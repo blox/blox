@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	log "github.com/cihub/seelog"
@@ -76,7 +77,12 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 		}
 	}
 
-	err = instanceStore.datastore.Add(key, instanceJSON)
+	compressedInstanceJSON, err := compress.Compress(instanceJSON)
+	if err != nil {
+		return err
+	}
+
+	err = instanceStore.datastore.Add(key, string(compressedInstanceJSON))
 	if err != nil {
 		return err
 	}
@@ -136,7 +142,11 @@ func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*types.Con
 
 	var instance types.ContainerInstance
 	for _, v := range resp {
-		err = json.UnmarshalJSON(v, &instance)
+		uncompressedVal, err := compress.Uncompress([]byte(v))
+		if err != nil {
+			return nil, err
+		}
+		err = json.UnmarshalJSON(uncompressedVal, &instance)
 		if err != nil {
 			return nil, err
 		}
@@ -161,8 +171,13 @@ func (instanceStore eventInstanceStore) getInstancesByKeyPrefix(key string) ([]t
 
 	instances := []types.ContainerInstance{}
 	for _, v := range resp {
+		uncompressedVal, err := compress.Uncompress([]byte(v))
+		if err != nil {
+			return nil, err
+		}
+
 		var instance types.ContainerInstance
-		err = json.UnmarshalJSON(v, &instance)
+		err = json.UnmarshalJSON(uncompressedVal, &instance)
 		if err != nil {
 			return nil, err
 		}

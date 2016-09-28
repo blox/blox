@@ -1,11 +1,12 @@
 package store
 
 import (
+	"strings"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 const (
@@ -78,7 +79,12 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 		}
 	}
 
-	err = taskStore.datastore.Add(key, taskJSON)
+	compressedTaskJSON, err := compress.Compress(taskJSON)
+	if err != nil {
+		return err
+	}
+
+	err = taskStore.datastore.Add(key, string(compressedTaskJSON))
 	if err != nil {
 		return err
 	}
@@ -160,7 +166,11 @@ func (taskStore eventTaskStore) getTaskByKey(key string) (*types.Task, error) {
 
 	var task types.Task
 	for _, v := range resp {
-		err = json.UnmarshalJSON(v, &task)
+		uncompressedVal, err := compress.Uncompress([]byte(v))
+		if err != nil {
+			return nil, err
+		}
+		err = json.UnmarshalJSON(uncompressedVal, &task)
 		if err != nil {
 			return nil, err
 		}
@@ -185,8 +195,12 @@ func (taskStore eventTaskStore) getTasksByKeyPrefix(key string) ([]types.Task, e
 
 	tasks := []types.Task{}
 	for _, v := range resp {
+		uncompressedVal, err := compress.Uncompress([]byte(v))
+		if err != nil {
+			return nil, err
+		}
 		var task types.Task
-		err = json.UnmarshalJSON(v, &task)
+		err = json.UnmarshalJSON(uncompressedVal, &task)
 		if err != nil {
 			return nil, err
 		}

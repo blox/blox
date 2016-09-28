@@ -2,58 +2,69 @@ package store
 
 import (
 	"encoding/json"
+	"testing"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 const (
-	taskArn       = "arn:aws:ecs:us-east-1:159403520677:task/271022c0-f894-4aa2-b063-25bae55088d5"
+	taskArn1      = "arn:aws:ecs:us-east-1:159403520677:task/271022c0-f894-4aa2-b063-25bae55088d5"
 	taskArn2      = "arn:aws:ecs:us-east-1:159403520677:task/345022c0-f894-4aa2-b063-25bae55088d5"
 	pendingStatus = "pending"
 )
 
 type TaskStoreTestSuite struct {
 	suite.Suite
-	datastore *mocks.MockDataStore
-	taskStore TaskStore
-	taskKey   string
-	task      types.Task
-	task2     types.Task
-	taskJSON  string
-	task2JSON string
+	datastore           *mocks.MockDataStore
+	taskStore           TaskStore
+	taskKey             string
+	task1               types.Task
+	task2               types.Task
+	task1JSON           string
+	task2JSON           string
+	compressedTask1JSON string
+	compressedTask2JSON string
 }
 
 func (suite *TaskStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.datastore = mocks.NewMockDataStore(mockCtrl)
-	suite.taskKey = taskKeyPrefix + taskArn
+	suite.taskKey = taskKeyPrefix + taskArn1
 
 	var err error
 	suite.taskStore, err = NewTaskStore(suite.datastore)
 	assert.Nil(suite.T(), err, "Cannot setup testSuite: Unexpected error when calling NewTaskStore")
 
-	suite.task = types.Task{}
-	suite.task.Detail.TaskArn = taskArn
-	suite.task.Detail.Version = 1
-	suite.task.Detail.LastStatus = pendingStatus
+	suite.task1 = types.Task{}
+	suite.task1.Detail.TaskArn = taskArn1
+	suite.task1.Detail.Version = 1
+	suite.task1.Detail.LastStatus = pendingStatus
 
-	taskJSON, err := json.Marshal(suite.task)
-	assert.Nil(suite.T(), err, "Cannot setup testSuite: Error when json marhsaling task %v", suite.task)
+	task1JSON, err := json.Marshal(suite.task1)
+	assert.Nil(suite.T(), err, "Cannot setup testSuite: Error when json marhsaling task %v", suite.task1)
 
-	suite.task2 = suite.task
+	suite.task2 = suite.task1
 	suite.task2.Detail.TaskArn = taskArn2
 	suite.task2.Detail.Version++
 
 	task2JSON, err := json.Marshal(suite.task2)
 	assert.Nil(suite.T(), err, "Cannot setup testSuite: Error when json marhsaling task %v", suite.task2)
 
-	suite.taskJSON = string(taskJSON)
+	suite.task1JSON = string(task1JSON)
 	suite.task2JSON = string(task2JSON)
+
+	compressedTask1JSON, err := compress.Compress(suite.task1JSON)
+	assert.Nil(suite.T(), err, "Cannot setup testSuite: Error when compressing task json %v", suite.task1JSON)
+	suite.compressedTask1JSON = string(compressedTask1JSON)
+
+	compressedTask2JSON, err := compress.Compress(suite.task2JSON)
+	assert.Nil(suite.T(), err, "Cannot setup testSuite: Error when compressing task json %v", suite.task2JSON)
+	suite.compressedTask2JSON = string(compressedTask2JSON)
 }
 
 func TestTaskStoreTestSuite(t *testing.T) {
@@ -83,97 +94,101 @@ func (suite *TaskStoreTestSuite) TestAddTaskUnmarshalJSONError() {
 
 func (suite *TaskStoreTestSuite) TestAddTaskEmptyTask() {
 	task := types.Task{}
-	taskJSON, err := json.Marshal(task)
-	err = suite.taskStore.AddTask(string(taskJSON))
+	task1JSON, err := json.Marshal(task)
+	err = suite.taskStore.AddTask(string(task1JSON))
 	assert.Error(suite.T(), err, "Expected an error when task arn is not set")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskGetTaskFails() {
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(nil, errors.New("Error when getting key"))
 
-	err := suite.taskStore.AddTask(suite.taskJSON)
+	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when get task fails")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskGetTaskNoResults() {
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(make(map[string]string), nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.taskJSON).Return(nil)
+	suite.datastore.EXPECT().Add(suite.taskKey, suite.compressedTask1JSON).Return(nil)
 
-	err := suite.taskStore.AddTask(suite.taskJSON)
+	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when datastore returns empty results")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskGetTaskMultipleResults() {
 	resp := map[string]string{
-		taskArn:  suite.taskJSON,
-		taskArn2: suite.task2JSON,
+		taskArn1: suite.compressedTask1JSON,
+		taskArn2: suite.compressedTask2JSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
 
-	err := suite.taskStore.AddTask(suite.taskJSON)
+	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns multiple results")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskGetTaskInvalidJSONResult() {
+	compressedInvalidJSON := suite.compressString("invalidJSON")
+
 	resp := map[string]string{
-		taskArn: "invalidJson",
+		taskArn1: compressedInvalidJSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
 
-	err := suite.taskStore.AddTask(suite.taskJSON)
+	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns invalid json results")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskSameVersionTaskExists() {
 	resp := map[string]string{
-		taskArn: suite.taskJSON,
+		taskArn1: suite.compressedTask1JSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.taskJSON).Times(0)
+	suite.datastore.EXPECT().Add(suite.taskKey, suite.task1JSON).Times(0)
 
-	err := suite.taskStore.AddTask(suite.taskJSON)
+	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when same version task exists")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskHigherVersionTaskExists() {
 	resp := map[string]string{
-		taskArn: suite.task2JSON,
+		taskArn1: suite.compressedTask2JSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
 	suite.datastore.EXPECT().Add(suite.taskKey, gomock.Any()).Times(0)
 
-	err := suite.taskStore.AddTask(suite.taskJSON)
+	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when higher version task exists")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskLowerVersionTaskExists() {
 	task := types.Task{}
-	task.Detail.TaskArn = taskArn
-	task.Detail.Version = suite.task.Detail.Version - 1
+	task.Detail.TaskArn = taskArn1
+	task.Detail.Version = suite.task1.Detail.Version - 1
 
 	taskJSON, err := json.Marshal(task)
 	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", task)
 
+	compressedTaskJSON := suite.compressString(string(taskJSON))
+
 	resp := map[string]string{
-		taskArn: string(taskJSON),
+		taskArn1: compressedTaskJSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.taskJSON).Return(nil)
+	suite.datastore.EXPECT().Add(suite.taskKey, suite.compressedTask1JSON).Return(nil)
 
-	err = suite.taskStore.AddTask(suite.taskJSON)
+	err = suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when lower version task exists")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskFails() {
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(make(map[string]string), nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.taskJSON).Return(errors.New("Add task failed"))
+	suite.datastore.EXPECT().Add(suite.taskKey, suite.compressedTask1JSON).Return(errors.New("Add task failed"))
 
-	err := suite.taskStore.AddTask(suite.taskJSON)
+	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when add task fails")
 }
 
@@ -185,58 +200,62 @@ func (suite *TaskStoreTestSuite) TestGetTaskEmptyArn() {
 func (suite *TaskStoreTestSuite) TestGetTaskGetTaskFails() {
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(nil, errors.New("Error when getting key"))
 
-	_, err := suite.taskStore.GetTask(taskArn)
+	_, err := suite.taskStore.GetTask(taskArn1)
 	assert.Error(suite.T(), err, "Expected an error when get task fails")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskGetTaskNoResults() {
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(make(map[string]string), nil)
 
-	task, err := suite.taskStore.GetTask(taskArn)
+	task, err := suite.taskStore.GetTask(taskArn1)
 	assert.Nil(suite.T(), err, "Unexpected error when datastore returns empty results")
 	assert.Nil(suite.T(), task, "Unexpected object returned when datastore returns empty results")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskGetMultipleResults() {
 	resp := map[string]string{
-		taskArn:  suite.taskJSON,
-		taskArn2: suite.task2JSON,
+		taskArn1: suite.compressedTask1JSON,
+		taskArn2: suite.compressedTask2JSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
 
-	_, err := suite.taskStore.GetTask(taskArn)
+	_, err := suite.taskStore.GetTask(taskArn1)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns multiple results")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskGetInvalidJSONResult() {
+	compressedInvalidJSON := suite.compressString("invalidJSON")
+
 	resp := map[string]string{
-		taskArn: "invalidJson",
+		taskArn1: compressedInvalidJSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
 
-	_, err := suite.taskStore.GetTask(taskArn)
+	_, err := suite.taskStore.GetTask(taskArn1)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns invalid json results")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTask() {
 	resp := map[string]string{
-		taskArn: suite.taskJSON,
+		taskArn1: suite.compressedTask1JSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
 
-	task, err := suite.taskStore.GetTask(taskArn)
+	task, err := suite.taskStore.GetTask(taskArn1)
 	assert.Nil(suite.T(), err, "Unexpected error when getting task")
 	assert.NotNil(suite.T(), task, "Expected a non-nil task when calling GetTask")
 
-	assert.Exactly(suite.T(), suite.task, *task, "Expected the returned task to match the one returned from the datastore")
+	assert.Exactly(suite.T(), suite.task1, *task, "Expected the returned task to match the one returned from the datastore")
 }
 
 func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixInvalidJSON() {
+	compressedInvalidJSON := suite.compressString("invalidJSON")
+
 	resp := map[string]string{
-		taskArn: "invalidJson",
+		taskArn1: compressedInvalidJSON,
 	}
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
 
@@ -263,8 +282,8 @@ func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixReturnsNoResults() {
 
 func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixReturnsMultipleResults() {
 	resp := map[string]string{
-		taskArn:  suite.taskJSON,
-		taskArn2: suite.task2JSON,
+		taskArn1: suite.compressedTask1JSON,
+		taskArn2: suite.compressedTask2JSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
@@ -281,8 +300,10 @@ func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixReturnsMultipleResult
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as ListTasks result. Missing %v", v)
 		} else {
+			uncompressedTaskJSON, err := compress.Uncompress([]byte(value))
+			assert.Nil(suite.T(), err, "Unexpected error when uncompressing task json %v", uncompressedTaskJSON)
 			var taskInResp types.Task
-			json.Unmarshal([]byte(value), &taskInResp)
+			json.Unmarshal([]byte(uncompressedTaskJSON), &taskInResp)
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as ListTasks result.")
 		}
 	}
@@ -322,8 +343,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsNoResults() {
 
 func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsNoneMatchFilter() {
 	resp := map[string]string{
-		taskArn:  suite.taskJSON,
-		taskArn2: suite.task2JSON,
+		taskArn1: suite.compressedTask1JSON,
+		taskArn2: suite.compressedTask2JSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
@@ -341,10 +362,13 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsO
 	taskMatchingStatus := suite.task2
 	taskMatchingStatus.Detail.LastStatus = filterStatus
 	taskMatchingStatusJSON, err := json.Marshal(taskMatchingStatus)
+	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", taskMatchingStatusJSON)
+
+	compressedTaskMatchingStatusJSON := suite.compressString(string(taskMatchingStatusJSON))
 
 	resp := map[string]string{
-		taskArn:  suite.taskJSON,
-		taskArn2: string(taskMatchingStatusJSON),
+		taskArn1: suite.compressedTask1JSON,
+		taskArn2: compressedTaskMatchingStatusJSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
@@ -358,13 +382,13 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsO
 
 func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsMultipleMatchFilter() {
 	resp := map[string]string{
-		taskArn:  suite.taskJSON,
-		taskArn2: suite.task2JSON,
+		taskArn1: suite.compressedTask1JSON,
+		taskArn2: suite.compressedTask2JSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
 
-	tasks, err := suite.taskStore.FilterTasks(statusFilter, suite.task.Detail.LastStatus)
+	tasks, err := suite.taskStore.FilterTasks(statusFilter, suite.task1.Detail.LastStatus)
 
 	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
 	assert.Equal(suite.T(), 2, len(tasks), "Expected one result when multiple match filter")
@@ -375,9 +399,17 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsM
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as FilterTasks result. Missing %v", v)
 		} else {
+			uncompressedTaskJSON, err := compress.Uncompress([]byte(value))
+			assert.Nil(suite.T(), err, "Unexpected error when uncompresseing task json %v", uncompressedTaskJSON)
 			var taskInResp types.Task
-			json.Unmarshal([]byte(value), &taskInResp)
+			json.Unmarshal([]byte(uncompressedTaskJSON), &taskInResp)
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as FilterTasks result.")
 		}
 	}
+}
+
+func (suite *TaskStoreTestSuite) compressString(str string) string {
+	compressedVal, err := compress.Compress(str)
+	assert.Nil(suite.T(), err, "Error when compressing string %v", str)
+	return string(compressedVal)
 }

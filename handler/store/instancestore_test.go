@@ -1,13 +1,14 @@
 package store
 
 import (
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"encoding/json"
-	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"reflect"
 	"testing"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
+	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -15,11 +16,12 @@ const (
 )
 
 type instanceStoreMockContext struct {
-	mockCtrl     *gomock.Controller
-	datastore    *mocks.MockDataStore
-	instance     types.ContainerInstance
-	instanceJson string
-	instanceKey  string
+	mockCtrl               *gomock.Controller
+	datastore              *mocks.MockDataStore
+	instance               types.ContainerInstance
+	instanceJSON           string
+	compressedInstanceJSON string
+	instanceKey            string
 }
 
 func NewContainerInstanceStoreMockContext(t *testing.T) *instanceStoreMockContext {
@@ -33,10 +35,15 @@ func NewContainerInstanceStoreMockContext(t *testing.T) *instanceStoreMockContex
 
 	json, err := json.Marshal(context.instance)
 	if err != nil {
-		t.Error("Cannot initialize instanceStoreMockContext")
+		t.Error("Cannot initialize instanceStoreMockContext: ", err)
 	}
-	context.instanceJson = string(json)
+	context.instanceJSON = string(json)
 
+	compressedInstanceJSON, err := compress.Compress(context.instanceJSON)
+	if err != nil {
+		t.Error("Cannot initialize instanceStoreMockContext: ", err)
+	}
+	context.compressedInstanceJSON = string(compressedInstanceJSON)
 	context.instanceKey = instanceKeyPrefix + containerInstanceArn
 
 	return &context
@@ -110,8 +117,8 @@ func TestAddContainerInstanceEmptyContainerInstanceArn(t *testing.T) {
 
 	instance := types.ContainerInstance{}
 
-	instanceJson, err := json.Marshal(instance)
-	err = instanceStore.AddContainerInstance(string(instanceJson))
+	instanceJSON, err := json.Marshal(instance)
+	err = instanceStore.AddContainerInstance(string(instanceJSON))
 
 	if err == nil {
 		t.Error("Expected an error when container instance arn is not set")
@@ -130,7 +137,7 @@ func TestAddContainerInstanceGetContainerInstanceFails(t *testing.T) {
 
 	context.datastore.EXPECT().Get(context.instanceKey).Return(nil, errors.New("Error when getting key"))
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err == nil {
 		t.Error("Expected an error when datastore get fails")
@@ -148,9 +155,9 @@ func TestAddContainerInstanceGetContainerInstanceNoResults(t *testing.T) {
 	}
 
 	context.datastore.EXPECT().Get(context.instanceKey).Return(make(map[string]string), nil)
-	context.datastore.EXPECT().Add(context.instanceKey, context.instanceJson).Return(nil)
+	context.datastore.EXPECT().Add(context.instanceKey, context.compressedInstanceJSON).Return(nil)
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore get returns empty results")
@@ -173,7 +180,7 @@ func TestAddContainerInstanceGetContainerInstanceMultipleResults(t *testing.T) {
 	}
 	context.datastore.EXPECT().Get(context.instanceKey).Return(resp, nil)
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err == nil {
 		t.Error("Expected an error when datastore get returns multiple results")
@@ -195,7 +202,7 @@ func TestAddContainerInstanceGetContainerInstanceInvalidJsonResult(t *testing.T)
 	}
 	context.datastore.EXPECT().Get(context.instanceKey).Return(resp, nil)
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err == nil {
 		t.Error("Expected an error when datastore get returns invalid json")
@@ -213,12 +220,12 @@ func TestAddContainerInstanceSameVersionInstanceExists(t *testing.T) {
 	}
 
 	resp := map[string]string{
-		containerInstanceArn: context.instanceJson,
+		containerInstanceArn: context.compressedInstanceJSON,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey).Return(resp, nil)
-	context.datastore.EXPECT().Add(context.instanceKey, context.instanceJson).Times(0)
+	context.datastore.EXPECT().Add(context.instanceKey, context.compressedInstanceJSON).Times(0)
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err != nil {
 		t.Error("Unxpected error when adding instance and same version instance exists")
@@ -240,14 +247,15 @@ func TestAddContainerInstanceHigherVersionInstanceExists(t *testing.T) {
 	instance.Detail.Version = context.instance.Detail.Version + 1
 
 	json, _ := json.Marshal(instance)
+	compressedJSON, _ := compress.Compress(string(json))
 
 	resp := map[string]string{
-		containerInstanceArn: string(json),
+		containerInstanceArn: string(compressedJSON),
 	}
 	context.datastore.EXPECT().Get(context.instanceKey).Return(resp, nil)
-	context.datastore.EXPECT().Add(context.instanceKey, context.instanceJson).Times(0)
+	context.datastore.EXPECT().Add(context.instanceKey, context.compressedInstanceJSON).Times(0)
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err != nil {
 		t.Error("Unxpected error when adding instance and higher version instance exists")
@@ -269,14 +277,15 @@ func TestAddContainerInstanceLowerVersionInstanceExists(t *testing.T) {
 	instance.Detail.Version = context.instance.Detail.Version - 1
 
 	json, _ := json.Marshal(instance)
+	compressedJSON, _ := compress.Compress(string(json))
 
 	resp := map[string]string{
-		containerInstanceArn: string(json),
+		containerInstanceArn: string(compressedJSON),
 	}
 	context.datastore.EXPECT().Get(context.instanceKey).Return(resp, nil)
-	context.datastore.EXPECT().Add(context.instanceKey, context.instanceJson).Return(nil)
+	context.datastore.EXPECT().Add(context.instanceKey, context.compressedInstanceJSON).Return(nil)
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err != nil {
 		t.Error("Unxpected error when adding instance and higher version instance exists")
@@ -298,14 +307,15 @@ func TestAddContainerInstanceFails(t *testing.T) {
 	instance.Detail.Version = context.instance.Detail.Version - 1
 
 	json, _ := json.Marshal(instance)
+	compressedJSON, _ := compress.Compress(string(json))
 
 	resp := map[string]string{
-		containerInstanceArn: string(json),
+		containerInstanceArn: string(compressedJSON),
 	}
 	context.datastore.EXPECT().Get(context.instanceKey).Return(resp, nil)
-	context.datastore.EXPECT().Add(context.instanceKey, context.instanceJson).Return(errors.New("Add instance failed"))
+	context.datastore.EXPECT().Add(context.instanceKey, context.compressedInstanceJSON).Return(errors.New("Add instance failed"))
 
-	err = instanceStore.AddContainerInstance(context.instanceJson)
+	err = instanceStore.AddContainerInstance(context.instanceJSON)
 
 	if err == nil {
 		t.Error("Expected an error when adding an instance fails")
@@ -427,7 +437,7 @@ func TestGetContainerInstance(t *testing.T) {
 	}
 
 	resp := map[string]string{
-		containerInstanceArn: context.instanceJson,
+		containerInstanceArn: context.compressedInstanceJSON,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey).Return(resp, nil)
 
@@ -517,11 +527,12 @@ func TestListContainerInstancesGetWithPrefixMultipleResults(t *testing.T) {
 	instance := types.ContainerInstance{}
 	instance.Detail.ContainerInstanceArn = containerInstanceArn + "1"
 
-	instance2Json, _ := json.Marshal(instance)
+	instance2JSON, _ := json.Marshal(instance)
+	compressedInstance2JSON, _ := compress.Compress(string(instance2JSON))
 
 	resp := map[string]string{
-		containerInstanceArn:       context.instanceJson,
-		containerInstanceArn + "1": string(instance2Json),
+		containerInstanceArn:       context.compressedInstanceJSON,
+		containerInstanceArn + "1": string(compressedInstance2JSON),
 	}
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(resp, nil)
 	instances, err := instanceStore.ListContainerInstances()
@@ -540,7 +551,8 @@ func TestListContainerInstancesGetWithPrefixMultipleResults(t *testing.T) {
 			t.Errorf("Expected GetWithPrefix result to contain the same elements as ListContainerInstances result. Missing %v", v)
 		} else {
 			var valueInstance types.ContainerInstance
-			json.Unmarshal([]byte(value), &valueInstance)
+			uncompressedValue, _ := compress.Uncompress([]byte(value))
+			json.Unmarshal([]byte(uncompressedValue), &valueInstance)
 			if !reflect.DeepEqual(v, valueInstance) {
 				t.Errorf("Expected GetWithPrefix result to contain the same elements as ListContainerInstances result. %v does not match %v", v, valueInstance)
 			}
