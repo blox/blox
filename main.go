@@ -18,10 +18,9 @@ import (
 )
 
 const (
-	serverAddress      = "localhost:3000"
-	serverReadTimeout  = 10 * time.Second
-	serverWriteTimeout = 10 * time.Second
-	errorCode          = 1
+	serverAddress     = "localhost:3000"
+	serverReadTimeout = 10 * time.Second
+	errorCode         = 1
 )
 
 func main() {
@@ -87,10 +86,9 @@ func _main() int {
 	n.UseHandler(router)
 
 	s := &http.Server{
-		Addr:         serverAddress,
-		Handler:      n,
-		ReadTimeout:  serverReadTimeout,
-		WriteTimeout: serverWriteTimeout,
+		Addr:        serverAddress,
+		Handler:     n,
+		ReadTimeout: serverReadTimeout,
 	}
 
 	err = s.ListenAndServe()

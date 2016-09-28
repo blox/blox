@@ -1,10 +1,10 @@
 package clients
 
 import (
+	"time"
 	etcd "github.com/coreos/etcd/clientv3"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
-	"time"
 )
 
 // EtcdInterface defines etcd methods that are used in the project to enable mocking
@@ -27,6 +27,13 @@ type EtcdInterface interface {
 	// When passed WithLimit(limit), the number of returned keys is bounded by limit.
 	// When passed WithSort(), the keys will be sorted.
 	Get(ctx context.Context, key string, opts ...etcd.OpOption) (*etcd.GetResponse, error)
+
+	// Watch watches on a key or prefix. The watched events will be returned
+	// through the returned channel.
+	// If the watch is slow or the required rev is compacted, the watch request
+	// might be canceled from the server-side and the chan will be closed.
+	// 'opts' can be: 'WithRev' and/or 'WithPrefix'.
+	Watch(ctx context.Context, key string, opts ...etcd.OpOption) etcd.WatchChan
 }
 
 var _ EtcdInterface = (*etcd.Client)(nil)

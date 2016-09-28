@@ -71,3 +71,18 @@ func (_mr *_MockEtcdInterfaceRecorder) Get(arg0, arg1 interface{}, arg2 ...inter
 	_s := append([]interface{}{arg0, arg1}, arg2...)
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", _s...)
 }
+
+func (_m *MockEtcdInterface) Watch(ctx context.Context, key string, opts ...clientv3.OpOption) clientv3.WatchChan {
+	_s := []interface{}{ctx, key}
+	for _, _x := range opts {
+		_s = append(_s, _x)
+	}
+	ret := _m.ctrl.Call(_m, "Watch", _s...)
+	ret0, _ := ret[0].(clientv3.WatchChan)
+	return ret0
+}
+
+func (_mr *_MockEtcdInterfaceRecorder) Watch(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	_s := append([]interface{}{arg0, arg1}, arg2...)
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Watch", _s...)
+}

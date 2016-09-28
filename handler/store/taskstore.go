@@ -1,9 +1,12 @@
 package store
 
 import (
+	"context"
 	"strings"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
+	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
@@ -20,7 +23,7 @@ type TaskStore interface {
 	GetTask(arn string) (*types.Task, error)
 	ListTasks() ([]types.Task, error)
 	FilterTasks(filterKey string, filterValue string) ([]types.Task, error)
-	StreamTasks() ([]types.Task, error)
+	StreamTasks(ctx context.Context) (chan storetypes.TaskErrorWrapper, error)
 }
 
 type eventTaskStore struct {
@@ -141,9 +144,44 @@ func (taskStore eventTaskStore) FilterTasks(filterKey string, filterValue string
 	return tasksWithStatus, nil
 }
 
-// StreamTasks returns a stream of all changes in the task keyspace
-func (taskStore eventTaskStore) StreamTasks() ([]types.Task, error) {
-	return nil, nil
+// StreamTasks streams all changes in the task keyspace into a channel
+func (taskStore eventTaskStore) StreamTasks(ctx context.Context) (chan storetypes.TaskErrorWrapper, error) {
+	taskStoreCtx, cancel := context.WithCancel(ctx) // go routine taskStore.pipeBetweenChannels() handles canceling this context
+
+	dsChan, err := taskStore.datastore.StreamWithPrefix(taskStoreCtx, taskKeyPrefix)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	taskRespChan := make(chan storetypes.TaskErrorWrapper) // go routine taskStore.pipeBetweenChannels() handles closing of this channel
+	go taskStore.pipeBetweenChannels(taskStoreCtx, cancel, dsChan, taskRespChan)
+	return taskRespChan, nil
+}
+
+func (taskStore eventTaskStore) pipeBetweenChannels(ctx context.Context, cancel context.CancelFunc, dsChan chan map[string]string, taskRespChan chan storetypes.TaskErrorWrapper) {
+	defer close(taskRespChan)
+	defer cancel()
+
+	for {
+		select {
+		case resp, ok := <-dsChan:
+			if !ok {
+				return
+			}
+			for _, v := range resp {
+				t, err := uncompressAndUnmarshalString(v)
+				if err != nil {
+					taskRespChan <- storetypes.TaskErrorWrapper{Task: types.Task{}, Err: err}
+					return
+				}
+				taskRespChan <- storetypes.TaskErrorWrapper{Task: t, Err: nil}
+			}
+
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (taskStore eventTaskStore) getTaskByKey(key string) (*types.Task, error) {
@@ -166,11 +204,7 @@ func (taskStore eventTaskStore) getTaskByKey(key string) (*types.Task, error) {
 
 	var task types.Task
 	for _, v := range resp {
-		uncompressedVal, err := compress.Uncompress([]byte(v))
-		if err != nil {
-			return nil, err
-		}
-		err = json.UnmarshalJSON(uncompressedVal, &task)
+		task, err = uncompressAndUnmarshalString(v)
 		if err != nil {
 			return nil, err
 		}
@@ -195,16 +229,27 @@ func (taskStore eventTaskStore) getTasksByKeyPrefix(key string) ([]types.Task, e
 
 	tasks := []types.Task{}
 	for _, v := range resp {
-		uncompressedVal, err := compress.Uncompress([]byte(v))
+		task, err := uncompressAndUnmarshalString(v)
 		if err != nil {
 			return nil, err
 		}
-		var task types.Task
-		err = json.UnmarshalJSON(uncompressedVal, &task)
-		if err != nil {
-			return nil, err
-		}
+
 		tasks = append(tasks, task)
 	}
 	return tasks, nil
+}
+
+func uncompressAndUnmarshalString(val string) (types.Task, error) {
+	var task types.Task
+
+	uncompressedVal, err := compress.Uncompress([]byte(val))
+	if err != nil {
+		return task, err
+	}
+	err = json.UnmarshalJSON(uncompressedVal, &task)
+	if err != nil {
+		return task, err
+	}
+
+	return task, nil
 }

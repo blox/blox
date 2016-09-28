@@ -1,10 +1,13 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
+	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -88,7 +91,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskEmptyJSON() {
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskUnmarshalJSONError() {
-	err := suite.taskStore.AddTask("invalidJson")
+	err := suite.taskStore.AddTask("invalidJSON")
 	assert.Error(suite.T(), err, "Expected an error when json invalid in AddTask")
 }
 
@@ -406,6 +409,99 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsM
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as FilterTasks result.")
 		}
 	}
+}
+
+func (suite *TaskStoreTestSuite) TestStreamTasksDataStoreStreamReturnsError() {
+	ctx := context.Background()
+	suite.datastore.EXPECT().StreamWithPrefix(gomock.Any(), taskKeyPrefix).Return(nil, errors.New("StreamWithPrefix failed"))
+
+	taskRespChan, err := suite.taskStore.StreamTasks(ctx)
+	assert.Error(suite.T(), err, "Expected an error when datastore StreamWithPrefix returns an error")
+	assert.Nil(suite.T(), taskRespChan, "Unexpected task response channel when there is a datastore channel setup error")
+}
+
+func (suite *TaskStoreTestSuite) TestStreamTasksValidJSONInDSChannel() {
+	ctx := context.Background()
+	dsChan := make(chan map[string]string)
+	defer close(dsChan)
+	suite.datastore.EXPECT().StreamWithPrefix(gomock.Any(), taskKeyPrefix).Return(dsChan, nil)
+
+	taskRespChan, err := suite.taskStore.StreamTasks(ctx)
+	assert.Nil(suite.T(), err, "Unexpected error when calling stream tasks")
+	assert.NotNil(suite.T(), taskRespChan)
+
+	taskResp := addTaskToDSChanAndReadFromTaskRespChan(suite.compressedTask1JSON, dsChan, taskRespChan)
+
+	assert.Nil(suite.T(), taskResp.Err, "Unexpected error when reading task from channel")
+	assert.Equal(suite.T(), suite.task1, taskResp.Task, "Expected task in task response to match that in the stream")
+}
+
+func (suite *TaskStoreTestSuite) TestStreamTasksInvalidJSONInDSChannel() {
+	ctx := context.Background()
+	dsChan := make(chan map[string]string)
+	defer close(dsChan)
+	suite.datastore.EXPECT().StreamWithPrefix(gomock.Any(), taskKeyPrefix).Return(dsChan, nil)
+
+	taskRespChan, err := suite.taskStore.StreamTasks(ctx)
+	assert.Nil(suite.T(), err, "Unexpected error when calling stream tasks")
+	assert.NotNil(suite.T(), taskRespChan)
+
+	compressedInvalidJSON := suite.compressString("invalidJSON")
+	taskResp := addTaskToDSChanAndReadFromTaskRespChan(compressedInvalidJSON, dsChan, taskRespChan)
+
+	assert.Error(suite.T(), taskResp.Err, "Expected an error when dsChannel returns an invalid task json")
+	assert.Equal(suite.T(), types.Task{}, taskResp.Task, "Expected empty task in response when there is a decode error")
+
+	_, ok := <-taskRespChan
+	assert.False(suite.T(), ok, "Expected task response channel to be closed")
+}
+
+func (suite *TaskStoreTestSuite) TestStreamTasksCancelUpstreamContext() {
+	ctx, cancel := context.WithCancel(context.Background())
+	dsChan := make(chan map[string]string)
+	defer close(dsChan)
+	suite.datastore.EXPECT().StreamWithPrefix(gomock.Any(), taskKeyPrefix).Return(dsChan, nil)
+
+	taskRespChan, err := suite.taskStore.StreamTasks(ctx)
+	assert.Nil(suite.T(), err, "Unexpected error when calling stream tasks")
+	assert.NotNil(suite.T(), taskRespChan)
+
+	cancel()
+
+	_, ok := <-taskRespChan
+	assert.False(suite.T(), ok, "Expected task response channel to be closed")
+}
+
+func (suite *TaskStoreTestSuite) TestStreamTasksCloseDownstreamChannel() {
+	ctx := context.Background()
+	dsChan := make(chan map[string]string)
+	suite.datastore.EXPECT().StreamWithPrefix(gomock.Any(), taskKeyPrefix).Return(dsChan, nil)
+
+	taskRespChan, err := suite.taskStore.StreamTasks(ctx)
+	assert.Nil(suite.T(), err, "Unexpected error when calling stream tasks")
+	assert.NotNil(suite.T(), taskRespChan)
+
+	close(dsChan)
+
+	_, ok := <-taskRespChan
+	assert.False(suite.T(), ok, "Expected task response channel to be closed")
+}
+
+func addTaskToDSChanAndReadFromTaskRespChan(taskToAdd string, dsChan chan map[string]string, taskRespChan chan storetypes.TaskErrorWrapper) storetypes.TaskErrorWrapper {
+	var taskResp storetypes.TaskErrorWrapper
+
+	doneChan := make(chan bool)
+	defer close(doneChan)
+	go func() {
+		taskResp = <-taskRespChan
+		doneChan <- true
+	}()
+
+	dsVal := map[string]string{taskArn1: taskToAdd}
+	dsChan <- dsVal
+	<-doneChan
+
+	return taskResp
 }
 
 func (suite *TaskStoreTestSuite) compressString(str string) string {

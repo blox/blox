@@ -1,6 +1,10 @@
 package store
 
 import (
+	"context"
+	"testing"
+	"time"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
 	etcd "github.com/coreos/etcd/clientv3"
 	mvccpb "github.com/coreos/etcd/mvcc/mvccpb"
@@ -8,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 const (
@@ -199,4 +202,101 @@ func (testSuite *DataStoreTestSuite) TestGetEtcd() {
 	} else {
 		assert.Exactly(testSuite.T(), string(getResp.Kvs[0].Value), value, "Expected value does not match the received response")
 	}
+}
+
+func (testSuite *DataStoreTestSuite) TestStreamWithPrefixEmptyKeyPrefix() {
+	ctx := context.Background()
+	_, err := testSuite.datastore.StreamWithPrefix(ctx, "")
+	assert.Error(testSuite.T(), err, "Expected an error when key is nil")
+}
+
+func (testSuite *DataStoreTestSuite) TestStreamWithPrefix() {
+	ctx := context.Background()
+	watchChan := make(chan etcd.WatchResponse)
+	defer close(watchChan)
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
+	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
+
+	dsVal := addToWatchChanAndReadFromDataChan(watchChan, dsChan)
+	expectedDsVal := map[string]string{
+		key: value,
+	}
+	assert.Equal(testSuite.T(), expectedDsVal, dsVal, "Expected key-val read from dsChan to match what was put into watchChan")
+}
+
+func (testSuite *DataStoreTestSuite) TestStreamWithPrefixCancelUpstreamContext() {
+	ctx, cancel := context.WithCancel(context.Background())
+	var watchChan etcd.WatchChan
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
+	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
+
+	cancel()
+
+	_, ok := <-dsChan
+	assert.False(testSuite.T(), ok, "Expected dschan to be closed")
+}
+
+func (testSuite *DataStoreTestSuite) TestStreamWithPrefixCloseDownstreamChannel() {
+	ctx := context.Background()
+	watchChan := make(chan etcd.WatchResponse)
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
+	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
+
+	close(watchChan)
+
+	_, ok := <-dsChan
+	assert.False(testSuite.T(), ok, "Expected dschan to be closed")
+}
+
+func (testSuite *DataStoreTestSuite) TestStreamWithPrefixStreamTimeout() {
+	if testing.Short() {
+		testSuite.T().Skip("Skipping TestStreamWithPrefixStreamTimeout in short mode")
+	}
+
+	ctx := context.Background()
+	var watchChan etcd.WatchChan
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
+	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
+
+	time.Sleep(streamIdleTimeout)
+
+	_, ok := <-dsChan
+	assert.False(testSuite.T(), ok, "Expected dschan to be closed")
+}
+
+func addToWatchChanAndReadFromDataChan(watchChan chan etcd.WatchResponse, dsChan chan map[string]string) map[string]string {
+	var dsVal map[string]string
+
+	doneChan := make(chan bool)
+	defer close(doneChan)
+	go func() {
+		dsVal = <-dsChan
+		doneChan <- true
+	}()
+
+	var event etcd.Event
+	event.Kv = &mvccpb.KeyValue{
+		Key:   []byte(key),
+		Value: []byte(value),
+	}
+	var watchResp etcd.WatchResponse
+	watchResp.Events = make([]*etcd.Event, 1)
+	watchResp.Events[0] = &event
+
+	watchChan <- watchResp
+	<-doneChan
+
+	return dsVal
 }
