@@ -1,0 +1,304 @@
+{
+	"ImportPath": "github.com/aws/amazon-ecs-event-stream-handler",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v74",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/awserr",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/awsutil",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/client",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/client/metadata",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/corehandlers",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/credentials",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/credentials/endpointcreds",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/credentials/stscreds",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/defaults",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/ec2metadata",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/request",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/session",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/signer/v4",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/endpoints",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/query",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/query/queryutil",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/rest",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/sqs",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/sqs/sqsiface",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/sts",
+			"Comment": "v1.4.9",
+			"Rev": "3d4bac4e7e2ebd6f6b49de28d3232317af79c6fe"
+		},
+		{
+			"ImportPath": "github.com/cihub/seelog",
+			"Comment": "v2.6-22-g752ef64",
+			"Rev": "752ef646ce438bc649b2bb565188471879185c33"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry-incubator/candiedyaml",
+			"Rev": "99c3df83b51532e3615f851d8c2dbb638f5313bf"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/auth/authpb",
+			"Comment": "v3.0.0-beta.0-777-g1c9e0a0",
+			"Rev": "1c9e0a0e33051fed6c05c141e6fcbfe5c7f2a899"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/clientv3",
+			"Comment": "v3.0.0-beta.0-777-g1c9e0a0",
+			"Rev": "1c9e0a0e33051fed6c05c141e6fcbfe5c7f2a899"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes",
+			"Comment": "v3.0.0-beta.0-777-g1c9e0a0",
+			"Rev": "1c9e0a0e33051fed6c05c141e6fcbfe5c7f2a899"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/etcdserver/etcdserverpb",
+			"Comment": "v3.0.0-beta.0-777-g1c9e0a0",
+			"Rev": "1c9e0a0e33051fed6c05c141e6fcbfe5c7f2a899"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/mvcc/mvccpb",
+			"Comment": "v3.0.0-beta.0-777-g1c9e0a0",
+			"Rev": "1c9e0a0e33051fed6c05c141e6fcbfe5c7f2a899"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/tlsutil",
+			"Comment": "v3.0.0-beta.0-777-g1c9e0a0",
+			"Rev": "1c9e0a0e33051fed6c05c141e6fcbfe5c7f2a899"
+		},
+		{
+			"ImportPath": "github.com/gengo/grpc-gateway/runtime",
+			"Comment": "v1.0.0-5-gfaa3576",
+			"Rev": "faa3576c70e270b37279f045637a7d04f632e353"
+		},
+		{
+			"ImportPath": "github.com/gengo/grpc-gateway/runtime/internal",
+			"Comment": "v1.0.0-5-gfaa3576",
+			"Rev": "faa3576c70e270b37279f045637a7d04f632e353"
+		},
+		{
+			"ImportPath": "github.com/gengo/grpc-gateway/utilities",
+			"Comment": "v1.0.0-5-gfaa3576",
+			"Rev": "faa3576c70e270b37279f045637a7d04f632e353"
+		},
+		{
+			"ImportPath": "github.com/ghodss/yaml",
+			"Rev": "aa0c862057666179de291b67d9f093d12b5a8473"
+		},
+		{
+			"ImportPath": "github.com/go-ini/ini",
+			"Comment": "v1.21.1",
+			"Rev": "6e4869b434bd001f6983749881c7ead3545887d8"
+		},
+		{
+			"ImportPath": "github.com/gogo/protobuf/proto",
+			"Comment": "v0.2-22-g2752d97",
+			"Rev": "2752d97bbd91927dd1c43296dbf8700e50e2708c"
+		},
+		{
+			"ImportPath": "github.com/golang/mock/gomock",
+			"Rev": "bd3c8e81be01eef76d4b503f5e687d2d1354d2d9"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/jsonpb",
+			"Rev": "874264fbbb43f4d91e999fecb4b40143ed611400"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "874264fbbb43f4d91e999fecb4b40143ed611400"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.1-20-g7804150",
+			"Rev": "780415097119f6f61c55475fe59b66f3c3e9ea53"
+		},
+		{
+			"ImportPath": "github.com/jmespath/go-jmespath",
+			"Comment": "0.2.2-14-gbd40a43",
+			"Rev": "bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d"
+		},
+		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.7.1",
+			"Rev": "17b591df37844cde689f4d5813e5cea0927d8dd2"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Comment": "v1.1.0-1-g0aa62d5",
+			"Rev": "0aa62d5ddceb50dbcb909d790b5345affd3669b6"
+		},
+		{
+			"ImportPath": "github.com/urfave/negroni",
+			"Comment": "v0.2.0-57-g6edff56",
+			"Rev": "6edff56736fa7bd546812f149e8cdaae61e5a38f"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "b400c2eff1badec7022a8c8f5bea058b6315eed7"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http2",
+			"Rev": "b400c2eff1badec7022a8c8f5bea058b6315eed7"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http2/hpack",
+			"Rev": "b400c2eff1badec7022a8c8f5bea058b6315eed7"
+		},
+		{
+			"ImportPath": "golang.org/x/net/internal/timeseries",
+			"Rev": "b400c2eff1badec7022a8c8f5bea058b6315eed7"
+		},
+		{
+			"ImportPath": "golang.org/x/net/lex/httplex",
+			"Rev": "b400c2eff1badec7022a8c8f5bea058b6315eed7"
+		},
+		{
+			"ImportPath": "golang.org/x/net/trace",
+			"Rev": "b400c2eff1badec7022a8c8f5bea058b6315eed7"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/codes",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/credentials",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/grpclog",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/internal",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/metadata",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/naming",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/peer",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/transport",
+			"Comment": "v1.0.0-6-g02fca89",
+			"Rev": "02fca896ff5f50c6bbbee0860345a49344b37a03"
+		}
+	]
+}
