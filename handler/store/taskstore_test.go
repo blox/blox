@@ -318,7 +318,7 @@ func (suite *TaskStoreTestSuite) TestFilterTasksEmptyKey() {
 }
 
 func (suite *TaskStoreTestSuite) TestFilterTasksEmptyValue() {
-	_, err := suite.taskStore.FilterTasks(statusFilter, "")
+	_, err := suite.taskStore.FilterTasks(taskStatusFilter, "")
 	assert.Error(suite.T(), err, "Expected an error when filterKey is empty")
 }
 
@@ -330,14 +330,14 @@ func (suite *TaskStoreTestSuite) TestFilterTasksUnsupportedFilter() {
 func (suite *TaskStoreTestSuite) TestFilterTasksListTasksGetWithPrefixFails() {
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(nil, errors.New("GetWithPrefix failed"))
 
-	_, err := suite.taskStore.FilterTasks(statusFilter, "randomFilter")
+	_, err := suite.taskStore.FilterTasks(taskStatusFilter, "randomFilter")
 	assert.Error(suite.T(), err, "Expected an error when list tasks fails")
 }
 
 func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsNoResults() {
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(make(map[string]string), nil)
 
-	tasks, err := suite.taskStore.FilterTasks(statusFilter, "randomFilter")
+	tasks, err := suite.taskStore.FilterTasks(taskStatusFilter, "randomFilter")
 
 	assert.Nil(suite.T(), err, "Unexpected error when list tasks returns empty")
 	assert.NotNil(suite.T(), tasks, "Result should be empty when lists tasks is empty")
@@ -352,7 +352,7 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsN
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
 
-	tasks, err := suite.taskStore.FilterTasks(statusFilter, "randomFilter")
+	tasks, err := suite.taskStore.FilterTasks(taskStatusFilter, "randomFilter")
 
 	assert.Nil(suite.T(), err, "Unexpected error when filter does not match")
 	assert.NotNil(suite.T(), tasks, "Result should be empty when filter does not match")
@@ -376,7 +376,7 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsO
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
 
-	tasks, err := suite.taskStore.FilterTasks(statusFilter, filterStatus)
+	tasks, err := suite.taskStore.FilterTasks(taskStatusFilter, filterStatus)
 
 	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
 	assert.Equal(suite.T(), 1, len(tasks), "Expected the length of the FilterTasks result to be 1")
@@ -391,7 +391,7 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsM
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
 
-	tasks, err := suite.taskStore.FilterTasks(statusFilter, suite.task1.Detail.LastStatus)
+	tasks, err := suite.taskStore.FilterTasks(taskStatusFilter, suite.task1.Detail.LastStatus)
 
 	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
 	assert.Equal(suite.T(), 2, len(tasks), "Expected one result when multiple match filter")

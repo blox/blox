@@ -1,6 +1,9 @@
 package store
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
@@ -9,7 +12,12 @@ import (
 )
 
 const (
-	instanceKeyPrefix = "ecs/instance/"
+	instanceKeyPrefix    = "ecs/instance/"
+	instanceStatusFilter = "status"
+	clusterFilter        = "cluster"
+
+	// TODO: Define these constants in a common place to avoid declaration in multiple places
+	clusterARNRegex = "(arn:aws:ecs:)([\\-\\w]+):[0-9]{12}:(cluster)/[a-zA-Z0-9\\-_]{1,255}"
 )
 
 // ContainerInstanceStore defines methods to access container instances from the datastore
@@ -114,7 +122,62 @@ func (instanceStore eventInstanceStore) ListContainerInstances() ([]types.Contai
 
 // FilterContainerInstances returns all container instances from the datastore that match the provided filters
 func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error) {
-	return nil, nil
+	if len(filterKey) == 0 || len(filterValue) == 0 {
+		return nil, errors.New("Filter key and value cannot be empty")
+	}
+
+	if filterKey != instanceStatusFilter && filterKey != clusterFilter {
+		return nil, errors.Errorf("Filter '%s' not supported", filterKey)
+	}
+
+	instances, err := instanceStore.ListContainerInstances()
+	if err != nil {
+		return nil, err
+	}
+
+	if filterKey == instanceStatusFilter {
+		return instanceStore.filterContainerInstancesByStatus(filterValue, instances), nil
+	}
+	return instanceStore.filterContainerInstancesByCluster(filterValue, instances), nil
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string, instances []types.ContainerInstance) []types.ContainerInstance {
+	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
+	for _, instance := range instances {
+		if strings.ToLower(status) == strings.ToLower(instance.Detail.Status) {
+			filteredInstances = append(filteredInstances, instance)
+		}
+	}
+	return filteredInstances
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluster string, instances []types.ContainerInstance) []types.ContainerInstance {
+	validClusterARN := regexp.MustCompile(clusterARNRegex)
+	if validClusterARN.MatchString(cluster) {
+		return instanceStore.filterContainerInstancesByClusterARN(cluster, instances)
+	}
+	return instanceStore.filterContainerInstancesByClusterName(cluster, instances)
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByClusterARN(clusterARN string, instances []types.ContainerInstance) []types.ContainerInstance {
+	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
+	for _, instance := range instances {
+		if clusterARN == instance.Detail.ClusterArn {
+			filteredInstances = append(filteredInstances, instance)
+		}
+	}
+	return filteredInstances
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByClusterName(clusterName string, instances []types.ContainerInstance) []types.ContainerInstance {
+	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
+	for _, instance := range instances {
+		clusterArnSuffix := "/" + clusterName
+		if strings.HasSuffix(instance.Detail.ClusterArn, clusterArnSuffix) {
+			filteredInstances = append(filteredInstances, instance)
+		}
+	}
+	return filteredInstances
 }
 
 // StreamContainerInstances returns a stream of all changes in the container instance keyspace

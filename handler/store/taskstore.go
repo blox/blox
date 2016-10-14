@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	taskKeyPrefix = "ecs/task/"
-	statusFilter  = "status"
+	taskKeyPrefix    = "ecs/task/"
+	taskStatusFilter = "status"
 )
 
 // TaskStore defines methods to access tasks from the datastore
@@ -125,7 +125,7 @@ func (taskStore eventTaskStore) FilterTasks(filterKey string, filterValue string
 
 	//TODO: make generic by finding the field name using reflection so we can filter
 	//on arbitrary fields
-	if statusFilter != filterKey {
+	if taskStatusFilter != filterKey {
 		return nil, errors.Errorf("Filter '%s' not supported", filterKey)
 	}
 
@@ -170,7 +170,7 @@ func (taskStore eventTaskStore) pipeBetweenChannels(ctx context.Context, cancel 
 				return
 			}
 			for _, v := range resp {
-				t, err := uncompressAndUnmarshalString(v)
+				t, err := taskStore.uncompressAndUnmarshalString(v)
 				if err != nil {
 					taskRespChan <- storetypes.TaskErrorWrapper{Task: types.Task{}, Err: err}
 					return
@@ -204,7 +204,7 @@ func (taskStore eventTaskStore) getTaskByKey(key string) (*types.Task, error) {
 
 	var task types.Task
 	for _, v := range resp {
-		task, err = uncompressAndUnmarshalString(v)
+		task, err = taskStore.uncompressAndUnmarshalString(v)
 		if err != nil {
 			return nil, err
 		}
@@ -229,7 +229,7 @@ func (taskStore eventTaskStore) getTasksByKeyPrefix(key string) ([]types.Task, e
 
 	tasks := []types.Task{}
 	for _, v := range resp {
-		task, err := uncompressAndUnmarshalString(v)
+		task, err := taskStore.uncompressAndUnmarshalString(v)
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +239,7 @@ func (taskStore eventTaskStore) getTasksByKeyPrefix(key string) ([]types.Task, e
 	return tasks, nil
 }
 
-func uncompressAndUnmarshalString(val string) (types.Task, error) {
+func (taskStore eventTaskStore) uncompressAndUnmarshalString(val string) (types.Task, error) {
 	var task types.Task
 
 	uncompressedVal, err := compress.Uncompress([]byte(val))

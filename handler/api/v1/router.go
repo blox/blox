@@ -38,8 +38,18 @@ func NewRouter(apis APIs) *mux.Router {
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.ListInstances)
 
-	s.Path("/instance/filter").
-		Queries("status", "{status:pending|running|stopped}").
+	s.Path("/instances/filter").
+		Queries("status", "{status:active|inactive}").
+		Methods("GET").
+		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
+
+	s.Path("/instances/filter").
+		Queries("cluster", "{cluster:[a-zA-Z0-9\\-_]{1,255}}").
+		Methods("GET").
+		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
+
+	s.Path("/instances/filter").
+		Queries("cluster", "{cluster:(arn:aws:ecs:)([\\-\\w]+):[0-9]{12}:(cluster)/[a-zA-Z0-9\\-_]{1,255}}").
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
 
