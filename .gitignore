@@ -1,2 +1,4 @@
 amazon-ecs-event-stream-handler
 *coverage.out
+/var/
+/bin/
