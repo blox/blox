@@ -22,7 +22,7 @@ $(LOCAL_BINARY): $(SOURCES)
 
 .PHONY: unit-test
 unit-test:
-	go test -v -timeout 1s ./handler/...
+	go test -v -timeout 1s ./handler/... -short
 
 .PHONY: clean
 clean:
