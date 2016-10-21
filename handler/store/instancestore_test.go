@@ -1,12 +1,14 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
+	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -742,6 +744,135 @@ func validateFilterContainerInstancecMultipleResultsMatchFilterResult(t *testing
 	}
 }
 
+func TestStreamContainerInstancesDataStoreStreamReturnsError(t *testing.T) {
+	ctx := NewContainerInstanceStoreMockContext(t)
+	defer ctx.mockCtrl.Finish()
+
+	tstCtx := context.Background()
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(nil, errors.New("StreamWithPrefix failed"))
+
+	instanceStore := instanceStore(t, ctx)
+	instaceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	if err == nil {
+		t.Error("Expected an error when datastore StreamWithPrefix returns an error")
+	}
+	if instaceRespChan != nil {
+		t.Error("Unexpected instance response channel when there is a datastore channel setup error")
+	}
+}
+
+func TestStreamContainerInstancesValidJSONInDSChannel(t *testing.T) {
+	ctx := NewContainerInstanceStoreMockContext(t)
+	defer ctx.mockCtrl.Finish()
+
+	tstCtx := context.Background()
+	dsChan := make(chan map[string]string)
+	defer close(dsChan)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+
+	instanceStore := instanceStore(t, ctx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	if err != nil {
+		t.Error("Unexpected error when calling stream instances")
+	}
+	if instanceRespChan == nil {
+		t.Error("Expected valid non-nil instanceRespChannel")
+	}
+
+	instanceResp := addContainerInstanceToDSChanAndReadFromInstanceRespChan(ctx.compressedInstanceJSON1, dsChan, instanceRespChan)
+	if instanceResp.Err != nil {
+		t.Error("Unexpected error when reading instance from channel")
+	}
+	if !reflect.DeepEqual(ctx.instance1, instanceResp.ContainerInstance) {
+		t.Error("Expected instance in instance response to match that in the stream")
+	}
+}
+
+func TestStreamContainerInstancesInvalidJSONInDSChannel(t *testing.T) {
+	ctx := NewContainerInstanceStoreMockContext(t)
+	defer ctx.mockCtrl.Finish()
+
+	tstCtx := context.Background()
+	dsChan := make(chan map[string]string)
+	defer close(dsChan)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+
+	instanceStore := instanceStore(t, ctx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	if err != nil {
+		t.Error("Unexpected error when calling stream instances")
+	}
+	if instanceRespChan == nil {
+		t.Error("Expected valid non-nil instanceRespChannel")
+	}
+
+	compressedInvalidJSON := compressInstanceJSON(t, "invalidJSON")
+	instanceResp := addContainerInstanceToDSChanAndReadFromInstanceRespChan(compressedInvalidJSON, dsChan, instanceRespChan)
+
+	if instanceResp.Err == nil {
+		t.Error("Expected an error when dsChannel returns an invalid instance json")
+	}
+	if !reflect.DeepEqual(types.ContainerInstance{}, instanceResp.ContainerInstance) {
+		t.Error("Expected empty instance in response when there is a decode error")
+	}
+
+	_, ok := <-instanceRespChan
+	if ok {
+		t.Error("Expected instance response channel to be closed")
+	}
+}
+
+func TestStreamContainerInstancesCancelUpstreamContext(t *testing.T) {
+	ctx := NewContainerInstanceStoreMockContext(t)
+	defer ctx.mockCtrl.Finish()
+
+	tstCtx, cancel := context.WithCancel(context.Background())
+	dsChan := make(chan map[string]string)
+	defer close(dsChan)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+
+	instanceStore := instanceStore(t, ctx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	if err != nil {
+		t.Error("Unexpected error when calling stream instances")
+	}
+	if instanceRespChan == nil {
+		t.Error("Expected valid non-nil instanceRespChannel")
+	}
+
+	cancel()
+
+	_, ok := <-instanceRespChan
+	if ok {
+		t.Error("Expected instance response channel to be closed")
+	}
+}
+
+func TestStreamContainerInstancesCloseDownstreamChannel(t *testing.T) {
+	ctx := NewContainerInstanceStoreMockContext(t)
+	defer ctx.mockCtrl.Finish()
+
+	tstCtx := context.Background()
+	dsChan := make(chan map[string]string)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+
+	instanceStore := instanceStore(t, ctx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	if err != nil {
+		t.Error("Unexpected error when calling stream instances")
+	}
+	if instanceRespChan == nil {
+		t.Error("Expected valid non-nil instanceRespChannel")
+	}
+
+	close(dsChan)
+
+	_, ok := <-instanceRespChan
+	if ok {
+		t.Error("Expected instance response channel to be closed")
+	}
+}
+
 func instanceStore(t *testing.T, context *instanceStoreMockContext) ContainerInstanceStore {
 	instanceStore, err := NewContainerInstanceStore(context.datastore)
 	if err != nil {
@@ -777,4 +908,21 @@ func uncompressAndUnmarshalString(t *testing.T, str string) types.ContainerInsta
 		t.Error("Failed to unmarshal compressed string: ", err)
 	}
 	return instance
+}
+
+func addContainerInstanceToDSChanAndReadFromInstanceRespChan(instanceToAdd string, dsChan chan map[string]string, instanceRespChan chan storetypes.ContainerInstanceErrorWrapper) storetypes.ContainerInstanceErrorWrapper {
+	var instanceResp storetypes.ContainerInstanceErrorWrapper
+
+	doneChan := make(chan bool)
+	defer close(doneChan)
+	go func() {
+		instanceResp = <-instanceRespChan
+		doneChan <- true
+	}()
+
+	dsVal := map[string]string{containerInstanceARN1: instanceToAdd}
+	dsChan <- dsVal
+	<-doneChan
+
+	return instanceResp
 }

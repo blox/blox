@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -25,11 +26,11 @@ func NewContainerInstanceAPIs(instanceStore store.ContainerInstanceStore) Contai
 }
 
 //TODO: add arn validation
-func (iApis ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *http.Request) {
+func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceArn := vars["arn"]
 
-	instance, err := iApis.instanceStore.GetContainerInstance(instanceArn)
+	instance, err := instanceAPIs.instanceStore.GetContainerInstance(instanceArn)
 
 	if err != nil {
 		//TODO: return http error
@@ -43,8 +44,8 @@ func (iApis ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func (iApis ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r *http.Request) {
-	instances, err := iApis.instanceStore.ListContainerInstances()
+func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r *http.Request) {
+	instances, err := instanceAPIs.instanceStore.ListContainerInstances()
 
 	if err != nil {
 		//TODO: return http error
@@ -58,7 +59,7 @@ func (iApis ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r *http.
 	}
 }
 
-func (iApis ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *http.Request) {
+func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	status := vars[statusFilter]
 	cluster := vars[clusterFilter]
@@ -69,11 +70,12 @@ func (iApis ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *htt
 
 	var instances []types.ContainerInstance
 	var err error
+
 	switch {
 	case len(status) != 0:
-		instances, err = iApis.instanceStore.FilterContainerInstances(statusFilter, status)
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(statusFilter, status)
 	case len(cluster) != 0:
-		instances, err = iApis.instanceStore.FilterContainerInstances(clusterFilter, cluster)
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(clusterFilter, cluster)
 	default:
 		// TODO: return http error
 	}
@@ -90,6 +92,32 @@ func (iApis ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *htt
 	}
 }
 
-func (iApis ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter, r *http.Request) {
-	//TODO
+func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
+
+	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx)
+	if err != nil {
+		//TODO
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		//TODO
+	}
+
+	w.Header().Set(connectionKey, connectionVal)
+	w.Header().Set(transferEncodingKey, transferEncodingVal)
+
+	for instanceResp := range instanceRespChan {
+		if instanceResp.Err != nil {
+			//TODO
+		}
+		if err := json.NewEncoder(w).Encode(instanceResp.ContainerInstance); err != nil {
+			//TODO
+		}
+		flusher.Flush()
+	}
+
+	// TODO: Handle client-side termination (Ctrl+C) using w.(http.CloseNotifier).closeNotify()
 }

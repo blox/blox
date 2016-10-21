@@ -1,11 +1,13 @@
 package store
 
 import (
+	"context"
 	"regexp"
 	"strings"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
+	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
@@ -26,7 +28,7 @@ type ContainerInstanceStore interface {
 	GetContainerInstance(arn string) (*types.ContainerInstance, error)
 	ListContainerInstances() ([]types.ContainerInstance, error)
 	FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error)
-	StreamContainerInstances() ([]types.ContainerInstance, error)
+	StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error)
 }
 
 type eventInstanceStore struct {
@@ -181,8 +183,43 @@ func (instanceStore eventInstanceStore) filterContainerInstancesByClusterName(cl
 }
 
 // StreamContainerInstances returns a stream of all changes in the container instance keyspace
-func (instanceStore eventInstanceStore) StreamContainerInstances() ([]types.ContainerInstance, error) {
-	return nil, nil
+func (instanceStore eventInstanceStore) StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error) {
+	instanceStoreCtx, cancel := context.WithCancel(ctx) // go routine instanceStore.pipeBetweenChannels() handles canceling this context
+
+	dsChan, err := instanceStore.datastore.StreamWithPrefix(instanceStoreCtx, instanceKeyPrefix)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper) // go routine instanceStore.pipeBetweenChannels() handles closing of this channel
+	go instanceStore.pipeBetweenChannels(instanceStoreCtx, cancel, dsChan, instanceRespChan)
+	return instanceRespChan, nil
+}
+
+func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context, cancel context.CancelFunc, dsChan chan map[string]string, instanceRespChan chan storetypes.ContainerInstanceErrorWrapper) {
+	defer close(instanceRespChan)
+	defer cancel()
+
+	for {
+		select {
+		case resp, ok := <-dsChan:
+			if !ok {
+				return
+			}
+			for _, v := range resp {
+				ins, err := instanceStore.uncompressAndUnmarshalInstance(v)
+				if err != nil {
+					instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: types.ContainerInstance{}, Err: err}
+					return
+				}
+				instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: ins, Err: nil}
+			}
+
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*types.ContainerInstance, error) {
@@ -247,4 +284,19 @@ func (instanceStore eventInstanceStore) getInstancesByKeyPrefix(key string) ([]t
 		instances = append(instances, instance)
 	}
 	return instances, nil
+}
+
+func (instanceStore eventInstanceStore) uncompressAndUnmarshalInstance(val string) (types.ContainerInstance, error) {
+	var instance types.ContainerInstance
+
+	uncompressedVal, err := compress.Uncompress([]byte(val))
+	if err != nil {
+		return instance, err
+	}
+	err = json.UnmarshalJSON(uncompressedVal, &instance)
+	if err != nil {
+		return instance, err
+	}
+
+	return instance, nil
 }
