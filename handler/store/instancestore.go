@@ -46,16 +46,21 @@ func NewContainerInstanceStore(ds DataStore) (ContainerInstanceStore, error) {
 }
 
 func generateInstanceKey(instance types.ContainerInstance) (string, error) {
-	if len(instance.Detail.ContainerInstanceArn) == 0 {
-		return "", errors.New("Container instance arn cannot be empty")
+	if instance.Detail == nil {
+		return "", errors.New("Container instance detail cannot be empty")
 	}
-	return instanceKeyPrefix + instance.Detail.ContainerInstanceArn, nil
+	instanceDetail := *instance.Detail
+	if instanceDetail.ContainerInstanceArn == nil {
+		return "", errors.New("Container instance ARN cannot be empty")
+	}
+
+	return instanceKeyPrefix + *instanceDetail.ContainerInstanceArn, nil
 }
 
 // AddContainerInstance adds a container instance represented in the instanceJSON to the datastore
 func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string) error {
 	if len(instanceJSON) == 0 {
-		return errors.New("Instance json should not be empty")
+		return errors.New("Instance JSON should not be empty")
 	}
 
 	var instance types.ContainerInstance
@@ -76,7 +81,9 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 	}
 
 	if existingInstance != nil {
-		if existingInstance.Detail.Version >= instance.Detail.Version {
+		existingInstanceDetail := *existingInstance.Detail
+		currentInstanceDetail := *instance.Detail
+		if *existingInstanceDetail.Version >= *currentInstanceDetail.Version {
 			log.Infof("Higher or equal version %v of instance %v with version %v already exists",
 				existingInstance.Detail.Version,
 				instance.Detail.ContainerInstanceArn,
@@ -106,8 +113,12 @@ func (instanceStore eventInstanceStore) GetContainerInstance(arn string) (*types
 		return nil, errors.New("Arn should not be empty")
 	}
 
-	var instance types.ContainerInstance
-	instance.Detail.ContainerInstanceArn = arn
+	instanceDetail := types.InstanceDetail{
+		ContainerInstanceArn: &arn,
+	}
+	instance := types.ContainerInstance{
+		Detail: &instanceDetail,
+	}
 
 	key, err := generateInstanceKey(instance)
 	if err != nil {
@@ -146,7 +157,7 @@ func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey strin
 func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string, instances []types.ContainerInstance) []types.ContainerInstance {
 	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
 	for _, instance := range instances {
-		if strings.ToLower(status) == strings.ToLower(instance.Detail.Status) {
+		if strings.ToLower(status) == strings.ToLower(*instance.Detail.Status) {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}
@@ -164,7 +175,7 @@ func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluste
 func (instanceStore eventInstanceStore) filterContainerInstancesByClusterARN(clusterARN string, instances []types.ContainerInstance) []types.ContainerInstance {
 	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
 	for _, instance := range instances {
-		if clusterARN == instance.Detail.ClusterArn {
+		if clusterARN == *instance.Detail.ClusterArn {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}
@@ -175,7 +186,7 @@ func (instanceStore eventInstanceStore) filterContainerInstancesByClusterName(cl
 	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
 	for _, instance := range instances {
 		clusterArnSuffix := "/" + clusterName
-		if strings.HasSuffix(instance.Detail.ClusterArn, clusterArnSuffix) {
+		if strings.HasSuffix(*instance.Detail.ClusterArn, clusterArnSuffix) {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}

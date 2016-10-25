@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1/models"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/store"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/gorilla/mux"
 )
 
 const (
-	statusFilter  = "status"
-	clusterFilter = "cluster"
+	instanceStatusFilter  = "status"
+	instanceClusterFilter = "cluster"
 )
 
 type ContainerInstanceAPIs struct {
@@ -28,19 +29,43 @@ func NewContainerInstanceAPIs(instanceStore store.ContainerInstanceStore) Contai
 //TODO: add arn validation
 func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	instanceArn := vars["arn"]
+	instanceARN := vars["arn"]
 
-	instance, err := instanceAPIs.instanceStore.GetContainerInstance(instanceArn)
+	if len(instanceARN) == 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		return
+	}
+
+	instance, err := instanceAPIs.instanceStore.GetContainerInstance(instanceARN)
 
 	if err != nil {
-		//TODO: return http error
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		return
+	}
+
+	if instance == nil {
+		w.WriteHeader(http.StatusNotFound)
+		instanceAPIs.writeErrorResponse(w, http.StatusNotFound, instanceNotFoundClientErrMsg)
+		return
+	}
+
+	instanceModel, err := ToContainerInstanceModel(*instance)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(instance); err != nil {
-		//TODO
+	err = json.NewEncoder(w).Encode(instanceModel)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		return
 	}
 }
 
@@ -48,24 +73,40 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 	instances, err := instanceAPIs.instanceStore.ListContainerInstances()
 
 	if err != nil {
-		//TODO: return http error
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(instances); err != nil {
-		//TODO
+	instanceModels := make([]models.ContainerInstanceModel, len(instances))
+	for i := range instances {
+		instanceModels[i], err = ToContainerInstanceModel(instances[i])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			return
+		}
+	}
+	err = json.NewEncoder(w).Encode(instanceModels)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		return
 	}
 }
 
 func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	status := vars[statusFilter]
-	cluster := vars[clusterFilter]
+	status := vars[instanceStatusFilter]
+	cluster := vars[instanceClusterFilter]
 
 	if len(status) != 0 && len(cluster) != 0 {
-		// TODO: return http error
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		return
 	}
 
 	var instances []types.ContainerInstance
@@ -73,22 +114,39 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 
 	switch {
 	case len(status) != 0:
-		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(statusFilter, status)
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceStatusFilter, status)
 	case len(cluster) != 0:
-		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(clusterFilter, cluster)
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceClusterFilter, cluster)
 	default:
-		// TODO: return http error
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		return
 	}
 
 	if err != nil {
-		//TODO: return http error
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	if err := json.NewEncoder(w).Encode(instances); err != nil {
-		//TODO
+	instanceModels := make([]models.ContainerInstanceModel, len(instances))
+	for i := range instances {
+		instanceModels[i], err = ToContainerInstanceModel(instances[i])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			return
+		}
+	}
+
+	err = json.NewEncoder(w).Encode(instanceModels)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		return
 	}
 }
 
@@ -98,12 +156,16 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 
 	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx)
 	if err != nil {
-		//TODO
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		//TODO
+		w.WriteHeader(http.StatusInternalServerError)
+		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		return
 	}
 
 	w.Header().Set(connectionKey, connectionVal)
@@ -111,13 +173,32 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 
 	for instanceResp := range instanceRespChan {
 		if instanceResp.Err != nil {
-			//TODO
+			w.WriteHeader(http.StatusInternalServerError)
+			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			return
 		}
-		if err := json.NewEncoder(w).Encode(instanceResp.ContainerInstance); err != nil {
-			//TODO
+		instanceModel, err := ToContainerInstanceModel(instanceResp.ContainerInstance)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			return
+		}
+		err = json.NewEncoder(w).Encode(instanceModel)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+			return
 		}
 		flusher.Flush()
 	}
 
 	// TODO: Handle client-side termination (Ctrl+C) using w.(http.CloseNotifier).closeNotify()
+}
+
+func (instanceAPIs ContainerInstanceAPIs) writeErrorResponse(w http.ResponseWriter, errCode int, errMsg string) {
+	errModel := ToErrorModel(errCode, errMsg)
+	err := json.NewEncoder(w).Encode(errModel)
+	if err != nil {
+		// TODO - Encoding error response failed. How do we handle this? Returning here drops the connection.
+	}
 }

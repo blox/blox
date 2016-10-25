@@ -13,15 +13,20 @@ LOCAL_BINARY=bin/local/ecs-event-stream-handler
 .PHONY: all
 all: clean build unit-test
 
+.PHONY: generate-models
+generate-models:
+	. ./scripts/v1/generate_swagger_models.sh
+	@echo "Generated swagger models"
+
 .PHONY: build
-build:	$(LOCAL_BINARY)
+build:	generate-models $(LOCAL_BINARY)
 
 $(LOCAL_BINARY): $(SOURCES)
 	. ./scripts/build_binary.sh ./bin/local
 	@echo "Built event-stream handler"
 
 .PHONY: unit-test
-unit-test:
+unit-test: generate-models
 	go test -v -timeout 1s ./handler/... -short
 
 .PHONY: clean

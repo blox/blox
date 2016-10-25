@@ -1,0 +1,599 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Amazon ECS Event Stream Handler",
+    "description": "APIs supported by the Amazon ECS Event Stream Handler"
+  },
+  "host": "localhost:3000",
+  "basePath": "/v1",
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/instance/{arn}": {
+      "get": {
+        "description": "Get instance based on a single ARN",
+        "operationId": "GetInstance",
+        "parameters": [
+          {
+            "name": "arn",
+            "in": "path",
+            "description": "ARN of the instance to fetch",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get instance by ARN response",
+            "schema": {
+              "$ref": "#/definitions/ContainerInstanceModel"
+            }
+          },
+          "default": {
+            "description": "Unexpected error getting instance by ARN",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    },
+    "/instances": {
+      "get": {
+        "description": "Lists all instances",
+        "operationId": "ListInstances",
+        "responses": {
+          "200": {
+            "description": "List instances response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ContainerInstanceModel"
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error listing instances",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    },
+    "/instances/filter": {
+      "get": {
+        "description": "Filter instances",
+        "operationId": "FilterInstances",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Status to filter instances by",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "cluster",
+            "in": "query",
+            "description": "Cluster name or ARN to filter instances by",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filter instances response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ContainerInstanceModel"
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error filtering instances",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    },
+    "/task/{arn}": {
+      "get": {
+        "description": "Get task based on a single ARN",
+        "operationId": "GetTask",
+        "parameters": [
+          {
+            "name": "arn",
+            "in": "path",
+            "description": "ARN of the task to fetch",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get task by ARN response",
+            "schema": {
+              "$ref": "#/definitions/TaskModel"
+            }
+          },
+          "default": {
+            "description": "Unexpected error getting task by ARN",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "description": "Lists all tasks",
+        "operationId": "ListTasks",
+        "responses": {
+          "200": {
+            "description": "List tasks response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TaskModel"
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error listing tasks",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    },
+    "/tasks/filter": {
+      "get": {
+        "description": "Filter tasks",
+        "operationId": "FilterTasks",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Status to filter tasks by",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filter tasks response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TaskModel"
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error filtering tasks",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ContainerInstanceModel": {
+      "type": "object",
+      "required": [
+        "id",
+        "account",
+        "time",
+        "region",
+        "resources",
+        "detail"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "account": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "detail": {
+          "$ref": "#/definitions/ContainerInstanceDetailModel"
+        }
+      }
+    },
+    "ContainerInstanceDetailModel": {
+      "type": "object",
+      "required": [
+        "agentConnected",
+        "clusterArn",
+        "containerInstanceArn",
+        "pendingTasksCount",
+        "registeredResources",
+        "remainingResources",
+        "runningTasksCount",
+        "status",
+        "version",
+        "versionInfo",
+        "updatedAt"
+      ],
+      "properties": {
+        "agentConnected": {
+          "type": "boolean"
+        },
+        "agentUpdateStatus": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContainerInstanceDetailAttributeModel"
+          }
+        },
+        "clusterArn": {
+          "type": "string"
+        },
+        "containerInstanceArn": {
+          "type": "string"
+        },
+        "ec2InstanceId": {
+          "type": "string"
+        },
+        "pendingTasksCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "registeredResources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContainerInstanceDetailRegisteredResourceModel"
+          }
+        },
+        "remainingResources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContainerInstanceDetailRemainingResourceModel"
+          }
+        },
+        "runningTasksCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "versionInfo": {
+          "$ref": "#/definitions/ContainerInstanceDetailVersionInfoModel"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "ContainerInstanceDetailAttributeModel": {
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "ContainerInstanceDetailRegisteredResourceModel": {
+      "type": "object",
+      "required": [
+        "name",
+        "type",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "ContainerInstanceDetailRemainingResourceModel": {
+      "type": "object",
+      "required": [
+        "name",
+        "type",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "ContainerInstanceDetailVersionInfoModel": {
+      "type": "object",
+      "properties": {
+        "agentHash": {
+          "type": "string"
+        },
+        "agentVersion": {
+          "type": "string"
+        },
+        "dockerVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "TaskModel": {
+      "type": "object",
+      "required": [
+        "id",
+        "account",
+        "time",
+        "region",
+        "resources",
+        "detail"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "account": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "detail": {
+          "$ref": "#/definitions/TaskDetailModel"
+        }
+      }
+    },
+    "TaskDetailModel": {
+      "type": "object",
+      "required": [
+        "clusterArn",
+        "containerInstanceArn",
+        "containers",
+        "createdAt",
+        "desiredStatus",
+        "lastStatus",
+        "overrides",
+        "updatedAt",
+        "taskArn",
+        "taskDefinitionArn",
+        "version"
+      ],
+      "properties": {
+        "clusterArn": {
+          "type": "string"
+        },
+        "containerInstanceArn": {
+          "type": "string"
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskDetailContainerModel"
+          }
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "desiredStatus": {
+          "type": "string"
+        },
+        "lastStatus": {
+          "type": "string"
+        },
+        "overrides": {
+          "$ref": "#/definitions/TaskDetailOverridesModel"
+        },
+        "startedAt": {
+          "type": "string"
+        },
+        "startedBy": {
+          "type": "string"
+        },
+        "stoppedAt": {
+          "type": "string"
+        },
+        "stoppedReason": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "taskArn": {
+          "type": "string"
+        },
+        "taskDefinitionArn": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "TaskDetailContainerModel": {
+      "type": "object",
+      "required": [
+        "containerArn",
+        "lastStatus",
+        "name"
+      ],
+      "properties": {
+        "containerArn": {
+          "type": "string"
+        },
+        "exitCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastStatus": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "networkBindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskDetailNetworkBindingModel"
+          }
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "TaskDetailNetworkBindingModel": {
+      "type": "object",
+      "required": [
+        "bindIP",
+        "containerPort",
+        "hostPort"
+      ],
+      "properties": {
+        "bindIP": {
+          "type": "string"
+        },
+        "containerPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hostPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "protocol": {
+          "type": "string"
+        }
+      }
+    },
+    "TaskDetailOverridesModel": {
+      "type": "object",
+      "required": [
+        "containerOverrides"
+      ],
+      "properties": {
+        "containerOverrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskDetailContainerOverridesModel"
+          }
+        },
+        "taskRoleArn": {
+          "type": "string"
+        }
+      }
+    },
+    "TaskDetailContainerOverridesModel": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "environment": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskDetailEnvironmentModel"
+          }
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "TaskDetailEnvironmentModel": {
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "ErrorModel": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+  }
+}

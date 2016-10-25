@@ -18,6 +18,8 @@ const opCreateCluster = "CreateCluster"
 // value can be used to capture response data after the request's "Send" method
 // is called.
 //
+// See CreateCluster for usage and error information.
+//
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
 // access properties on the request object before or after sending the request. If
@@ -52,9 +54,32 @@ func (c *ECS) CreateClusterRequest(input *CreateClusterInput) (req *request.Requ
 	return
 }
 
+// CreateCluster API operation for Amazon EC2 Container Service.
+//
 // Creates a new Amazon ECS cluster. By default, your account receives a default
 // cluster when you launch your first container instance. However, you can create
 // your own cluster with a unique name with the CreateCluster action.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation CreateCluster for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) CreateCluster(input *CreateClusterInput) (*CreateClusterOutput, error) {
 	req, out := c.CreateClusterRequest(input)
 	err := req.Send()
@@ -67,6 +92,8 @@ const opCreateService = "CreateService"
 // client's request for the CreateService operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See CreateService for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -102,10 +129,12 @@ func (c *ECS) CreateServiceRequest(input *CreateServiceInput) (req *request.Requ
 	return
 }
 
+// CreateService API operation for Amazon EC2 Container Service.
+//
 // Runs and maintains a desired number of tasks from a specified task definition.
 // If the number of tasks running in a service drops below desiredCount, Amazon
-// ECS spawns another instantiation of the task in the specified cluster. To
-// update an existing service, see UpdateService.
+// ECS spawns another copy of the task in the specified cluster. To update an
+// existing service, see UpdateService.
 //
 // In addition to maintaining the desired count of tasks in your service, you
 // can optionally run your service behind a load balancer. The load balancer
@@ -113,46 +142,75 @@ func (c *ECS) CreateServiceRequest(input *CreateServiceInput) (req *request.Requ
 // For more information, see Service Load Balancing (http://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-load-balancing.html)
 // in the Amazon EC2 Container Service Developer Guide.
 //
-// You can optionally specify a deployment configuration for your service.
-// During a deployment (which is triggered by changing the task definition of
-// a service with an UpdateService operation), the service scheduler uses the
-// minimumHealthyPercent and maximumPercent parameters to determine the deployment
-// strategy.
+// You can optionally specify a deployment configuration for your service. During
+// a deployment (which is triggered by changing the task definition or the desired
+// count of a service with an UpdateService operation), the service scheduler
+// uses the minimumHealthyPercent and maximumPercent parameters to determine
+// the deployment strategy.
 //
-// If the minimumHealthyPercent is below 100%, the scheduler can ignore the
-// desiredCount temporarily during a deployment. For example, if your service
-// has a desiredCount of four tasks, a minimumHealthyPercent of 50% allows the
-// scheduler to stop two existing tasks before starting two new tasks. Tasks
-// for services that do not use a load balancer are considered healthy if they
-// are in the RUNNING state; tasks for services that do use a load balancer
-// are considered healthy if they are in the RUNNING state and the container
-// instance it is hosted on is reported as healthy by the load balancer. The
-// default value for minimumHealthyPercent is 50% in the console and 100% for
-// the AWS CLI, the AWS SDKs, and the APIs.
+// The minimumHealthyPercent represents a lower limit on the number of your
+// service's tasks that must remain in the RUNNING state during a deployment,
+// as a percentage of the desiredCount (rounded up to the nearest integer).
+// This parameter enables you to deploy without using additional cluster capacity.
+// For example, if your service has a desiredCount of four tasks and a minimumHealthyPercent
+// of 50%, the scheduler may stop two existing tasks to free up cluster capacity
+// before starting two new tasks. Tasks for services that do not use a load
+// balancer are considered healthy if they are in the RUNNING state; tasks for
+// services that do use a load balancer are considered healthy if they are in
+// the RUNNING state and the container instance it is hosted on is reported
+// as healthy by the load balancer. The default value for minimumHealthyPercent
+// is 50% in the console and 100% for the AWS CLI, the AWS SDKs, and the APIs.
 //
-// The maximumPercent parameter represents an upper limit on the number of
-// running tasks during a deployment, which enables you to define the deployment
-// batch size. For example, if your service has a desiredCount of four tasks,
-// a maximumPercent value of 200% starts four new tasks before stopping the
+// The maximumPercent parameter represents an upper limit on the number of your
+// service's tasks that are allowed in the RUNNING or PENDING state during a
+// deployment, as a percentage of the desiredCount (rounded down to the nearest
+// integer). This parameter enables you to define the deployment batch size.
+// For example, if your service has a desiredCount of four tasks and a maximumPercent
+// value of 200%, the scheduler may start four new tasks before stopping the
 // four older tasks (provided that the cluster resources required to do this
 // are available). The default value for maximumPercent is 200%.
 //
 // When the service scheduler launches new tasks, it attempts to balance them
 // across the Availability Zones in your cluster with the following logic:
 //
-//   Determine which of the container instances in your cluster can support
-// your service's task definition (for example, they have the required CPU,
-// memory, ports, and container instance attributes).
+//    * Determine which of the container instances in your cluster can support
+//    your service's task definition (for example, they have the required CPU,
+//    memory, ports, and container instance attributes).
 //
-//   Sort the valid container instances by the fewest number of running tasks
-// for this service in the same Availability Zone as the instance. For example,
-// if zone A has one running service task and zones B and C each have zero,
-// valid container instances in either zone B or C are considered optimal for
-// placement.
+//    * Sort the valid container instances by the fewest number of running tasks
+//    for this service in the same Availability Zone as the instance. For example,
+//    if zone A has one running service task and zones B and C each have zero,
+//    valid container instances in either zone B or C are considered optimal
+//    for placement.
 //
-//   Place the new service task on a valid container instance in an optimal
-// Availability Zone (based on the previous steps), favoring container instances
-// with the fewest number of running tasks for this service.
+//    * Place the new service task on a valid container instance in an optimal
+//    Availability Zone (based on the previous steps), favoring container instances
+//    with the fewest number of running tasks for this service.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation CreateService for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) CreateService(input *CreateServiceInput) (*CreateServiceOutput, error) {
 	req, out := c.CreateServiceRequest(input)
 	err := req.Send()
@@ -165,6 +223,8 @@ const opDeleteCluster = "DeleteCluster"
 // client's request for the DeleteCluster operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DeleteCluster for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -200,9 +260,46 @@ func (c *ECS) DeleteClusterRequest(input *DeleteClusterInput) (req *request.Requ
 	return
 }
 
+// DeleteCluster API operation for Amazon EC2 Container Service.
+//
 // Deletes the specified cluster. You must deregister all container instances
 // from this cluster before you may delete it. You can list the container instances
 // in a cluster with ListContainerInstances and deregister them with DeregisterContainerInstance.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DeleteCluster for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
+//   * ClusterContainsContainerInstancesException
+//   You cannot delete a cluster that has registered container instances. You
+//   must first deregister the container instances before you can delete the cluster.
+//   For more information, see DeregisterContainerInstance.
+//
+//   * ClusterContainsServicesException
+//   You cannot delete a cluster that contains services. You must first update
+//   the service to reduce its desired task count to 0 and then delete the service.
+//   For more information, see UpdateService and DeleteService.
+//
 func (c *ECS) DeleteCluster(input *DeleteClusterInput) (*DeleteClusterOutput, error) {
 	req, out := c.DeleteClusterRequest(input)
 	err := req.Send()
@@ -215,6 +312,8 @@ const opDeleteService = "DeleteService"
 // client's request for the DeleteService operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DeleteService for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -250,13 +349,15 @@ func (c *ECS) DeleteServiceRequest(input *DeleteServiceInput) (req *request.Requ
 	return
 }
 
+// DeleteService API operation for Amazon EC2 Container Service.
+//
 // Deletes a specified service within a cluster. You can delete a service if
 // you have no running tasks in it and the desired task count is zero. If the
 // service is actively maintaining tasks, you cannot delete it, and you must
 // update the service to a desired task count of zero. For more information,
 // see UpdateService.
 //
-//  When you delete a service, if there are still running tasks that require
+// When you delete a service, if there are still running tasks that require
 // cleanup, the service status moves from ACTIVE to DRAINING, and the service
 // is no longer visible in the console or in ListServices API operations. After
 // the tasks have stopped, then the service status moves from DRAINING to INACTIVE.
@@ -264,6 +365,35 @@ func (c *ECS) DeleteServiceRequest(input *DeleteServiceInput) (req *request.Requ
 // API operations; however, in the future, INACTIVE services may be cleaned
 // up and purged from Amazon ECS record keeping, and DescribeServices API operations
 // on those services will return a ServiceNotFoundException error.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DeleteService for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
+//   * ServiceNotFoundException
+//   The specified service could not be found. You can view your available services
+//   with ListServices. Amazon ECS services are cluster-specific and region-specific.
+//
 func (c *ECS) DeleteService(input *DeleteServiceInput) (*DeleteServiceOutput, error) {
 	req, out := c.DeleteServiceRequest(input)
 	err := req.Send()
@@ -276,6 +406,8 @@ const opDeregisterContainerInstance = "DeregisterContainerInstance"
 // client's request for the DeregisterContainerInstance operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DeregisterContainerInstance for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -311,6 +443,8 @@ func (c *ECS) DeregisterContainerInstanceRequest(input *DeregisterContainerInsta
 	return
 }
 
+// DeregisterContainerInstance API operation for Amazon EC2 Container Service.
+//
 // Deregisters an Amazon ECS container instance from the specified cluster.
 // This instance is no longer available to run tasks.
 //
@@ -319,14 +453,38 @@ func (c *ECS) DeregisterContainerInstanceRequest(input *DeregisterContainerInsta
 // instance before deregistration to avoid any orphaned tasks from consuming
 // resources.
 //
-// Deregistering a container instance removes the instance from a cluster,
-// but it does not terminate the EC2 instance; if you are finished using the
-// instance, be sure to terminate it in the Amazon EC2 console to stop billing.
+// Deregistering a container instance removes the instance from a cluster, but
+// it does not terminate the EC2 instance; if you are finished using the instance,
+// be sure to terminate it in the Amazon EC2 console to stop billing.
 //
-//  If you terminate a running container instance with a connected Amazon ECS
-// container agent, the agent automatically deregisters the instance from your
-// cluster (stopped container instances or instances with disconnected agents
-// are not automatically deregistered when terminated).
+// If you terminate a running container instance, Amazon ECS automatically deregisters
+// the instance from your cluster (stopped container instances or instances
+// with disconnected agents are not automatically deregistered when terminated).
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DeregisterContainerInstance for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) DeregisterContainerInstance(input *DeregisterContainerInstanceInput) (*DeregisterContainerInstanceOutput, error) {
 	req, out := c.DeregisterContainerInstanceRequest(input)
 	err := req.Send()
@@ -339,6 +497,8 @@ const opDeregisterTaskDefinition = "DeregisterTaskDefinition"
 // client's request for the DeregisterTaskDefinition operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DeregisterTaskDefinition for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -374,6 +534,8 @@ func (c *ECS) DeregisterTaskDefinitionRequest(input *DeregisterTaskDefinitionInp
 	return
 }
 
+// DeregisterTaskDefinition API operation for Amazon EC2 Container Service.
+//
 // Deregisters the specified task definition by family and revision. Upon deregistration,
 // the task definition is marked as INACTIVE. Existing tasks and services that
 // reference an INACTIVE task definition continue to run without disruption.
@@ -384,6 +546,27 @@ func (c *ECS) DeregisterTaskDefinitionRequest(input *DeregisterTaskDefinitionInp
 // services, and you cannot update an existing service to reference an INACTIVE
 // task definition (although there may be up to a 10 minute window following
 // deregistration where these restrictions have not yet taken effect).
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DeregisterTaskDefinition for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) DeregisterTaskDefinition(input *DeregisterTaskDefinitionInput) (*DeregisterTaskDefinitionOutput, error) {
 	req, out := c.DeregisterTaskDefinitionRequest(input)
 	err := req.Send()
@@ -396,6 +579,8 @@ const opDescribeClusters = "DescribeClusters"
 // client's request for the DescribeClusters operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DescribeClusters for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -431,7 +616,30 @@ func (c *ECS) DescribeClustersRequest(input *DescribeClustersInput) (req *reques
 	return
 }
 
+// DescribeClusters API operation for Amazon EC2 Container Service.
+//
 // Describes one or more of your clusters.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DescribeClusters for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) DescribeClusters(input *DescribeClustersInput) (*DescribeClustersOutput, error) {
 	req, out := c.DescribeClustersRequest(input)
 	err := req.Send()
@@ -444,6 +652,8 @@ const opDescribeContainerInstances = "DescribeContainerInstances"
 // client's request for the DescribeContainerInstances operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DescribeContainerInstances for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -479,8 +689,35 @@ func (c *ECS) DescribeContainerInstancesRequest(input *DescribeContainerInstance
 	return
 }
 
+// DescribeContainerInstances API operation for Amazon EC2 Container Service.
+//
 // Describes Amazon EC2 Container Service container instances. Returns metadata
 // about registered and remaining resources on each container instance requested.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DescribeContainerInstances for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) DescribeContainerInstances(input *DescribeContainerInstancesInput) (*DescribeContainerInstancesOutput, error) {
 	req, out := c.DescribeContainerInstancesRequest(input)
 	err := req.Send()
@@ -493,6 +730,8 @@ const opDescribeServices = "DescribeServices"
 // client's request for the DescribeServices operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DescribeServices for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -528,7 +767,34 @@ func (c *ECS) DescribeServicesRequest(input *DescribeServicesInput) (req *reques
 	return
 }
 
+// DescribeServices API operation for Amazon EC2 Container Service.
+//
 // Describes the specified services running in your cluster.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DescribeServices for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) DescribeServices(input *DescribeServicesInput) (*DescribeServicesOutput, error) {
 	req, out := c.DescribeServicesRequest(input)
 	err := req.Send()
@@ -541,6 +807,8 @@ const opDescribeTaskDefinition = "DescribeTaskDefinition"
 // client's request for the DescribeTaskDefinition operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DescribeTaskDefinition for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -576,12 +844,35 @@ func (c *ECS) DescribeTaskDefinitionRequest(input *DescribeTaskDefinitionInput) 
 	return
 }
 
+// DescribeTaskDefinition API operation for Amazon EC2 Container Service.
+//
 // Describes a task definition. You can specify a family and revision to find
 // information about a specific task definition, or you can simply specify the
 // family to find the latest ACTIVE revision in that family.
 //
-//  You can only describe INACTIVE task definitions while an active task or
-// service references them.
+// You can only describe INACTIVE task definitions while an active task or service
+// references them.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DescribeTaskDefinition for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) DescribeTaskDefinition(input *DescribeTaskDefinitionInput) (*DescribeTaskDefinitionOutput, error) {
 	req, out := c.DescribeTaskDefinitionRequest(input)
 	err := req.Send()
@@ -594,6 +885,8 @@ const opDescribeTasks = "DescribeTasks"
 // client's request for the DescribeTasks operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DescribeTasks for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -629,7 +922,34 @@ func (c *ECS) DescribeTasksRequest(input *DescribeTasksInput) (req *request.Requ
 	return
 }
 
+// DescribeTasks API operation for Amazon EC2 Container Service.
+//
 // Describes a specified task or tasks.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DescribeTasks for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) DescribeTasks(input *DescribeTasksInput) (*DescribeTasksOutput, error) {
 	req, out := c.DescribeTasksRequest(input)
 	err := req.Send()
@@ -642,6 +962,8 @@ const opDiscoverPollEndpoint = "DiscoverPollEndpoint"
 // client's request for the DiscoverPollEndpoint operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See DiscoverPollEndpoint for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -677,11 +999,30 @@ func (c *ECS) DiscoverPollEndpointRequest(input *DiscoverPollEndpointInput) (req
 	return
 }
 
+// DiscoverPollEndpoint API operation for Amazon EC2 Container Service.
+//
 // This action is only used by the Amazon EC2 Container Service agent, and it
 // is not intended for use outside of the agent.
 //
-//  Returns an endpoint for the Amazon EC2 Container Service agent to poll
-// for updates.
+// Returns an endpoint for the Amazon EC2 Container Service agent to poll for
+// updates.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation DiscoverPollEndpoint for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
 func (c *ECS) DiscoverPollEndpoint(input *DiscoverPollEndpointInput) (*DiscoverPollEndpointOutput, error) {
 	req, out := c.DiscoverPollEndpointRequest(input)
 	err := req.Send()
@@ -694,6 +1035,8 @@ const opListClusters = "ListClusters"
 // client's request for the ListClusters operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See ListClusters for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -735,7 +1078,30 @@ func (c *ECS) ListClustersRequest(input *ListClustersInput) (req *request.Reques
 	return
 }
 
+// ListClusters API operation for Amazon EC2 Container Service.
+//
 // Returns a list of existing clusters.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation ListClusters for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) ListClusters(input *ListClustersInput) (*ListClustersOutput, error) {
 	req, out := c.ListClustersRequest(input)
 	err := req.Send()
@@ -773,6 +1139,8 @@ const opListContainerInstances = "ListContainerInstances"
 // client's request for the ListContainerInstances operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See ListContainerInstances for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -814,7 +1182,34 @@ func (c *ECS) ListContainerInstancesRequest(input *ListContainerInstancesInput) 
 	return
 }
 
+// ListContainerInstances API operation for Amazon EC2 Container Service.
+//
 // Returns a list of container instances in a specified cluster.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation ListContainerInstances for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) ListContainerInstances(input *ListContainerInstancesInput) (*ListContainerInstancesOutput, error) {
 	req, out := c.ListContainerInstancesRequest(input)
 	err := req.Send()
@@ -852,6 +1247,8 @@ const opListServices = "ListServices"
 // client's request for the ListServices operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See ListServices for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -893,7 +1290,34 @@ func (c *ECS) ListServicesRequest(input *ListServicesInput) (req *request.Reques
 	return
 }
 
+// ListServices API operation for Amazon EC2 Container Service.
+//
 // Lists the services that are running in a specified cluster.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation ListServices for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) ListServices(input *ListServicesInput) (*ListServicesOutput, error) {
 	req, out := c.ListServicesRequest(input)
 	err := req.Send()
@@ -931,6 +1355,8 @@ const opListTaskDefinitionFamilies = "ListTaskDefinitionFamilies"
 // client's request for the ListTaskDefinitionFamilies operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See ListTaskDefinitionFamilies for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -972,6 +1398,8 @@ func (c *ECS) ListTaskDefinitionFamiliesRequest(input *ListTaskDefinitionFamilie
 	return
 }
 
+// ListTaskDefinitionFamilies API operation for Amazon EC2 Container Service.
+//
 // Returns a list of task definition families that are registered to your account
 // (which may include task definition families that no longer have any ACTIVE
 // task definition revisions).
@@ -979,6 +1407,27 @@ func (c *ECS) ListTaskDefinitionFamiliesRequest(input *ListTaskDefinitionFamilie
 // You can filter out task definition families that do not contain any ACTIVE
 // task definition revisions by setting the status parameter to ACTIVE. You
 // can also filter the results with the familyPrefix parameter.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation ListTaskDefinitionFamilies for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) ListTaskDefinitionFamilies(input *ListTaskDefinitionFamiliesInput) (*ListTaskDefinitionFamiliesOutput, error) {
 	req, out := c.ListTaskDefinitionFamiliesRequest(input)
 	err := req.Send()
@@ -1016,6 +1465,8 @@ const opListTaskDefinitions = "ListTaskDefinitions"
 // client's request for the ListTaskDefinitions operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See ListTaskDefinitions for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1057,9 +1508,32 @@ func (c *ECS) ListTaskDefinitionsRequest(input *ListTaskDefinitionsInput) (req *
 	return
 }
 
+// ListTaskDefinitions API operation for Amazon EC2 Container Service.
+//
 // Returns a list of task definitions that are registered to your account. You
 // can filter the results by family name with the familyPrefix parameter or
 // by status with the status parameter.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation ListTaskDefinitions for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) ListTaskDefinitions(input *ListTaskDefinitionsInput) (*ListTaskDefinitionsOutput, error) {
 	req, out := c.ListTaskDefinitionsRequest(input)
 	err := req.Send()
@@ -1097,6 +1571,8 @@ const opListTasks = "ListTasks"
 // client's request for the ListTasks operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See ListTasks for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1138,12 +1614,43 @@ func (c *ECS) ListTasksRequest(input *ListTasksInput) (req *request.Request, out
 	return
 }
 
+// ListTasks API operation for Amazon EC2 Container Service.
+//
 // Returns a list of tasks for a specified cluster. You can filter the results
 // by family name, by a particular container instance, or by the desired status
 // of the task with the family, containerInstance, and desiredStatus parameters.
 //
-// Recently-stopped tasks might appear in the returned results. Currently,
-// stopped tasks appear in the returned results for at least one hour.
+// Recently-stopped tasks might appear in the returned results. Currently, stopped
+// tasks appear in the returned results for at least one hour.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation ListTasks for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
+//   * ServiceNotFoundException
+//   The specified service could not be found. You can view your available services
+//   with ListServices. Amazon ECS services are cluster-specific and region-specific.
+//
 func (c *ECS) ListTasks(input *ListTasksInput) (*ListTasksOutput, error) {
 	req, out := c.ListTasksRequest(input)
 	err := req.Send()
@@ -1182,6 +1689,8 @@ const opRegisterContainerInstance = "RegisterContainerInstance"
 // value can be used to capture response data after the request's "Send" method
 // is called.
 //
+// See RegisterContainerInstance for usage and error information.
+//
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
 // access properties on the request object before or after sending the request. If
@@ -1216,11 +1725,30 @@ func (c *ECS) RegisterContainerInstanceRequest(input *RegisterContainerInstanceI
 	return
 }
 
+// RegisterContainerInstance API operation for Amazon EC2 Container Service.
+//
 // This action is only used by the Amazon EC2 Container Service agent, and it
 // is not intended for use outside of the agent.
 //
-//  Registers an EC2 instance into the specified cluster. This instance becomes
+// Registers an EC2 instance into the specified cluster. This instance becomes
 // available to place containers on.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation RegisterContainerInstance for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
 func (c *ECS) RegisterContainerInstance(input *RegisterContainerInstanceInput) (*RegisterContainerInstanceOutput, error) {
 	req, out := c.RegisterContainerInstanceRequest(input)
 	err := req.Send()
@@ -1233,6 +1761,8 @@ const opRegisterTaskDefinition = "RegisterTaskDefinition"
 // client's request for the RegisterTaskDefinition operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See RegisterTaskDefinition for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1268,6 +1798,8 @@ func (c *ECS) RegisterTaskDefinitionRequest(input *RegisterTaskDefinitionInput) 
 	return
 }
 
+// RegisterTaskDefinition API operation for Amazon EC2 Container Service.
+//
 // Registers a new task definition from the supplied family and containerDefinitions.
 // Optionally, you can add data volumes to your containers with the volumes
 // parameter. For more information about task definition parameters and defaults,
@@ -1285,6 +1817,27 @@ func (c *ECS) RegisterTaskDefinitionRequest(input *RegisterTaskDefinitionInput) 
 // definition with the networkMode parameter. The available network modes correspond
 // to those described in Network settings (https://docs.docker.com/engine/reference/run/#/network-settings)
 // in the Docker run reference.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation RegisterTaskDefinition for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
 func (c *ECS) RegisterTaskDefinition(input *RegisterTaskDefinitionInput) (*RegisterTaskDefinitionOutput, error) {
 	req, out := c.RegisterTaskDefinitionRequest(input)
 	err := req.Send()
@@ -1297,6 +1850,8 @@ const opRunTask = "RunTask"
 // client's request for the RunTask operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See RunTask for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1332,11 +1887,38 @@ func (c *ECS) RunTaskRequest(input *RunTaskInput) (req *request.Request, output 
 	return
 }
 
+// RunTask API operation for Amazon EC2 Container Service.
+//
 // Start a task using random placement and the default Amazon ECS scheduler.
 // To use your own scheduler or place a task on a specific container instance,
 // use StartTask instead.
 //
-//  The count parameter is limited to 10 tasks per call.
+// The count parameter is limited to 10 tasks per call.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation RunTask for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) RunTask(input *RunTaskInput) (*RunTaskOutput, error) {
 	req, out := c.RunTaskRequest(input)
 	err := req.Send()
@@ -1349,6 +1931,8 @@ const opStartTask = "StartTask"
 // client's request for the StartTask operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See StartTask for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1384,11 +1968,38 @@ func (c *ECS) StartTaskRequest(input *StartTaskInput) (req *request.Request, out
 	return
 }
 
+// StartTask API operation for Amazon EC2 Container Service.
+//
 // Starts a new task from the specified task definition on the specified container
 // instance or instances. To use the default Amazon ECS scheduler to place your
 // task, use RunTask instead.
 //
-//  The list of container instances to start tasks on is limited to 10.
+// The list of container instances to start tasks on is limited to 10.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation StartTask for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) StartTask(input *StartTaskInput) (*StartTaskOutput, error) {
 	req, out := c.StartTaskRequest(input)
 	err := req.Send()
@@ -1401,6 +2012,8 @@ const opStopTask = "StopTask"
 // client's request for the StopTask operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See StopTask for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1436,6 +2049,8 @@ func (c *ECS) StopTaskRequest(input *StopTaskInput) (req *request.Request, outpu
 	return
 }
 
+// StopTask API operation for Amazon EC2 Container Service.
+//
 // Stops a running task.
 //
 // When StopTask is called on a task, the equivalent of docker stop is issued
@@ -1443,6 +2058,31 @@ func (c *ECS) StopTaskRequest(input *StopTaskInput) (req *request.Request, outpu
 // timeout, after which SIGKILL is sent and the containers are forcibly stopped.
 // If the container handles the SIGTERM gracefully and exits within 30 seconds
 // from receiving it, no SIGKILL is sent.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation StopTask for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
 func (c *ECS) StopTask(input *StopTaskInput) (*StopTaskOutput, error) {
 	req, out := c.StopTaskRequest(input)
 	err := req.Send()
@@ -1455,6 +2095,8 @@ const opSubmitContainerStateChange = "SubmitContainerStateChange"
 // client's request for the SubmitContainerStateChange operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See SubmitContainerStateChange for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1490,10 +2132,29 @@ func (c *ECS) SubmitContainerStateChangeRequest(input *SubmitContainerStateChang
 	return
 }
 
+// SubmitContainerStateChange API operation for Amazon EC2 Container Service.
+//
 // This action is only used by the Amazon EC2 Container Service agent, and it
 // is not intended for use outside of the agent.
 //
-//  Sent to acknowledge that a container changed states.
+// Sent to acknowledge that a container changed states.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation SubmitContainerStateChange for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
 func (c *ECS) SubmitContainerStateChange(input *SubmitContainerStateChangeInput) (*SubmitContainerStateChangeOutput, error) {
 	req, out := c.SubmitContainerStateChangeRequest(input)
 	err := req.Send()
@@ -1506,6 +2167,8 @@ const opSubmitTaskStateChange = "SubmitTaskStateChange"
 // client's request for the SubmitTaskStateChange operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See SubmitTaskStateChange for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1541,10 +2204,29 @@ func (c *ECS) SubmitTaskStateChangeRequest(input *SubmitTaskStateChangeInput) (r
 	return
 }
 
+// SubmitTaskStateChange API operation for Amazon EC2 Container Service.
+//
 // This action is only used by the Amazon EC2 Container Service agent, and it
 // is not intended for use outside of the agent.
 //
-//  Sent to acknowledge that a task changed states.
+// Sent to acknowledge that a task changed states.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation SubmitTaskStateChange for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
 func (c *ECS) SubmitTaskStateChange(input *SubmitTaskStateChangeInput) (*SubmitTaskStateChangeOutput, error) {
 	req, out := c.SubmitTaskStateChangeRequest(input)
 	err := req.Send()
@@ -1557,6 +2239,8 @@ const opUpdateContainerAgent = "UpdateContainerAgent"
 // client's request for the UpdateContainerAgent operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See UpdateContainerAgent for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1592,17 +2276,62 @@ func (c *ECS) UpdateContainerAgentRequest(input *UpdateContainerAgentInput) (req
 	return
 }
 
+// UpdateContainerAgent API operation for Amazon EC2 Container Service.
+//
 // Updates the Amazon ECS container agent on a specified container instance.
 // Updating the Amazon ECS container agent does not interrupt running tasks
 // or services on the container instance. The process for updating the agent
 // differs depending on whether your container instance was launched with the
 // Amazon ECS-optimized AMI or another operating system.
 //
-//  UpdateContainerAgent requires the Amazon ECS-optimized AMI or Amazon Linux
+// UpdateContainerAgent requires the Amazon ECS-optimized AMI or Amazon Linux
 // with the ecs-init service installed and running. For help updating the Amazon
 // ECS container agent on other operating systems, see Manually Updating the
 // Amazon ECS Container Agent (http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-update.html#manually_update_agent)
 // in the Amazon EC2 Container Service Developer Guide.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation UpdateContainerAgent for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
+//   * UpdateInProgressException
+//   There is already a current Amazon ECS container agent update in progress
+//   on the specified container instance. If the container agent becomes disconnected
+//   while it is in a transitional stage, such as PENDING or STAGING, the update
+//   process can get stuck in that state. However, when the agent reconnects,
+//   it resumes where it stopped previously.
+//
+//   * NoUpdateAvailableException
+//   There is no update available for this Amazon ECS container agent. This could
+//   be because the agent is already running the latest version, or it is so old
+//   that there is no update path to the current version.
+//
+//   * MissingVersionException
+//   Amazon ECS is unable to determine the current version of the Amazon ECS container
+//   agent on the container instance and does not have enough information to proceed
+//   with an update. This could be because the agent running on the container
+//   instance is an older or custom version that does not use our version information.
+//
 func (c *ECS) UpdateContainerAgent(input *UpdateContainerAgentInput) (*UpdateContainerAgentOutput, error) {
 	req, out := c.UpdateContainerAgentRequest(input)
 	err := req.Send()
@@ -1615,6 +2344,8 @@ const opUpdateService = "UpdateService"
 // client's request for the UpdateService operation. The "output" return
 // value can be used to capture response data after the request's "Send" method
 // is called.
+//
+// See UpdateService for usage and error information.
 //
 // Creating a request object using this method should be used when you want to inject
 // custom logic into the request's lifecycle using a custom handler, or if you want to
@@ -1650,6 +2381,8 @@ func (c *ECS) UpdateServiceRequest(input *UpdateServiceInput) (req *request.Requ
 	return
 }
 
+// UpdateService API operation for Amazon EC2 Container Service.
+//
 // Modifies the desired count, deployment configuration, or task definition
 // used in a service.
 //
@@ -1674,12 +2407,11 @@ func (c *ECS) UpdateServiceRequest(input *UpdateServiceInput) (req *request.Requ
 // are considered healthy if they are in the RUNNING state and the container
 // instance it is hosted on is reported as healthy by the load balancer.
 //
-// The maximumPercent parameter represents an upper limit on the number of
-// running tasks during a deployment, which enables you to define the deployment
-// batch size. For example, if your service has a desiredCount of four tasks,
-// a maximumPercent value of 200% starts four new tasks before stopping the
-// four older tasks (provided that the cluster resources required to do this
-// are available).
+// The maximumPercent parameter represents an upper limit on the number of running
+// tasks during a deployment, which enables you to define the deployment batch
+// size. For example, if your service has a desiredCount of four tasks, a maximumPercent
+// value of 200% starts four new tasks before stopping the four older tasks
+// (provided that the cluster resources required to do this are available).
 //
 // When UpdateService stops a task during a deployment, the equivalent of docker
 // stop is issued to the containers running in the task. This results in a SIGTERM
@@ -1690,19 +2422,53 @@ func (c *ECS) UpdateServiceRequest(input *UpdateServiceInput) (req *request.Requ
 // When the service scheduler launches new tasks, it attempts to balance them
 // across the Availability Zones in your cluster with the following logic:
 //
-//   Determine which of the container instances in your cluster can support
-// your service's task definition (for example, they have the required CPU,
-// memory, ports, and container instance attributes).
+//    * Determine which of the container instances in your cluster can support
+//    your service's task definition (for example, they have the required CPU,
+//    memory, ports, and container instance attributes).
 //
-//   Sort the valid container instances by the fewest number of running tasks
-// for this service in the same Availability Zone as the instance. For example,
-// if zone A has one running service task and zones B and C each have zero,
-// valid container instances in either zone B or C are considered optimal for
-// placement.
+//    * Sort the valid container instances by the fewest number of running tasks
+//    for this service in the same Availability Zone as the instance. For example,
+//    if zone A has one running service task and zones B and C each have zero,
+//    valid container instances in either zone B or C are considered optimal
+//    for placement.
 //
-//   Place the new service task on a valid container instance in an optimal
-// Availability Zone (based on the previous steps), favoring container instances
-// with the fewest number of running tasks for this service.
+//    * Place the new service task on a valid container instance in an optimal
+//    Availability Zone (based on the previous steps), favoring container instances
+//    with the fewest number of running tasks for this service.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon EC2 Container Service's
+// API operation UpdateService for usage and error information.
+//
+// Returned Error Codes:
+//   * ServerException
+//   These errors are usually caused by a server issue.
+//
+//   * ClientException
+//   These errors are usually caused by a client action, such as using an action
+//   or resource on behalf of a user that doesn't have permission to use the action
+//   or resource, or specifying an identifier that is not valid.
+//
+//   * InvalidParameterException
+//   The specified parameter is invalid. Review the available parameters for the
+//   API request.
+//
+//   * ClusterNotFoundException
+//   The specified cluster could not be found. You can view your available clusters
+//   with ListClusters. Amazon ECS clusters are region-specific.
+//
+//   * ServiceNotFoundException
+//   The specified service could not be found. You can view your available services
+//   with ListServices. Amazon ECS services are cluster-specific and region-specific.
+//
+//   * ServiceNotActiveException
+//   The specified service is not active. You cannot update a service that is
+//   not active. If you have previously deleted a service, you can re-create it
+//   with CreateService.
+//
 func (c *ECS) UpdateService(input *UpdateServiceInput) (*UpdateServiceOutput, error) {
 	req, out := c.UpdateServiceRequest(input)
 	err := req.Send()
@@ -1714,6 +2480,8 @@ type Attribute struct {
 	_ struct{} `type:"structure"`
 
 	// The name of the container instance attribute.
+	//
+	// Name is a required field
 	Name *string `locationName:"name" type:"string" required:"true"`
 
 	// The value of the container instance attribute (at this time, the value here
@@ -1758,7 +2526,7 @@ type Cluster struct {
 	// The Amazon Resource Name (ARN) that identifies the cluster. The ARN contains
 	// the arn:aws:ecs namespace, followed by the region of the cluster, the AWS
 	// account ID of the cluster owner, the cluster namespace, and then the cluster
-	// name. For example, arn:aws:ecs:region:012345678910:cluster/test ..
+	// name. For example, arn:aws:ecs:region:012345678910:cluster/test..
 	ClusterArn *string `locationName:"clusterArn" type:"string"`
 
 	// A user-generated string that you use to identify your cluster.
@@ -1832,11 +2600,11 @@ type ContainerDefinition struct {
 	_ struct{} `type:"structure"`
 
 	// The command that is passed to the container. This parameter maps to Cmd in
-	// the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the COMMAND parameter to docker run (https://docs.docker.com/reference/commandline/run/).
-	// For more information, see https://docs.docker.com/reference/builder/#cmd
-	// (https://docs.docker.com/reference/builder/#cmd).
+	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the COMMAND parameter to docker run (https://docs.docker.com/engine/reference/run/).
+	// For more information, see https://docs.docker.com/engine/reference/builder/#cmd
+	// (https://docs.docker.com/engine/reference/builder/#cmd).
 	Command []*string `locationName:"command" type:"list"`
 
 	// The number of cpu units reserved for the container. A container instance
@@ -1844,16 +2612,16 @@ type ContainerDefinition struct {
 	// amount of CPU to reserve for a container, and containers share unallocated
 	// CPU units with other containers on the instance with the same ratio as their
 	// allocated amount. This parameter maps to CpuShares in the Create a container
-	// (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --cpu-shares option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --cpu-shares option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
-	//  You can determine the number of CPU units that are available per EC2 instance
+	// You can determine the number of CPU units that are available per EC2 instance
 	// type by multiplying the vCPUs listed for that instance type on the Amazon
 	// EC2 Instances (http://aws.amazon.com/ec2/instance-types/) detail page by
 	// 1,024.
 	//
-	//  For example, if you run a single-container task on a single-core instance
+	// For example, if you run a single-container task on a single-core instance
 	// type with 512 CPU units specified for that container, and that is the only
 	// task running on the container instance, that container could use the full
 	// 1,024 CPU unit share at any given time. However, if you launched another
@@ -1864,43 +2632,43 @@ type ContainerDefinition struct {
 	//
 	// The Docker daemon on the container instance uses the CPU value to calculate
 	// the relative CPU share ratios for running containers. For more information,
-	// see CPU share constraint (https://docs.docker.com/reference/run/#cpu-share-constraint)
+	// see CPU share constraint (https://docs.docker.com/engine/reference/run/#cpu-share-constraint)
 	// in the Docker documentation. The minimum valid CPU share value that the Linux
 	// kernel allows is 2; however, the CPU parameter is not required, and you can
 	// use CPU values below 2 in your container definitions. For CPU values below
 	// 2 (including null), the behavior varies based on your Amazon ECS container
 	// agent version:
 	//
-	//    Agent versions less than or equal to 1.1.0: Null and zero CPU values
-	// are passed to Docker as 0, which Docker then converts to 1,024 CPU shares.
-	// CPU values of 1 are passed to Docker as 1, which the Linux kernel converts
-	// to 2 CPU shares.
+	//    * Agent versions less than or equal to 1.1.0: Null and zero CPU values
+	//    are passed to Docker as 0, which Docker then converts to 1,024 CPU shares.
+	//    CPU values of 1 are passed to Docker as 1, which the Linux kernel converts
+	//    to 2 CPU shares.
 	//
-	//    Agent versions greater than or equal to 1.2.0: Null, zero, and CPU values
-	// of 1 are passed to Docker as 2.
+	//    * Agent versions greater than or equal to 1.2.0: Null, zero, and CPU values
+	//    of 1 are passed to Docker as 2.
 	Cpu *int64 `locationName:"cpu" type:"integer"`
 
 	// When this parameter is true, networking is disabled within the container.
-	// This parameter maps to NetworkDisabled in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/).
+	// This parameter maps to NetworkDisabled in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/).
 	DisableNetworking *bool `locationName:"disableNetworking" type:"boolean"`
 
 	// A list of DNS search domains that are presented to the container. This parameter
-	// maps to DnsSearch in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --dns-search option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// maps to DnsSearch in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --dns-search option to docker run (https://docs.docker.com/engine/reference/run/).
 	DnsSearchDomains []*string `locationName:"dnsSearchDomains" type:"list"`
 
 	// A list of DNS servers that are presented to the container. This parameter
-	// maps to Dns in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --dns option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// maps to Dns in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --dns option to docker run (https://docs.docker.com/engine/reference/run/).
 	DnsServers []*string `locationName:"dnsServers" type:"list"`
 
 	// A key/value map of labels to add to the container. This parameter maps to
-	// Labels in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --label option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// Labels in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --label option to docker run (https://docs.docker.com/engine/reference/run/).
 	// This parameter requires version 1.18 of the Docker Remote API or greater
 	// on your container instance. To check the Docker Remote API version on your
 	// container instance, log into your container instance and run the following
@@ -1909,11 +2677,11 @@ type ContainerDefinition struct {
 
 	// A list of strings to provide custom labels for SELinux and AppArmor multi-level
 	// security systems. This parameter maps to SecurityOpt in the Create a container
-	// (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --security-opt option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --security-opt option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
-	//  The Amazon ECS container agent running on a container instance must register
+	// The Amazon ECS container agent running on a container instance must register
 	// with the ECS_SELINUX_CAPABLE=true or ECS_APPARMOR_CAPABLE=true environment
 	// variables before containers placed on that instance can use these security
 	// options. For more information, see Amazon ECS Container Agent Configuration
@@ -1925,20 +2693,20 @@ type ContainerDefinition struct {
 	// parameters. If you have problems using entryPoint, update your container
 	// agent or enter your commands and arguments as command array items instead.
 	//
-	//  The entry point that is passed to the container. This parameter maps to
-	// Entrypoint in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --entrypoint option to docker run (https://docs.docker.com/reference/commandline/run/).
-	// For more information, see https://docs.docker.com/reference/builder/#entrypoint
-	// (https://docs.docker.com/reference/builder/#entrypoint).
+	// The entry point that is passed to the container. This parameter maps to Entrypoint
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --entrypoint option to docker run (https://docs.docker.com/engine/reference/run/).
+	// For more information, see https://docs.docker.com/engine/reference/builder/#entrypoint
+	// (https://docs.docker.com/engine/reference/builder/#entrypoint).
 	EntryPoint []*string `locationName:"entryPoint" type:"list"`
 
 	// The environment variables to pass to a container. This parameter maps to
-	// Env in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --env option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// Env in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --env option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
-	//  We do not recommend using plain text environment variables for sensitive
+	// We do not recommend using plain text environment variables for sensitive
 	// information, such as credential data.
 	Environment []*KeyValuePair `locationName:"environment" type:"list"`
 
@@ -1958,34 +2726,34 @@ type ContainerDefinition struct {
 
 	// A list of hostnames and IP address mappings to append to the /etc/hosts file
 	// on the container. This parameter maps to ExtraHosts in the Create a container
-	// (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --add-host option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --add-host option to docker run (https://docs.docker.com/engine/reference/run/).
 	ExtraHosts []*HostEntry `locationName:"extraHosts" type:"list"`
 
 	// The hostname to use for your container. This parameter maps to Hostname in
-	// the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --hostname option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --hostname option to docker run (https://docs.docker.com/engine/reference/run/).
 	Hostname *string `locationName:"hostname" type:"string"`
 
 	// The image used to start a container. This string is passed directly to the
 	// Docker daemon. Images in the Docker Hub registry are available by default.
-	// Other repositories are specified with  repository-url/image:tag . Up to 255
+	// Other repositories are specified with repository-url/image:tag. Up to 255
 	// letters (uppercase and lowercase), numbers, hyphens, underscores, colons,
 	// periods, forward slashes, and number signs are allowed. This parameter maps
-	// to Image in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the IMAGE parameter of docker run (https://docs.docker.com/reference/commandline/run/).
+	// to Image in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the IMAGE parameter of docker run (https://docs.docker.com/engine/reference/run/).
 	//
-	//   Images in official repositories on Docker Hub use a single name (for example,
-	// ubuntu or mongo).
+	//    * Images in official repositories on Docker Hub use a single name (for
+	//    example, ubuntu or mongo).
 	//
-	//   Images in other repositories on Docker Hub are qualified with an organization
-	// name (for example, amazon/amazon-ecs-agent).
+	//    * Images in other repositories on Docker Hub are qualified with an organization
+	//    name (for example, amazon/amazon-ecs-agent).
 	//
-	//   Images in other online repositories are qualified further by a domain
-	// name (for example, quay.io/assemblyline/ubuntu).
+	//    * Images in other online repositories are qualified further by a domain
+	//    name (for example, quay.io/assemblyline/ubuntu).
 	Image *string `locationName:"image" type:"string"`
 
 	// The link parameter allows containers to communicate with each other without
@@ -1993,21 +2761,22 @@ type ContainerDefinition struct {
 	// for the link. This construct is analogous to name:alias in Docker links.
 	// Up to 255 letters (uppercase and lowercase), numbers, hyphens, and underscores
 	// are allowed for each name and alias. For more information on linking Docker
-	// containers, see https://docs.docker.com/userguide/dockerlinks/ (https://docs.docker.com/userguide/dockerlinks/).
-	// This parameter maps to Links in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --link option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// containers, see https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/
+	// (https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/).
+	// This parameter maps to Links in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --link option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
-	//  Containers that are collocated on a single container instance may be able
+	// Containers that are collocated on a single container instance may be able
 	// to communicate with each other without requiring links or host port mappings.
 	// Network isolation is achieved on the container instance using security groups
 	// and VPC settings.
 	Links []*string `locationName:"links" type:"list"`
 
 	// The log configuration specification for the container. This parameter maps
-	// to LogConfig in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --log-driver option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// to LogConfig in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --log-driver option to docker run (https://docs.docker.com/engine/reference/run/).
 	// By default, containers use the same logging driver that the Docker daemon
 	// uses; however the container may use a different logging driver than the Docker
 	// daemon by specifying a log driver with this parameter in the container definition.
@@ -2017,17 +2786,17 @@ type ContainerDefinition struct {
 	// supported log drivers, see Configure logging drivers (https://docs.docker.com/engine/admin/logging/overview/)
 	// in the Docker documentation.
 	//
-	//  Amazon ECS currently supports a subset of the logging drivers available
-	// to the Docker daemon (shown in the LogConfiguration data type). Currently
-	// unsupported log drivers may be available in future releases of the Amazon
-	// ECS container agent.
+	// Amazon ECS currently supports a subset of the logging drivers available to
+	// the Docker daemon (shown in the LogConfiguration data type). Currently unsupported
+	// log drivers may be available in future releases of the Amazon ECS container
+	// agent.
 	//
-	//  This parameter requires version 1.18 of the Docker Remote API or greater
+	// This parameter requires version 1.18 of the Docker Remote API or greater
 	// on your container instance. To check the Docker Remote API version on your
 	// container instance, log into your container instance and run the following
 	// command: sudo docker version | grep "Server API version"
 	//
-	//  The Amazon ECS container agent running on a container instance must register
+	// The Amazon ECS container agent running on a container instance must register
 	// the logging drivers available on that instance with the ECS_AVAILABLE_LOGGING_DRIVERS
 	// environment variable before containers placed on that instance can use these
 	// log configuration options. For more information, see Amazon ECS Container
@@ -2037,9 +2806,9 @@ type ContainerDefinition struct {
 
 	// The hard limit (in MiB) of memory to present to the container. If your container
 	// attempts to exceed the memory specified here, the container is killed. This
-	// parameter maps to Memory in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --memory option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// parameter maps to Memory in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --memory option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// You must specify a non-zero integer for one or both of memory or memoryReservation
 	// in container definitions. If you specify both, memory must be greater than
@@ -2057,9 +2826,9 @@ type ContainerDefinition struct {
 	// it needs to, up to either the hard limit specified with the memory parameter
 	// (if applicable), or all of the available memory on the container instance,
 	// whichever comes first. This parameter maps to MemoryReservation in the Create
-	// a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --memory-reservation option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --memory-reservation option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// You must specify a non-zero integer for one or both of memory or memoryReservation
 	// in container definitions. If you specify both, memory must be greater than
@@ -2076,54 +2845,54 @@ type ContainerDefinition struct {
 	MemoryReservation *int64 `locationName:"memoryReservation" type:"integer"`
 
 	// The mount points for data volumes in your container. This parameter maps
-	// to Volumes in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --volume option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// to Volumes in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --volume option to docker run (https://docs.docker.com/engine/reference/run/).
 	MountPoints []*MountPoint `locationName:"mountPoints" type:"list"`
 
 	// The name of a container. If you are linking multiple containers together
 	// in a task definition, the name of one container can be entered in the links
 	// of another container to connect the containers. Up to 255 letters (uppercase
 	// and lowercase), numbers, hyphens, and underscores are allowed. This parameter
-	// maps to name in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --name option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// maps to name in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --name option to docker run (https://docs.docker.com/engine/reference/run/).
 	Name *string `locationName:"name" type:"string"`
 
 	// The list of port mappings for the container. Port mappings allow containers
 	// to access ports on the host container instance to send or receive traffic.
-	// This parameter maps to PortBindings in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --publish option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// This parameter maps to PortBindings in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --publish option to docker run (https://docs.docker.com/engine/reference/run/).
 	// If the network mode of a task definition is set to none, then you cannot
 	// specify port mappings. If the network mode of a task definition is set to
 	// host, then host ports must either be undefined or they must match the container
 	// port in the port mapping.
 	//
-	//  After a task reaches the RUNNING status, manual and automatic host and
-	// container port assignments are visible in the Network Bindings section of
-	// a container description of a selected task in the Amazon ECS console, or
-	// the networkBindings section DescribeTasks responses.
+	// After a task reaches the RUNNING status, manual and automatic host and container
+	// port assignments are visible in the Network Bindings section of a container
+	// description of a selected task in the Amazon ECS console, or the networkBindings
+	// section DescribeTasks responses.
 	PortMappings []*PortMapping `locationName:"portMappings" type:"list"`
 
 	// When this parameter is true, the container is given elevated privileges on
 	// the host container instance (similar to the root user). This parameter maps
-	// to Privileged in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --privileged option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// to Privileged in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --privileged option to docker run (https://docs.docker.com/engine/reference/run/).
 	Privileged *bool `locationName:"privileged" type:"boolean"`
 
 	// When this parameter is true, the container is given read-only access to its
 	// root file system. This parameter maps to ReadonlyRootfs in the Create a container
-	// (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
 	// and the --read-only option to docker run.
 	ReadonlyRootFilesystem *bool `locationName:"readonlyRootFilesystem" type:"boolean"`
 
 	// A list of ulimits to set in the container. This parameter maps to Ulimits
-	// in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --ulimit option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --ulimit option to docker run (https://docs.docker.com/engine/reference/run/).
 	// Valid naming values are displayed in the Ulimit data type. This parameter
 	// requires version 1.18 of the Docker Remote API or greater on your container
 	// instance. To check the Docker Remote API version on your container instance,
@@ -2132,21 +2901,21 @@ type ContainerDefinition struct {
 	Ulimits []*Ulimit `locationName:"ulimits" type:"list"`
 
 	// The user name to use inside the container. This parameter maps to User in
-	// the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --user option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --user option to docker run (https://docs.docker.com/engine/reference/run/).
 	User *string `locationName:"user" type:"string"`
 
 	// Data volumes to mount from another container. This parameter maps to VolumesFrom
-	// in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --volumes-from option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --volumes-from option to docker run (https://docs.docker.com/engine/reference/run/).
 	VolumesFrom []*VolumeFrom `locationName:"volumesFrom" type:"list"`
 
 	// The working directory in which to run commands inside the container. This
-	// parameter maps to WorkingDir in the Create a container (https://docs.docker.com/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/reference/api/docker_remote_api_v1.23/)
-	// and the --workdir option to docker run (https://docs.docker.com/reference/commandline/run/).
+	// parameter maps to WorkingDir in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// and the --workdir option to docker run (https://docs.docker.com/engine/reference/run/).
 	WorkingDirectory *string `locationName:"workingDirectory" type:"string"`
 }
 
@@ -2217,8 +2986,7 @@ type ContainerInstance struct {
 	// The Amazon Resource Name (ARN) of the container instance. The ARN contains
 	// the arn:aws:ecs namespace, followed by the region of the container instance,
 	// the AWS account ID of the container instance owner, the container-instance
-	// namespace, and then the container instance ID. For example, arn:aws:ecs:region:aws_account_id:container-instance/container_instance_ID
-	// .
+	// namespace, and then the container instance ID. For example, arn:aws:ecs:region:aws_account_id:container-instance/container_instance_ID.
 	ContainerInstanceArn *string `locationName:"containerInstanceArn" type:"string"`
 
 	// The EC2 instance ID of the container instance.
@@ -2227,12 +2995,18 @@ type ContainerInstance struct {
 	// The number of tasks on the container instance that are in the PENDING status.
 	PendingTasksCount *int64 `locationName:"pendingTasksCount" type:"integer"`
 
-	// The registered resources on the container instance that are in use by current
-	// tasks.
+	// For most resource types, this parameter describes the registered resources
+	// on the container instance that are in use by current tasks. For port resource
+	// types, this parameter describes the ports that were reserved by the Amazon
+	// ECS container agent when it registered the container instance with Amazon
+	// ECS.
 	RegisteredResources []*Resource `locationName:"registeredResources" type:"list"`
 
-	// The remaining resources of the container instance that are available for
-	// new tasks.
+	// For most resource types, this parameter describes the remaining resources
+	// of the container instance that are available for new tasks. For port resource
+	// types, this parameter describes the ports that are reserved by the Amazon
+	// ECS container agent and any containers that have reserved port mappings;
+	// any port that is not specified here is available for new tasks.
 	RemainingResources []*Resource `locationName:"remainingResources" type:"list"`
 
 	// The number of tasks on the container instance that are in the RUNNING status.
@@ -2338,6 +3112,8 @@ type CreateServiceInput struct {
 
 	// The number of instantiations of the specified task definition to place and
 	// keep running on your cluster.
+	//
+	// DesiredCount is a required field
 	DesiredCount *int64 `locationName:"desiredCount" type:"integer" required:"true"`
 
 	// A load balancer object representing the load balancer to use with your service.
@@ -2351,12 +3127,12 @@ type CreateServiceInput struct {
 	// a task from this service is placed on a container instance, the container
 	// instance is registered with the load balancer specified here.
 	//
-	// For Elastic Load Balancing Application load balancers, this object must
-	// contain the load balancer target group ARN, the container name (as it appears
-	// in a container definition), and the container port to access from the load
-	// balancer. When a task from this service is placed on a container instance,
-	// the container instance and port combination is registered as a target in
-	// the target group specified here.
+	// For Elastic Load Balancing Application load balancers, this object must contain
+	// the load balancer target group ARN, the container name (as it appears in
+	// a container definition), and the container port to access from the load balancer.
+	// When a task from this service is placed on a container instance, the container
+	// instance and port combination is registered as a target in the target group
+	// specified here.
 	LoadBalancers []*LoadBalancer `locationName:"loadBalancers" type:"list"`
 
 	// The name or full Amazon Resource Name (ARN) of the IAM role that allows Amazon
@@ -2377,11 +3153,15 @@ type CreateServiceInput struct {
 	// hyphens, and underscores are allowed. Service names must be unique within
 	// a cluster, but you can have similarly named services in multiple clusters
 	// within a region or across multiple regions.
+	//
+	// ServiceName is a required field
 	ServiceName *string `locationName:"serviceName" type:"string" required:"true"`
 
 	// The family and revision (family:revision) or full Amazon Resource Name (ARN)
 	// of the task definition to run in your service. If a revision is not specified,
 	// the latest ACTIVE revision is used.
+	//
+	// TaskDefinition is a required field
 	TaskDefinition *string `locationName:"taskDefinition" type:"string" required:"true"`
 }
 
@@ -2435,6 +3215,8 @@ type DeleteClusterInput struct {
 	_ struct{} `type:"structure"`
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster to delete.
+	//
+	// Cluster is a required field
 	Cluster *string `locationName:"cluster" type:"string" required:"true"`
 }
 
@@ -2486,6 +3268,8 @@ type DeleteServiceInput struct {
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// The name of the service to delete.
+	//
+	// Service is a required field
 	Service *string `locationName:"service" type:"string" required:"true"`
 }
 
@@ -2578,13 +3362,14 @@ type DeploymentConfiguration struct {
 	_ struct{} `type:"structure"`
 
 	// The upper limit (as a percentage of the service's desiredCount) of the number
-	// of running tasks that can be running in a service during a deployment. The
-	// maximum number of tasks during a deployment is the desiredCount multiplied
-	// by the maximumPercent/100, rounded down to the nearest integer value.
+	// of tasks that are allowed in the RUNNING or PENDING state in a service during
+	// a deployment. The maximum number of tasks during a deployment is the desiredCount
+	// multiplied by the maximumPercent/100, rounded down to the nearest integer
+	// value.
 	MaximumPercent *int64 `locationName:"maximumPercent" type:"integer"`
 
 	// The lower limit (as a percentage of the service's desiredCount) of the number
-	// of running tasks that must remain running and healthy in a service during
+	// of running tasks that must remain in the RUNNING state in a service during
 	// a deployment. The minimum healthy tasks during a deployment is the desiredCount
 	// multiplied by the minimumHealthyPercent/100, rounded up to the nearest integer
 	// value.
@@ -2613,18 +3398,23 @@ type DeregisterContainerInstanceInput struct {
 	// instance to deregister. The ARN contains the arn:aws:ecs namespace, followed
 	// by the region of the container instance, the AWS account ID of the container
 	// instance owner, the container-instance namespace, and then the container
-	// instance ID. For example, arn:aws:ecs:region:aws_account_id:container-instance/container_instance_ID
-	// .
+	// instance ID. For example, arn:aws:ecs:region:aws_account_id:container-instance/container_instance_ID.
+	//
+	// ContainerInstance is a required field
 	ContainerInstance *string `locationName:"containerInstance" type:"string" required:"true"`
 
 	// Forces the deregistration of the container instance. If you have tasks running
 	// on the container instance when you deregister it with the force option, these
-	// tasks remain running and they continue to pass Elastic Load Balancing load
-	// balancer health checks until you terminate the instance or the tasks stop
-	// through some other means, but they are orphaned (no longer monitored or accounted
+	// tasks remain running until you terminate the instance or the tasks stop through
+	// some other means, but they are orphaned (no longer monitored or accounted
 	// for by Amazon ECS). If an orphaned task on your container instance is part
 	// of an Amazon ECS service, then the service scheduler starts another copy
 	// of that task, on a different container instance if possible.
+	//
+	// Any containers in orphaned service tasks that are registered with a Classic
+	// load balancer or an Application load balancer target group are deregistered,
+	// and they will begin connection draining according to the settings on the
+	// load balancer or target group.
 	Force *bool `locationName:"force" type:"boolean"`
 }
 
@@ -2674,6 +3464,8 @@ type DeregisterTaskDefinitionInput struct {
 
 	// The family and revision (family:revision) or full Amazon Resource Name (ARN)
 	// of the task definition to deregister. You must specify a revision.
+	//
+	// TaskDefinition is a required field
 	TaskDefinition *string `locationName:"taskDefinition" type:"string" required:"true"`
 }
 
@@ -2766,6 +3558,8 @@ type DescribeContainerInstancesInput struct {
 
 	// A space-separated list of container instance IDs or full Amazon Resource
 	// Name (ARN) entries.
+	//
+	// ContainerInstances is a required field
 	ContainerInstances []*string `locationName:"containerInstances" type:"list" required:"true"`
 }
 
@@ -2819,7 +3613,10 @@ type DescribeServicesInput struct {
 	// specify a cluster, the default cluster is assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
-	// A list of services to describe.
+	// A list of services to describe. You may specify up to 10 services to describe
+	// in a single operation.
+	//
+	// Services is a required field
 	Services []*string `locationName:"services" type:"list" required:"true"`
 }
 
@@ -2872,6 +3669,8 @@ type DescribeTaskDefinitionInput struct {
 	// The family for the latest ACTIVE revision, family and revision (family:revision)
 	// for a specific revision in the family, or full Amazon Resource Name (ARN)
 	// of the task definition to describe.
+	//
+	// TaskDefinition is a required field
 	TaskDefinition *string `locationName:"taskDefinition" type:"string" required:"true"`
 }
 
@@ -2924,6 +3723,8 @@ type DescribeTasksInput struct {
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// A space-separated list of task IDs or full Amazon Resource Name (ARN) entries.
+	//
+	// Tasks is a required field
 	Tasks []*string `locationName:"tasks" type:"list" required:"true"`
 }
 
@@ -2980,8 +3781,7 @@ type DiscoverPollEndpointInput struct {
 	// instance. The ARN contains the arn:aws:ecs namespace, followed by the region
 	// of the container instance, the AWS account ID of the container instance owner,
 	// the container-instance namespace, and then the container instance ID. For
-	// example, arn:aws:ecs:region:aws_account_id:container-instance/container_instance_ID
-	// .
+	// example, arn:aws:ecs:region:aws_account_id:container-instance/container_instance_ID.
 	ContainerInstance *string `locationName:"containerInstance" type:"string"`
 }
 
@@ -3042,9 +3842,13 @@ type HostEntry struct {
 	_ struct{} `type:"structure"`
 
 	// The hostname to use in the /etc/hosts entry.
+	//
+	// Hostname is a required field
 	Hostname *string `locationName:"hostname" type:"string" required:"true"`
 
 	// The IP address to use in the /etc/hosts entry.
+	//
+	// IpAddress is a required field
 	IpAddress *string `locationName:"ipAddress" type:"string" required:"true"`
 }
 
@@ -3138,8 +3942,8 @@ type ListClustersInput struct {
 	// Pagination continues from the end of the previous results that returned the
 	// nextToken value. This value is null when there are no more results to return.
 	//
-	//  This token should be treated as an opaque identifier that is only used
-	// to retrieve the next items in a list and not for other programmatic purposes.
+	// This token should be treated as an opaque identifier that is only used to
+	// retrieve the next items in a list and not for other programmatic purposes.
 	NextToken *string `locationName:"nextToken" type:"string"`
 }
 
@@ -3182,7 +3986,7 @@ type ListContainerInstancesInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster that hosts
 	// the container instances to list. If you do not specify a cluster, the default
-	// cluster is assumed..
+	// cluster is assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// The maximum number of container instance results returned by ListContainerInstances
@@ -3201,8 +4005,8 @@ type ListContainerInstancesInput struct {
 	// returned the nextToken value. This value is null when there are no more results
 	// to return.
 	//
-	//  This token should be treated as an opaque identifier that is only used
-	// to retrieve the next items in a list and not for other programmatic purposes.
+	// This token should be treated as an opaque identifier that is only used to
+	// retrieve the next items in a list and not for other programmatic purposes.
 	NextToken *string `locationName:"nextToken" type:"string"`
 }
 
@@ -3245,7 +4049,7 @@ type ListServicesInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster that hosts
 	// the services to list. If you do not specify a cluster, the default cluster
-	// is assumed..
+	// is assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// The maximum number of container instance results returned by ListServices
@@ -3262,8 +4066,8 @@ type ListServicesInput struct {
 	// Pagination continues from the end of the previous results that returned the
 	// nextToken value. This value is null when there are no more results to return.
 	//
-	//  This token should be treated as an opaque identifier that is only used
-	// to retrieve the next items in a list and not for other programmatic purposes.
+	// This token should be treated as an opaque identifier that is only used to
+	// retrieve the next items in a list and not for other programmatic purposes.
 	NextToken *string `locationName:"nextToken" type:"string"`
 }
 
@@ -3325,8 +4129,8 @@ type ListTaskDefinitionFamiliesInput struct {
 	// returned the nextToken value. This value is null when there are no more results
 	// to return.
 	//
-	//  This token should be treated as an opaque identifier that is only used
-	// to retrieve the next items in a list and not for other programmatic purposes.
+	// This token should be treated as an opaque identifier that is only used to
+	// retrieve the next items in a list and not for other programmatic purposes.
 	NextToken *string `locationName:"nextToken" type:"string"`
 
 	// The task definition family status with which to filter the ListTaskDefinitionFamilies
@@ -3396,8 +4200,8 @@ type ListTaskDefinitionsInput struct {
 	// returned the nextToken value. This value is null when there are no more results
 	// to return.
 	//
-	//  This token should be treated as an opaque identifier that is only used
-	// to retrieve the next items in a list and not for other programmatic purposes.
+	// This token should be treated as an opaque identifier that is only used to
+	// retrieve the next items in a list and not for other programmatic purposes.
 	NextToken *string `locationName:"nextToken" type:"string"`
 
 	// The order in which to sort the results. Valid values are ASC and DESC. By
@@ -3455,7 +4259,7 @@ type ListTasksInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster that hosts
 	// the tasks to list. If you do not specify a cluster, the default cluster is
-	// assumed..
+	// assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// The container instance ID or full Amazon Resource Name (ARN) of the container
@@ -3469,7 +4273,7 @@ type ListTasksInput struct {
 	// not starting properly or have died or finished. The default status filter
 	// is RUNNING, which shows tasks that ECS has set the desired status to RUNNING.
 	//
-	//  Although you can filter results based on a desired status of PENDING, this
+	// Although you can filter results based on a desired status of PENDING, this
 	// will not return any results because ECS never sets the desired status of
 	// a task to that value (only a task's lastStatus may have a value of PENDING).
 	DesiredStatus *string `locationName:"desiredStatus" type:"string" enum:"DesiredStatus"`
@@ -3492,8 +4296,8 @@ type ListTasksInput struct {
 	// Pagination continues from the end of the previous results that returned the
 	// nextToken value. This value is null when there are no more results to return.
 	//
-	//  This token should be treated as an opaque identifier that is only used
-	// to retrieve the next items in a list and not for other programmatic purposes.
+	// This token should be treated as an opaque identifier that is only used to
+	// retrieve the next items in a list and not for other programmatic purposes.
 	NextToken *string `locationName:"nextToken" type:"string"`
 
 	// The name of the service with which to filter the ListTasks results. Specifying
@@ -3578,7 +4382,7 @@ type LogConfiguration struct {
 	// parameter are log drivers that the Amazon ECS container agent can communicate
 	// with by default.
 	//
-	//  If you have a custom driver that is not listed above that you would like
+	// If you have a custom driver that is not listed above that you would like
 	// to work with the Amazon ECS container agent, you can fork the Amazon ECS
 	// container agent project that is available on GitHub (https://github.com/aws/amazon-ecs-agent)
 	// and customize it to work with that driver. We encourage you to submit pull
@@ -3586,10 +4390,12 @@ type LogConfiguration struct {
 	// Web Services does not currently provide support for running modified copies
 	// of this software.
 	//
-	//  This parameter requires version 1.18 of the Docker Remote API or greater
+	// This parameter requires version 1.18 of the Docker Remote API or greater
 	// on your container instance. To check the Docker Remote API version on your
 	// container instance, log into your container instance and run the following
 	// command: sudo docker version | grep "Server API version"
+	//
+	// LogDriver is a required field
 	LogDriver *string `locationName:"logDriver" type:"string" required:"true" enum:"LogDriver"`
 
 	// The configuration options to send to the log driver. This parameter requires
@@ -3710,13 +4516,13 @@ type PortMapping struct {
 	// below 32768 are outside of the ephemeral port range.
 	//
 	// The default reserved ports are 22 for SSH, the Docker ports 2375 and 2376,
-	// and the Amazon ECS container agent port 51678. Any host port that was previously
-	// specified in a running task is also reserved while the task is running (after
-	// a task stops, the host port is released).The current reserved ports are displayed
-	// in the remainingResources of DescribeContainerInstances output, and a container
-	// instance may have up to 100 reserved ports at a time, including the default
-	// reserved ports (automatically assigned ports do not count toward the 100
-	// reserved ports limit).
+	// and the Amazon ECS container agent ports 51678 and 51679. Any host port that
+	// was previously specified in a running task is also reserved while the task
+	// is running (after a task stops, the host port is released).The current reserved
+	// ports are displayed in the remainingResources of DescribeContainerInstances
+	// output, and a container instance may have up to 100 reserved ports at a time,
+	// including the default reserved ports (automatically assigned ports do not
+	// count toward the 100 reserved ports limit).
 	HostPort *int64 `locationName:"hostPort" type:"integer"`
 
 	// The protocol used for the port mapping. Valid values are tcp and udp. The
@@ -3742,7 +4548,7 @@ type RegisterContainerInstanceInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster with which
 	// to register your container instance. If you do not specify a cluster, the
-	// default cluster is assumed..
+	// default cluster is assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// The Amazon Resource Name (ARN) of the container instance (if it was previously
@@ -3819,12 +4625,16 @@ type RegisterTaskDefinitionInput struct {
 
 	// A list of container definitions in JSON format that describe the different
 	// containers that make up your task.
+	//
+	// ContainerDefinitions is a required field
 	ContainerDefinitions []*ContainerDefinition `locationName:"containerDefinitions" type:"list" required:"true"`
 
 	// You must specify a family for a task definition, which allows you to track
 	// multiple versions of the same task definition. The family is used as a name
 	// for your task definition. Up to 255 letters (uppercase and lowercase), numbers,
 	// hyphens, and underscores are allowed.
+	//
+	// Family is a required field
 	Family *string `locationName:"family" type:"string" required:"true"`
 
 	// The Docker networking mode to use for the containers in the task. The valid
@@ -3844,9 +4654,11 @@ type RegisterTaskDefinitionInput struct {
 	// in the Docker run reference.
 	NetworkMode *string `locationName:"networkMode" type:"string" enum:"NetworkMode"`
 
-	// The Amazon Resource Name (ARN) of the IAM role that containers in this task
-	// can assume. All containers in this task are granted the permissions that
-	// are specified in this role.
+	// The short name or full Amazon Resource Name (ARN) of the IAM role that containers
+	// in this task can assume. All containers in this task are granted the permissions
+	// that are specified in this role. For more information, see IAM Roles for
+	// Tasks (http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html)
+	// in the Amazon EC2 Container Service Developer Guide.
 	TaskRoleArn *string `locationName:"taskRoleArn" type:"string"`
 
 	// A list of volume definitions in JSON format that containers in your task
@@ -3948,12 +4760,12 @@ type RunTaskInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster on which
 	// to run your task. If you do not specify a cluster, the default cluster is
-	// assumed..
+	// assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// The number of instantiations of the specified task to place on your cluster.
 	//
-	//  The count parameter is limited to 10 tasks per call.
+	// The count parameter is limited to 10 tasks per call.
 	Count *int64 `locationName:"count" type:"integer"`
 
 	// A list of container overrides in JSON format that specify the name of a container
@@ -3964,7 +4776,7 @@ type RunTaskInput struct {
 	// or Docker image) on a container or add new environment variables to it with
 	// an environment override.
 	//
-	//  A total of 8192 characters are allowed for overrides. This limit includes
+	// A total of 8192 characters are allowed for overrides. This limit includes
 	// the JSON formatting characters of the override structure.
 	Overrides *TaskOverride `locationName:"overrides" type:"structure"`
 
@@ -3982,6 +4794,8 @@ type RunTaskInput struct {
 	// The family and revision (family:revision) or full Amazon Resource Name (ARN)
 	// of the task definition to run. If a revision is not specified, the latest
 	// ACTIVE revision is used.
+	//
+	// TaskDefinition is a required field
 	TaskDefinition *string `locationName:"taskDefinition" type:"string" required:"true"`
 }
 
@@ -4074,7 +4888,7 @@ type Service struct {
 	// The Amazon Resource Name (ARN) that identifies the service. The ARN contains
 	// the arn:aws:ecs namespace, followed by the region of the service, the AWS
 	// account ID of the service owner, the service namespace, and then the service
-	// name. For example, arn:aws:ecs:region:012345678910:service/my-service .
+	// name. For example, arn:aws:ecs:region:012345678910:service/my-service.
 	ServiceArn *string `locationName:"serviceArn" type:"string"`
 
 	// The name of your service. Up to 255 letters (uppercase and lowercase), numbers,
@@ -4131,13 +4945,15 @@ type StartTaskInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster on which
 	// to start your task. If you do not specify a cluster, the default cluster
-	// is assumed..
+	// is assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// The container instance IDs or full Amazon Resource Name (ARN) entries for
 	// the container instances on which you would like to place your task.
 	//
-	//  The list of container instances to start tasks on is limited to 10.
+	// The list of container instances to start tasks on is limited to 10.
+	//
+	// ContainerInstances is a required field
 	ContainerInstances []*string `locationName:"containerInstances" type:"list" required:"true"`
 
 	// A list of container overrides in JSON format that specify the name of a container
@@ -4148,7 +4964,7 @@ type StartTaskInput struct {
 	// or Docker image) on a container or add new environment variables to it with
 	// an environment override.
 	//
-	//  A total of 8192 characters are allowed for overrides. This limit includes
+	// A total of 8192 characters are allowed for overrides. This limit includes
 	// the JSON formatting characters of the override structure.
 	Overrides *TaskOverride `locationName:"overrides" type:"structure"`
 
@@ -4166,6 +4982,8 @@ type StartTaskInput struct {
 	// The family and revision (family:revision) or full Amazon Resource Name (ARN)
 	// of the task definition to start. If a revision is not specified, the latest
 	// ACTIVE revision is used.
+	//
+	// TaskDefinition is a required field
 	TaskDefinition *string `locationName:"taskDefinition" type:"string" required:"true"`
 }
 
@@ -4221,7 +5039,7 @@ type StopTaskInput struct {
 
 	// The short name or full Amazon Resource Name (ARN) of the cluster that hosts
 	// the task to stop. If you do not specify a cluster, the default cluster is
-	// assumed..
+	// assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
 	// An optional message specified when a task is stopped. For example, if you
@@ -4231,6 +5049,8 @@ type StopTaskInput struct {
 	Reason *string `locationName:"reason" type:"string"`
 
 	// The task ID or full Amazon Resource Name (ARN) entry of the task to stop.
+	//
+	// Task is a required field
 	Task *string `locationName:"task" type:"string" required:"true"`
 }
 
@@ -4522,12 +5342,18 @@ type Ulimit struct {
 	_ struct{} `type:"structure"`
 
 	// The hard limit for the ulimit type.
+	//
+	// HardLimit is a required field
 	HardLimit *int64 `locationName:"hardLimit" type:"integer" required:"true"`
 
 	// The type of the ulimit.
+	//
+	// Name is a required field
 	Name *string `locationName:"name" type:"string" required:"true" enum:"UlimitName"`
 
 	// The soft limit for the ulimit type.
+	//
+	// SoftLimit is a required field
 	SoftLimit *int64 `locationName:"softLimit" type:"integer" required:"true"`
 }
 
@@ -4571,6 +5397,8 @@ type UpdateContainerAgentInput struct {
 	// The container instance ID or full Amazon Resource Name (ARN) entries for
 	// the container instance on which you would like to update the Amazon ECS container
 	// agent.
+	//
+	// ContainerInstance is a required field
 	ContainerInstance *string `locationName:"containerInstance" type:"string" required:"true"`
 }
 
@@ -4632,6 +5460,8 @@ type UpdateServiceInput struct {
 	DesiredCount *int64 `locationName:"desiredCount" type:"integer"`
 
 	// The name of the service to update.
+	//
+	// Service is a required field
 	Service *string `locationName:"service" type:"string" required:"true"`
 
 	// The family and revision (family:revision) or full Amazon Resource Name (ARN)
@@ -4759,114 +5589,148 @@ func (s VolumeFrom) GoString() string {
 }
 
 const (
-	// @enum AgentUpdateStatus
+	// AgentUpdateStatusPending is a AgentUpdateStatus enum value
 	AgentUpdateStatusPending = "PENDING"
-	// @enum AgentUpdateStatus
+
+	// AgentUpdateStatusStaging is a AgentUpdateStatus enum value
 	AgentUpdateStatusStaging = "STAGING"
-	// @enum AgentUpdateStatus
+
+	// AgentUpdateStatusStaged is a AgentUpdateStatus enum value
 	AgentUpdateStatusStaged = "STAGED"
-	// @enum AgentUpdateStatus
+
+	// AgentUpdateStatusUpdating is a AgentUpdateStatus enum value
 	AgentUpdateStatusUpdating = "UPDATING"
-	// @enum AgentUpdateStatus
+
+	// AgentUpdateStatusUpdated is a AgentUpdateStatus enum value
 	AgentUpdateStatusUpdated = "UPDATED"
-	// @enum AgentUpdateStatus
+
+	// AgentUpdateStatusFailed is a AgentUpdateStatus enum value
 	AgentUpdateStatusFailed = "FAILED"
 )
 
 const (
-	// @enum DesiredStatus
+	// DesiredStatusRunning is a DesiredStatus enum value
 	DesiredStatusRunning = "RUNNING"
-	// @enum DesiredStatus
+
+	// DesiredStatusPending is a DesiredStatus enum value
 	DesiredStatusPending = "PENDING"
-	// @enum DesiredStatus
+
+	// DesiredStatusStopped is a DesiredStatus enum value
 	DesiredStatusStopped = "STOPPED"
 )
 
 const (
-	// @enum LogDriver
+	// LogDriverJsonFile is a LogDriver enum value
 	LogDriverJsonFile = "json-file"
-	// @enum LogDriver
+
+	// LogDriverSyslog is a LogDriver enum value
 	LogDriverSyslog = "syslog"
-	// @enum LogDriver
+
+	// LogDriverJournald is a LogDriver enum value
 	LogDriverJournald = "journald"
-	// @enum LogDriver
+
+	// LogDriverGelf is a LogDriver enum value
 	LogDriverGelf = "gelf"
-	// @enum LogDriver
+
+	// LogDriverFluentd is a LogDriver enum value
 	LogDriverFluentd = "fluentd"
-	// @enum LogDriver
+
+	// LogDriverAwslogs is a LogDriver enum value
 	LogDriverAwslogs = "awslogs"
-	// @enum LogDriver
+
+	// LogDriverSplunk is a LogDriver enum value
 	LogDriverSplunk = "splunk"
 )
 
 const (
-	// @enum NetworkMode
+	// NetworkModeBridge is a NetworkMode enum value
 	NetworkModeBridge = "bridge"
-	// @enum NetworkMode
+
+	// NetworkModeHost is a NetworkMode enum value
 	NetworkModeHost = "host"
-	// @enum NetworkMode
+
+	// NetworkModeNone is a NetworkMode enum value
 	NetworkModeNone = "none"
 )
 
 const (
-	// @enum SortOrder
+	// SortOrderAsc is a SortOrder enum value
 	SortOrderAsc = "ASC"
-	// @enum SortOrder
+
+	// SortOrderDesc is a SortOrder enum value
 	SortOrderDesc = "DESC"
 )
 
 const (
-	// @enum TaskDefinitionFamilyStatus
+	// TaskDefinitionFamilyStatusActive is a TaskDefinitionFamilyStatus enum value
 	TaskDefinitionFamilyStatusActive = "ACTIVE"
-	// @enum TaskDefinitionFamilyStatus
+
+	// TaskDefinitionFamilyStatusInactive is a TaskDefinitionFamilyStatus enum value
 	TaskDefinitionFamilyStatusInactive = "INACTIVE"
-	// @enum TaskDefinitionFamilyStatus
+
+	// TaskDefinitionFamilyStatusAll is a TaskDefinitionFamilyStatus enum value
 	TaskDefinitionFamilyStatusAll = "ALL"
 )
 
 const (
-	// @enum TaskDefinitionStatus
+	// TaskDefinitionStatusActive is a TaskDefinitionStatus enum value
 	TaskDefinitionStatusActive = "ACTIVE"
-	// @enum TaskDefinitionStatus
+
+	// TaskDefinitionStatusInactive is a TaskDefinitionStatus enum value
 	TaskDefinitionStatusInactive = "INACTIVE"
 )
 
 const (
-	// @enum TransportProtocol
+	// TransportProtocolTcp is a TransportProtocol enum value
 	TransportProtocolTcp = "tcp"
-	// @enum TransportProtocol
+
+	// TransportProtocolUdp is a TransportProtocol enum value
 	TransportProtocolUdp = "udp"
 )
 
 const (
-	// @enum UlimitName
+	// UlimitNameCore is a UlimitName enum value
 	UlimitNameCore = "core"
-	// @enum UlimitName
+
+	// UlimitNameCpu is a UlimitName enum value
 	UlimitNameCpu = "cpu"
-	// @enum UlimitName
+
+	// UlimitNameData is a UlimitName enum value
 	UlimitNameData = "data"
-	// @enum UlimitName
+
+	// UlimitNameFsize is a UlimitName enum value
 	UlimitNameFsize = "fsize"
-	// @enum UlimitName
+
+	// UlimitNameLocks is a UlimitName enum value
 	UlimitNameLocks = "locks"
-	// @enum UlimitName
+
+	// UlimitNameMemlock is a UlimitName enum value
 	UlimitNameMemlock = "memlock"
-	// @enum UlimitName
+
+	// UlimitNameMsgqueue is a UlimitName enum value
 	UlimitNameMsgqueue = "msgqueue"
-	// @enum UlimitName
+
+	// UlimitNameNice is a UlimitName enum value
 	UlimitNameNice = "nice"
-	// @enum UlimitName
+
+	// UlimitNameNofile is a UlimitName enum value
 	UlimitNameNofile = "nofile"
-	// @enum UlimitName
+
+	// UlimitNameNproc is a UlimitName enum value
 	UlimitNameNproc = "nproc"
-	// @enum UlimitName
+
+	// UlimitNameRss is a UlimitName enum value
 	UlimitNameRss = "rss"
-	// @enum UlimitName
+
+	// UlimitNameRtprio is a UlimitName enum value
 	UlimitNameRtprio = "rtprio"
-	// @enum UlimitName
+
+	// UlimitNameRttime is a UlimitName enum value
 	UlimitNameRttime = "rttime"
-	// @enum UlimitName
+
+	// UlimitNameSigpending is a UlimitName enum value
 	UlimitNameSigpending = "sigpending"
-	// @enum UlimitName
+
+	// UlimitNameStack is a UlimitName enum value
 	UlimitNameStack = "stack"
 )

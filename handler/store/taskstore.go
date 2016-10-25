@@ -41,10 +41,14 @@ func NewTaskStore(ds DataStore) (TaskStore, error) {
 }
 
 func generateTaskKey(task types.Task) (string, error) {
-	if len(task.Detail.TaskArn) == 0 {
-		return "", errors.New("Task arn cannot be empty")
+	if task.Detail == nil {
+		return "", errors.New("Task detail cannot be empty")
 	}
-	return taskKeyPrefix + task.Detail.TaskArn, nil
+	taskDetail := *task.Detail
+	if taskDetail.TaskArn == nil {
+		return "", errors.New("Task ARN cannot be empty")
+	}
+	return taskKeyPrefix + *taskDetail.TaskArn, nil
 }
 
 // AddTask adds a task represented in the taskJSON to the datastore
@@ -71,7 +75,9 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 	}
 
 	if existingTask != nil {
-		if existingTask.Detail.Version >= task.Detail.Version {
+		existingTaskDetail := *existingTask.Detail
+		currentTaskDetail := *task.Detail
+		if *existingTaskDetail.Version >= *currentTaskDetail.Version {
 			log.Infof("Higher or equal version %v of task %v with version %v already exists",
 				existingTask.Detail.Version,
 				task.Detail.TaskArn,
@@ -101,8 +107,12 @@ func (taskStore eventTaskStore) GetTask(arn string) (*types.Task, error) {
 		return nil, errors.New("Arn should not be empty")
 	}
 
-	var task types.Task
-	task.Detail.TaskArn = arn
+	taskDetail := types.TaskDetail{
+		TaskArn: &arn,
+	}
+	task := types.Task{
+		Detail: &taskDetail,
+	}
 
 	key, err := generateTaskKey(task)
 	if err != nil {
@@ -136,7 +146,7 @@ func (taskStore eventTaskStore) FilterTasks(filterKey string, filterValue string
 
 	tasksWithStatus := []types.Task{}
 	for _, task := range tasks {
-		if strings.ToLower(filterValue) == strings.ToLower(task.Detail.LastStatus) {
+		if strings.ToLower(filterValue) == strings.ToLower(*task.Detail.LastStatus) {
 			tasksWithStatus = append(tasksWithStatus, task)
 		}
 	}
