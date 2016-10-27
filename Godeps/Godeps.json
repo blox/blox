@@ -254,6 +254,10 @@
 			"Rev": "3969e1fbeb2c58cc2e539bf8d35f1448d278729f"
 		},
 		{
+			"ImportPath": "github.com/go-openapi/runtime/client",
+			"Rev": "3969e1fbeb2c58cc2e539bf8d35f1448d278729f"
+		},
+		{
 			"ImportPath": "github.com/go-openapi/spec",
 			"Rev": "451818a42c4560481c33bf592ca7665c928f7889"
 		},
@@ -362,6 +366,10 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
+			"Rev": "65dfc08770ce66f74becfdff5f8ab01caef4e946"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context/ctxhttp",
 			"Rev": "65dfc08770ce66f74becfdff5f8ab01caef4e946"
 		},
 		{
