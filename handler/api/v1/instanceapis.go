@@ -33,7 +33,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 
 	if len(instanceARN) == 0 {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
@@ -41,20 +41,20 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
 	if instance == nil {
 		w.WriteHeader(http.StatusNotFound)
-		instanceAPIs.writeErrorResponse(w, http.StatusNotFound, instanceNotFoundClientErrMsg)
+		json.NewEncoder(w).Encode(instanceNotFoundClientErrMsg)
 		return
 	}
 
 	instanceModel, err := ToContainerInstanceModel(*instance)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 	err = json.NewEncoder(w).Encode(instanceModel)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		json.NewEncoder(w).Encode(encodingServerErrMsg)
 		return
 	}
 }
@@ -74,7 +74,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
@@ -86,14 +86,14 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 		instanceModels[i], err = ToContainerInstanceModel(instances[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 	}
 	err = json.NewEncoder(w).Encode(instanceModels)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		json.NewEncoder(w).Encode(encodingServerErrMsg)
 		return
 	}
 }
@@ -105,7 +105,7 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 
 	if len(status) != 0 && len(cluster) != 0 {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
@@ -119,13 +119,13 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceClusterFilter, cluster)
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
@@ -137,7 +137,7 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 		instanceModels[i], err = ToContainerInstanceModel(instances[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 	}
@@ -145,7 +145,7 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 	err = json.NewEncoder(w).Encode(instanceModels)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		json.NewEncoder(w).Encode(encodingServerErrMsg)
 		return
 	}
 }
@@ -157,14 +157,14 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
@@ -174,31 +174,23 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 	for instanceResp := range instanceRespChan {
 		if instanceResp.Err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 		instanceModel, err := ToContainerInstanceModel(instanceResp.ContainerInstance)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 		err = json.NewEncoder(w).Encode(instanceModel)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			instanceAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+			json.NewEncoder(w).Encode(encodingServerErrMsg)
 			return
 		}
 		flusher.Flush()
 	}
 
 	// TODO: Handle client-side termination (Ctrl+C) using w.(http.CloseNotifier).closeNotify()
-}
-
-func (instanceAPIs ContainerInstanceAPIs) writeErrorResponse(w http.ResponseWriter, errCode int, errMsg string) {
-	errModel := ToErrorModel(errCode, errMsg)
-	err := json.NewEncoder(w).Encode(errModel)
-	if err != nil {
-		// TODO - Encoding error response failed. How do we handle this? Returning here drops the connection.
-	}
 }

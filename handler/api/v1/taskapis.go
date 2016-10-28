@@ -38,7 +38,7 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	if len(taskARN) == 0 {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
@@ -46,13 +46,13 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
 	if task == nil {
 		w.WriteHeader(http.StatusNotFound)
-		taskAPIs.writeErrorResponse(w, http.StatusNotFound, instanceNotFoundClientErrMsg)
+		json.NewEncoder(w).Encode(taskNotFoundClientErrMsg)
 		return
 	}
 
@@ -62,14 +62,14 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	taskModel, err := ToTaskModel(*task)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(taskModel)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		json.NewEncoder(w).Encode(encodingServerErrMsg)
 		return
 	}
 }
@@ -79,7 +79,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
@@ -91,7 +91,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 		taskModels[i], err = ToTaskModel(tasks[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 	}
@@ -99,7 +99,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(taskModels)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		json.NewEncoder(w).Encode(encodingServerErrMsg)
 		return
 	}
 }
@@ -110,7 +110,7 @@ func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 
 	if len(status) == 0 {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, routingServerErrMsg)
+		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
@@ -118,7 +118,7 @@ func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
@@ -130,7 +130,7 @@ func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 		taskModels[i], err = ToTaskModel(tasks[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 	}
@@ -138,7 +138,7 @@ func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(taskModels)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+		json.NewEncoder(w).Encode(encodingServerErrMsg)
 		return
 	}
 }
@@ -150,14 +150,14 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 	taskRespChan, err := taskAPIs.taskStore.StreamTasks(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
@@ -167,31 +167,23 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 	for taskResp := range taskRespChan {
 		if taskResp.Err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 		taskModel, err := ToTaskModel(taskResp.Task)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, internalServerErrMsg)
+			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
 		err = json.NewEncoder(w).Encode(taskModel)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			taskAPIs.writeErrorResponse(w, http.StatusInternalServerError, encodingServerErrMsg)
+			json.NewEncoder(w).Encode(encodingServerErrMsg)
 			return
 		}
 		flusher.Flush()
 	}
 
 	// TODO: Handle client-side termination (Ctrl+C) using w.(http.CloseNotifier).closeNotify()
-}
-
-func (taskAPIs TaskAPIs) writeErrorResponse(w http.ResponseWriter, errCode int, errMsg string) {
-	errModel := ToErrorModel(errCode, errMsg)
-	err := json.NewEncoder(w).Encode(errModel)
-	if err != nil {
-		// TODO - Encoding error response failed. How do we handle this? Returning here drops the connection.
-	}
 }

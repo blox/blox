@@ -5,3 +5,7 @@ Feature: Get Task
     Given I start 1 task in the ECS cluster
     When I get task with the same ARN
     Then I get a task that matches the task started
+
+  Scenario: Get non-existent task
+    When I try to get task with a non-existent ARN
+    Then I get a GetTaskNotFound task exception

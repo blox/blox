@@ -5,6 +5,10 @@ import (
 	. "github.com/gucumber/gucumber"
 )
 
+const (
+	nonExistentInstanceARN = "arn:aws:ecs:us-east-1:123456789012:container-instance/950bc492-81a5-4fed-9419-8edeab4769e5"
+)
+
 func init() {
 
 	ecsWrapper := wrappers.NewECSWrapper()
@@ -50,5 +54,14 @@ func init() {
 		if err != nil {
 			T.Errorf(err.Error())
 		}
+	})
+
+	When(`^I try to get instance with a non-existent ARN$`, func() {
+		exceptionList = nil
+		exception, err := eshWrapper.TryGetInstance(nonExistentInstanceARN)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exceptionList = append(exceptionList, exception)
 	})
 }

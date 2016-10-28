@@ -30,12 +30,15 @@ func (o *FilterTasksReader) ReadResponse(response runtime.ClientResponse, consum
 		}
 		return result, nil
 
-	default:
-		result := NewFilterTasksDefault(response.Code())
+	case 500:
+		result := NewFilterTasksInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
+	default:
+		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
 }
 
@@ -46,7 +49,7 @@ func NewFilterTasksOK() *FilterTasksOK {
 
 /*FilterTasksOK handles this case with default header values.
 
-Filter tasks response
+Filter tasks - success
 */
 type FilterTasksOK struct {
 	Payload []*models.TaskModel
@@ -66,38 +69,27 @@ func (o *FilterTasksOK) readResponse(response runtime.ClientResponse, consumer r
 	return nil
 }
 
-// NewFilterTasksDefault creates a FilterTasksDefault with default headers values
-func NewFilterTasksDefault(code int) *FilterTasksDefault {
-	return &FilterTasksDefault{
-		_statusCode: code,
-	}
+// NewFilterTasksInternalServerError creates a FilterTasksInternalServerError with default headers values
+func NewFilterTasksInternalServerError() *FilterTasksInternalServerError {
+	return &FilterTasksInternalServerError{}
 }
 
-/*FilterTasksDefault handles this case with default header values.
+/*FilterTasksInternalServerError handles this case with default header values.
 
-Unexpected error filtering tasks
+Filter tasks - unexpected error
 */
-type FilterTasksDefault struct {
-	_statusCode int
-
-	Payload *models.ErrorModel
+type FilterTasksInternalServerError struct {
+	Payload string
 }
 
-// Code gets the status code for the filter tasks default response
-func (o *FilterTasksDefault) Code() int {
-	return o._statusCode
+func (o *FilterTasksInternalServerError) Error() string {
+	return fmt.Sprintf("[GET /tasks/filter][%d] filterTasksInternalServerError  %+v", 500, o.Payload)
 }
 
-func (o *FilterTasksDefault) Error() string {
-	return fmt.Sprintf("[GET /tasks/filter][%d] FilterTasks default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *FilterTasksDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.ErrorModel)
+func (o *FilterTasksInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

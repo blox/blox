@@ -3,6 +3,7 @@ package v1
 const (
 	// 4xx error messages
 	instanceNotFoundClientErrMsg = "Instance not found"
+	taskNotFoundClientErrMsg     = "Task not found"
 
 	// 5xx error messages
 	internalServerErrMsg = "Unexpected internal server error"

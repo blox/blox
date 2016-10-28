@@ -30,12 +30,22 @@ func (o *GetTaskReader) ReadResponse(response runtime.ClientResponse, consumer r
 		}
 		return result, nil
 
-	default:
-		result := NewGetTaskDefault(response.Code())
+	case 404:
+		result := NewGetTaskNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
+	case 500:
+		result := NewGetTaskInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
+	default:
+		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
 }
 
@@ -46,7 +56,7 @@ func NewGetTaskOK() *GetTaskOK {
 
 /*GetTaskOK handles this case with default header values.
 
-Get task by ARN response
+Get task by ARN - success
 */
 type GetTaskOK struct {
 	Payload *models.TaskModel
@@ -68,38 +78,54 @@ func (o *GetTaskOK) readResponse(response runtime.ClientResponse, consumer runti
 	return nil
 }
 
-// NewGetTaskDefault creates a GetTaskDefault with default headers values
-func NewGetTaskDefault(code int) *GetTaskDefault {
-	return &GetTaskDefault{
-		_statusCode: code,
-	}
+// NewGetTaskNotFound creates a GetTaskNotFound with default headers values
+func NewGetTaskNotFound() *GetTaskNotFound {
+	return &GetTaskNotFound{}
 }
 
-/*GetTaskDefault handles this case with default header values.
+/*GetTaskNotFound handles this case with default header values.
 
-Unexpected error getting task by ARN
+Get task by ARN - task not found
 */
-type GetTaskDefault struct {
-	_statusCode int
-
-	Payload *models.ErrorModel
+type GetTaskNotFound struct {
+	Payload string
 }
 
-// Code gets the status code for the get task default response
-func (o *GetTaskDefault) Code() int {
-	return o._statusCode
+func (o *GetTaskNotFound) Error() string {
+	return fmt.Sprintf("[GET /task/{arn}][%d] getTaskNotFound  %+v", 404, o.Payload)
 }
 
-func (o *GetTaskDefault) Error() string {
-	return fmt.Sprintf("[GET /task/{arn}][%d] GetTask default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetTaskDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.ErrorModel)
+func (o *GetTaskNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetTaskInternalServerError creates a GetTaskInternalServerError with default headers values
+func NewGetTaskInternalServerError() *GetTaskInternalServerError {
+	return &GetTaskInternalServerError{}
+}
+
+/*GetTaskInternalServerError handles this case with default header values.
+
+Get task by ARN - unexpected error
+*/
+type GetTaskInternalServerError struct {
+	Payload string
+}
+
+func (o *GetTaskInternalServerError) Error() string {
+	return fmt.Sprintf("[GET /task/{arn}][%d] getTaskInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetTaskInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	// response payload
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

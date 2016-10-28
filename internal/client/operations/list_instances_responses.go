@@ -30,12 +30,15 @@ func (o *ListInstancesReader) ReadResponse(response runtime.ClientResponse, cons
 		}
 		return result, nil
 
-	default:
-		result := NewListInstancesDefault(response.Code())
+	case 500:
+		result := NewListInstancesInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
+	default:
+		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
 }
 
@@ -46,7 +49,7 @@ func NewListInstancesOK() *ListInstancesOK {
 
 /*ListInstancesOK handles this case with default header values.
 
-List instances response
+List instances - success
 */
 type ListInstancesOK struct {
 	Payload []*models.ContainerInstanceModel
@@ -66,38 +69,27 @@ func (o *ListInstancesOK) readResponse(response runtime.ClientResponse, consumer
 	return nil
 }
 
-// NewListInstancesDefault creates a ListInstancesDefault with default headers values
-func NewListInstancesDefault(code int) *ListInstancesDefault {
-	return &ListInstancesDefault{
-		_statusCode: code,
-	}
+// NewListInstancesInternalServerError creates a ListInstancesInternalServerError with default headers values
+func NewListInstancesInternalServerError() *ListInstancesInternalServerError {
+	return &ListInstancesInternalServerError{}
 }
 
-/*ListInstancesDefault handles this case with default header values.
+/*ListInstancesInternalServerError handles this case with default header values.
 
-Unexpected error listing instances
+List instances - unexpected error
 */
-type ListInstancesDefault struct {
-	_statusCode int
-
-	Payload *models.ErrorModel
+type ListInstancesInternalServerError struct {
+	Payload string
 }
 
-// Code gets the status code for the list instances default response
-func (o *ListInstancesDefault) Code() int {
-	return o._statusCode
+func (o *ListInstancesInternalServerError) Error() string {
+	return fmt.Sprintf("[GET /instances][%d] listInstancesInternalServerError  %+v", 500, o.Payload)
 }
 
-func (o *ListInstancesDefault) Error() string {
-	return fmt.Sprintf("[GET /instances][%d] ListInstances default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *ListInstancesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.ErrorModel)
+func (o *ListInstancesInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

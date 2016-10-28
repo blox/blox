@@ -8,8 +8,11 @@ import (
 )
 
 var (
-	ecsTaskList = []ecs.Task{}
-	eshTaskList = []models.TaskModel{}
+	// Lists to memorize results required for the subsequent steps
+	ecsTaskList   = []ecs.Task{}
+	eshTaskList   = []models.TaskModel{}
+	exceptionList = []string{}
+
 	taskDefnARN = ""
 )
 
@@ -52,6 +55,15 @@ func init() {
 				T.Errorf(err.Error())
 			}
 			ecsTaskList = append(ecsTaskList, ecsTask)
+		}
+	})
+
+	Then(`^I get a (.+?) task exception$`, func(exception string) {
+		if len(exceptionList) != 1 {
+			T.Errorf("Error memorizing exception")
+		}
+		if exception != exceptionList[0] {
+			T.Errorf("Expected exception '%s' but got '%s'", exception, exceptionList[0])
 		}
 	})
 }

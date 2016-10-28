@@ -139,7 +139,8 @@ func (suite *TaskAPIsTestSuite) TestGetTaskNoTask() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusNotFound, instanceNotFoundClientErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusNotFound)
+	suite.decodeErrorResponseAndValidate(responseRecorder, taskNotFoundClientErrMsg)
 }
 
 func (suite *TaskAPIsTestSuite) TestGetTaskStoreReturnsError() {
@@ -149,7 +150,8 @@ func (suite *TaskAPIsTestSuite) TestGetTaskStoreReturnsError() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, internalServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
 func (suite *TaskAPIsTestSuite) TestGetTaskWithoutArn() {
@@ -161,7 +163,8 @@ func (suite *TaskAPIsTestSuite) TestGetTaskWithoutArn() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, routingServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, routingServerErrMsg)
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksReturnsTasks() {
@@ -183,7 +186,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksStoreReturnsError() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, internalServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksReturnsTasks() {
@@ -205,7 +209,8 @@ func (suite *TaskAPIsTestSuite) TestFilterTasksStoreReturnsError() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, internalServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksNoKey() {
@@ -217,7 +222,8 @@ func (suite *TaskAPIsTestSuite) TestFilterTasksNoKey() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, routingServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, routingServerErrMsg)
 }
 
 // Helper functions
@@ -298,6 +304,12 @@ func (suite *TaskAPIsTestSuite) validateSuccessfulResponseHeaderAndStatus(respon
 	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code, "Http response status is invalid")
 }
 
+func (suite *TaskAPIsTestSuite) validateErrorResponseHeaderAndStatus(responseRecorder *httptest.ResponseRecorder, errorCode int) {
+	h := responseRecorder.Header()
+	assert.NotNil(suite.T(), h, "Unexpected empty header")
+	assert.Equal(suite.T(), errorCode, responseRecorder.Code, "Http response status is invalid")
+}
+
 func (suite *TaskAPIsTestSuite) validateTasksInListOrFilterTasksResponse(responseRecorder *httptest.ResponseRecorder, expectedTasks []types.Task) {
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
 	tasksInResponse := new([]types.Task)
@@ -306,11 +318,10 @@ func (suite *TaskAPIsTestSuite) validateTasksInListOrFilterTasksResponse(respons
 	assert.Exactly(suite.T(), expectedTasks, *tasksInResponse, "Tasks in response is invalid")
 }
 
-func (suite *TaskAPIsTestSuite) decodeErrorResponseAndValidate(responseRecorder *httptest.ResponseRecorder, expectedErrCode int, expectedErrMsg string) {
+func (suite *TaskAPIsTestSuite) decodeErrorResponseAndValidate(responseRecorder *httptest.ResponseRecorder, expectedErrMsg string) {
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	errorModel := models.ErrorModel{}
-	err := json.NewDecoder(reader).Decode(&errorModel)
+	var str string
+	err := json.NewDecoder(reader).Decode(&str)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
-	assert.Equal(suite.T(), int32(expectedErrCode), *errorModel.Code)
-	assert.Equal(suite.T(), expectedErrMsg, *errorModel.Message)
+	assert.Equal(suite.T(), expectedErrMsg, str)
 }

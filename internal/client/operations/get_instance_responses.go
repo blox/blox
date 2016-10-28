@@ -30,12 +30,22 @@ func (o *GetInstanceReader) ReadResponse(response runtime.ClientResponse, consum
 		}
 		return result, nil
 
-	default:
-		result := NewGetInstanceDefault(response.Code())
+	case 404:
+		result := NewGetInstanceNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
+	case 500:
+		result := NewGetInstanceInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
+	default:
+		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
 }
 
@@ -46,7 +56,7 @@ func NewGetInstanceOK() *GetInstanceOK {
 
 /*GetInstanceOK handles this case with default header values.
 
-Get instance by ARN response
+Get instance by ARN - success
 */
 type GetInstanceOK struct {
 	Payload *models.ContainerInstanceModel
@@ -68,38 +78,54 @@ func (o *GetInstanceOK) readResponse(response runtime.ClientResponse, consumer r
 	return nil
 }
 
-// NewGetInstanceDefault creates a GetInstanceDefault with default headers values
-func NewGetInstanceDefault(code int) *GetInstanceDefault {
-	return &GetInstanceDefault{
-		_statusCode: code,
-	}
+// NewGetInstanceNotFound creates a GetInstanceNotFound with default headers values
+func NewGetInstanceNotFound() *GetInstanceNotFound {
+	return &GetInstanceNotFound{}
 }
 
-/*GetInstanceDefault handles this case with default header values.
+/*GetInstanceNotFound handles this case with default header values.
 
-Unexpected error getting instance by ARN
+Get instance by ARN - instance not found
 */
-type GetInstanceDefault struct {
-	_statusCode int
-
-	Payload *models.ErrorModel
+type GetInstanceNotFound struct {
+	Payload string
 }
 
-// Code gets the status code for the get instance default response
-func (o *GetInstanceDefault) Code() int {
-	return o._statusCode
+func (o *GetInstanceNotFound) Error() string {
+	return fmt.Sprintf("[GET /instance/{arn}][%d] getInstanceNotFound  %+v", 404, o.Payload)
 }
 
-func (o *GetInstanceDefault) Error() string {
-	return fmt.Sprintf("[GET /instance/{arn}][%d] GetInstance default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *GetInstanceDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.ErrorModel)
+func (o *GetInstanceNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetInstanceInternalServerError creates a GetInstanceInternalServerError with default headers values
+func NewGetInstanceInternalServerError() *GetInstanceInternalServerError {
+	return &GetInstanceInternalServerError{}
+}
+
+/*GetInstanceInternalServerError handles this case with default header values.
+
+Get instance by ARN - unexpected error
+*/
+type GetInstanceInternalServerError struct {
+	Payload string
+}
+
+func (o *GetInstanceInternalServerError) Error() string {
+	return fmt.Sprintf("[GET /instance/{arn}][%d] getInstanceInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetInstanceInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	// response payload
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

@@ -77,7 +77,7 @@ func (a *Client) FilterTasks(params *FilterTasksParams) (*FilterTasksOK, error) 
 }
 
 /*
-GetInstance Get instance based on a single ARN
+GetInstance Get instance using instance ARN
 */
 func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) {
 	// TODO: Validate the params before sending
@@ -104,7 +104,7 @@ func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) 
 }
 
 /*
-GetTask Get task based on a single ARN
+GetTask Get task using task ARN
 */
 func (a *Client) GetTask(params *GetTaskParams) (*GetTaskOK, error) {
 	// TODO: Validate the params before sending

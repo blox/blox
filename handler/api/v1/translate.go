@@ -221,8 +221,3 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		Detail:    &detail,
 	}, nil
 }
-
-func ToErrorModel(errCode int, errMsg string) models.ErrorModel {
-	code := int32(errCode)
-	return models.ErrorModel{Code: &code, Message: &errMsg}
-}

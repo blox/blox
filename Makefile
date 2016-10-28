@@ -11,7 +11,7 @@ SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 LOCAL_BINARY=bin/local/ecs-event-stream-handler
 
 .PHONY: all
-all: clean build unit-test
+all: clean build unit-tests
 
 .PHONY: generate-models
 generate-models:
@@ -25,9 +25,14 @@ $(LOCAL_BINARY): $(SOURCES)
 	. ./scripts/build_binary.sh ./bin/local
 	@echo "Built event-stream handler"
 
-.PHONY: unit-test
-unit-test: generate-models
+.PHONY: unit-tests
+unit-tests: generate-models
 	go test -v -timeout 1s ./handler/... -short
+
+# Start the server before running this target. More details in Readme under ./internal directory.
+.PHONY: e2e-test
+e2e-tests:
+	gucumber -tags=@e2e
 
 .PHONY: clean
 clean:

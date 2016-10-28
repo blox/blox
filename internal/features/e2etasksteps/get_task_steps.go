@@ -7,6 +7,10 @@ import (
 	. "github.com/gucumber/gucumber"
 )
 
+const (
+	nonExistentTaskARN = "arn:aws:ecs:us-east-1:123456789012:task/31900037-daf4-40c7-93f7-102ece023cef"
+)
+
 func init() {
 
 	eshWrapper := wrappers.NewESHWrapper()
@@ -35,4 +39,14 @@ func init() {
 			T.Errorf(err.Error())
 		}
 	})
+
+	When(`^I try to get task with a non-existent ARN$`, func() {
+		exceptionList = nil
+		exception, err := eshWrapper.TryGetTask(nonExistentTaskARN)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exceptionList = append(exceptionList, exception)
+	})
+
 }

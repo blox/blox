@@ -19,7 +19,7 @@
   "paths": {
     "/instance/{arn}": {
       "get": {
-        "description": "Get instance based on a single ARN",
+        "description": "Get instance using instance ARN",
         "operationId": "GetInstance",
         "parameters": [
           {
@@ -32,15 +32,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Get instance by ARN response",
+            "description": "Get instance by ARN - success",
             "schema": {
               "$ref": "#/definitions/ContainerInstanceModel"
             }
           },
-          "default": {
-            "description": "Unexpected error getting instance by ARN",
+          "404": {
+            "description": "Get instance by ARN - instance not found",
             "schema": {
-              "$ref": "#/definitions/ErrorModel"
+              "type": "string"
+            }
+          },
+          "500": {
+            "description": "Get instance by ARN - unexpected error",
+            "schema": {
+              "type": "string"
             }
           }
         }
@@ -52,7 +58,7 @@
         "operationId": "ListInstances",
         "responses": {
           "200": {
-            "description": "List instances response",
+            "description": "List instances - success",
             "schema": {
               "type": "array",
               "items": {
@@ -60,10 +66,10 @@
               }
             }
           },
-          "default": {
-            "description": "Unexpected error listing instances",
+          "500": {
+            "description": "List instances - unexpected error",
             "schema": {
-              "$ref": "#/definitions/ErrorModel"
+              "type": "string"
             }
           }
         }
@@ -91,7 +97,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Filter instances response",
+            "description": "Filter instances - success",
             "schema": {
               "type": "array",
               "items": {
@@ -99,10 +105,10 @@
               }
             }
           },
-          "default": {
-            "description": "Unexpected error filtering instances",
+          "500": {
+            "description": "Filter instances - unexpected error",
             "schema": {
-              "$ref": "#/definitions/ErrorModel"
+              "type": "string"
             }
           }
         }
@@ -110,7 +116,7 @@
     },
     "/task/{arn}": {
       "get": {
-        "description": "Get task based on a single ARN",
+        "description": "Get task using task ARN",
         "operationId": "GetTask",
         "parameters": [
           {
@@ -123,15 +129,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Get task by ARN response",
+            "description": "Get task by ARN - success",
             "schema": {
               "$ref": "#/definitions/TaskModel"
             }
           },
-          "default": {
-            "description": "Unexpected error getting task by ARN",
+          "404": {
+            "description": "Get task by ARN - task not found",
             "schema": {
-              "$ref": "#/definitions/ErrorModel"
+              "type": "string"
+            }
+          },
+          "500": {
+            "description": "Get task by ARN - unexpected error",
+            "schema": {
+              "type": "string"
             }
           }
         }
@@ -143,7 +155,7 @@
         "operationId": "ListTasks",
         "responses": {
           "200": {
-            "description": "List tasks response",
+            "description": "List tasks - success",
             "schema": {
               "type": "array",
               "items": {
@@ -151,10 +163,10 @@
               }
             }
           },
-          "default": {
-            "description": "Unexpected error listing tasks",
+          "500": {
+            "description": "List tasks - unexpected error",
             "schema": {
-              "$ref": "#/definitions/ErrorModel"
+              "type": "string"
             }
           }
         }
@@ -175,7 +187,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Filter tasks response",
+            "description": "Filter tasks - success",
             "schema": {
               "type": "array",
               "items": {
@@ -183,10 +195,10 @@
               }
             }
           },
-          "default": {
-            "description": "Unexpected error filtering tasks",
+          "500": {
+            "description": "Filter tasks - unexpected error",
             "schema": {
-              "$ref": "#/definitions/ErrorModel"
+              "type": "string"
             }
           }
         }
@@ -575,22 +587,6 @@
           "type": "string"
         },
         "value": {
-          "type": "string"
-        }
-      }
-    },
-    "ErrorModel": {
-      "type": "object",
-      "required": [
-        "code",
-        "message"
-      ],
-      "properties": {
-        "code": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "message": {
           "type": "string"
         }
       }

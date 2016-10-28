@@ -8,8 +8,10 @@ import (
 )
 
 var (
+	// Lists to memorize results required for the subsequent steps
 	ecsContainerInstanceList = []ecs.ContainerInstance{}
 	eshContainerInstanceList = []models.ContainerInstanceModel{}
+	exceptionList            = []string{}
 )
 
 func init() {
@@ -33,6 +35,15 @@ func init() {
 				T.Errorf(err.Error())
 			}
 			ecsContainerInstanceList = append(ecsContainerInstanceList, ecsInstance)
+		}
+	})
+
+	Then(`^I get a (.+?) instance exception$`, func(exception string) {
+		if len(exceptionList) != 1 {
+			T.Errorf("Error memorizing exception")
+		}
+		if exception != exceptionList[0] {
+			T.Errorf("Expected exception '%s' but got '%s'", exception, exceptionList[0])
 		}
 	})
 }

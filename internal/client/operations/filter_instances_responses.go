@@ -30,12 +30,15 @@ func (o *FilterInstancesReader) ReadResponse(response runtime.ClientResponse, co
 		}
 		return result, nil
 
-	default:
-		result := NewFilterInstancesDefault(response.Code())
+	case 500:
+		result := NewFilterInstancesInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
+	default:
+		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
 }
 
@@ -46,7 +49,7 @@ func NewFilterInstancesOK() *FilterInstancesOK {
 
 /*FilterInstancesOK handles this case with default header values.
 
-Filter instances response
+Filter instances - success
 */
 type FilterInstancesOK struct {
 	Payload []*models.ContainerInstanceModel
@@ -66,38 +69,27 @@ func (o *FilterInstancesOK) readResponse(response runtime.ClientResponse, consum
 	return nil
 }
 
-// NewFilterInstancesDefault creates a FilterInstancesDefault with default headers values
-func NewFilterInstancesDefault(code int) *FilterInstancesDefault {
-	return &FilterInstancesDefault{
-		_statusCode: code,
-	}
+// NewFilterInstancesInternalServerError creates a FilterInstancesInternalServerError with default headers values
+func NewFilterInstancesInternalServerError() *FilterInstancesInternalServerError {
+	return &FilterInstancesInternalServerError{}
 }
 
-/*FilterInstancesDefault handles this case with default header values.
+/*FilterInstancesInternalServerError handles this case with default header values.
 
-Unexpected error filtering instances
+Filter instances - unexpected error
 */
-type FilterInstancesDefault struct {
-	_statusCode int
-
-	Payload *models.ErrorModel
+type FilterInstancesInternalServerError struct {
+	Payload string
 }
 
-// Code gets the status code for the filter instances default response
-func (o *FilterInstancesDefault) Code() int {
-	return o._statusCode
+func (o *FilterInstancesInternalServerError) Error() string {
+	return fmt.Sprintf("[GET /instances/filter][%d] filterInstancesInternalServerError  %+v", 500, o.Payload)
 }
 
-func (o *FilterInstancesDefault) Error() string {
-	return fmt.Sprintf("[GET /instances/filter][%d] FilterInstances default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *FilterInstancesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.ErrorModel)
+func (o *FilterInstancesInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

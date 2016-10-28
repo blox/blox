@@ -35,7 +35,8 @@ gcucumber -tags=@list-instances,@e2e
 gcucumber -tags=@filter-instances,@e2e
 ```
 **e2e GetTask API tests**
-```gcucumber -tags=@get-task,@e2e
+```
+gcucumber -tags=@get-task,@e2e
 ```
 **e2e ListTasks API tests**
 ```

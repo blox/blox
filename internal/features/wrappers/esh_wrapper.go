@@ -1,9 +1,16 @@
 package wrappers
 
 import (
+	"errors"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/internal/client"
 	"github.com/aws/amazon-ecs-event-stream-handler/internal/client/operations"
 	"github.com/aws/amazon-ecs-event-stream-handler/internal/models"
+)
+
+const (
+	getTaskNotFoundException     = "GetTaskNotFound"
+	getInstanceNotFoundException = "GetInstanceNotFound"
 )
 
 type ESHWrapper struct {
@@ -25,6 +32,20 @@ func (eshWrapper ESHWrapper) GetTask(taskARN string) (*models.TaskModel, error) 
 	}
 	task := resp.Payload
 	return task, nil
+}
+
+func (eshWrapper ESHWrapper) TryGetTask(taskARN string) (string, error) {
+	in := operations.NewGetTaskParams()
+	in.SetArn(taskARN)
+	_, err := eshWrapper.client.Operations.GetTask(in)
+	if err != nil {
+		if _, ok := err.(*operations.GetTaskNotFound); ok {
+			return getTaskNotFoundException, nil
+		} else {
+			return "", errors.New("Unknown exception when calling Get Task")
+		}
+	}
+	return "", errors.New("Expected an exception when calling Get Task, but none received")
 }
 
 func (eshWrapper ESHWrapper) ListTasks() ([]*models.TaskModel, error) {
@@ -57,6 +78,20 @@ func (eshWrapper ESHWrapper) GetInstance(instanceARN string) (*models.ContainerI
 	}
 	instance := resp.Payload
 	return instance, nil
+}
+
+func (eshWrapper ESHWrapper) TryGetInstance(instanceARN string) (string, error) {
+	in := operations.NewGetInstanceParams()
+	in.SetArn(instanceARN)
+	_, err := eshWrapper.client.Operations.GetInstance(in)
+	if err != nil {
+		if _, ok := err.(*operations.GetInstanceNotFound); ok {
+			return getInstanceNotFoundException, nil
+		} else {
+			return "", errors.New("Unknown exception when calling Get Instance")
+		}
+	}
+	return "", errors.New("Expected an exception when calling Get Instance, but none received")
 }
 
 func (eshWrapper ESHWrapper) ListInstances() ([]*models.ContainerInstanceModel, error) {

@@ -123,7 +123,8 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsNoInstance() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusNotFound, instanceNotFoundClientErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusNotFound)
+	suite.decodeErrorResponseAndValidate(responseRecorder, instanceNotFoundClientErrMsg)
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceStoreReturnsError() {
@@ -133,7 +134,8 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceStoreReturnsError() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, internalServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceWithoutArn() {
@@ -145,7 +147,8 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceWithoutArn() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, routingServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, routingServerErrMsg)
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsInstances() {
@@ -181,7 +184,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesStoreReturnsError() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, internalServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesByStatusReturnsInstances() {
@@ -220,7 +224,8 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesByStatusStoreReturnsError
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, internalServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesByClusterReturnsInstances() {
@@ -259,7 +264,8 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesByClusterStoreReturnsErro
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, internalServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesByUnsupportedKey() {
@@ -273,7 +279,8 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesByUnsupportedKey() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.decodeErrorResponseAndValidate(responseRecorder, http.StatusInternalServerError, routingServerErrMsg)
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, routingServerErrMsg)
 }
 
 // Helper functions
@@ -346,13 +353,18 @@ func (suite *InstanceAPIsTestSuite) validateSuccessfulResponseHeaderAndStatus(re
 	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code, "Http response status is invalid")
 }
 
-func (suite *InstanceAPIsTestSuite) decodeErrorResponseAndValidate(responseRecorder *httptest.ResponseRecorder, expectedErrCode int, expectedErrMsg string) {
+func (suite *InstanceAPIsTestSuite) validateErrorResponseHeaderAndStatus(responseRecorder *httptest.ResponseRecorder, errorCode int) {
+	h := responseRecorder.Header()
+	assert.NotNil(suite.T(), h, "Unexpected empty header")
+	assert.Equal(suite.T(), errorCode, responseRecorder.Code, "Http response status is invalid")
+}
+
+func (suite *InstanceAPIsTestSuite) decodeErrorResponseAndValidate(responseRecorder *httptest.ResponseRecorder, expectedErrMsg string) {
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	errorModel := models.ErrorModel{}
-	err := json.NewDecoder(reader).Decode(&errorModel)
+	var str string
+	err := json.NewDecoder(reader).Decode(&str)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
-	assert.Equal(suite.T(), int32(expectedErrCode), *errorModel.Code)
-	assert.Equal(suite.T(), expectedErrMsg, *errorModel.Message)
+	assert.Equal(suite.T(), expectedErrMsg, str)
 }
 
 func (suite *InstanceAPIsTestSuite) validateInstancesInListOrFilterInstancesResponse(responseRecorder *httptest.ResponseRecorder, expectedInstanceModels []models.ContainerInstanceModel) {
