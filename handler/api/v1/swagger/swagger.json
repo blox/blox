@@ -17,11 +17,18 @@
     "application/json"
   ],
   "paths": {
-    "/instance/{arn}": {
+    "/instances/{cluster}/{arn}": {
       "get": {
-        "description": "Get instance using instance ARN",
+        "description": "Get instance using cluster name and instance ARN",
         "operationId": "GetInstance",
         "parameters": [
+          {
+            "name": "cluster",
+            "in": "path",
+            "description": "Cluster name of the instance to fetch",
+            "required": true,
+            "type": "string"
+          },
           {
             "name": "arn",
             "in": "path",
@@ -32,19 +39,19 @@
         ],
         "responses": {
           "200": {
-            "description": "Get instance by ARN - success",
+            "description": "Get instance using cluster name and instance ARN - success",
             "schema": {
               "$ref": "#/definitions/ContainerInstanceModel"
             }
           },
           "404": {
-            "description": "Get instance by ARN - instance not found",
+            "description": "Get instance using cluster name and instance ARN - instance not found",
             "schema": {
               "type": "string"
             }
           },
           "500": {
-            "description": "Get instance by ARN - unexpected error",
+            "description": "Get instance using cluster name and instance ARN - unexpected error",
             "schema": {
               "type": "string"
             }
@@ -114,11 +121,18 @@
         }
       }
     },
-    "/task/{arn}": {
+    "/tasks/{cluster}/{arn}": {
       "get": {
-        "description": "Get task using task ARN",
+        "description": "Get task using cluster name and task ARN",
         "operationId": "GetTask",
         "parameters": [
+          {
+            "name": "cluster",
+            "in": "path",
+            "description": "Cluster name of the task to fetch",
+            "required": true,
+            "type": "string"
+          },
           {
             "name": "arn",
             "in": "path",
@@ -129,19 +143,19 @@
         ],
         "responses": {
           "200": {
-            "description": "Get task by ARN - success",
+            "description": "Get task using cluster name and task ARN - success",
             "schema": {
               "$ref": "#/definitions/TaskModel"
             }
           },
           "404": {
-            "description": "Get task by ARN - task not found",
+            "description": "Get task using cluster name and task ARN - task not found",
             "schema": {
               "type": "string"
             }
           },
           "500": {
-            "description": "Get task by ARN - unexpected error",
+            "description": "Get task using cluster name and task ARN - unexpected error",
             "schema": {
               "type": "string"
             }

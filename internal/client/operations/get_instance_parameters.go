@@ -55,6 +55,11 @@ type GetInstanceParams struct {
 
 	*/
 	Arn string
+	/*Cluster
+	  Cluster name of the instance to fetch
+
+	*/
+	Cluster string
 
 	timeout time.Duration
 	Context context.Context
@@ -93,6 +98,17 @@ func (o *GetInstanceParams) SetArn(arn string) {
 	o.Arn = arn
 }
 
+// WithCluster adds the cluster to the get instance params
+func (o *GetInstanceParams) WithCluster(cluster string) *GetInstanceParams {
+	o.SetCluster(cluster)
+	return o
+}
+
+// SetCluster adds the cluster to the get instance params
+func (o *GetInstanceParams) SetCluster(cluster string) {
+	o.Cluster = cluster
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetInstanceParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -101,6 +117,11 @@ func (o *GetInstanceParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 	// path param arn
 	if err := r.SetPathParam("arn", o.Arn); err != nil {
+		return err
+	}
+
+	// path param cluster
+	if err := r.SetPathParam("cluster", o.Cluster); err != nil {
 		return err
 	}
 

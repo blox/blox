@@ -11,13 +11,6 @@ import (
 )
 
 const (
-	contentTypeKey      = "Content-Type"
-	contentTypeVal      = "application/json; charset=UTF-8"
-	connectionKey       = "Connection"
-	connectionVal       = "Keep-Alive"
-	transferEncodingKey = "Transfer-Encoding"
-	transferEncodingVal = "chunked"
-
 	taskStatusFilter = "status"
 )
 
@@ -35,14 +28,15 @@ func NewTaskAPIs(taskStore store.TaskStore) TaskAPIs {
 func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	taskARN := vars["arn"]
+	cluster := vars["cluster"]
 
-	if len(taskARN) == 0 {
+	if len(taskARN) == 0 || len(cluster) == 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
-	task, err := taskAPIs.taskStore.GetTask(taskARN)
+	task, err := taskAPIs.taskStore.GetTask(cluster, taskARN)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

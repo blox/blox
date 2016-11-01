@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1/models"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
@@ -18,23 +19,19 @@ import (
 )
 
 const (
-	getInstancePath     = `/instance/{arn:(arn:aws:ecs:)([\-\w]+):[0-9]{12}:(container\-instance)\/[\-\w]+}`
-	listInstancesPath   = "/instances"
-	filterInstancesPath = "/instances/filter"
-
 	filterInstancesByStatusQueryValue  = "{status:active|inactive}"
 	filterInstancesByClusterQueryValue = "{cluster:(arn:aws:ecs:)([\\-\\w]+):[0-9]{12}:(cluster)/[a-zA-Z0-9\\-_]{1,255}}"
 
 	instanceStatusKey  = "status"
 	instanceClusterKey = "cluster"
 
-	getInstancePrefix              = "/v1/instance"
+	getInstancePrefix              = "/v1/instances"
 	listInstancesPrefix            = "/v1/instances"
 	filterInstancesByStatusPrefix  = "/v1/instances/filter?status="
 	filterInstancesByClusterPrefix = "/v1/instances/filter?cluster="
 
 	// Routing to GetInstance handler function without arn
-	invalidGetInstancePath = "/instance"
+	invalidGetInstancePath = "/instances/{cluster:" + regex.ClusterNameRegex + "}"
 
 	// Routing to FilterInstances handler function
 	unsupportedFilterInstancesKey        = "unsupportedFilter"
@@ -101,7 +98,7 @@ func TestInstanceAPIsTestSuite(t *testing.T) {
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsInstance() {
-	suite.instanceStore.EXPECT().GetContainerInstance(instanceARN1).Return(&suite.instance1, nil)
+	suite.instanceStore.EXPECT().GetContainerInstance(clusterName1, instanceARN1).Return(&suite.instance1, nil)
 
 	request := suite.getInstanceRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -117,7 +114,7 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsInstance() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsNoInstance() {
-	suite.instanceStore.EXPECT().GetContainerInstance(instanceARN1).Return(nil, nil)
+	suite.instanceStore.EXPECT().GetContainerInstance(clusterName1, instanceARN1).Return(nil, nil)
 
 	request := suite.getInstanceRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -128,7 +125,7 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsNoInstance() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceStoreReturnsError() {
-	suite.instanceStore.EXPECT().GetContainerInstance(instanceARN1).Return(nil, errors.New("Error when getting instance"))
+	suite.instanceStore.EXPECT().GetContainerInstance(clusterName1, instanceARN1).Return(nil, errors.New("Error when getting instance"))
 
 	request := suite.getInstanceRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -139,9 +136,10 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceStoreReturnsError() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceWithoutArn() {
-	suite.instanceStore.EXPECT().GetContainerInstance(gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().GetContainerInstance(gomock.Any(), gomock.Any()).Times(0)
 
-	request, err := http.NewRequest("GET", getInstancePrefix, nil)
+	url := getInstancePrefix + "/" + clusterName1
+	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating task get request")
 
 	responseRecorder := httptest.NewRecorder()
@@ -320,7 +318,7 @@ func (suite *InstanceAPIsTestSuite) getRouter() *mux.Router {
 }
 
 func (suite *InstanceAPIsTestSuite) getInstanceRequest() *http.Request {
-	url := getInstancePrefix + "/" + instanceARN1
+	url := getInstancePrefix + "/" + clusterName1 + "/" + instanceARN1
 	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating get instance request")
 	return request

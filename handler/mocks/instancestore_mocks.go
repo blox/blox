@@ -5,8 +5,8 @@ package mocks
 
 import (
 	context "context"
-	types "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
-	types0 "github.com/aws/amazon-ecs-event-stream-handler/handler/types"
+	types0 "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
+	types "github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -41,20 +41,20 @@ func (_mr *_MockContainerInstanceStoreRecorder) AddContainerInstance(arg0 interf
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddContainerInstance", arg0)
 }
 
-func (_m *MockContainerInstanceStore) GetContainerInstance(arn string) (*types0.ContainerInstance, error) {
-	ret := _m.ctrl.Call(_m, "GetContainerInstance", arn)
-	ret0, _ := ret[0].(*types0.ContainerInstance)
+func (_m *MockContainerInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error) {
+	ret := _m.ctrl.Call(_m, "GetContainerInstance", cluster, instanceARN)
+	ret0, _ := ret[0].(*types.ContainerInstance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockContainerInstanceStoreRecorder) GetContainerInstance(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetContainerInstance", arg0)
+func (_mr *_MockContainerInstanceStoreRecorder) GetContainerInstance(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetContainerInstance", arg0, arg1)
 }
 
-func (_m *MockContainerInstanceStore) ListContainerInstances() ([]types0.ContainerInstance, error) {
+func (_m *MockContainerInstanceStore) ListContainerInstances() ([]types.ContainerInstance, error) {
 	ret := _m.ctrl.Call(_m, "ListContainerInstances")
-	ret0, _ := ret[0].([]types0.ContainerInstance)
+	ret0, _ := ret[0].([]types.ContainerInstance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -63,9 +63,9 @@ func (_mr *_MockContainerInstanceStoreRecorder) ListContainerInstances() *gomock
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListContainerInstances")
 }
 
-func (_m *MockContainerInstanceStore) FilterContainerInstances(filterKey string, filterValue string) ([]types0.ContainerInstance, error) {
+func (_m *MockContainerInstanceStore) FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error) {
 	ret := _m.ctrl.Call(_m, "FilterContainerInstances", filterKey, filterValue)
-	ret0, _ := ret[0].([]types0.ContainerInstance)
+	ret0, _ := ret[0].([]types.ContainerInstance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -74,9 +74,9 @@ func (_mr *_MockContainerInstanceStoreRecorder) FilterContainerInstances(arg0, a
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "FilterContainerInstances", arg0, arg1)
 }
 
-func (_m *MockContainerInstanceStore) StreamContainerInstances(ctx context.Context) (chan types.ContainerInstanceErrorWrapper, error) {
+func (_m *MockContainerInstanceStore) StreamContainerInstances(ctx context.Context) (chan types0.ContainerInstanceErrorWrapper, error) {
 	ret := _m.ctrl.Call(_m, "StreamContainerInstances", ctx)
-	ret0, _ := ret[0].(chan types.ContainerInstanceErrorWrapper)
+	ret0, _ := ret[0].(chan types0.ContainerInstanceErrorWrapper)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -56,14 +56,14 @@ func NewGetTaskOK() *GetTaskOK {
 
 /*GetTaskOK handles this case with default header values.
 
-Get task by ARN - success
+Get task using cluster name and task ARN - success
 */
 type GetTaskOK struct {
 	Payload *models.TaskModel
 }
 
 func (o *GetTaskOK) Error() string {
-	return fmt.Sprintf("[GET /task/{arn}][%d] getTaskOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /tasks/{cluster}/{arn}][%d] getTaskOK  %+v", 200, o.Payload)
 }
 
 func (o *GetTaskOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -85,14 +85,14 @@ func NewGetTaskNotFound() *GetTaskNotFound {
 
 /*GetTaskNotFound handles this case with default header values.
 
-Get task by ARN - task not found
+Get task using cluster name and task ARN - task not found
 */
 type GetTaskNotFound struct {
 	Payload string
 }
 
 func (o *GetTaskNotFound) Error() string {
-	return fmt.Sprintf("[GET /task/{arn}][%d] getTaskNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[GET /tasks/{cluster}/{arn}][%d] getTaskNotFound  %+v", 404, o.Payload)
 }
 
 func (o *GetTaskNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -112,14 +112,14 @@ func NewGetTaskInternalServerError() *GetTaskInternalServerError {
 
 /*GetTaskInternalServerError handles this case with default header values.
 
-Get task by ARN - unexpected error
+Get task using cluster name and task ARN - unexpected error
 */
 type GetTaskInternalServerError struct {
 	Payload string
 }
 
 func (o *GetTaskInternalServerError) Error() string {
-	return fmt.Sprintf("[GET /task/{arn}][%d] getTaskInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[GET /tasks/{cluster}/{arn}][%d] getTaskInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *GetTaskInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

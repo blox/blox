@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	log "github.com/cihub/seelog"
@@ -20,7 +21,7 @@ const (
 // TaskStore defines methods to access tasks from the datastore
 type TaskStore interface {
 	AddTask(task string) error
-	GetTask(arn string) (*types.Task, error)
+	GetTask(cluster string, taskARN string) (*types.Task, error)
 	ListTasks() ([]types.Task, error)
 	FilterTasks(filterKey string, filterValue string) ([]types.Task, error)
 	StreamTasks(ctx context.Context) (chan storetypes.TaskErrorWrapper, error)
@@ -40,15 +41,14 @@ func NewTaskStore(ds DataStore) (TaskStore, error) {
 	}, nil
 }
 
-func generateTaskKey(task types.Task) (string, error) {
-	if task.Detail == nil {
-		return "", errors.New("Task detail cannot be empty")
+func generateTaskKey(clusterName string, taskARN string) (string, error) {
+	if len(clusterName) == 0 {
+		return "", errors.New("Cluster name cannot be empty")
 	}
-	taskDetail := *task.Detail
-	if taskDetail.TaskArn == nil {
+	if len(taskARN) == 0 {
 		return "", errors.New("Task ARN cannot be empty")
 	}
-	return taskKeyPrefix + *taskDetail.TaskArn, nil
+	return taskKeyPrefix + clusterName + "/" + taskARN, nil
 }
 
 // AddTask adds a task represented in the taskJSON to the datastore
@@ -63,7 +63,16 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 		return err
 	}
 
-	key, err := generateTaskKey(task)
+	if task.Detail == nil || task.Detail.ClusterArn == nil || task.Detail.TaskArn == nil {
+		return errors.New("Cluster ARN and task ARN should not be empty in task JSON")
+	}
+
+	clusterName, err := regex.GetClusterNameFromARN(*task.Detail.ClusterArn)
+	if err != nil {
+		return err
+	}
+
+	key, err := generateTaskKey(clusterName, *task.Detail.TaskArn)
 	if err != nil {
 		return err
 	}
@@ -101,20 +110,26 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 	return nil
 }
 
-// GetTask gets a task with key 'arn' from the datastore
-func (taskStore eventTaskStore) GetTask(arn string) (*types.Task, error) {
-	if len(arn) == 0 {
-		return nil, errors.New("Arn should not be empty")
+// GetTask gets a task with ARN 'taskARN' belonging to cluster 'cluster'
+func (taskStore eventTaskStore) GetTask(cluster string, taskARN string) (*types.Task, error) {
+	if len(cluster) == 0 {
+		return nil, errors.New("Cluster should not be empty")
 	}
 
-	taskDetail := types.TaskDetail{
-		TaskArn: &arn,
-	}
-	task := types.Task{
-		Detail: &taskDetail,
+	if len(taskARN) == 0 {
+		return nil, errors.New("Task ARN should not be empty")
 	}
 
-	key, err := generateTaskKey(task)
+	clusterName := cluster
+	var err error
+	if regex.IsClusterARN(cluster) {
+		clusterName, err = regex.GetClusterNameFromARN(cluster)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	key, err := generateTaskKey(clusterName, taskARN)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ type TaskStoreTestSuite struct {
 	suite.Suite
 	datastore           *mocks.MockDataStore
 	taskStore           TaskStore
-	taskKey             string
+	taskKey1            string
 	task1               types.Task
 	task2               types.Task
 	task1JSON           string
@@ -37,7 +37,7 @@ type TaskStoreTestSuite struct {
 func (suite *TaskStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.datastore = mocks.NewMockDataStore(mockCtrl)
-	suite.taskKey = taskKeyPrefix + taskARN1
+	suite.taskKey1 = taskKeyPrefix + clusterName1 + "/" + taskARN1
 
 	var err error
 	suite.taskStore, err = NewTaskStore(suite.datastore)
@@ -115,16 +115,89 @@ func (suite *TaskStoreTestSuite) TestAddTaskEmptyTask() {
 	assert.Error(suite.T(), err, "Expected an error when task arn is not set")
 }
 
+func (suite *TaskStoreTestSuite) TestAddTaskTaskDetailNotSet() {
+	task := types.Task{}
+	taskJSON, err := json.Marshal(task)
+	err = suite.taskStore.AddTask(string(taskJSON))
+	assert.Error(suite.T(), err, "Expected an error when task detail is not set")
+}
+
+func (suite *TaskStoreTestSuite) TestAddTaskTaskARNNotSet() {
+	taskDetail := types.TaskDetail{
+		ClusterArn: &clusterARN1,
+	}
+	task := types.Task{
+		Detail: &taskDetail,
+	}
+	taskJSON, err := json.Marshal(task)
+	err = suite.taskStore.AddTask(string(taskJSON))
+	assert.Error(suite.T(), err, "Expected an error when task ARN is not set")
+}
+
+func (suite *TaskStoreTestSuite) TestAddTaskClusterARNNotSet() {
+	taskDetail := types.TaskDetail{
+		TaskArn: &taskARN1,
+	}
+	task := types.Task{
+		Detail: &taskDetail,
+	}
+	taskJSON, err := json.Marshal(task)
+	err = suite.taskStore.AddTask(string(taskJSON))
+	assert.Error(suite.T(), err, "Expected an error when cluster ARN is not set")
+}
+
+func (suite *TaskStoreTestSuite) TestAddTaskEmptyTaskARN() {
+	taskARN := ""
+	taskDetail := types.TaskDetail{
+		ClusterArn: &clusterARN1,
+		TaskArn:    &taskARN,
+	}
+	task := types.Task{
+		Detail: &taskDetail,
+	}
+	taskJSON, err := json.Marshal(task)
+	err = suite.taskStore.AddTask(string(taskJSON))
+	assert.Error(suite.T(), err, "Expected an error when task ARN is empty")
+}
+
+func (suite *TaskStoreTestSuite) TestAddTaskEmptyClusterARN() {
+	clusterARN := ""
+	taskDetail := types.TaskDetail{
+		ClusterArn: &clusterARN,
+		TaskArn:    &taskARN1,
+	}
+	task := types.Task{
+		Detail: &taskDetail,
+	}
+	taskJSON, err := json.Marshal(task)
+	err = suite.taskStore.AddTask(string(taskJSON))
+	assert.Error(suite.T(), err, "Expected an error when cluster ARN is empty")
+}
+
+func (suite *TaskStoreTestSuite) TestAddTaskInvalidClusterARNWithNoName() {
+	clusterARN := "arn:aws:ecs:us-east-1:123456789123:cluster/"
+	taskDetail := types.TaskDetail{
+		ClusterArn: &clusterARN,
+		TaskArn:    &taskARN1,
+	}
+	task := types.Task{
+		Detail: &taskDetail,
+	}
+	taskJSON, err := json.Marshal(task)
+	err = suite.taskStore.AddTask(string(taskJSON))
+	assert.Error(suite.T(), err, "Expected an error when cluster ARN has no name")
+}
+
 func (suite *TaskStoreTestSuite) TestAddTaskGetTaskFails() {
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(nil, errors.New("Error when getting key"))
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(nil, errors.New("Error when getting key"))
 
 	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when get task fails")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskGetTaskNoResults() {
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(make(map[string]string), nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.compressedTask1JSON).Return(nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(make(map[string]string), nil)
+	suite.datastore.EXPECT().Add(suite.taskKey1, suite.compressedTask1JSON).Return(nil)
 
 	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when datastore returns empty results")
@@ -136,7 +209,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskGetTaskMultipleResults() {
 		taskARN2: suite.compressedTask2JSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
 
 	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns multiple results")
@@ -149,7 +222,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskGetTaskInvalidJSONResult() {
 		taskARN1: compressedInvalidJSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
 
 	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns invalid json results")
@@ -160,8 +233,8 @@ func (suite *TaskStoreTestSuite) TestAddTaskSameVersionTaskExists() {
 		taskARN1: suite.compressedTask1JSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.task1JSON).Times(0)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
+	suite.datastore.EXPECT().Add(suite.taskKey1, suite.task1JSON).Times(0)
 
 	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when same version task exists")
@@ -172,8 +245,8 @@ func (suite *TaskStoreTestSuite) TestAddTaskHigherVersionTaskExists() {
 		taskARN1: suite.compressedTask2JSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, gomock.Any()).Times(0)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
+	suite.datastore.EXPECT().Add(suite.taskKey1, gomock.Any()).Times(0)
 
 	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when higher version task exists")
@@ -192,37 +265,42 @@ func (suite *TaskStoreTestSuite) TestAddTaskLowerVersionTaskExists() {
 		taskARN1: compressedTaskJSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.compressedTask1JSON).Return(nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
+	suite.datastore.EXPECT().Add(suite.taskKey1, suite.compressedTask1JSON).Return(nil)
 
 	err = suite.taskStore.AddTask(suite.task1JSON)
 	assert.Nil(suite.T(), err, "Unexpected error when lower version task exists")
 }
 
 func (suite *TaskStoreTestSuite) TestAddTaskFails() {
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(make(map[string]string), nil)
-	suite.datastore.EXPECT().Add(suite.taskKey, suite.compressedTask1JSON).Return(errors.New("Add task failed"))
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(make(map[string]string), nil)
+	suite.datastore.EXPECT().Add(suite.taskKey1, suite.compressedTask1JSON).Return(errors.New("Add task failed"))
 
 	err := suite.taskStore.AddTask(suite.task1JSON)
 	assert.Error(suite.T(), err, "Expected an error when add task fails")
 }
 
-func (suite *TaskStoreTestSuite) TestGetTaskEmptyArn() {
-	_, err := suite.taskStore.GetTask("")
-	assert.Error(suite.T(), err, "Expected an error when arn empty in GetTask")
+func (suite *TaskStoreTestSuite) TestGetTaskEmptyClusterName() {
+	_, err := suite.taskStore.GetTask("", taskARN1)
+	assert.Error(suite.T(), err, "Expected an error when cluster name is empty in GetTask")
+}
+
+func (suite *TaskStoreTestSuite) TestGetTaskEmptyTaskARN() {
+	_, err := suite.taskStore.GetTask(clusterName1, "")
+	assert.Error(suite.T(), err, "Expected an error when task ARN is empty in GetTask")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskGetTaskFails() {
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(nil, errors.New("Error when getting key"))
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(nil, errors.New("Error when getting key"))
 
-	_, err := suite.taskStore.GetTask(taskARN1)
+	_, err := suite.taskStore.GetTask(clusterName1, taskARN1)
 	assert.Error(suite.T(), err, "Expected an error when get task fails")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskGetTaskNoResults() {
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(make(map[string]string), nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(make(map[string]string), nil)
 
-	task, err := suite.taskStore.GetTask(taskARN1)
+	task, err := suite.taskStore.GetTask(clusterName1, taskARN1)
 	assert.Nil(suite.T(), err, "Unexpected error when datastore returns empty results")
 	assert.Nil(suite.T(), task, "Unexpected object returned when datastore returns empty results")
 }
@@ -233,9 +311,9 @@ func (suite *TaskStoreTestSuite) TestGetTaskGetMultipleResults() {
 		taskARN2: suite.compressedTask2JSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
 
-	_, err := suite.taskStore.GetTask(taskARN1)
+	_, err := suite.taskStore.GetTask(clusterName1, taskARN1)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns multiple results")
 }
 
@@ -246,20 +324,34 @@ func (suite *TaskStoreTestSuite) TestGetTaskGetInvalidJSONResult() {
 		taskARN1: compressedInvalidJSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
 
-	_, err := suite.taskStore.GetTask(taskARN1)
+	_, err := suite.taskStore.GetTask(clusterName1, taskARN1)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns invalid json results")
 }
 
-func (suite *TaskStoreTestSuite) TestGetTask() {
+func (suite *TaskStoreTestSuite) TestGetTaskWithClusterNameAndTaskARN() {
 	resp := map[string]string{
 		taskARN1: suite.compressedTask1JSON,
 	}
 
-	suite.datastore.EXPECT().Get(suite.taskKey).Return(resp, nil)
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
 
-	task, err := suite.taskStore.GetTask(taskARN1)
+	task, err := suite.taskStore.GetTask(clusterName1, taskARN1)
+	assert.Nil(suite.T(), err, "Unexpected error when getting task")
+	assert.NotNil(suite.T(), task, "Expected a non-nil task when calling GetTask")
+
+	assert.Exactly(suite.T(), suite.task1, *task, "Expected the returned task to match the one returned from the datastore")
+}
+
+func (suite *TaskStoreTestSuite) TestGetTaskWithClusterARNAndTaskARN() {
+	resp := map[string]string{
+		taskARN1: suite.compressedTask1JSON,
+	}
+
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
+
+	task, err := suite.taskStore.GetTask(clusterARN1, taskARN1)
 	assert.Nil(suite.T(), err, "Unexpected error when getting task")
 	assert.NotNil(suite.T(), task, "Expected a non-nil task when calling GetTask")
 

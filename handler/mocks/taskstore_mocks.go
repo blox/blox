@@ -41,15 +41,15 @@ func (_mr *_MockTaskStoreRecorder) AddTask(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddTask", arg0)
 }
 
-func (_m *MockTaskStore) GetTask(arn string) (*types.Task, error) {
-	ret := _m.ctrl.Call(_m, "GetTask", arn)
+func (_m *MockTaskStore) GetTask(cluster string, taskARN string) (*types.Task, error) {
+	ret := _m.ctrl.Call(_m, "GetTask", cluster, taskARN)
 	ret0, _ := ret[0].(*types.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockTaskStoreRecorder) GetTask(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetTask", arg0)
+func (_mr *_MockTaskStoreRecorder) GetTask(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetTask", arg0, arg1)
 }
 
 func (_m *MockTaskStore) ListTasks() ([]types.Task, error) {

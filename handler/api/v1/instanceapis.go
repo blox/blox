@@ -30,14 +30,15 @@ func NewContainerInstanceAPIs(instanceStore store.ContainerInstanceStore) Contai
 func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceARN := vars["arn"]
+	cluster := vars["cluster"]
 
-	if len(instanceARN) == 0 {
+	if len(instanceARN) == 0 || len(cluster) == 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
-	instance, err := instanceAPIs.instanceStore.GetContainerInstance(instanceARN)
+	instance, err := instanceAPIs.instanceStore.GetContainerInstance(cluster, instanceARN)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -23,8 +23,9 @@ func NewESHWrapper() ESHWrapper {
 	}
 }
 
-func (eshWrapper ESHWrapper) GetTask(taskARN string) (*models.TaskModel, error) {
+func (eshWrapper ESHWrapper) GetTask(clusterName string, taskARN string) (*models.TaskModel, error) {
 	in := operations.NewGetTaskParams()
+	in.SetCluster(clusterName)
 	in.SetArn(taskARN)
 	resp, err := eshWrapper.client.Operations.GetTask(in)
 	if err != nil {
@@ -69,8 +70,9 @@ func (eshWrapper ESHWrapper) FilterTasksByStatus(status string) ([]*models.TaskM
 	return tasks, nil
 }
 
-func (eshWrapper ESHWrapper) GetInstance(instanceARN string) (*models.ContainerInstanceModel, error) {
+func (eshWrapper ESHWrapper) GetInstance(clusterName string, instanceARN string) (*models.ContainerInstanceModel, error) {
 	in := operations.NewGetInstanceParams()
+	in.SetCluster(clusterName)
 	in.SetArn(instanceARN)
 	resp, err := eshWrapper.client.Operations.GetInstance(in)
 	if err != nil {

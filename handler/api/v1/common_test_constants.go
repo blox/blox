@@ -6,7 +6,8 @@ var (
 	time               = "2016-10-18T16:52:49Z"
 	id1                = "4082c1f7-d572-4684-8b3b-a7dd637e8721"
 	instanceARN1       = "arn:aws:ecs:us-east-1:123456789012:container-instance/b6b9eace-958e-4f2a-a09c-8cf43b76cf97"
-	clusterARN1        = "arn:aws:ecs:us-east-1:123456789012:cluster/test"
+	clusterName1       = "cluster1"
+	clusterARN1        = "arn:aws:ecs:us-east-1:123456789012:cluster/" + clusterName1
 	containerARN1      = "arn:aws:ecs:us-east-1:123456789012:container/57156e30-e410-4773-9a9e-ae8264c10bbd"
 	agentConnected1    = true
 	pendingTaskCount1  = 0

@@ -3,7 +3,7 @@ Feature: Get Instance
 
   Scenario: Get instance with a valid instance ARN
     Given I have an instance registered with the ECS cluster
-    When I get instance with the instance ARN
+    When I get instance with the cluster name and instance ARN
     Then I get an instance that matches the registered instance
 
   Scenario: Get non-existent instance

@@ -1,59 +1,96 @@
 package v1
 
 import (
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	"github.com/gorilla/mux"
 )
 
-//TODO: add a map of path and query keys and use the map in task apis instead of hardcoding strings
+// TODO: add a map of path and query keys and use the map in task apis instead of hardcoding strings
+const (
+	getTaskPath     = "/tasks/{cluster:" + regex.ClusterNameRegex + "}/{arn:" + regex.TaskARNRegex + "}"
+	listTasksPath   = "/tasks"
+	filterTasksPath = "/tasks/filter"
+	streamTasksPath = "/tasks/stream"
+
+	getInstancePath     = "/instances/{cluster:" + regex.ClusterNameRegex + "}/{arn:" + regex.InstanceARNRegex + "}"
+	listInstancesPath   = "/instances"
+	filterInstancesPath = "/instances/filter"
+	streamInstancesPath = "/instances/stream"
+
+	clusterKey     = "cluster"
+	clusterNameVal = "{" + clusterKey + ":" + regex.ClusterNameRegex + "}"
+	clusterARNVal  = "{" + clusterKey + ":" + regex.ClusterARNRegex + "}"
+
+	taskKey    = "task"
+	taskARNVal = "{" + taskKey + ":" + regex.TaskARNRegex + "}"
+
+	instanceKey    = "instance"
+	instanceARNVal = "{" + instanceKey + ":" + regex.InstanceARNRegex + "}"
+
+	statusKey         = "status"
+	taskStatusVal     = "{" + statusKey + ":pending|running|stopped}"
+	instanceStatusVal = "{" + statusKey + ":active|inactive}"
+)
+
 func NewRouter(apis APIs) *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	s := r.Path("/v1").Subrouter()
 
-	// tasks
+	// Tasks
 
-	s.Path(`/task/{arn:(arn:aws:ecs:)([\-\w]+):[0-9]{12}:(task)\/[\-\w]+}`).
+	// Get task using cluster name and task ARN
+	s.Path(getTaskPath).
 		Methods("GET").
 		HandlerFunc(apis.TaskApis.GetTask)
 
-	s.Path("/tasks").
+	// List tasks
+	s.Path(listTasksPath).
 		Methods("GET").
 		HandlerFunc(apis.TaskApis.ListTasks)
 
-	s.Path("/tasks/filter").
-		Queries("status", "{status:pending|running|stopped}").
+	// Filter tasks by status
+	s.Path(filterTasksPath).
+		Queries(statusKey, taskStatusVal).
 		Methods("GET").
 		HandlerFunc(apis.TaskApis.FilterTasks)
 
-	s.Path("/tasks/stream").
+	// Stream tasks
+	s.Path(streamTasksPath).
 		Methods("GET").
 		HandlerFunc(apis.TaskApis.StreamTasks)
 
-	// instances
+	// Instances
 
-	s.Path(`/instance/{arn:(arn:aws:ecs:)([\-\w]+):[0-9]{12}:(container\-instance)\/[\-\w]+}`).
+	// Get instance using cluster name and instance ARN
+	s.Path(getInstancePath).
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.GetInstance)
 
-	s.Path("/instances").
+	// List instances
+	s.Path(listInstancesPath).
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.ListInstances)
 
-	s.Path("/instances/filter").
-		Queries("status", "{status:active|inactive}").
+	// Filter instances by status
+	s.Path(filterInstancesPath).
+		Queries(statusKey, instanceStatusVal).
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
 
-	s.Path("/instances/filter").
-		Queries("cluster", "{cluster:[a-zA-Z0-9\\-_]{1,255}}").
+	// Filter instances by cluser name
+	s.Path(filterInstancesPath).
+		Queries(clusterKey, clusterNameVal).
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
 
-	s.Path("/instances/filter").
-		Queries("cluster", "{cluster:(arn:aws:ecs:)([\\-\\w]+):[0-9]{12}:(cluster)/[a-zA-Z0-9\\-_]{1,255}}").
+	// Filter instances by cluster ARN
+	s.Path(filterInstancesPath).
+		Queries(clusterKey, clusterARNVal).
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
 
-	s.Path("/instances/stream").
+	// Stream instances
+	s.Path(streamInstancesPath).
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.StreamInstances)
 

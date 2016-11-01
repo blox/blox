@@ -77,7 +77,7 @@ func (a *Client) FilterTasks(params *FilterTasksParams) (*FilterTasksOK, error) 
 }
 
 /*
-GetInstance Get instance using instance ARN
+GetInstance Get instance using cluster name and instance ARN
 */
 func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) {
 	// TODO: Validate the params before sending
@@ -88,7 +88,7 @@ func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "GetInstance",
 		Method:             "GET",
-		PathPattern:        "/instance/{arn}",
+		PathPattern:        "/instances/{cluster}/{arn}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
@@ -104,7 +104,7 @@ func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) 
 }
 
 /*
-GetTask Get task using task ARN
+GetTask Get task using cluster name and task ARN
 */
 func (a *Client) GetTask(params *GetTaskParams) (*GetTaskOK, error) {
 	// TODO: Validate the params before sending
@@ -115,7 +115,7 @@ func (a *Client) GetTask(params *GetTaskParams) (*GetTaskOK, error) {
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "GetTask",
 		Method:             "GET",
-		PathPattern:        "/task/{arn}",
+		PathPattern:        "/tasks/{cluster}/{arn}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},

@@ -2,11 +2,11 @@ package store
 
 import (
 	"context"
-	"regexp"
 	"strings"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	log "github.com/cihub/seelog"
@@ -17,15 +17,12 @@ const (
 	instanceKeyPrefix    = "ecs/instance/"
 	instanceStatusFilter = "status"
 	clusterFilter        = "cluster"
-
-	// TODO: Define these constants in a common place to avoid declaration in multiple places
-	clusterARNRegex = "(arn:aws:ecs:)([\\-\\w]+):[0-9]{12}:(cluster)/[a-zA-Z0-9\\-_]{1,255}"
 )
 
 // ContainerInstanceStore defines methods to access container instances from the datastore
 type ContainerInstanceStore interface {
 	AddContainerInstance(instance string) error
-	GetContainerInstance(arn string) (*types.ContainerInstance, error)
+	GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error)
 	ListContainerInstances() ([]types.ContainerInstance, error)
 	FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error)
 	StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error)
@@ -45,16 +42,14 @@ func NewContainerInstanceStore(ds DataStore) (ContainerInstanceStore, error) {
 	}, nil
 }
 
-func generateInstanceKey(instance types.ContainerInstance) (string, error) {
-	if instance.Detail == nil {
-		return "", errors.New("Container instance detail cannot be empty")
+func generateInstanceKey(clusterName string, instanceARN string) (string, error) {
+	if len(clusterName) == 0 {
+		return "", errors.New("Cluster name cannot be empty")
 	}
-	instanceDetail := *instance.Detail
-	if instanceDetail.ContainerInstanceArn == nil {
-		return "", errors.New("Container instance ARN cannot be empty")
+	if len(instanceARN) == 0 {
+		return "", errors.New("Instance ARN cannot be empty")
 	}
-
-	return instanceKeyPrefix + *instanceDetail.ContainerInstanceArn, nil
+	return instanceKeyPrefix + clusterName + "/" + instanceARN, nil
 }
 
 // AddContainerInstance adds a container instance represented in the instanceJSON to the datastore
@@ -69,7 +64,16 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 		return err
 	}
 
-	key, err := generateInstanceKey(instance)
+	if instance.Detail == nil || instance.Detail.ClusterArn == nil || instance.Detail.ContainerInstanceArn == nil {
+		return errors.New("Cluster ARN and container instance ARN should not be empty in instance JSON")
+	}
+
+	clusterName, err := regex.GetClusterNameFromARN(*instance.Detail.ClusterArn)
+	if err != nil {
+		return err
+	}
+
+	key, err := generateInstanceKey(clusterName, *instance.Detail.ContainerInstanceArn)
 	if err != nil {
 		return err
 	}
@@ -107,20 +111,25 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 	return nil
 }
 
-// GetContainerInstance gets a container instance with key 'arn' from the datastore
-func (instanceStore eventInstanceStore) GetContainerInstance(arn string) (*types.ContainerInstance, error) {
-	if len(arn) == 0 {
-		return nil, errors.New("Arn should not be empty")
+// GetContainerInstance gets a container with ARN 'instanceARN' belonging to cluster 'cluster'
+func (instanceStore eventInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error) {
+	if len(cluster) == 0 {
+		return nil, errors.New("Cluster should not be empty")
+	}
+	if len(instanceARN) == 0 {
+		return nil, errors.New("Instance ARN should not be empty")
 	}
 
-	instanceDetail := types.InstanceDetail{
-		ContainerInstanceArn: &arn,
-	}
-	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
+	clusterName := cluster
+	var err error
+	if regex.IsClusterARN(cluster) {
+		clusterName, err = regex.GetClusterNameFromARN(cluster)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	key, err := generateInstanceKey(instance)
+	key, err := generateInstanceKey(clusterName, instanceARN)
 	if err != nil {
 		return nil, err
 	}
@@ -139,58 +148,42 @@ func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey strin
 		return nil, errors.New("Filter key and value cannot be empty")
 	}
 
-	if filterKey != instanceStatusFilter && filterKey != clusterFilter {
-		return nil, errors.Errorf("Filter '%s' not supported", filterKey)
+	switch {
+	case filterKey == instanceStatusFilter:
+		return instanceStore.filterContainerInstancesByStatus(filterValue)
+	case filterKey == clusterFilter:
+		return instanceStore.filterContainerInstancesByCluster(filterValue)
+	default:
+		return nil, errors.New("Unsupported filter key")
 	}
+}
 
+func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string) ([]types.ContainerInstance, error) {
 	instances, err := instanceStore.ListContainerInstances()
 	if err != nil {
 		return nil, err
 	}
-
-	if filterKey == instanceStatusFilter {
-		return instanceStore.filterContainerInstancesByStatus(filterValue, instances), nil
-	}
-	return instanceStore.filterContainerInstancesByCluster(filterValue, instances), nil
-}
-
-func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string, instances []types.ContainerInstance) []types.ContainerInstance {
 	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
 	for _, instance := range instances {
 		if strings.ToLower(status) == strings.ToLower(*instance.Detail.Status) {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}
-	return filteredInstances
+	return filteredInstances, nil
 }
 
-func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluster string, instances []types.ContainerInstance) []types.ContainerInstance {
-	validClusterARN := regexp.MustCompile(clusterARNRegex)
-	if validClusterARN.MatchString(cluster) {
-		return instanceStore.filterContainerInstancesByClusterARN(cluster, instances)
-	}
-	return instanceStore.filterContainerInstancesByClusterName(cluster, instances)
-}
-
-func (instanceStore eventInstanceStore) filterContainerInstancesByClusterARN(clusterARN string, instances []types.ContainerInstance) []types.ContainerInstance {
-	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
-	for _, instance := range instances {
-		if clusterARN == *instance.Detail.ClusterArn {
-			filteredInstances = append(filteredInstances, instance)
+func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluster string) ([]types.ContainerInstance, error) {
+	clusterName := cluster
+	var err error
+	if regex.IsClusterARN(cluster) {
+		clusterName, err = regex.GetClusterNameFromARN(cluster)
+		if err != nil {
+			return nil, err
 		}
 	}
-	return filteredInstances
-}
 
-func (instanceStore eventInstanceStore) filterContainerInstancesByClusterName(clusterName string, instances []types.ContainerInstance) []types.ContainerInstance {
-	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
-	for _, instance := range instances {
-		clusterArnSuffix := "/" + clusterName
-		if strings.HasSuffix(*instance.Detail.ClusterArn, clusterArnSuffix) {
-			filteredInstances = append(filteredInstances, instance)
-		}
-	}
-	return filteredInstances
+	instancesForClusterPrefix := instanceKeyPrefix + clusterName + "/"
+	return instanceStore.getInstancesByKeyPrefix(instancesForClusterPrefix)
 }
 
 // StreamContainerInstances returns a stream of all changes in the container instance keyspace

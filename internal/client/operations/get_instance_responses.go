@@ -56,14 +56,14 @@ func NewGetInstanceOK() *GetInstanceOK {
 
 /*GetInstanceOK handles this case with default header values.
 
-Get instance by ARN - success
+Get instance using cluster name and instance ARN - success
 */
 type GetInstanceOK struct {
 	Payload *models.ContainerInstanceModel
 }
 
 func (o *GetInstanceOK) Error() string {
-	return fmt.Sprintf("[GET /instance/{arn}][%d] getInstanceOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /instances/{cluster}/{arn}][%d] getInstanceOK  %+v", 200, o.Payload)
 }
 
 func (o *GetInstanceOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -85,14 +85,14 @@ func NewGetInstanceNotFound() *GetInstanceNotFound {
 
 /*GetInstanceNotFound handles this case with default header values.
 
-Get instance by ARN - instance not found
+Get instance using cluster name and instance ARN - instance not found
 */
 type GetInstanceNotFound struct {
 	Payload string
 }
 
 func (o *GetInstanceNotFound) Error() string {
-	return fmt.Sprintf("[GET /instance/{arn}][%d] getInstanceNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[GET /instances/{cluster}/{arn}][%d] getInstanceNotFound  %+v", 404, o.Payload)
 }
 
 func (o *GetInstanceNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -112,14 +112,14 @@ func NewGetInstanceInternalServerError() *GetInstanceInternalServerError {
 
 /*GetInstanceInternalServerError handles this case with default header values.
 
-Get instance by ARN - unexpected error
+Get instance using cluster name and instance ARN - unexpected error
 */
 type GetInstanceInternalServerError struct {
 	Payload string
 }
 
 func (o *GetInstanceInternalServerError) Error() string {
-	return fmt.Sprintf("[GET /instance/{arn}][%d] getInstanceInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[GET /instances/{cluster}/{arn}][%d] getInstanceInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *GetInstanceInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

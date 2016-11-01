@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1/models"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
@@ -18,11 +19,7 @@ import (
 )
 
 const (
-	getTaskPath     = `/task/{arn:(arn:aws:ecs:)([\-\w]+):[0-9]{12}:(task)\/[\-\w]+}`
-	listTasksPath   = "/tasks"
-	filterTasksPath = "/tasks/filter"
-
-	getTaskPrefix             = "/v1/task"
+	getTaskPrefix             = "/v1/tasks"
 	listTasksPrefix           = "/v1/tasks"
 	filterTasksByStatusPrefix = "/v1/tasks/filter?status="
 
@@ -30,8 +27,8 @@ const (
 
 	taskStatusKey = "status"
 
-	// Routing to GetInstance handler function without arn
-	invalidGetTaskPath       = "/task"
+	// Routing to GetInstance handler function without task ARN
+	invalidGetTaskPath       = "/tasks/{cluster:" + regex.ClusterNameRegex + "}"
 	invalidFilterTasksPrefix = "/v1/tasks/filter"
 )
 
@@ -115,8 +112,8 @@ func TestTaskAPIsTestSuite(t *testing.T) {
 	suite.Run(t, new(TaskAPIsTestSuite))
 }
 
-func (suite *TaskAPIsTestSuite) TestGetTaskReturnsTask() {
-	suite.taskStore.EXPECT().GetTask(taskARN1).Return(&suite.task1, nil)
+func (suite *TaskAPIsTestSuite) TestGetReturnsTask() {
+	suite.taskStore.EXPECT().GetTask(clusterName1, taskARN1).Return(&suite.task1, nil)
 
 	request := suite.getTaskRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -133,7 +130,7 @@ func (suite *TaskAPIsTestSuite) TestGetTaskReturnsTask() {
 }
 
 func (suite *TaskAPIsTestSuite) TestGetTaskNoTask() {
-	suite.taskStore.EXPECT().GetTask(taskARN1).Return(nil, nil)
+	suite.taskStore.EXPECT().GetTask(clusterName1, taskARN1).Return(nil, nil)
 
 	request := suite.getTaskRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -144,7 +141,7 @@ func (suite *TaskAPIsTestSuite) TestGetTaskNoTask() {
 }
 
 func (suite *TaskAPIsTestSuite) TestGetTaskStoreReturnsError() {
-	suite.taskStore.EXPECT().GetTask(taskARN1).Return(nil, errors.New("Error when getting task"))
+	suite.taskStore.EXPECT().GetTask(clusterName1, taskARN1).Return(nil, errors.New("Error when getting task"))
 
 	request := suite.getTaskRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -154,10 +151,11 @@ func (suite *TaskAPIsTestSuite) TestGetTaskStoreReturnsError() {
 	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
-func (suite *TaskAPIsTestSuite) TestGetTaskWithoutArn() {
-	suite.taskStore.EXPECT().GetTask(gomock.Any()).Times(0)
+func (suite *TaskAPIsTestSuite) TestGetTaskWithoutTaskARN() {
+	suite.taskStore.EXPECT().GetTask(gomock.Any(), gomock.Any()).Times(0)
 
-	request, err := http.NewRequest("GET", getTaskPrefix, nil)
+	url := getTaskPrefix + "/" + clusterName1
+	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating task get request")
 
 	responseRecorder := httptest.NewRecorder()
@@ -229,7 +227,7 @@ func (suite *TaskAPIsTestSuite) TestFilterTasksNoKey() {
 // Helper functions
 
 func (suite *TaskAPIsTestSuite) getTaskRequest() *http.Request {
-	url := getTaskPrefix + "/" + taskARN1
+	url := getTaskPrefix + "/" + clusterName1 + "/" + taskARN1
 	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating get task request")
 	return request
