@@ -6,26 +6,32 @@ import (
 )
 
 // TODO: add a map of path and query keys and use the map in task apis instead of hardcoding strings
-const (
-	getTaskPath     = "/tasks/{cluster:" + regex.ClusterNameRegex + "}/{arn:" + regex.TaskARNRegex + "}"
+var (
+	// Stripping off '^' and '$' from the beginning and end of regexes respectively for the router
+	clusterNameRegex = string(regex.ClusterNameRegex[1 : len(regex.ClusterNameRegex)-1])
+	clusterARNRegex  = string(regex.ClusterARNRegex[1 : len(regex.ClusterARNRegex)-1])
+	taskARNRegex     = string(regex.TaskARNRegex[1 : len(regex.TaskARNRegex)-1])
+	instanceARNRegex = string(regex.InstanceARNRegex[1 : len(regex.InstanceARNRegex)-1])
+
+	getTaskPath     = "/tasks/{cluster:" + clusterNameRegex + "}/{arn:" + taskARNRegex + "}"
 	listTasksPath   = "/tasks"
 	filterTasksPath = "/tasks/filter"
 	streamTasksPath = "/tasks/stream"
 
-	getInstancePath     = "/instances/{cluster:" + regex.ClusterNameRegex + "}/{arn:" + regex.InstanceARNRegex + "}"
+	getInstancePath     = "/instances/{cluster:" + clusterNameRegex + "}/{arn:" + instanceARNRegex + "}"
 	listInstancesPath   = "/instances"
 	filterInstancesPath = "/instances/filter"
 	streamInstancesPath = "/instances/stream"
 
 	clusterKey     = "cluster"
-	clusterNameVal = "{" + clusterKey + ":" + regex.ClusterNameRegex + "}"
-	clusterARNVal  = "{" + clusterKey + ":" + regex.ClusterARNRegex + "}"
+	clusterNameVal = "{" + clusterKey + ":" + clusterNameRegex + "}"
+	clusterARNVal  = "{" + clusterKey + ":" + clusterARNRegex + "}"
 
 	taskKey    = "task"
-	taskARNVal = "{" + taskKey + ":" + regex.TaskARNRegex + "}"
+	taskARNVal = "{" + taskKey + ":" + taskARNRegex + "}"
 
 	instanceKey    = "instance"
-	instanceARNVal = "{" + instanceKey + ":" + regex.InstanceARNRegex + "}"
+	instanceARNVal = "{" + instanceKey + ":" + instanceARNRegex + "}"
 
 	statusKey         = "status"
 	taskStatusVal     = "{" + statusKey + ":pending|running|stopped}"

@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	containerInstanceARN1 = "arn:aws:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597"
-	containerInstanceARN2 = "arn:aws:us-east-1:123456789123:container-instance/3af93452-d6b7-6759-0923-4f5123cfd025"
+	containerInstanceARN1 = "arn:aws:ecs:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597"
+	containerInstanceARN2 = "arn:aws:ecs:us-east-1:123456789123:container-instance/3af93452-d6b7-6759-0923-4f5123cfd025"
 	status1               = "active"
 	status2               = "inactive"
 )

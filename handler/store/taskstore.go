@@ -42,11 +42,11 @@ func NewTaskStore(ds DataStore) (TaskStore, error) {
 }
 
 func generateTaskKey(clusterName string, taskARN string) (string, error) {
-	if len(clusterName) == 0 {
-		return "", errors.New("Cluster name cannot be empty")
+	if !regex.IsClusterName(clusterName) {
+		return "", errors.New("Cluster name does not match expected regex")
 	}
-	if len(taskARN) == 0 {
-		return "", errors.New("Task ARN cannot be empty")
+	if !regex.IsTaskARN(taskARN) {
+		return "", errors.New("Task ARN does not match expected regex")
 	}
 	return taskKeyPrefix + clusterName + "/" + taskARN, nil
 }

@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	taskARN1      = "arn:aws:ecs:us-east-1:159403520677:task/271022c0-f894-4aa2-b063-25bae55088d5"
-	taskARN2      = "arn:aws:ecs:us-east-1:159403520677:task/345022c0-f894-4aa2-b063-25bae55088d5"
+	taskARN1      = "arn:aws:ecs:us-east-1:123456789012:task/271022c0-f894-4aa2-b063-25bae55088d5"
+	taskARN2      = "arn:aws:ecs:us-east-1:123456789012:task/345022c0-f894-4aa2-b063-25bae55088d5"
 	pendingStatus = "pending"
 )
 

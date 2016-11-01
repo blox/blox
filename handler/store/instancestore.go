@@ -43,11 +43,11 @@ func NewContainerInstanceStore(ds DataStore) (ContainerInstanceStore, error) {
 }
 
 func generateInstanceKey(clusterName string, instanceARN string) (string, error) {
-	if len(clusterName) == 0 {
-		return "", errors.New("Cluster name cannot be empty")
+	if !regex.IsClusterName(clusterName) {
+		return "", errors.New("Cluster name does not match expected regex")
 	}
-	if len(instanceARN) == 0 {
-		return "", errors.New("Instance ARN cannot be empty")
+	if !regex.IsInstanceARN(instanceARN) {
+		return "", errors.New("Instance ARN does not match expected regex")
 	}
 	return instanceKeyPrefix + clusterName + "/" + instanceARN, nil
 }

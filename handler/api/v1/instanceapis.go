@@ -6,12 +6,16 @@ import (
 	"net/http"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1/models"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/store"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/gorilla/mux"
 )
 
 const (
+	instanceARNKey     = "arn"
+	instanceClusterKey = "cluster"
+
 	instanceStatusFilter  = "status"
 	instanceClusterFilter = "cluster"
 )
@@ -26,13 +30,12 @@ func NewContainerInstanceAPIs(instanceStore store.ContainerInstanceStore) Contai
 	}
 }
 
-//TODO: add arn validation
 func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	instanceARN := vars["arn"]
-	cluster := vars["cluster"]
+	instanceARN := vars[instanceARNKey]
+	cluster := vars[instanceClusterKey]
 
-	if len(instanceARN) == 0 || len(cluster) == 0 {
+	if len(instanceARN) == 0 || len(cluster) == 0 || !regex.IsInstanceARN(instanceARN) || !regex.IsClusterName(cluster) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
@@ -59,7 +62,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(instanceModel)
@@ -79,7 +82,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
 	instanceModels := make([]models.ContainerInstanceModel, len(instances))
@@ -130,7 +133,7 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
 	instanceModels := make([]models.ContainerInstanceModel, len(instances))
@@ -169,7 +172,7 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 		return
 	}
 
-	w.Header().Set(connectionKey, connectionVal)
+	w.Header().Set(connectionKey, contentTypeVal)
 	w.Header().Set(transferEncodingKey, transferEncodingVal)
 
 	for instanceResp := range instanceRespChan {

@@ -10,7 +10,6 @@ import (
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1/models"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
@@ -25,10 +24,8 @@ const (
 
 	filterTasksByStatusQueryValue = "{status:pending|running|stopped}"
 
-	taskStatusKey = "status"
-
 	// Routing to GetInstance handler function without task ARN
-	invalidGetTaskPath       = "/tasks/{cluster:" + regex.ClusterNameRegex + "}"
+	invalidGetTaskPath       = "/tasks/{cluster:[a-zA-Z0-9_]{1,255}}"
 	invalidFilterTasksPrefix = "/v1/tasks/filter"
 )
 
@@ -190,18 +187,18 @@ func (suite *TaskAPIsTestSuite) TestListTasksStoreReturnsError() {
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksReturnsTasks() {
 	taskList := []types.Task{suite.task1}
-	suite.taskStore.EXPECT().FilterTasks(taskStatusKey, taskStatus1).Return(taskList, nil)
+	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(taskList, nil)
 	suite.filterTasksTester(taskList)
 }
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksNoTasks() {
 	emptytaskList := make([]types.Task, 0)
-	suite.taskStore.EXPECT().FilterTasks(taskStatusKey, taskStatus1).Return(emptytaskList, nil)
+	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(emptytaskList, nil)
 	suite.filterTasksTester(emptytaskList)
 }
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksStoreReturnsError() {
-	suite.taskStore.EXPECT().FilterTasks(taskStatusKey, taskStatus1).Return(nil, errors.New("Error when filtering tasks"))
+	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(nil, errors.New("Error when filtering tasks"))
 
 	request := suite.filterTasksRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -212,7 +209,7 @@ func (suite *TaskAPIsTestSuite) TestFilterTasksStoreReturnsError() {
 }
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksNoKey() {
-	suite.taskStore.EXPECT().FilterTasks(taskStatusKey, gomock.Any()).Times(0)
+	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, gomock.Any()).Times(0)
 
 	request, err := http.NewRequest("GET", invalidFilterTasksPrefix, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating filter tasks request")
@@ -279,7 +276,7 @@ func (suite *TaskAPIsTestSuite) getRouter() *mux.Router {
 		HandlerFunc(suite.taskAPIs.ListTasks)
 
 	s.Path(filterTasksPath).
-		Queries(taskStatusKey, filterTasksByStatusQueryValue).
+		Queries(taskStatusFilter, filterTasksByStatusQueryValue).
 		Methods("GET").
 		HandlerFunc(suite.taskAPIs.FilterTasks)
 

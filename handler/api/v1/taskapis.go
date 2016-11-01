@@ -6,11 +6,15 @@ import (
 	"net/http"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1/models"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/store"
 	"github.com/gorilla/mux"
 )
 
 const (
+	taskARNKey     = "arn"
+	taskClusterKey = "cluster"
+
 	taskStatusFilter = "status"
 )
 
@@ -24,13 +28,12 @@ func NewTaskAPIs(taskStore store.TaskStore) TaskAPIs {
 	}
 }
 
-//TODO: add arn validation
 func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	taskARN := vars["arn"]
-	cluster := vars["cluster"]
+	taskARN := vars[taskARNKey]
+	cluster := vars[taskClusterKey]
 
-	if len(taskARN) == 0 || len(cluster) == 0 {
+	if len(taskARN) == 0 || len(cluster) == 0 || !regex.IsTaskARN(taskARN) || !regex.IsClusterName(cluster) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return

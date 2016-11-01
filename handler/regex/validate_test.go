@@ -6,6 +6,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsClusterNameEmptyName(t *testing.T) {
+	isValid := IsClusterName("")
+	assert.False(t, isValid, "Empty cluster name should not satisfy regex")
+}
+
+func TestIsClusterNameInvalidName(t *testing.T) {
+	isValid := IsClusterName(invalidClusterName)
+	assert.False(t, isValid, "Invalid cluster name should not satisfy regex")
+}
+
+func TestIsClusterName(t *testing.T) {
+	isValid := IsClusterName(validClusterName)
+	assert.True(t, isValid, "Valid cluster name should satisfy regex")
+}
+
 func TestIsClusterARNEmptyARN(t *testing.T) {
 	isValid := IsClusterARN("")
 	assert.False(t, isValid, "Empty cluster ARN should not satisfy regex")
@@ -29,4 +44,54 @@ func TestIsClusterARNInvalidPrefixInARN(t *testing.T) {
 func TestIsClusterARN(t *testing.T) {
 	isValid := IsClusterARN(validClusterARN)
 	assert.True(t, isValid, "Valid cluster ARN should satisfy regex")
+}
+
+func TestIsTaskARNEmptyARN(t *testing.T) {
+	isValid := IsTaskARN("")
+	assert.False(t, isValid, "Empty task ARN should not satisfy regex")
+}
+
+func TestIsTaskARNNoIDInARN(t *testing.T) {
+	isValid := IsTaskARN(invalidTaskARNWithNoID)
+	assert.False(t, isValid, "Invalid task ARN with no ID should not satisfy regex")
+}
+
+func TestIsTaskARNInvalidIDInARN(t *testing.T) {
+	isValid := IsTaskARN(invalidTaskARNWithInvalidID)
+	assert.False(t, isValid, "Invalid task ARN with invalid ID should not satisfy regex")
+}
+
+func TestIsTaskARNInvalidPrefixInARN(t *testing.T) {
+	isValid := IsTaskARN(invalidTaskARNWithInvalidPrefix)
+	assert.False(t, isValid, "Invalid task ARN with invalid prefix should not satisfy regex")
+}
+
+func TestIsTaskARN(t *testing.T) {
+	isValid := IsTaskARN(validTaskARN)
+	assert.True(t, isValid, "Valid task ARN should satisfy regex")
+}
+
+func TestIsInstanceARNEmptyARN(t *testing.T) {
+	isValid := IsInstanceARN("")
+	assert.False(t, isValid, "Empty instance ARN should not satisfy regex")
+}
+
+func TestIsInstanceARNNoIDInARN(t *testing.T) {
+	isValid := IsInstanceARN(invalidInstanceARNWithNoID)
+	assert.False(t, isValid, "Invalid instance ARN with no ID should not satisfy regex")
+}
+
+func TestIsInstanceARNInvalidIDInARN(t *testing.T) {
+	isValid := IsInstanceARN(invalidInstanceARNWithInvalidID)
+	assert.False(t, isValid, "Invalid instance ARN with invalid ID should not satisfy regex")
+}
+
+func TestIsInstanceARNInvalidPrefixInARN(t *testing.T) {
+	isValid := IsInstanceARN(invalidInstanceARNWithInvalidPrefix)
+	assert.False(t, isValid, "Invalid instance ARN with invalid prefix should not satisfy regex")
+}
+
+func TestIsInstanceARN(t *testing.T) {
+	isValid := IsInstanceARN(validInstanceARN)
+	assert.True(t, isValid, "Valid instance ARN should satisfy regex")
 }

@@ -30,5 +30,5 @@ func TestGetClusterNameFromARN(t *testing.T) {
 	c, err := GetClusterNameFromARN(validClusterARN)
 	assert.Nil(t, err, "Unexpected error when retrieving cluster name from ARN")
 	assert.NotNil(t, c, "Expected cluster name to be retrieved from ARN")
-	assert.Equal(t, clusterName, c, "Invalid cluster name retrieved from ARN")
+	assert.Equal(t, validClusterName, c, "Invalid cluster name retrieved from ARN")
 }
