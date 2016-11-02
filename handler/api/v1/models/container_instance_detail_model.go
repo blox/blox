@@ -11,88 +11,61 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*ContainerInstanceDetailModel container instance detail model
-
-swagger:model ContainerInstanceDetailModel
-*/
+// ContainerInstanceDetailModel container instance detail model
+// swagger:model ContainerInstanceDetailModel
 type ContainerInstanceDetailModel struct {
 
-	/* agent connected
-
-	Required: true
-	*/
+	// agent connected
+	// Required: true
 	AgentConnected *bool `json:"agentConnected"`
 
-	/* agent update status
-	 */
+	// agent update status
 	AgentUpdateStatus string `json:"agentUpdateStatus,omitempty"`
 
-	/* attributes
-	 */
-	Attributes []*ContainerInstanceDetailAttributeModel `json:"attributes,omitempty"`
+	// attributes
+	Attributes []*ContainerInstanceDetailAttributeModel `json:"attributes"`
 
-	/* cluster arn
-
-	Required: true
-	*/
+	// cluster arn
+	// Required: true
 	ClusterArn *string `json:"clusterArn"`
 
-	/* container instance arn
-
-	Required: true
-	*/
+	// container instance arn
+	// Required: true
 	ContainerInstanceArn *string `json:"containerInstanceArn"`
 
-	/* ec2 instance Id
-	 */
+	// ec2 instance Id
 	Ec2InstanceID string `json:"ec2InstanceId,omitempty"`
 
-	/* pending tasks count
-
-	Required: true
-	*/
+	// pending tasks count
+	// Required: true
 	PendingTasksCount *int32 `json:"pendingTasksCount"`
 
-	/* registered resources
-
-	Required: true
-	*/
+	// registered resources
+	// Required: true
 	RegisteredResources []*ContainerInstanceDetailRegisteredResourceModel `json:"registeredResources"`
 
-	/* remaining resources
-
-	Required: true
-	*/
+	// remaining resources
+	// Required: true
 	RemainingResources []*ContainerInstanceDetailRemainingResourceModel `json:"remainingResources"`
 
-	/* running tasks count
-
-	Required: true
-	*/
+	// running tasks count
+	// Required: true
 	RunningTasksCount *int32 `json:"runningTasksCount"`
 
-	/* status
-
-	Required: true
-	*/
+	// status
+	// Required: true
 	Status *string `json:"status"`
 
-	/* updated at
-
-	Required: true
-	*/
+	// updated at
+	// Required: true
 	UpdatedAt *string `json:"updatedAt"`
 
-	/* version
-
-	Required: true
-	*/
+	// version
+	// Required: true
 	Version *int32 `json:"version"`
 
-	/* version info
-
-	Required: true
-	*/
+	// version info
+	// Required: true
 	VersionInfo *ContainerInstanceDetailVersionInfoModel `json:"versionInfo"`
 }
 

@@ -11,40 +11,29 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailContainerModel task detail container model
-
-swagger:model TaskDetailContainerModel
-*/
+// TaskDetailContainerModel task detail container model
+// swagger:model TaskDetailContainerModel
 type TaskDetailContainerModel struct {
 
-	/* container arn
-
-	Required: true
-	*/
+	// container arn
+	// Required: true
 	ContainerArn *string `json:"containerArn"`
 
-	/* exit code
-	 */
+	// exit code
 	ExitCode int32 `json:"exitCode,omitempty"`
 
-	/* last status
-
-	Required: true
-	*/
+	// last status
+	// Required: true
 	LastStatus *string `json:"lastStatus"`
 
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 
-	/* network bindings
-	 */
-	NetworkBindings []*TaskDetailNetworkBindingModel `json:"networkBindings,omitempty"`
+	// network bindings
+	NetworkBindings []*TaskDetailNetworkBindingModel `json:"networkBindings"`
 
-	/* reason
-	 */
+	// reason
 	Reason string `json:"reason,omitempty"`
 }
 

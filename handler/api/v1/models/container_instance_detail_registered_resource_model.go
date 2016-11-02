@@ -10,28 +10,20 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*ContainerInstanceDetailRegisteredResourceModel container instance detail registered resource model
-
-swagger:model ContainerInstanceDetailRegisteredResourceModel
-*/
+// ContainerInstanceDetailRegisteredResourceModel container instance detail registered resource model
+// swagger:model ContainerInstanceDetailRegisteredResourceModel
 type ContainerInstanceDetailRegisteredResourceModel struct {
 
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 
-	/* type
-
-	Required: true
-	*/
+	// type
+	// Required: true
 	Type *string `json:"type"`
 
-	/* value
-
-	Required: true
-	*/
+	// value
+	// Required: true
 	Value *string `json:"value"`
 }
 

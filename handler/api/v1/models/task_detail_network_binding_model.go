@@ -10,32 +10,23 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailNetworkBindingModel task detail network binding model
-
-swagger:model TaskDetailNetworkBindingModel
-*/
+// TaskDetailNetworkBindingModel task detail network binding model
+// swagger:model TaskDetailNetworkBindingModel
 type TaskDetailNetworkBindingModel struct {
 
-	/* bind IP
-
-	Required: true
-	*/
+	// bind IP
+	// Required: true
 	BindIP *string `json:"bindIP"`
 
-	/* container port
-
-	Required: true
-	*/
+	// container port
+	// Required: true
 	ContainerPort *int32 `json:"containerPort"`
 
-	/* host port
-
-	Required: true
-	*/
+	// host port
+	// Required: true
 	HostPort *int32 `json:"hostPort"`
 
-	/* protocol
-	 */
+	// protocol
 	Protocol string `json:"protocol,omitempty"`
 }
 

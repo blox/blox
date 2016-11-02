@@ -9,22 +9,17 @@ import (
 	"github.com/go-openapi/errors"
 )
 
-/*ContainerInstanceDetailVersionInfoModel container instance detail version info model
-
-swagger:model ContainerInstanceDetailVersionInfoModel
-*/
+// ContainerInstanceDetailVersionInfoModel container instance detail version info model
+// swagger:model ContainerInstanceDetailVersionInfoModel
 type ContainerInstanceDetailVersionInfoModel struct {
 
-	/* agent hash
-	 */
+	// agent hash
 	AgentHash string `json:"agentHash,omitempty"`
 
-	/* agent version
-	 */
+	// agent version
 	AgentVersion string `json:"agentVersion,omitempty"`
 
-	/* docker version
-	 */
+	// docker version
 	DockerVersion string `json:"dockerVersion,omitempty"`
 }
 

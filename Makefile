@@ -25,6 +25,10 @@ $(LOCAL_BINARY): $(SOURCES)
 	. ./scripts/build_binary.sh ./bin/local
 	@echo "Built event-stream handler"
 
+.PHONY: get-deps
+get-deps:
+	go get -u github.com/go-swagger/go-swagger/cmd/swagger
+
 .PHONY: unit-tests
 unit-tests: generate-models
 	go test -v -timeout 1s ./handler/... -short

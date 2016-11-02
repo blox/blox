@@ -11,20 +11,15 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailOverridesModel task detail overrides model
-
-swagger:model TaskDetailOverridesModel
-*/
+// TaskDetailOverridesModel task detail overrides model
+// swagger:model TaskDetailOverridesModel
 type TaskDetailOverridesModel struct {
 
-	/* container overrides
-
-	Required: true
-	*/
+	// container overrides
+	// Required: true
 	ContainerOverrides []*TaskDetailContainerOverridesModel `json:"containerOverrides"`
 
-	/* task role arn
-	 */
+	// task role arn
 	TaskRoleArn string `json:"taskRoleArn,omitempty"`
 }
 

@@ -10,22 +10,16 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*ContainerInstanceDetailAttributeModel container instance detail attribute model
-
-swagger:model ContainerInstanceDetailAttributeModel
-*/
+// ContainerInstanceDetailAttributeModel container instance detail attribute model
+// swagger:model ContainerInstanceDetailAttributeModel
 type ContainerInstanceDetailAttributeModel struct {
 
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 
-	/* value
-
-	Required: true
-	*/
+	// value
+	// Required: true
 	Value *string `json:"value"`
 }
 

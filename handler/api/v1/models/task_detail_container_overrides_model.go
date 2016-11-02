@@ -11,24 +11,18 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailContainerOverridesModel task detail container overrides model
-
-swagger:model TaskDetailContainerOverridesModel
-*/
+// TaskDetailContainerOverridesModel task detail container overrides model
+// swagger:model TaskDetailContainerOverridesModel
 type TaskDetailContainerOverridesModel struct {
 
-	/* command
-	 */
-	Command []string `json:"command,omitempty"`
+	// command
+	Command []string `json:"command"`
 
-	/* environment
-	 */
-	Environment []*TaskDetailEnvironmentModel `json:"environment,omitempty"`
+	// environment
+	Environment []*TaskDetailEnvironmentModel `json:"environment"`
 
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 }
 

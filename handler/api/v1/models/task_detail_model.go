@@ -11,92 +11,64 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailModel task detail model
-
-swagger:model TaskDetailModel
-*/
+// TaskDetailModel task detail model
+// swagger:model TaskDetailModel
 type TaskDetailModel struct {
 
-	/* cluster arn
-
-	Required: true
-	*/
+	// cluster arn
+	// Required: true
 	ClusterArn *string `json:"clusterArn"`
 
-	/* container instance arn
-
-	Required: true
-	*/
+	// container instance arn
+	// Required: true
 	ContainerInstanceArn *string `json:"containerInstanceArn"`
 
-	/* containers
-
-	Required: true
-	*/
+	// containers
+	// Required: true
 	Containers []*TaskDetailContainerModel `json:"containers"`
 
-	/* created at
-
-	Required: true
-	*/
+	// created at
+	// Required: true
 	CreatedAt *string `json:"createdAt"`
 
-	/* desired status
-
-	Required: true
-	*/
+	// desired status
+	// Required: true
 	DesiredStatus *string `json:"desiredStatus"`
 
-	/* last status
-
-	Required: true
-	*/
+	// last status
+	// Required: true
 	LastStatus *string `json:"lastStatus"`
 
-	/* overrides
-
-	Required: true
-	*/
+	// overrides
+	// Required: true
 	Overrides *TaskDetailOverridesModel `json:"overrides"`
 
-	/* started at
-	 */
+	// started at
 	StartedAt string `json:"startedAt,omitempty"`
 
-	/* started by
-	 */
+	// started by
 	StartedBy string `json:"startedBy,omitempty"`
 
-	/* stopped at
-	 */
+	// stopped at
 	StoppedAt string `json:"stoppedAt,omitempty"`
 
-	/* stopped reason
-	 */
+	// stopped reason
 	StoppedReason string `json:"stoppedReason,omitempty"`
 
-	/* task arn
-
-	Required: true
-	*/
+	// task arn
+	// Required: true
 	TaskArn *string `json:"taskArn"`
 
-	/* task definition arn
-
-	Required: true
-	*/
+	// task definition arn
+	// Required: true
 	TaskDefinitionArn *string `json:"taskDefinitionArn"`
 
-	/* updated at
-
-	Required: true
-	*/
+	// updated at
+	// Required: true
 	UpdatedAt *string `json:"updatedAt"`
 
-	/* version
-
-	Required: true
-	*/
+	// version
+	// Required: true
 	Version *int32 `json:"version"`
 }
 

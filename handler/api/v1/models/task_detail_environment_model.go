@@ -10,22 +10,16 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailEnvironmentModel task detail environment model
-
-swagger:model TaskDetailEnvironmentModel
-*/
+// TaskDetailEnvironmentModel task detail environment model
+// swagger:model TaskDetailEnvironmentModel
 type TaskDetailEnvironmentModel struct {
 
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 
-	/* value
-
-	Required: true
-	*/
+	// value
+	// Required: true
 	Value *string `json:"value"`
 }
 

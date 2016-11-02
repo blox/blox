@@ -10,46 +10,32 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*ContainerInstanceModel container instance model
-
-swagger:model ContainerInstanceModel
-*/
+// ContainerInstanceModel container instance model
+// swagger:model ContainerInstanceModel
 type ContainerInstanceModel struct {
 
-	/* account
-
-	Required: true
-	*/
+	// account
+	// Required: true
 	Account *string `json:"account"`
 
-	/* detail
-
-	Required: true
-	*/
+	// detail
+	// Required: true
 	Detail *ContainerInstanceDetailModel `json:"detail"`
 
-	/* id
-
-	Required: true
-	*/
+	// id
+	// Required: true
 	ID *string `json:"id"`
 
-	/* region
-
-	Required: true
-	*/
+	// region
+	// Required: true
 	Region *string `json:"region"`
 
-	/* resources
-
-	Required: true
-	*/
+	// resources
+	// Required: true
 	Resources []string `json:"resources"`
 
-	/* time
-
-	Required: true
-	*/
+	// time
+	// Required: true
 	Time *string `json:"time"`
 }
 
