@@ -46,7 +46,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 	version1 := 1
 	taskDetail1 := types.TaskDetail{
 		TaskArn:    &taskARN1,
-		ClusterArn: &clusterARN1,
+		ClusterARN: &clusterARN1,
 		LastStatus: &pendingStatus,
 		Version:    &version1,
 	}
@@ -60,7 +60,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 	version2 := version1 + 1
 	taskDetail2 := types.TaskDetail{
 		TaskArn:    &taskARN2,
-		ClusterArn: &clusterARN2,
+		ClusterARN: &clusterARN2,
 		LastStatus: &pendingStatus,
 		Version:    &version2,
 	}
@@ -124,7 +124,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskTaskDetailNotSet() {
 
 func (suite *TaskStoreTestSuite) TestAddTaskTaskARNNotSet() {
 	taskDetail := types.TaskDetail{
-		ClusterArn: &clusterARN1,
+		ClusterARN: &clusterARN1,
 	}
 	task := types.Task{
 		Detail: &taskDetail,
@@ -149,7 +149,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskClusterARNNotSet() {
 func (suite *TaskStoreTestSuite) TestAddTaskEmptyTaskARN() {
 	taskARN := ""
 	taskDetail := types.TaskDetail{
-		ClusterArn: &clusterARN1,
+		ClusterARN: &clusterARN1,
 		TaskArn:    &taskARN,
 	}
 	task := types.Task{
@@ -163,7 +163,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskEmptyTaskARN() {
 func (suite *TaskStoreTestSuite) TestAddTaskEmptyClusterARN() {
 	clusterARN := ""
 	taskDetail := types.TaskDetail{
-		ClusterArn: &clusterARN,
+		ClusterARN: &clusterARN,
 		TaskArn:    &taskARN1,
 	}
 	task := types.Task{
@@ -177,7 +177,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskEmptyClusterARN() {
 func (suite *TaskStoreTestSuite) TestAddTaskInvalidClusterARNWithNoName() {
 	clusterARN := "arn:aws:ecs:us-east-1:123456789123:cluster/"
 	taskDetail := types.TaskDetail{
-		ClusterArn: &clusterARN,
+		ClusterARN: &clusterARN,
 		TaskArn:    &taskARN1,
 	}
 	task := types.Task{

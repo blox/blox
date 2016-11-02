@@ -41,8 +41,8 @@ func NewContainerInstanceStoreMockContext(t *testing.T) *instanceStoreMockContex
 
 	version := 1
 	instanceDetail1 := types.InstanceDetail{
-		ContainerInstanceArn: &containerInstanceARN1,
-		ClusterArn:           &clusterARN1,
+		ContainerInstanceARN: &containerInstanceARN1,
+		ClusterARN:           &clusterARN1,
 		Status:               &status1,
 		Version:              &version,
 	}
@@ -54,8 +54,8 @@ func NewContainerInstanceStoreMockContext(t *testing.T) *instanceStoreMockContex
 	context.instanceKey1 = instanceKeyPrefix + clusterName1 + "/" + containerInstanceARN1
 
 	instanceDetail2 := types.InstanceDetail{
-		ContainerInstanceArn: &containerInstanceARN2,
-		ClusterArn:           &clusterARN2,
+		ContainerInstanceARN: &containerInstanceARN2,
+		ClusterARN:           &clusterARN2,
 		Status:               &status2,
 		Version:              &version,
 	}
@@ -135,7 +135,7 @@ func TestAddContainerInstanceContainerInstanceARNNotSet(t *testing.T) {
 	instanceStore := instanceStore(t, context)
 
 	instanceDetail := types.InstanceDetail{
-		ClusterArn: &clusterARN1,
+		ClusterARN: &clusterARN1,
 	}
 	instance := types.ContainerInstance{
 		Detail: &instanceDetail,
@@ -156,7 +156,7 @@ func TestAddContainerInstanceClusterARNNotSet(t *testing.T) {
 	instanceStore := instanceStore(t, context)
 
 	instanceDetail := types.InstanceDetail{
-		ContainerInstanceArn: &containerInstanceARN1,
+		ContainerInstanceARN: &containerInstanceARN1,
 	}
 	instance := types.ContainerInstance{
 		Detail: &instanceDetail,
@@ -178,8 +178,8 @@ func TestAddContainerInstanceEmptyContainerInstanceARN(t *testing.T) {
 
 	instanceARN := ""
 	instanceDetail := types.InstanceDetail{
-		ContainerInstanceArn: &instanceARN,
-		ClusterArn:           &clusterARN1,
+		ContainerInstanceARN: &instanceARN,
+		ClusterARN:           &clusterARN1,
 	}
 	instance := types.ContainerInstance{
 		Detail: &instanceDetail,
@@ -201,8 +201,8 @@ func TestAddContainerInstanceEmptyClusterARN(t *testing.T) {
 
 	clusterARN := ""
 	instanceDetail := types.InstanceDetail{
-		ContainerInstanceArn: &containerInstanceARN1,
-		ClusterArn:           &clusterARN,
+		ContainerInstanceARN: &containerInstanceARN1,
+		ClusterARN:           &clusterARN,
 	}
 	instance := types.ContainerInstance{
 		Detail: &instanceDetail,
@@ -311,7 +311,7 @@ func TestAddContainerInstanceHigherVersionInstanceExists(t *testing.T) {
 
 	version := *(*context.instance1.Detail).Version + 1
 	instanceDetail := types.InstanceDetail{
-		ContainerInstanceArn: &containerInstanceARN1,
+		ContainerInstanceARN: &containerInstanceARN1,
 		Version:              &version,
 	}
 	instance := types.ContainerInstance{
@@ -342,7 +342,7 @@ func TestAddContainerInstanceLowerVersionInstanceExists(t *testing.T) {
 
 	version := *(*context.instance1.Detail).Version - 1
 	instanceDetail := types.InstanceDetail{
-		ContainerInstanceArn: &containerInstanceARN1,
+		ContainerInstanceARN: &containerInstanceARN1,
 		Version:              &version,
 	}
 	instance := types.ContainerInstance{
@@ -373,7 +373,7 @@ func TestAddContainerInstanceFails(t *testing.T) {
 
 	version := *(*context.instance1.Detail).Version - 1
 	instanceDetail := types.InstanceDetail{
-		ContainerInstanceArn: &containerInstanceARN1,
+		ContainerInstanceARN: &containerInstanceARN1,
 		Version:              &version,
 	}
 	instance := types.ContainerInstance{
@@ -609,7 +609,7 @@ func TestListContainerInstancesGetWithPrefixMultipleResults(t *testing.T) {
 	}
 
 	for _, v := range instances {
-		value, ok := resp[*v.Detail.ContainerInstanceArn]
+		value, ok := resp[*v.Detail.ContainerInstanceARN]
 		if !ok {
 			t.Errorf("Expected GetWithPrefix result to contain the same elements as ListContainerInstances result. Missing %v", v)
 		} else {
@@ -801,7 +801,7 @@ func validateFilterContainerInstancesResultsMatchDatastoreResponse(t *testing.T,
 	}
 
 	for _, v := range instances {
-		value, ok := datastoreResp[*v.Detail.ContainerInstanceArn]
+		value, ok := datastoreResp[*v.Detail.ContainerInstanceARN]
 		if !ok {
 			t.Errorf("Expected FilterContainerInstances result to contain the same elements as datastore GetWithPrefix result. Missing %v", v)
 		} else {

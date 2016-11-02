@@ -58,8 +58,8 @@ func (suite *InstanceAPIsTestSuite) SetupTest() {
 	versionInfo := types.VersionInfo{}
 	instanceDetail := types.InstanceDetail{
 		AgentConnected:       &agentConnected1,
-		ClusterArn:           &clusterARN1,
-		ContainerInstanceArn: &instanceARN1,
+		ClusterARN:           &clusterARN1,
+		ContainerInstanceARN: &instanceARN1,
 		PendingTasksCount:    &pendingTaskCount1,
 		RegisteredResources:  []*types.Resource{},
 		RemainingResources:   []*types.Resource{},

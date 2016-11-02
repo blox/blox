@@ -56,15 +56,15 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		ContainerOverrides: []*types.ContainerOverrides{},
 	}
 	taskDetail1 := types.TaskDetail{
-		ClusterArn:           &clusterARN1,
-		ContainerInstanceArn: &instanceARN1,
+		ClusterARN:           &clusterARN1,
+		ContainerInstanceARN: &instanceARN1,
 		Containers:           []*types.Container{},
 		CreatedAt:            &createdAt,
 		DesiredStatus:        &taskStatus1,
 		LastStatus:           &taskStatus1,
 		Overrides:            &overrides,
 		TaskArn:              &taskARN1,
-		TaskDefinitionArn:    &taskDefinitionARN,
+		TaskDefinitionARN:    &taskDefinitionARN,
 		UpdatedAt:            &updatedAt1,
 		Version:              &version,
 	}

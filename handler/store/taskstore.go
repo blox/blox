@@ -9,6 +9,7 @@ import (
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
+	"github.com/aws/aws-sdk-go/aws"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -63,16 +64,16 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 		return err
 	}
 
-	if task.Detail == nil || task.Detail.ClusterArn == nil || task.Detail.TaskArn == nil {
+	if task.Detail == nil || task.Detail.ClusterARN == nil || task.Detail.TaskArn == nil {
 		return errors.New("Cluster ARN and task ARN should not be empty in task JSON")
 	}
-
-	clusterName, err := regex.GetClusterNameFromARN(*task.Detail.ClusterArn)
+	log.Infof("Task store unmarshalled task: %s, trying to add it to the store", task.Detail.String())
+	clusterName, err := regex.GetClusterNameFromARN(aws.StringValue(task.Detail.ClusterARN))
 	if err != nil {
 		return err
 	}
 
-	key, err := generateTaskKey(clusterName, *task.Detail.TaskArn)
+	key, err := generateTaskKey(clusterName, aws.StringValue(task.Detail.TaskArn))
 	if err != nil {
 		return err
 	}
@@ -84,9 +85,9 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 	}
 
 	if existingTask != nil {
-		existingTaskDetail := *existingTask.Detail
-		currentTaskDetail := *task.Detail
-		if *existingTaskDetail.Version >= *currentTaskDetail.Version {
+		existingTaskDetail := existingTask.Detail
+		currentTaskDetail := task.Detail
+		if aws.IntValue(existingTaskDetail.Version) >= aws.IntValue(currentTaskDetail.Version) {
 			log.Infof("Higher or equal version %v of task %v with version %v already exists",
 				existingTask.Detail.Version,
 				task.Detail.TaskArn,
@@ -161,7 +162,7 @@ func (taskStore eventTaskStore) FilterTasks(filterKey string, filterValue string
 
 	tasksWithStatus := []types.Task{}
 	for _, task := range tasks {
-		if strings.ToLower(filterValue) == strings.ToLower(*task.Detail.LastStatus) {
+		if strings.ToLower(filterValue) == strings.ToLower(aws.StringValue(task.Detail.LastStatus)) {
 			tasksWithStatus = append(tasksWithStatus, task)
 		}
 	}

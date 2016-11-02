@@ -9,6 +9,7 @@ import (
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
+	"github.com/aws/aws-sdk-go/aws"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -64,20 +65,21 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 		return err
 	}
 
-	if instance.Detail == nil || instance.Detail.ClusterArn == nil || instance.Detail.ContainerInstanceArn == nil {
+	if instance.Detail == nil || instance.Detail.ClusterARN == nil || instance.Detail.ContainerInstanceARN == nil {
 		return errors.New("Cluster ARN and container instance ARN should not be empty in instance JSON")
 	}
 
-	clusterName, err := regex.GetClusterNameFromARN(*instance.Detail.ClusterArn)
+	clusterName, err := regex.GetClusterNameFromARN(aws.StringValue(instance.Detail.ClusterARN))
 	if err != nil {
 		return err
 	}
 
-	key, err := generateInstanceKey(clusterName, *instance.Detail.ContainerInstanceArn)
+	key, err := generateInstanceKey(clusterName, aws.StringValue(instance.Detail.ContainerInstanceARN))
 	if err != nil {
 		return err
 	}
 
+	log.Infof("Instance store unmarshalled instance: %s, trying to add it to the store", instance.Detail.String())
 	// check if record exists with higher version number
 	existingInstance, err := instanceStore.getInstanceByKey(key)
 	if err != nil {
@@ -85,12 +87,12 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 	}
 
 	if existingInstance != nil {
-		existingInstanceDetail := *existingInstance.Detail
-		currentInstanceDetail := *instance.Detail
-		if *existingInstanceDetail.Version >= *currentInstanceDetail.Version {
+		existingInstanceDetail := existingInstance.Detail
+		currentInstanceDetail := instance.Detail
+		if aws.IntValue(existingInstanceDetail.Version) >= aws.IntValue(currentInstanceDetail.Version) {
 			log.Infof("Higher or equal version %v of instance %v with version %v already exists",
 				existingInstance.Detail.Version,
-				instance.Detail.ContainerInstanceArn,
+				instance.Detail.ContainerInstanceARN,
 				instance.Detail.Version)
 
 			// do nothing. later version of the event has already been stored
@@ -165,7 +167,7 @@ func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status 
 	}
 	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
 	for _, instance := range instances {
-		if strings.ToLower(status) == strings.ToLower(*instance.Detail.Status) {
+		if strings.ToLower(status) == strings.ToLower(aws.StringValue(instance.Detail.Status)) {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}

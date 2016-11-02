@@ -29,10 +29,10 @@ type sqsEventConsumer struct {
 
 func NewConsumer(sqs sqsiface.SQSAPI, processor Processor) (Consumer, error) {
 	if sqs == nil {
-		return nil, errors.Errorf("The sqs API cannot be nil")
+		return nil, errors.Errorf("The SQS API interface is not initialized")
 	}
 	if processor == nil {
-		return nil, errors.Errorf("The processor cannot be nil")
+		return nil, errors.Errorf("The event processor is not initialized")
 	}
 
 	//TODO: create queue if doesn't exist
@@ -50,10 +50,10 @@ func NewConsumer(sqs sqsiface.SQSAPI, processor Processor) (Consumer, error) {
 
 func getQueueURL(client sqsiface.SQSAPI, queueName string) (string, error) {
 	if client == nil {
-		return "", errors.Errorf("The sqsClient cannot be nil")
+		return "", errors.Errorf("The SQS client is not initialized")
 	}
 	if len(queueName) == 0 {
-		return "", errors.Errorf("The queueName cannot be empty")
+		return "", errors.Errorf("The queue name cannot be empty")
 	}
 
 	input := &sqs.GetQueueUrlInput{
@@ -71,6 +71,7 @@ func getQueueURL(client sqsiface.SQSAPI, queueName string) (string, error) {
 }
 
 func (sqsConsumer sqsEventConsumer) PollForEvents(ctx context.Context) {
+	log.Infof("Starting to poll for events from SQS")
 	for {
 		select {
 		case <-ctx.Done():
@@ -82,8 +83,6 @@ func (sqsConsumer sqsEventConsumer) PollForEvents(ctx context.Context) {
 }
 
 func (sqsConsumer sqsEventConsumer) pollForMessages() {
-	log.Info("Polling for an event")
-
 	receiveMessageInput := &sqs.ReceiveMessageInput{
 		QueueUrl:          aws.String(sqsConsumer.queueURL),
 		VisibilityTimeout: aws.Int64(visibilityTimeout),
@@ -99,7 +98,7 @@ func (sqsConsumer sqsEventConsumer) pollForMessages() {
 	}
 
 	if output == nil || output.Messages == nil {
-		log.Infof("Receive message output is nil with the following input: %+v", receiveMessageInput)
+		log.Debug("Received a blank message from the queue")
 		return
 	}
 

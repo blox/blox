@@ -1,5 +1,11 @@
 package types
 
+import (
+	"fmt"
+
+	"github.com/aws/aws-sdk-go/aws"
+)
+
 // Task defines the structure of the task json received from the event stream
 type Task struct {
 	ID        *string     `json:"id"`
@@ -11,8 +17,8 @@ type Task struct {
 }
 
 type TaskDetail struct {
-	ClusterArn           *string      `json:"clusterArn"`
-	ContainerInstanceArn *string      `json:"containerInstanceArn"`
+	ClusterARN           *string      `json:"clusterArn"`
+	ContainerInstanceARN *string      `json:"containerInstanceArn"`
 	Containers           []*Container `json:"containers"`
 	CreatedAt            *string      `json:"createdAt"`
 	DesiredStatus        *string      `json:"desiredStatus"`
@@ -23,13 +29,26 @@ type TaskDetail struct {
 	StoppedAt            string       `json:"stoppedAt,omitempty"`
 	StoppedReason        string       `json:"stoppedReason,omitempty"`
 	TaskArn              *string      `json:"taskArn"`
-	TaskDefinitionArn    *string      `json:"taskDefinitionArn"`
+	TaskDefinitionARN    *string      `json:"taskDefinitionArn"`
 	UpdatedAt            *string      `json:"updatedAt"`
 	Version              *int         `json:"version"`
 }
 
+func (taskDetail *TaskDetail) String() string {
+	return fmt.Sprintf("Task %s; Version: %d; Task Definition: %s; %s -> %s; Cluster: %s; Container Instance: %s; Started By: %s; Updated At: %s",
+		aws.StringValue(taskDetail.TaskArn),
+		aws.IntValue(taskDetail.Version),
+		aws.StringValue(taskDetail.TaskDefinitionARN),
+		aws.StringValue(taskDetail.LastStatus),
+		aws.StringValue(taskDetail.DesiredStatus),
+		aws.StringValue(taskDetail.ClusterARN),
+		aws.StringValue(taskDetail.ContainerInstanceARN),
+		taskDetail.StartedBy,
+		aws.StringValue(taskDetail.UpdatedAt))
+}
+
 type Container struct {
-	ContainerArn    *string           `json:"containerArn"`
+	ContainerARN    *string           `json:"containerArn"`
 	ExitCode        int               `json:"exitCode,omitempty"`
 	LastStatus      *string           `json:"lastStatus"`
 	Name            *string           `json:"name"`

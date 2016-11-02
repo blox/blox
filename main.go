@@ -1,17 +1,18 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/clients"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/event"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/store"
+	"github.com/aws/amazon-ecs-event-stream-handler/logger"
 
 	log "github.com/cihub/seelog"
-	"github.com/pkg/errors"
 	"github.com/urfave/negroni"
 	"golang.org/x/net/context"
 
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -28,7 +29,8 @@ func main() {
 }
 
 func _main() int {
-	err := initLogger("seelog.xml")
+	defer log.Flush()
+	err := logger.InitLogger()
 	if err != nil {
 		fmt.Printf("Could not initialize logger: %+v", err)
 	}
@@ -98,18 +100,4 @@ func _main() int {
 	}
 
 	return 0
-}
-
-func initLogger(filename string) error {
-	logger, err := log.LoggerFromConfigAsFile(filename)
-	if err != nil {
-		return errors.Wrap(err, "Could not load logger config")
-	}
-
-	err = log.ReplaceLogger(logger)
-	if err != nil {
-		return errors.Wrap(err, "Could not replace logger")
-	}
-
-	return nil
 }

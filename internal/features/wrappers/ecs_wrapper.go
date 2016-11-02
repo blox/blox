@@ -1,7 +1,6 @@
 package wrappers
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/pkg/errors"
@@ -23,13 +22,7 @@ func NewECSWrapper() ECSWrapper {
 }
 
 func newAWSSession() *session.Session {
-	//TODO: env vars? cli inputs?
-	sess, err := session.NewSessionWithOptions(session.Options{
-		Config: aws.Config{
-			Region: aws.String("us-east-1"),
-		},
-		Profile: "event-handler",
-	})
+	sess, err := session.NewSession()
 
 	if err != nil {
 		panic(err)

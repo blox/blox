@@ -13,8 +13,8 @@ func validateContainerInstance(instance types.ContainerInstance) error {
 	}
 	// TODO: Validate inner structs in instance.Detail
 	detail := instance.Detail
-	if detail == nil || detail.AgentConnected == nil || detail.ClusterArn == nil ||
-		detail.ContainerInstanceArn == nil || detail.PendingTasksCount == nil ||
+	if detail == nil || detail.AgentConnected == nil || detail.ClusterARN == nil ||
+		detail.ContainerInstanceARN == nil || detail.PendingTasksCount == nil ||
 		detail.RegisteredResources == nil || detail.RemainingResources == nil ||
 		detail.RunningTasksCount == nil || detail.Status == nil || detail.Version == nil ||
 		detail.VersionInfo == nil || detail.UpdatedAt == nil {
@@ -72,9 +72,9 @@ func ToContainerInstanceModel(instance types.ContainerInstance) (models.Containe
 	detail := models.ContainerInstanceDetailModel{
 		AgentConnected:       instance.Detail.AgentConnected,
 		AgentUpdateStatus:    instance.Detail.AgentUpdateStatus,
-		ClusterArn:           instance.Detail.ClusterArn,
-		ContainerInstanceArn: instance.Detail.ContainerInstanceArn,
-		Ec2InstanceID:        instance.Detail.Ec2InstanceID,
+		ClusterArn:           instance.Detail.ClusterARN,
+		ContainerInstanceArn: instance.Detail.ContainerInstanceARN,
+		Ec2InstanceID:        instance.Detail.EC2InstanceID,
 		PendingTasksCount:    &pendingTaskCount,
 		RegisteredResources:  regRes,
 		RemainingResources:   remRes,
@@ -113,10 +113,10 @@ func validateTaskModel(task types.Task) error {
 	}
 	// TODO: Validate inner structs in task.Detail
 	detail := task.Detail
-	if detail == nil || detail.ClusterArn == nil || detail.ContainerInstanceArn == nil ||
+	if detail == nil || detail.ClusterARN == nil || detail.ContainerInstanceARN == nil ||
 		detail.Containers == nil || detail.CreatedAt == nil || detail.DesiredStatus == nil ||
 		detail.LastStatus == nil || detail.Overrides == nil || detail.TaskArn == nil ||
-		detail.TaskDefinitionArn == nil || detail.UpdatedAt == nil || detail.Version == nil {
+		detail.TaskDefinitionARN == nil || detail.UpdatedAt == nil || detail.Version == nil {
 		return errors.New("Task detail is invalid")
 	}
 	if task.ID == nil {
@@ -145,7 +145,7 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		c := task.Detail.Containers[i]
 		exitCode := int32(c.ExitCode)
 		containers[i] = &models.TaskDetailContainerModel{
-			ContainerArn: c.ContainerArn,
+			ContainerArn: c.ContainerARN,
 			ExitCode:     exitCode,
 			LastStatus:   c.LastStatus,
 			Name:         c.Name,
@@ -195,8 +195,8 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 
 	version := int32(*task.Detail.Version)
 	detail := models.TaskDetailModel{
-		ClusterArn:           task.Detail.ClusterArn,
-		ContainerInstanceArn: task.Detail.ContainerInstanceArn,
+		ClusterArn:           task.Detail.ClusterARN,
+		ContainerInstanceArn: task.Detail.ContainerInstanceARN,
 		Containers:           containers,
 		CreatedAt:            task.Detail.CreatedAt,
 		DesiredStatus:        task.Detail.DesiredStatus,
@@ -207,7 +207,7 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		StoppedAt:            task.Detail.StoppedAt,
 		StoppedReason:        task.Detail.StoppedReason,
 		TaskArn:              task.Detail.TaskArn,
-		TaskDefinitionArn:    task.Detail.TaskDefinitionArn,
+		TaskDefinitionArn:    task.Detail.TaskDefinitionARN,
 		UpdatedAt:            task.Detail.UpdatedAt,
 		Version:              &version,
 	}
