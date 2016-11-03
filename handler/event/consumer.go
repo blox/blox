@@ -9,9 +9,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-//TODO: take optional queue name from command line when starting the app
 const (
-	queueName         = "event_stream"
 	visibilityTimeout = 10
 	waitTimeSeconds   = 10
 )
@@ -27,15 +25,17 @@ type sqsEventConsumer struct {
 	processor Processor
 }
 
-func NewConsumer(sqs sqsiface.SQSAPI, processor Processor) (Consumer, error) {
+func NewConsumer(sqs sqsiface.SQSAPI, processor Processor, queueName string) (Consumer, error) {
 	if sqs == nil {
 		return nil, errors.Errorf("The SQS API interface is not initialized")
 	}
 	if processor == nil {
 		return nil, errors.Errorf("The event processor is not initialized")
 	}
+	if queueName == "" {
+		return nil, errors.Errorf("The SQS queue name is empty")
+	}
 
-	//TODO: create queue if doesn't exist
 	sqsQueueURL, err := getQueueURL(sqs, queueName)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func getQueueURL(client sqsiface.SQSAPI, queueName string) (string, error) {
 		return "", errors.Errorf("Queue url is empty: %v", output)
 	}
 
-	return *output.QueueUrl, nil
+	return aws.StringValue(output.QueueUrl), nil
 }
 
 func (sqsConsumer sqsEventConsumer) PollForEvents(ctx context.Context) {

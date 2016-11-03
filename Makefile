@@ -28,6 +28,7 @@ $(LOCAL_BINARY): $(SOURCES)
 .PHONY: get-deps
 get-deps:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
+	go get github.com/tools/godep
 
 .PHONY: unit-tests
 unit-tests: generate-models
