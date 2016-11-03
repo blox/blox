@@ -10,11 +10,11 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*ContainerInstanceDetailAttributeModel container instance detail attribute model
+/*ContainerInstanceAttributeModel container instance attribute model
 
-swagger:model ContainerInstanceDetailAttributeModel
+swagger:model ContainerInstanceAttributeModel
 */
-type ContainerInstanceDetailAttributeModel struct {
+type ContainerInstanceAttributeModel struct {
 
 	/* name
 
@@ -29,8 +29,8 @@ type ContainerInstanceDetailAttributeModel struct {
 	Value *string `json:"value"`
 }
 
-// Validate validates this container instance detail attribute model
-func (m *ContainerInstanceDetailAttributeModel) Validate(formats strfmt.Registry) error {
+// Validate validates this container instance attribute model
+func (m *ContainerInstanceAttributeModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateName(formats); err != nil {
@@ -49,7 +49,7 @@ func (m *ContainerInstanceDetailAttributeModel) Validate(formats strfmt.Registry
 	return nil
 }
 
-func (m *ContainerInstanceDetailAttributeModel) validateName(formats strfmt.Registry) error {
+func (m *ContainerInstanceAttributeModel) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -58,7 +58,7 @@ func (m *ContainerInstanceDetailAttributeModel) validateName(formats strfmt.Regi
 	return nil
 }
 
-func (m *ContainerInstanceDetailAttributeModel) validateValue(formats strfmt.Registry) error {
+func (m *ContainerInstanceAttributeModel) validateValue(formats strfmt.Registry) error {
 
 	if err := validate.Required("value", "body", m.Value); err != nil {
 		return err

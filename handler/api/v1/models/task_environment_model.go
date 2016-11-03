@@ -10,27 +10,21 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailEnvironmentModel task detail environment model
+// TaskEnvironmentModel task environment model
+// swagger:model TaskEnvironmentModel
+type TaskEnvironmentModel struct {
 
-swagger:model TaskDetailEnvironmentModel
-*/
-type TaskDetailEnvironmentModel struct {
-
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 
-	/* value
-
-	Required: true
-	*/
+	// value
+	// Required: true
 	Value *string `json:"value"`
 }
 
-// Validate validates this task detail environment model
-func (m *TaskDetailEnvironmentModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task environment model
+func (m *TaskEnvironmentModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateName(formats); err != nil {
@@ -49,7 +43,7 @@ func (m *TaskDetailEnvironmentModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskDetailEnvironmentModel) validateName(formats strfmt.Registry) error {
+func (m *TaskEnvironmentModel) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -58,7 +52,7 @@ func (m *TaskDetailEnvironmentModel) validateName(formats strfmt.Registry) error
 	return nil
 }
 
-func (m *TaskDetailEnvironmentModel) validateValue(formats strfmt.Registry) error {
+func (m *TaskEnvironmentModel) validateValue(formats strfmt.Registry) error {
 
 	if err := validate.Required("value", "body", m.Value); err != nil {
 		return err

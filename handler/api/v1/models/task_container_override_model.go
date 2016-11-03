@@ -11,23 +11,23 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskDetailContainerOverridesModel task detail container overrides model
-// swagger:model TaskDetailContainerOverridesModel
-type TaskDetailContainerOverridesModel struct {
+// TaskContainerOverrideModel task container override model
+// swagger:model TaskContainerOverrideModel
+type TaskContainerOverrideModel struct {
 
 	// command
 	Command []string `json:"command"`
 
 	// environment
-	Environment []*TaskDetailEnvironmentModel `json:"environment"`
+	Environment []*TaskEnvironmentModel `json:"environment"`
 
 	// name
 	// Required: true
 	Name *string `json:"name"`
 }
 
-// Validate validates this task detail container overrides model
-func (m *TaskDetailContainerOverridesModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task container override model
+func (m *TaskContainerOverrideModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCommand(formats); err != nil {
@@ -51,7 +51,7 @@ func (m *TaskDetailContainerOverridesModel) Validate(formats strfmt.Registry) er
 	return nil
 }
 
-func (m *TaskDetailContainerOverridesModel) validateCommand(formats strfmt.Registry) error {
+func (m *TaskContainerOverrideModel) validateCommand(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Command) { // not required
 		return nil
@@ -60,7 +60,7 @@ func (m *TaskDetailContainerOverridesModel) validateCommand(formats strfmt.Regis
 	return nil
 }
 
-func (m *TaskDetailContainerOverridesModel) validateEnvironment(formats strfmt.Registry) error {
+func (m *TaskContainerOverrideModel) validateEnvironment(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Environment) { // not required
 		return nil
@@ -84,7 +84,7 @@ func (m *TaskDetailContainerOverridesModel) validateEnvironment(formats strfmt.R
 	return nil
 }
 
-func (m *TaskDetailContainerOverridesModel) validateName(formats strfmt.Registry) error {
+func (m *TaskContainerOverrideModel) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err

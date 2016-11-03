@@ -11,20 +11,20 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskDetailOverridesModel task detail overrides model
-// swagger:model TaskDetailOverridesModel
-type TaskDetailOverridesModel struct {
+// TaskOverrideModel task override model
+// swagger:model TaskOverrideModel
+type TaskOverrideModel struct {
 
 	// container overrides
 	// Required: true
-	ContainerOverrides []*TaskDetailContainerOverridesModel `json:"containerOverrides"`
+	ContainerOverrides []*TaskContainerOverrideModel `json:"containerOverrides"`
 
 	// task role arn
 	TaskRoleArn string `json:"taskRoleArn,omitempty"`
 }
 
-// Validate validates this task detail overrides model
-func (m *TaskDetailOverridesModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task override model
+func (m *TaskOverrideModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateContainerOverrides(formats); err != nil {
@@ -38,7 +38,7 @@ func (m *TaskDetailOverridesModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskDetailOverridesModel) validateContainerOverrides(formats strfmt.Registry) error {
+func (m *TaskOverrideModel) validateContainerOverrides(formats strfmt.Registry) error {
 
 	if err := validate.Required("containerOverrides", "body", m.ContainerOverrides); err != nil {
 		return err

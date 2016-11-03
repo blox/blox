@@ -28,7 +28,7 @@ type TaskDetail struct {
 	StartedBy            string       `json:"startedBy,omitempty"`
 	StoppedAt            string       `json:"stoppedAt,omitempty"`
 	StoppedReason        string       `json:"stoppedReason,omitempty"`
-	TaskArn              *string      `json:"taskArn"`
+	TaskARN              *string      `json:"taskArn"`
 	TaskDefinitionARN    *string      `json:"taskDefinitionArn"`
 	UpdatedAt            *string      `json:"updatedAt"`
 	Version              *int         `json:"version"`
@@ -36,7 +36,7 @@ type TaskDetail struct {
 
 func (taskDetail *TaskDetail) String() string {
 	return fmt.Sprintf("Task %s; Version: %d; Task Definition: %s; %s -> %s; Cluster: %s; Container Instance: %s; Started By: %s; Updated At: %s",
-		aws.StringValue(taskDetail.TaskArn),
+		aws.StringValue(taskDetail.TaskARN),
 		aws.IntValue(taskDetail.Version),
 		aws.StringValue(taskDetail.TaskDefinitionARN),
 		aws.StringValue(taskDetail.LastStatus),

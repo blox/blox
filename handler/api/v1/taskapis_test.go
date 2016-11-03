@@ -63,7 +63,7 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		DesiredStatus:        &taskStatus1,
 		LastStatus:           &taskStatus1,
 		Overrides:            &overrides,
-		TaskArn:              &taskARN1,
+		TaskARN:              &taskARN1,
 		TaskDefinitionARN:    &taskDefinitionARN,
 		UpdatedAt:            &updatedAt1,
 		Version:              &version,
@@ -84,7 +84,7 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 	suite.taskModel1 = taskModel
 
 	taskDetail2 := taskDetail1
-	taskDetail2.TaskArn = &taskARN2
+	taskDetail2.TaskARN = &taskARN2
 	taskDetail2.LastStatus = &taskStatus2
 
 	suite.task2 = types.Task{
@@ -95,6 +95,12 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		Resources: []string{taskARN2},
 		Time:      &time,
 	}
+
+	taskModel, err = ToTaskModel(suite.task2)
+	if err != nil {
+		suite.T().Error("Cannot setup testSuite: Error when tranlating task to external model")
+	}
+	suite.taskModel2 = taskModel
 
 	suite.responseHeader = http.Header{responseContentTypeKey: []string{responseContentTypeVal}}
 
@@ -120,10 +126,10 @@ func (suite *TaskAPIsTestSuite) TestGetReturnsTask() {
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
 
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	taskInResponse := types.Task{}
+	taskInResponse := models.TaskModel{}
 	err := json.NewDecoder(reader).Decode(&taskInResponse)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
-	assert.Exactly(suite.T(), suite.task1, taskInResponse, "Task in response is invalid")
+	assert.Exactly(suite.T(), suite.taskModel1, taskInResponse, "Task in response is invalid")
 }
 
 func (suite *TaskAPIsTestSuite) TestGetTaskNoTask() {
@@ -165,13 +171,15 @@ func (suite *TaskAPIsTestSuite) TestGetTaskWithoutTaskARN() {
 func (suite *TaskAPIsTestSuite) TestListTasksReturnsTasks() {
 	taskList := []types.Task{suite.task1, suite.task2}
 	suite.taskStore.EXPECT().ListTasks().Return(taskList, nil)
-	suite.listTaskTester(taskList)
+	taskModelList := []models.TaskModel{suite.taskModel1, suite.taskModel2}
+	suite.listTaskTester(taskModelList)
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksNoTasks() {
-	emptytaskList := make([]types.Task, 0)
-	suite.taskStore.EXPECT().ListTasks().Return(emptytaskList, nil)
-	suite.listTaskTester(emptytaskList)
+	emptyTaskList := make([]types.Task, 0)
+	suite.taskStore.EXPECT().ListTasks().Return(emptyTaskList, nil)
+	emptyTaskModelList := make([]models.TaskModel, 0)
+	suite.listTaskTester(emptyTaskModelList)
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksStoreReturnsError() {
@@ -188,13 +196,15 @@ func (suite *TaskAPIsTestSuite) TestListTasksStoreReturnsError() {
 func (suite *TaskAPIsTestSuite) TestFilterTasksReturnsTasks() {
 	taskList := []types.Task{suite.task1}
 	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(taskList, nil)
-	suite.filterTasksTester(taskList)
+	taskModelList := []models.TaskModel{suite.taskModel1}
+	suite.filterTasksTester(taskModelList)
 }
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksNoTasks() {
-	emptytaskList := make([]types.Task, 0)
-	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(emptytaskList, nil)
-	suite.filterTasksTester(emptytaskList)
+	emptyTaskList := make([]types.Task, 0)
+	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(emptyTaskList, nil)
+	emptyTaskModelList := make([]models.TaskModel, 0)
+	suite.filterTasksTester(emptyTaskModelList)
 }
 
 func (suite *TaskAPIsTestSuite) TestFilterTasksStoreReturnsError() {
@@ -243,7 +253,7 @@ func (suite *TaskAPIsTestSuite) filterTasksRequest() *http.Request {
 	return request
 }
 
-func (suite *TaskAPIsTestSuite) listTaskTester(taskList []types.Task) {
+func (suite *TaskAPIsTestSuite) listTaskTester(taskList []models.TaskModel) {
 	request := suite.listTasksRequest()
 	responseRecorder := httptest.NewRecorder()
 
@@ -253,7 +263,7 @@ func (suite *TaskAPIsTestSuite) listTaskTester(taskList []types.Task) {
 	suite.validateTasksInListOrFilterTasksResponse(responseRecorder, taskList)
 }
 
-func (suite *TaskAPIsTestSuite) filterTasksTester(taskList []types.Task) {
+func (suite *TaskAPIsTestSuite) filterTasksTester(taskList []models.TaskModel) {
 	request := suite.filterTasksRequest()
 	responseRecorder := httptest.NewRecorder()
 
@@ -305,9 +315,9 @@ func (suite *TaskAPIsTestSuite) validateErrorResponseHeaderAndStatus(responseRec
 	assert.Equal(suite.T(), errorCode, responseRecorder.Code, "Http response status is invalid")
 }
 
-func (suite *TaskAPIsTestSuite) validateTasksInListOrFilterTasksResponse(responseRecorder *httptest.ResponseRecorder, expectedTasks []types.Task) {
+func (suite *TaskAPIsTestSuite) validateTasksInListOrFilterTasksResponse(responseRecorder *httptest.ResponseRecorder, expectedTasks []models.TaskModel) {
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	tasksInResponse := new([]types.Task)
+	tasksInResponse := new([]models.TaskModel)
 	err := json.NewDecoder(reader).Decode(tasksInResponse)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
 	assert.Exactly(suite.T(), expectedTasks, *tasksInResponse, "Tasks in response is invalid")

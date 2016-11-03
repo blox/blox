@@ -5,6 +5,7 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/validate"
@@ -14,61 +15,120 @@ import (
 // swagger:model ContainerInstanceModel
 type ContainerInstanceModel struct {
 
-	// account
-	// Required: true
-	Account *string `json:"account"`
+	// e c2 instance ID
+	EC2InstanceID string `json:"EC2InstanceID,omitempty"`
 
-	// detail
+	// agent connected
 	// Required: true
-	Detail *ContainerInstanceDetailModel `json:"detail"`
+	AgentConnected *bool `json:"agentConnected"`
 
-	// id
-	// Required: true
-	ID *string `json:"id"`
+	// agent update status
+	AgentUpdateStatus string `json:"agentUpdateStatus,omitempty"`
 
-	// region
-	// Required: true
-	Region *string `json:"region"`
+	// attributes
+	Attributes []*ContainerInstanceAttributeModel `json:"attributes"`
 
-	// resources
+	// cluster a r n
 	// Required: true
-	Resources []string `json:"resources"`
+	ClusterARN *string `json:"clusterARN"`
 
-	// time
+	// container instance a r n
 	// Required: true
-	Time *string `json:"time"`
+	ContainerInstanceARN *string `json:"containerInstanceARN"`
+
+	// pending tasks count
+	// Required: true
+	PendingTasksCount *int32 `json:"pendingTasksCount"`
+
+	// registered resources
+	// Required: true
+	RegisteredResources []*ContainerInstanceRegisteredResourceModel `json:"registeredResources"`
+
+	// remaining resources
+	// Required: true
+	RemainingResources []*ContainerInstanceRemainingResourceModel `json:"remainingResources"`
+
+	// running tasks count
+	// Required: true
+	RunningTasksCount *int32 `json:"runningTasksCount"`
+
+	// status
+	// Required: true
+	Status *string `json:"status"`
+
+	// updated at
+	// Required: true
+	UpdatedAt *string `json:"updatedAt"`
+
+	// version
+	// Required: true
+	Version *int32 `json:"version"`
+
+	// version info
+	// Required: true
+	VersionInfo *ContainerInstanceVersionInfoModel `json:"versionInfo"`
 }
 
 // Validate validates this container instance model
 func (m *ContainerInstanceModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAccount(formats); err != nil {
+	if err := m.validateAgentConnected(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
-	if err := m.validateDetail(formats); err != nil {
+	if err := m.validateAttributes(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
-	if err := m.validateID(formats); err != nil {
+	if err := m.validateClusterARN(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
-	if err := m.validateRegion(formats); err != nil {
+	if err := m.validateContainerInstanceARN(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
-	if err := m.validateResources(formats); err != nil {
+	if err := m.validatePendingTasksCount(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
-	if err := m.validateTime(formats); err != nil {
+	if err := m.validateRegisteredResources(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
+	if err := m.validateRemainingResources(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
+	if err := m.validateRunningTasksCount(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
+	if err := m.validateUpdatedAt(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
+	if err := m.validateVersion(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
+	if err := m.validateVersionInfo(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -79,62 +139,161 @@ func (m *ContainerInstanceModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ContainerInstanceModel) validateAccount(formats strfmt.Registry) error {
+func (m *ContainerInstanceModel) validateAgentConnected(formats strfmt.Registry) error {
 
-	if err := validate.Required("account", "body", m.Account); err != nil {
+	if err := validate.Required("agentConnected", "body", m.AgentConnected); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *ContainerInstanceModel) validateDetail(formats strfmt.Registry) error {
+func (m *ContainerInstanceModel) validateAttributes(formats strfmt.Registry) error {
 
-	if err := validate.Required("detail", "body", m.Detail); err != nil {
+	if swag.IsZero(m.Attributes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Attributes); i++ {
+
+		if swag.IsZero(m.Attributes[i]) { // not required
+			continue
+		}
+
+		if m.Attributes[i] != nil {
+
+			if err := m.Attributes[i].Validate(formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateClusterARN(formats strfmt.Registry) error {
+
+	if err := validate.Required("clusterARN", "body", m.ClusterARN); err != nil {
 		return err
 	}
 
-	if m.Detail != nil {
+	return nil
+}
 
-		if err := m.Detail.Validate(formats); err != nil {
+func (m *ContainerInstanceModel) validateContainerInstanceARN(formats strfmt.Registry) error {
+
+	if err := validate.Required("containerInstanceARN", "body", m.ContainerInstanceARN); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validatePendingTasksCount(formats strfmt.Registry) error {
+
+	if err := validate.Required("pendingTasksCount", "body", m.PendingTasksCount); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateRegisteredResources(formats strfmt.Registry) error {
+
+	if err := validate.Required("registeredResources", "body", m.RegisteredResources); err != nil {
+		return err
+	}
+
+	for i := 0; i < len(m.RegisteredResources); i++ {
+
+		if swag.IsZero(m.RegisteredResources[i]) { // not required
+			continue
+		}
+
+		if m.RegisteredResources[i] != nil {
+
+			if err := m.RegisteredResources[i].Validate(formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateRemainingResources(formats strfmt.Registry) error {
+
+	if err := validate.Required("remainingResources", "body", m.RemainingResources); err != nil {
+		return err
+	}
+
+	for i := 0; i < len(m.RemainingResources); i++ {
+
+		if swag.IsZero(m.RemainingResources[i]) { // not required
+			continue
+		}
+
+		if m.RemainingResources[i] != nil {
+
+			if err := m.RemainingResources[i].Validate(formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateRunningTasksCount(formats strfmt.Registry) error {
+
+	if err := validate.Required("runningTasksCount", "body", m.RunningTasksCount); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateStatus(formats strfmt.Registry) error {
+
+	if err := validate.Required("status", "body", m.Status); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateUpdatedAt(formats strfmt.Registry) error {
+
+	if err := validate.Required("updatedAt", "body", m.UpdatedAt); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateVersion(formats strfmt.Registry) error {
+
+	if err := validate.Required("version", "body", m.Version); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ContainerInstanceModel) validateVersionInfo(formats strfmt.Registry) error {
+
+	if err := validate.Required("versionInfo", "body", m.VersionInfo); err != nil {
+		return err
+	}
+
+	if m.VersionInfo != nil {
+
+		if err := m.VersionInfo.Validate(formats); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *ContainerInstanceModel) validateID(formats strfmt.Registry) error {
-
-	if err := validate.Required("id", "body", m.ID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstanceModel) validateRegion(formats strfmt.Registry) error {
-
-	if err := validate.Required("region", "body", m.Region); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstanceModel) validateResources(formats strfmt.Registry) error {
-
-	if err := validate.Required("resources", "body", m.Resources); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstanceModel) validateTime(formats strfmt.Registry) error {
-
-	if err := validate.Required("time", "body", m.Time); err != nil {
-		return err
 	}
 
 	return nil

@@ -10,9 +10,9 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskDetailNetworkBindingModel task detail network binding model
-// swagger:model TaskDetailNetworkBindingModel
-type TaskDetailNetworkBindingModel struct {
+// TaskNetworkBindingModel task network binding model
+// swagger:model TaskNetworkBindingModel
+type TaskNetworkBindingModel struct {
 
 	// bind IP
 	// Required: true
@@ -30,8 +30,8 @@ type TaskDetailNetworkBindingModel struct {
 	Protocol string `json:"protocol,omitempty"`
 }
 
-// Validate validates this task detail network binding model
-func (m *TaskDetailNetworkBindingModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task network binding model
+func (m *TaskNetworkBindingModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateBindIP(formats); err != nil {
@@ -55,7 +55,7 @@ func (m *TaskDetailNetworkBindingModel) Validate(formats strfmt.Registry) error 
 	return nil
 }
 
-func (m *TaskDetailNetworkBindingModel) validateBindIP(formats strfmt.Registry) error {
+func (m *TaskNetworkBindingModel) validateBindIP(formats strfmt.Registry) error {
 
 	if err := validate.Required("bindIP", "body", m.BindIP); err != nil {
 		return err
@@ -64,7 +64,7 @@ func (m *TaskDetailNetworkBindingModel) validateBindIP(formats strfmt.Registry) 
 	return nil
 }
 
-func (m *TaskDetailNetworkBindingModel) validateContainerPort(formats strfmt.Registry) error {
+func (m *TaskNetworkBindingModel) validateContainerPort(formats strfmt.Registry) error {
 
 	if err := validate.Required("containerPort", "body", m.ContainerPort); err != nil {
 		return err
@@ -73,7 +73,7 @@ func (m *TaskDetailNetworkBindingModel) validateContainerPort(formats strfmt.Reg
 	return nil
 }
 
-func (m *TaskDetailNetworkBindingModel) validateHostPort(formats strfmt.Registry) error {
+func (m *TaskNetworkBindingModel) validateHostPort(formats strfmt.Registry) error {
 
 	if err := validate.Required("hostPort", "body", m.HostPort); err != nil {
 		return err

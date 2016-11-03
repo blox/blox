@@ -7,8 +7,8 @@ import (
 )
 
 func ValidateInstancesMatch(ecsInstance ecs.ContainerInstance, eshInstance models.ContainerInstanceModel) error {
-	if *ecsInstance.ContainerInstanceArn != *eshInstance.Detail.ContainerInstanceArn ||
-		*ecsInstance.Status != *eshInstance.Detail.Status {
+	if *ecsInstance.ContainerInstanceArn != *eshInstance.ContainerInstanceARN ||
+		*ecsInstance.Status != *eshInstance.Status {
 		return errors.New("Container instances don't match")
 	}
 	return nil
@@ -18,12 +18,12 @@ func ValidateListContainsInstance(ecsInstance ecs.ContainerInstance, eshInstance
 	instanceARN := *ecsInstance.ContainerInstanceArn
 	var eshInstance models.ContainerInstanceModel
 	for _, i := range eshInstanceList {
-		if *i.Detail.ContainerInstanceArn == instanceARN {
+		if *i.ContainerInstanceARN == instanceARN {
 			eshInstance = i
 			break
 		}
 	}
-	if eshInstance.Detail == nil || eshInstance.Detail.ContainerInstanceArn == nil {
+	if eshInstance.ContainerInstanceARN == nil {
 		return errors.Errorf("Instance with ARN '%s' not found in response", instanceARN)
 	}
 	return ValidateInstancesMatch(ecsInstance, eshInstance)

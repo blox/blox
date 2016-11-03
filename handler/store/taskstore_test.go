@@ -45,7 +45,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 
 	version1 := 1
 	taskDetail1 := types.TaskDetail{
-		TaskArn:    &taskARN1,
+		TaskARN:    &taskARN1,
 		ClusterARN: &clusterARN1,
 		LastStatus: &pendingStatus,
 		Version:    &version1,
@@ -59,7 +59,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 
 	version2 := version1 + 1
 	taskDetail2 := types.TaskDetail{
-		TaskArn:    &taskARN2,
+		TaskARN:    &taskARN2,
 		ClusterARN: &clusterARN2,
 		LastStatus: &pendingStatus,
 		Version:    &version2,
@@ -136,7 +136,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskTaskARNNotSet() {
 
 func (suite *TaskStoreTestSuite) TestAddTaskClusterARNNotSet() {
 	taskDetail := types.TaskDetail{
-		TaskArn: &taskARN1,
+		TaskARN: &taskARN1,
 	}
 	task := types.Task{
 		Detail: &taskDetail,
@@ -150,7 +150,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskEmptyTaskARN() {
 	taskARN := ""
 	taskDetail := types.TaskDetail{
 		ClusterARN: &clusterARN1,
-		TaskArn:    &taskARN,
+		TaskARN:    &taskARN,
 	}
 	task := types.Task{
 		Detail: &taskDetail,
@@ -164,7 +164,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskEmptyClusterARN() {
 	clusterARN := ""
 	taskDetail := types.TaskDetail{
 		ClusterARN: &clusterARN,
-		TaskArn:    &taskARN1,
+		TaskARN:    &taskARN1,
 	}
 	task := types.Task{
 		Detail: &taskDetail,
@@ -178,7 +178,7 @@ func (suite *TaskStoreTestSuite) TestAddTaskInvalidClusterARNWithNoName() {
 	clusterARN := "arn:aws:ecs:us-east-1:123456789123:cluster/"
 	taskDetail := types.TaskDetail{
 		ClusterARN: &clusterARN,
-		TaskArn:    &taskARN1,
+		TaskARN:    &taskARN1,
 	}
 	task := types.Task{
 		Detail: &taskDetail,
@@ -403,7 +403,7 @@ func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixReturnsMultipleResult
 
 	for _, v := range tasks {
 		//attempt to grab the same task from resp
-		value, ok := resp[*v.Detail.TaskArn]
+		value, ok := resp[*v.Detail.TaskARN]
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as ListTasks result. Missing %v", v)
 		} else {
@@ -502,7 +502,7 @@ func (suite *TaskStoreTestSuite) TestFilterTasksListTasksReturnsMultipleResultsM
 
 	for _, v := range tasks {
 		//attempt to grab the same task from resp
-		value, ok := resp[*v.Detail.TaskArn]
+		value, ok := resp[*v.Detail.TaskARN]
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as FilterTasks result. Missing %v", v)
 		} else {

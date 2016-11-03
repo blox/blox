@@ -11,48 +11,37 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskDetailContainerModel task detail container model
+// TaskContainerModel task container model
+// swagger:model TaskContainerModel
+type TaskContainerModel struct {
 
-swagger:model TaskDetailContainerModel
-*/
-type TaskDetailContainerModel struct {
+	// container a r n
+	// Required: true
+	ContainerARN *string `json:"containerARN"`
 
-	/* container arn
-
-	Required: true
-	*/
-	ContainerArn *string `json:"containerArn"`
-
-	/* exit code
-	 */
+	// exit code
 	ExitCode int32 `json:"exitCode,omitempty"`
 
-	/* last status
-
-	Required: true
-	*/
+	// last status
+	// Required: true
 	LastStatus *string `json:"lastStatus"`
 
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 
-	/* network bindings
-	 */
-	NetworkBindings []*TaskDetailNetworkBindingModel `json:"networkBindings,omitempty"`
+	// network bindings
+	NetworkBindings []*TaskNetworkBindingModel `json:"networkBindings"`
 
-	/* reason
-	 */
+	// reason
 	Reason string `json:"reason,omitempty"`
 }
 
-// Validate validates this task detail container model
-func (m *TaskDetailContainerModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task container model
+func (m *TaskContainerModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateContainerArn(formats); err != nil {
+	if err := m.validateContainerARN(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -78,16 +67,16 @@ func (m *TaskDetailContainerModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskDetailContainerModel) validateContainerArn(formats strfmt.Registry) error {
+func (m *TaskContainerModel) validateContainerARN(formats strfmt.Registry) error {
 
-	if err := validate.Required("containerArn", "body", m.ContainerArn); err != nil {
+	if err := validate.Required("containerARN", "body", m.ContainerARN); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *TaskDetailContainerModel) validateLastStatus(formats strfmt.Registry) error {
+func (m *TaskContainerModel) validateLastStatus(formats strfmt.Registry) error {
 
 	if err := validate.Required("lastStatus", "body", m.LastStatus); err != nil {
 		return err
@@ -96,7 +85,7 @@ func (m *TaskDetailContainerModel) validateLastStatus(formats strfmt.Registry) e
 	return nil
 }
 
-func (m *TaskDetailContainerModel) validateName(formats strfmt.Registry) error {
+func (m *TaskContainerModel) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -105,7 +94,7 @@ func (m *TaskDetailContainerModel) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskDetailContainerModel) validateNetworkBindings(formats strfmt.Registry) error {
+func (m *TaskContainerModel) validateNetworkBindings(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.NetworkBindings) { // not required
 		return nil

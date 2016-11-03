@@ -64,7 +64,7 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 		return err
 	}
 
-	if task.Detail == nil || task.Detail.ClusterARN == nil || task.Detail.TaskArn == nil {
+	if task.Detail == nil || task.Detail.ClusterARN == nil || task.Detail.TaskARN == nil {
 		return errors.New("Cluster ARN and task ARN should not be empty in task JSON")
 	}
 	log.Infof("Task store unmarshalled task: %s, trying to add it to the store", task.Detail.String())
@@ -73,7 +73,7 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 		return err
 	}
 
-	key, err := generateTaskKey(clusterName, aws.StringValue(task.Detail.TaskArn))
+	key, err := generateTaskKey(clusterName, aws.StringValue(task.Detail.TaskARN))
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 		if aws.IntValue(existingTaskDetail.Version) >= aws.IntValue(currentTaskDetail.Version) {
 			log.Infof("Higher or equal version %v of task %v with version %v already exists",
 				existingTask.Detail.Version,
-				task.Detail.TaskArn,
+				task.Detail.TaskARN,
 				task.Detail.Version)
 
 			// do nothing. later version of the event has already been stored

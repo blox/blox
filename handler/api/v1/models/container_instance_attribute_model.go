@@ -10,9 +10,9 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskDetailEnvironmentModel task detail environment model
-// swagger:model TaskDetailEnvironmentModel
-type TaskDetailEnvironmentModel struct {
+// ContainerInstanceAttributeModel container instance attribute model
+// swagger:model ContainerInstanceAttributeModel
+type ContainerInstanceAttributeModel struct {
 
 	// name
 	// Required: true
@@ -23,8 +23,8 @@ type TaskDetailEnvironmentModel struct {
 	Value *string `json:"value"`
 }
 
-// Validate validates this task detail environment model
-func (m *TaskDetailEnvironmentModel) Validate(formats strfmt.Registry) error {
+// Validate validates this container instance attribute model
+func (m *ContainerInstanceAttributeModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateName(formats); err != nil {
@@ -43,7 +43,7 @@ func (m *TaskDetailEnvironmentModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskDetailEnvironmentModel) validateName(formats strfmt.Registry) error {
+func (m *ContainerInstanceAttributeModel) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -52,7 +52,7 @@ func (m *TaskDetailEnvironmentModel) validateName(formats strfmt.Registry) error
 	return nil
 }
 
-func (m *TaskDetailEnvironmentModel) validateValue(formats strfmt.Registry) error {
+func (m *ContainerInstanceAttributeModel) validateValue(formats strfmt.Registry) error {
 
 	if err := validate.Required("value", "body", m.Value); err != nil {
 		return err

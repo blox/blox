@@ -223,43 +223,9 @@
     "ContainerInstanceModel": {
       "type": "object",
       "required": [
-        "id",
-        "account",
-        "time",
-        "region",
-        "resources",
-        "detail"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "account": {
-          "type": "string"
-        },
-        "time": {
-          "type": "string"
-        },
-        "region": {
-          "type": "string"
-        },
-        "resources": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "detail": {
-          "$ref": "#/definitions/ContainerInstanceDetailModel"
-        }
-      }
-    },
-    "ContainerInstanceDetailModel": {
-      "type": "object",
-      "required": [
         "agentConnected",
-        "clusterArn",
-        "containerInstanceArn",
+        "clusterARN",
+        "containerInstanceARN",
         "pendingTasksCount",
         "registeredResources",
         "remainingResources",
@@ -279,16 +245,16 @@
         "attributes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ContainerInstanceDetailAttributeModel"
+            "$ref": "#/definitions/ContainerInstanceAttributeModel"
           }
         },
-        "clusterArn": {
+        "clusterARN": {
           "type": "string"
         },
-        "containerInstanceArn": {
+        "containerInstanceARN": {
           "type": "string"
         },
-        "ec2InstanceId": {
+        "EC2InstanceID": {
           "type": "string"
         },
         "pendingTasksCount": {
@@ -298,13 +264,13 @@
         "registeredResources": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ContainerInstanceDetailRegisteredResourceModel"
+            "$ref": "#/definitions/ContainerInstanceRegisteredResourceModel"
           }
         },
         "remainingResources": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ContainerInstanceDetailRemainingResourceModel"
+            "$ref": "#/definitions/ContainerInstanceRemainingResourceModel"
           }
         },
         "runningTasksCount": {
@@ -319,14 +285,14 @@
           "format": "int32"
         },
         "versionInfo": {
-          "$ref": "#/definitions/ContainerInstanceDetailVersionInfoModel"
+          "$ref": "#/definitions/ContainerInstanceVersionInfoModel"
         },
         "updatedAt": {
           "type": "string"
         }
       }
     },
-    "ContainerInstanceDetailAttributeModel": {
+    "ContainerInstanceAttributeModel": {
       "type": "object",
       "required": [
         "name",
@@ -341,26 +307,7 @@
         }
       }
     },
-    "ContainerInstanceDetailRegisteredResourceModel": {
-      "type": "object",
-      "required": [
-        "name",
-        "type",
-        "value"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      }
-    },
-    "ContainerInstanceDetailRemainingResourceModel": {
+    "ContainerInstanceRegisteredResourceModel": {
       "type": "object",
       "required": [
         "name",
@@ -379,7 +326,26 @@
         }
       }
     },
-    "ContainerInstanceDetailVersionInfoModel": {
+    "ContainerInstanceRemainingResourceModel": {
+      "type": "object",
+      "required": [
+        "name",
+        "type",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "ContainerInstanceVersionInfoModel": {
       "type": "object",
       "properties": {
         "agentHash": {
@@ -396,63 +362,29 @@
     "TaskModel": {
       "type": "object",
       "required": [
-        "id",
-        "account",
-        "time",
-        "region",
-        "resources",
-        "detail"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "account": {
-          "type": "string"
-        },
-        "time": {
-          "type": "string"
-        },
-        "region": {
-          "type": "string"
-        },
-        "resources": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "detail": {
-          "$ref": "#/definitions/TaskDetailModel"
-        }
-      }
-    },
-    "TaskDetailModel": {
-      "type": "object",
-      "required": [
-        "clusterArn",
-        "containerInstanceArn",
+        "clusterARN",
+        "containerInstanceARN",
         "containers",
         "createdAt",
         "desiredStatus",
         "lastStatus",
         "overrides",
         "updatedAt",
-        "taskArn",
-        "taskDefinitionArn",
+        "taskARN",
+        "taskDefinitionARN",
         "version"
       ],
       "properties": {
-        "clusterArn": {
+        "clusterARN": {
           "type": "string"
         },
-        "containerInstanceArn": {
+        "containerInstanceARN": {
           "type": "string"
         },
         "containers": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskDetailContainerModel"
+            "$ref": "#/definitions/TaskContainerModel"
           }
         },
         "createdAt": {
@@ -465,7 +397,7 @@
           "type": "string"
         },
         "overrides": {
-          "$ref": "#/definitions/TaskDetailOverridesModel"
+          "$ref": "#/definitions/TaskOverrideModel"
         },
         "startedAt": {
           "type": "string"
@@ -482,10 +414,10 @@
         "updatedAt": {
           "type": "string"
         },
-        "taskArn": {
+        "taskARN": {
           "type": "string"
         },
-        "taskDefinitionArn": {
+        "taskDefinitionARN": {
           "type": "string"
         },
         "version": {
@@ -494,15 +426,15 @@
         }
       }
     },
-    "TaskDetailContainerModel": {
+    "TaskContainerModel": {
       "type": "object",
       "required": [
-        "containerArn",
+        "containerARN",
         "lastStatus",
         "name"
       ],
       "properties": {
-        "containerArn": {
+        "containerARN": {
           "type": "string"
         },
         "exitCode": {
@@ -518,7 +450,7 @@
         "networkBindings": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskDetailNetworkBindingModel"
+            "$ref": "#/definitions/TaskNetworkBindingModel"
           }
         },
         "reason": {
@@ -526,7 +458,7 @@
         }
       }
     },
-    "TaskDetailNetworkBindingModel": {
+    "TaskNetworkBindingModel": {
       "type": "object",
       "required": [
         "bindIP",
@@ -550,7 +482,7 @@
         }
       }
     },
-    "TaskDetailOverridesModel": {
+    "TaskOverrideModel": {
       "type": "object",
       "required": [
         "containerOverrides"
@@ -559,7 +491,7 @@
         "containerOverrides": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskDetailContainerOverridesModel"
+            "$ref": "#/definitions/TaskContainerOverrideModel"
           }
         },
         "taskRoleArn": {
@@ -567,7 +499,7 @@
         }
       }
     },
-    "TaskDetailContainerOverridesModel": {
+    "TaskContainerOverrideModel": {
       "type": "object",
       "required": [
         "name"
@@ -582,7 +514,7 @@
         "environment": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskDetailEnvironmentModel"
+            "$ref": "#/definitions/TaskEnvironmentModel"
           }
         },
         "name": {
@@ -590,7 +522,7 @@
         }
       }
     },
-    "TaskDetailEnvironmentModel": {
+    "TaskEnvironmentModel": {
       "type": "object",
       "required": [
         "name",

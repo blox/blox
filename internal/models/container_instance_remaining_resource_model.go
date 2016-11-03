@@ -10,11 +10,11 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*ContainerInstanceDetailRemainingResourceModel container instance detail remaining resource model
+/*ContainerInstanceRemainingResourceModel container instance remaining resource model
 
-swagger:model ContainerInstanceDetailRemainingResourceModel
+swagger:model ContainerInstanceRemainingResourceModel
 */
-type ContainerInstanceDetailRemainingResourceModel struct {
+type ContainerInstanceRemainingResourceModel struct {
 
 	/* name
 
@@ -35,8 +35,8 @@ type ContainerInstanceDetailRemainingResourceModel struct {
 	Value *string `json:"value"`
 }
 
-// Validate validates this container instance detail remaining resource model
-func (m *ContainerInstanceDetailRemainingResourceModel) Validate(formats strfmt.Registry) error {
+// Validate validates this container instance remaining resource model
+func (m *ContainerInstanceRemainingResourceModel) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateName(formats); err != nil {
@@ -60,7 +60,7 @@ func (m *ContainerInstanceDetailRemainingResourceModel) Validate(formats strfmt.
 	return nil
 }
 
-func (m *ContainerInstanceDetailRemainingResourceModel) validateName(formats strfmt.Registry) error {
+func (m *ContainerInstanceRemainingResourceModel) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -69,7 +69,7 @@ func (m *ContainerInstanceDetailRemainingResourceModel) validateName(formats str
 	return nil
 }
 
-func (m *ContainerInstanceDetailRemainingResourceModel) validateType(formats strfmt.Registry) error {
+func (m *ContainerInstanceRemainingResourceModel) validateType(formats strfmt.Registry) error {
 
 	if err := validate.Required("type", "body", m.Type); err != nil {
 		return err
@@ -78,7 +78,7 @@ func (m *ContainerInstanceDetailRemainingResourceModel) validateType(formats str
 	return nil
 }
 
-func (m *ContainerInstanceDetailRemainingResourceModel) validateValue(formats strfmt.Registry) error {
+func (m *ContainerInstanceRemainingResourceModel) validateValue(formats strfmt.Registry) error {
 
 	if err := validate.Required("value", "body", m.Value); err != nil {
 		return err
