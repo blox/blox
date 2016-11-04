@@ -28,7 +28,7 @@ $(LOCAL_BINARY): $(SOURCES)
 
 .PHONY: generate
 generate: generate-models $(SOURCES)
-	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/...
+	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
 
 .PHONY: get-deps
 get-deps:
