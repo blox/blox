@@ -9,6 +9,7 @@
 SOURCEDIR=.
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 LOCAL_BINARY=bin/local/ecs-event-stream-handler
+ROOT := $(shell pwd)
 
 .PHONY: all
 all: clean build unit-tests
@@ -19,11 +20,15 @@ generate-models:
 	@echo "Generated swagger models"
 
 .PHONY: build
-build: generate-models $(LOCAL_BINARY)
+build:	$(LOCAL_BINARY)
 
 $(LOCAL_BINARY): $(SOURCES)
 	. ./scripts/build_binary.sh ./bin/local
 	@echo "Built event-stream handler"
+
+.PHONY: generate
+generate: generate-models $(SOURCES)
+	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/...
 
 .PHONY: get-deps
 get-deps:
@@ -32,7 +37,7 @@ get-deps:
 	go get github.com/gucumber/gucumber/cmd/gucumber
 
 .PHONY: unit-tests
-unit-tests: generate-models
+unit-tests:
 	go test -v -timeout 1s ./handler/... -short
 
 # Start the server before running this target. More details in Readme under ./internal directory.
