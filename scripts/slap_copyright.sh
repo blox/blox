@@ -23,6 +23,7 @@ if [ -z "$1" ]
 fi
 
 appendLicense(){
+  echo "Slapping copyright notice on ${outputfile}"
   outputfile=${1?Must provide an output file}
 
   echo "// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -45,7 +46,6 @@ for input in "$@"
 do
   if [ -d ${input} ] ; then
     for file in `find ${input} -name "*.go"`; do
-      echo "slap copyright on ${file}"
       if ! grep -q "// Copyright" ${file} ; then
         appendLicense ${file}
       fi
