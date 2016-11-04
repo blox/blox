@@ -19,7 +19,7 @@ generate-models:
 	@echo "Generated swagger models"
 
 .PHONY: build
-build:	generate-models $(LOCAL_BINARY)
+build: generate-models $(LOCAL_BINARY)
 
 $(LOCAL_BINARY): $(SOURCES)
 	. ./scripts/build_binary.sh ./bin/local
@@ -29,6 +29,7 @@ $(LOCAL_BINARY): $(SOURCES)
 get-deps:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get github.com/tools/godep
+	go get github.com/gucumber/gucumber/cmd/gucumber
 
 .PHONY: unit-tests
 unit-tests: generate-models

@@ -5,46 +5,55 @@ These tests call the Event Stream Handler (ESH) APIs using the swagger generated
 
 ### What are the assumptions made?
 * ESH server is running locally.
-* There is an ECS cluster named "eventStreamTestCluster" and it has at least one container instance registered to it. (This step can be automated in the future versions of the test suite by creating a test cluster and launching an EC2 instance with user data enabling to register itself to the created cluster.)
+* An ECS cluster has already been created with at least one Container Instance registered to it. You can specify the cluster name by using the `ECS_CLUSTER` envrionment variable (This step can be automated in the future versions of the test suite by creating a test cluster and launching an EC2 instance with user data enabling to register itself to the created cluster).
 
 ### How to run the test suite?
 From a level above the ./internal directory, use the following commands depending on test suite you want to run.
 
+Note: The examples commands here make the following assumptions about your setup:
+
+1. The ECS Cluster is named `test`
+2. The AWS Credentials are saved under a profile named `test-profile`
+3. The ECS Cluster is setup in the `us-east-1` region
+
+If you're using a custom ECS Endpoint, then you can use `ECS_ENDPOINT=<endpoint>` to specify the same.
+
 **All e2e tests**
 ```
-gucumber -tags=@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@e2e
 ```
+
 **All e2e instance API tests**
 ```
-gucumber -tags=@instance,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@instance,@e2e
 ```
 **All e2e task API tests**
 ```
-gcucumber -tags=@task,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@task,@e2e
 ```
 **e2e GetInstance API tests**
 ```
-gcucumber -tags=@get-instance,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@get-instance,@e2e
 ```
 **e2e ListInstances API tests**
 ```
-gcucumber -tags=@list-instances,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@list-instances,@e2e
 ```
 **e2e FilterInstances API tests**
 ```
-gcucumber -tags=@filter-instances,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@filter-instances,@e2e
 ```
 **e2e GetTask API tests**
 ```
-gcucumber -tags=@get-task,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@get-task,@e2e
 ```
 **e2e ListTasks API tests**
 ```
-gcucumber -tags=@list-tasks,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@list-tasks,@e2e
 ```
 **e2e FilterTasks API tests**
 ```
-gcucumber -tags=@filter-tasks,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@filter-tasks,@e2e
 ```
 
 ***Note:*** The the ESH client used by the tests are checked in. However, if there is any change in 'swagger.json' file in the handler, re-generate the models using the following command from inside the ./internal directory.

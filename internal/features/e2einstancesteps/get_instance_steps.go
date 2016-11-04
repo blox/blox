@@ -18,6 +18,11 @@ func init() {
 		ecsContainerInstanceList = nil
 		eshContainerInstanceList = nil
 
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
 		instanceARNs, err := ecsWrapper.ListContainerInstances(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
@@ -33,6 +38,11 @@ func init() {
 	})
 
 	When(`^I get instance with the cluster name and instance ARN$`, func() {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
 		if len(ecsContainerInstanceList) != 1 {
 			T.Errorf("Error memorizing container instance registered to ECS")
 		}

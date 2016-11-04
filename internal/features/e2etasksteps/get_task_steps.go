@@ -16,7 +16,12 @@ func init() {
 	eshWrapper := wrappers.NewESHWrapper()
 
 	When(`^I get task with the cluster name and task ARN$`, func() {
-		time.Sleep(5 * time.Second)
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
+		time.Sleep(15 * time.Second)
 		if len(ecsTaskList) != 1 {
 			T.Errorf("Error memorizing task started using ECS client")
 		}

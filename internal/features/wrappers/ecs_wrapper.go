@@ -1,6 +1,7 @@
 package wrappers
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/pkg/errors"
@@ -22,8 +23,17 @@ func NewECSWrapper() ECSWrapper {
 }
 
 func newAWSSession() *session.Session {
-	sess, err := session.NewSession()
-
+	var sess *session.Session
+	var err error
+	if endpoint, err := getECSEndpoint(); err != nil {
+		sess, err = session.NewSession()
+	} else {
+		sess, err = session.NewSessionWithOptions(session.Options{
+			Config: aws.Config{
+				Endpoint: aws.String(endpoint),
+			},
+		})
+	}
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +103,7 @@ func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string) (ecs
 		return ecs.Task{}, err
 	}
 	if len(containerInstances) < 1 {
-		return ecs.Task{}, errors.Errorf("No container instance registered to cluser '%s'", clusterName)
+		return ecs.Task{}, errors.Errorf("No container instance registered to cluster '%s'", clusterName)
 	}
 	in := ecs.StartTaskInput{
 		Cluster:            &clusterName,
@@ -106,7 +116,9 @@ func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string) (ecs
 	}
 	if len(resp.Failures) != 0 {
 		reason := *resp.Failures[0].Reason
-		return ecs.Task{}, errors.Errorf("Failure starting task. Reason: %s", reason)
+		return ecs.Task{}, errors.Errorf(
+			"Failure starting task on cluster '%s' with '%d' container instances using task definition '%s'. Reason: %s",
+			clusterName, len(in.ContainerInstances), taskDefn, reason)
 	}
 	if len(resp.Tasks) != 1 {
 		return ecs.Task{}, errors.New("Invalid number of tasks started")
@@ -121,7 +133,7 @@ func (ecsWrapper ECSWrapper) StopTask(clusterName string, taskARN string) error 
 	}
 	_, err := ecsWrapper.client.StopTask(&in)
 	if err != nil {
-		return errors.Errorf("Failed to stop task with ARN '%s'", taskARN)
+		return errors.Wrapf(err, "Failed to stop task with ARN '%s' on cluster: '%s'", taskARN, clusterName)
 	}
 	return nil
 }
@@ -143,7 +155,7 @@ func (ecsWrapper ECSWrapper) ListContainerInstances(clusterName string) ([]*stri
 	}
 	resp, err := ecsWrapper.client.ListContainerInstances(&in)
 	if err != nil {
-		return nil, errors.New("Failed to list ECS container instances")
+		return nil, errors.Wrapf(err, "Failed to list ECS container instances with cluster name: '%s'", clusterName)
 	}
 	return resp.ContainerInstanceArns, nil
 }

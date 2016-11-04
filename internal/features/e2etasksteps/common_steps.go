@@ -29,14 +29,22 @@ func init() {
 	})
 
 	Before("@task", func() {
-		err := stopAllTasks(ecsWrapper)
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		err = stopAllTasks(ecsWrapper, clusterName)
 		if err != nil {
 			T.Errorf("Failed to stop all ECS tasks. Error: %s", err)
 		}
 	})
 
 	AfterAll(func() {
-		err := stopAllTasks(ecsWrapper)
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		err = stopAllTasks(ecsWrapper, clusterName)
 		if err != nil {
 			T.Errorf("Failed to stop all ECS tasks. Error: %s", err)
 		}
@@ -49,6 +57,12 @@ func init() {
 	Given(`^I start (\d+) task(?:|s) in the ECS cluster$`, func(numTasks int) {
 		ecsTaskList = nil
 		eshTaskList = nil
+
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
 		for i := 0; i < numTasks; i++ {
 			ecsTask, err := ecsWrapper.StartTask(clusterName, taskDefinitionSleep300)
 			if err != nil {
@@ -68,7 +82,7 @@ func init() {
 	})
 }
 
-func stopAllTasks(ecsWrapper wrappers.ECSWrapper) error {
+func stopAllTasks(ecsWrapper wrappers.ECSWrapper, clusterName string) error {
 	taskARNList, err := ecsWrapper.ListTasks(clusterName)
 	if err != nil {
 		return err

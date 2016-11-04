@@ -12,7 +12,7 @@ func init() {
 	eshWrapper := wrappers.NewESHWrapper()
 
 	When(`^I list tasks$`, func() {
-		time.Sleep(5 * time.Second)
+		time.Sleep(15 * time.Second)
 		eshTasks, err := eshWrapper.ListTasks()
 		if err != nil {
 			T.Errorf(err.Error())

@@ -90,10 +90,10 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 		existingInstanceDetail := existingInstance.Detail
 		currentInstanceDetail := instance.Detail
 		if aws.IntValue(existingInstanceDetail.Version) >= aws.IntValue(currentInstanceDetail.Version) {
-			log.Infof("Higher or equal version %v of instance %v with version %v already exists",
-				existingInstance.Detail.Version,
-				instance.Detail.ContainerInstanceARN,
-				instance.Detail.Version)
+			log.Infof("Higher or equal version %d of instance %s with version %d already exists",
+				aws.IntValue(existingInstance.Detail.Version),
+				aws.StringValue(instance.Detail.ContainerInstanceARN),
+				aws.IntValue(instance.Detail.Version))
 
 			// do nothing. later version of the event has already been stored
 			return nil
@@ -156,7 +156,7 @@ func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey strin
 	case filterKey == clusterFilter:
 		return instanceStore.filterContainerInstancesByCluster(filterValue)
 	default:
-		return nil, errors.New("Unsupported filter key")
+		return nil, errors.Errorf("Unsupported filter key: %s", filterKey)
 	}
 }
 

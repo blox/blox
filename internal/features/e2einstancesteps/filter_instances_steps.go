@@ -6,10 +6,14 @@ import (
 )
 
 func init() {
-
 	eshWrapper := wrappers.NewESHWrapper()
 
 	When(`^I filter instances by the same ECS cluster name$`, func() {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
 		eshInstances, err := eshWrapper.FilterInstancesByClusterName(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())

@@ -22,6 +22,11 @@ func init() {
 		ecsContainerInstanceList = nil
 		eshContainerInstanceList = nil
 
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
 		instanceARNs, err := ecsWrapper.ListContainerInstances(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())

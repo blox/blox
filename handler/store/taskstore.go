@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	taskKeyPrefix    = "ecs/task/"
-	taskStatusFilter = "status"
+	taskKeyPrefix       = "ecs/task/"
+	taskStatusFilter    = "status"
+	taskStartedByFilter = "startedBy"
 )
 
 // TaskStore defines methods to access tasks from the datastore
@@ -88,10 +89,10 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 		existingTaskDetail := existingTask.Detail
 		currentTaskDetail := task.Detail
 		if aws.IntValue(existingTaskDetail.Version) >= aws.IntValue(currentTaskDetail.Version) {
-			log.Infof("Higher or equal version %v of task %v with version %v already exists",
-				existingTask.Detail.Version,
-				task.Detail.TaskARN,
-				task.Detail.Version)
+			log.Infof("Higher or equal version %d of task %s with version %d already exists",
+				aws.IntValue(existingTask.Detail.Version),
+				aws.StringValue(task.Detail.TaskARN),
+				aws.IntValue(task.Detail.Version))
 
 			// do nothing. later version of the event has already been stored
 			return nil
@@ -149,25 +150,41 @@ func (taskStore eventTaskStore) FilterTasks(filterKey string, filterValue string
 		return nil, errors.New("Filter key and value cannot be empty")
 	}
 
-	//TODO: make generic by finding the field name using reflection so we can filter
-	//on arbitrary fields
-	if taskStatusFilter != filterKey {
-		return nil, errors.Errorf("Filter '%s' not supported", filterKey)
+	switch {
+	case filterKey == taskStatusFilter:
+		return taskStore.filterTasks(isTaskStatus, filterValue)
+	case filterKey == taskStartedByFilter:
+		return taskStore.filterTasks(isTaskStartedBy, filterValue)
+	default:
+		return nil, errors.Errorf("Unsupported filter key: %s", filterKey)
 	}
 
+}
+
+type taskFilter func(string, types.Task) bool
+
+func isTaskStatus(status string, task types.Task) bool {
+	return strings.ToLower(status) == strings.ToLower(aws.StringValue(task.Detail.LastStatus))
+}
+
+func isTaskStartedBy(startedBy string, task types.Task) bool {
+	return startedBy == task.Detail.StartedBy
+}
+
+func (taskStore eventTaskStore) filterTasks(filter taskFilter, filterValue string) ([]types.Task, error) {
 	tasks, err := taskStore.ListTasks()
 	if err != nil {
 		return nil, err
 	}
 
-	tasksWithStatus := []types.Task{}
+	result := []types.Task{}
 	for _, task := range tasks {
-		if strings.ToLower(filterValue) == strings.ToLower(aws.StringValue(task.Detail.LastStatus)) {
-			tasksWithStatus = append(tasksWithStatus, task)
+		if filter(filterValue, task) {
+			result = append(result, task)
 		}
 	}
 
-	return tasksWithStatus, nil
+	return result, nil
 }
 
 // StreamTasks streams all changes in the task keyspace into a channel

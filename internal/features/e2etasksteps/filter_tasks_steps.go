@@ -13,7 +13,7 @@ func init() {
 	eshWrapper := wrappers.NewESHWrapper()
 
 	When(`^I filter tasks by (.+?) status$`, func(status string) {
-		time.Sleep(5 * time.Second)
+		time.Sleep(15 * time.Second)
 		eshTasks, err := eshWrapper.FilterTasksByStatus(status)
 		if err != nil {
 			T.Errorf(err.Error())
@@ -36,12 +36,16 @@ func init() {
 		for _, t := range ecsTaskList {
 			err := ValidateListContainsTask(t, eshTaskList)
 			if err != nil {
-				T.Errorf(err.Error())
+				T.Errorf("Error validating if '%s' is in task list %v", *t.TaskArn, err.Error())
 			}
 		}
 	})
 
 	And(`^I stop the (\d+) tasks in the ECS cluster$`, func(numTasks int) {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
 		if len(ecsTaskList) != numTasks {
 			T.Errorf("Error memorizing tasks started using ECS client")
 		}
