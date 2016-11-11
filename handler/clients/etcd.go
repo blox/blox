@@ -14,6 +14,7 @@
 package clients
 
 import (
+	"fmt"
 	"time"
 
 	etcd "github.com/coreos/etcd/clientv3"
@@ -57,19 +58,21 @@ var _ EtcdInterface = (*etcd.Client)(nil)
 
 const (
 	dialTimeout = 5 * time.Second
-	endpoint    = "localhost:2379"
 )
 
 // NewEtcdClient initializes an etcd client
-func NewEtcdClient() (*etcd.Client, error) {
+func NewEtcdClient(endpoints []string) (*etcd.Client, error) {
 	//TODO: attach a lease TTL
+	if len(endpoints) == 0 {
+		return nil, fmt.Errorf("etcd endpoints cannot be empty")
+	}
 	etcd, err := etcd.New(etcd.Config{
-		Endpoints:   []string{endpoint},
+		Endpoints:   endpoints,
 		DialTimeout: dialTimeout,
 	})
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Etcd connection error")
+		return nil, errors.Wrapf(err, "Etcd connection error connecting to '%v'", endpoints)
 	}
 
 	return etcd, nil

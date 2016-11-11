@@ -17,6 +17,8 @@ import (
 	"fmt"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/cmd"
+	"github.com/aws/amazon-ecs-event-stream-handler/config"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/run"
 	"github.com/aws/amazon-ecs-event-stream-handler/logger"
 
 	log "github.com/cihub/seelog"
@@ -34,6 +36,10 @@ func main() {
 	}
 	if err := cmd.RootCmd.Execute(); err != nil {
 		log.Criticalf("Error executing: %v", err)
-		os.Exit(1)
+		os.Exit(errorCode)
+	}
+	if err := run.StartEventStreamHandler(config.SQSQueueName, config.EtcdEndpoints); err != nil {
+		log.Criticalf("Error starting event stream handler: %v", err)
+		os.Exit(errorCode)
 	}
 }

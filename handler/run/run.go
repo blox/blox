@@ -39,8 +39,8 @@ const (
 // events from the SQS queue. It also starts the RESTful server and blocks on
 // the listen method of the same to listen to requests that query for task and
 // instance state from the store.
-func StartEventStreamHandler(queueName string) error {
-	etcdClient, err := clients.NewEtcdClient()
+func StartEventStreamHandler(queueName string, etcdEndpoints []string) error {
+	etcdClient, err := clients.NewEtcdClient(etcdEndpoints)
 	if err != nil {
 		return errors.Wrapf(err, "Could not start etcd")
 	}
