@@ -44,13 +44,13 @@ type TaskDetail struct {
 	TaskARN              *string      `json:"taskArn"`
 	TaskDefinitionARN    *string      `json:"taskDefinitionArn"`
 	UpdatedAt            *string      `json:"updatedAt"`
-	Version              *int         `json:"version"`
+	Version              *int64       `json:"version"`
 }
 
 func (taskDetail *TaskDetail) String() string {
 	return fmt.Sprintf("Task %s; Version: %d; Task Definition: %s; %s -> %s; Cluster: %s; Container Instance: %s; Started By: %s; Updated At: %s",
 		aws.StringValue(taskDetail.TaskARN),
-		aws.IntValue(taskDetail.Version),
+		aws.Int64Value(taskDetail.Version),
 		aws.StringValue(taskDetail.TaskDefinitionARN),
 		aws.StringValue(taskDetail.LastStatus),
 		aws.StringValue(taskDetail.DesiredStatus),
@@ -62,7 +62,7 @@ func (taskDetail *TaskDetail) String() string {
 
 type Container struct {
 	ContainerARN    *string           `json:"containerArn"`
-	ExitCode        int               `json:"exitCode,omitempty"`
+	ExitCode        int64             `json:"exitCode,omitempty"`
 	LastStatus      *string           `json:"lastStatus"`
 	Name            *string           `json:"name"`
 	NetworkBindings []*NetworkBinding `json:"networkBindings,omitempty"`
@@ -71,8 +71,8 @@ type Container struct {
 
 type NetworkBinding struct {
 	BindIP        *string `json:"bindIP"`
-	ContainerPort *int    `json: "containerPort"`
-	HostPort      *int    `json: "hostPort"`
+	ContainerPort *int64  `json: "containerPort"`
+	HostPort      *int64  `json: "hostPort"`
 	Protocol      string  `json: "protocol,omitempty"`
 }
 

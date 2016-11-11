@@ -63,7 +63,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 	suite.taskStore, err = NewTaskStore(suite.datastore)
 	assert.Nil(suite.T(), err, "Cannot setup testSuite: Unexpected error when calling NewTaskStore")
 
-	version1 := 1
+	version1 := int64(1)
 	suite.firstPendingTask = types.Task{
 		Detail: &types.TaskDetail{
 			TaskARN:    &taskARN1,
@@ -310,6 +310,45 @@ func (suite *TaskStoreTestSuite) TestAddTaskFails() {
 
 	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
 	assert.Error(suite.T(), err, "Expected an error when add task fails")
+}
+
+func (suite *TaskStoreTestSuite) TestAddUnversionedTaskSkipIfExistsTrue() {
+	resp := map[string]string{
+		taskARN1: suite.firstPendingTaskCompressedJSON,
+	}
+	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
+	suite.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
+
+	task := suite.firstPendingTask
+	*task.Detail.Version = unversionedTask
+
+	taskJSON, err := json.Marshal(task)
+	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", task)
+
+	err = suite.taskStore.AddUnversionedTask(string(taskJSON))
+	assert.Nil(suite.T(), err, "Unexpected error when adding unversioned task")
+}
+
+func (suite *TaskStoreTestSuite) TestAddUnversionedTaskEmptyVersion() {
+	suite.datastore.EXPECT().Get(gomock.Any()).Times(0)
+	suite.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
+
+	task := suite.firstPendingTask
+	task.Detail.Version = nil
+
+	taskJSON, err := json.Marshal(task)
+	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", task)
+
+	err = suite.taskStore.AddUnversionedTask(string(taskJSON))
+	assert.NotNil(suite.T(), err, "Expected an error when adding unversioned task with empty version")
+}
+
+func (suite *TaskStoreTestSuite) TestAddUnversionedTaskInvalidVersion() {
+	suite.datastore.EXPECT().Get(gomock.Any()).Times(0)
+	suite.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
+
+	err := suite.taskStore.AddUnversionedTask(suite.firstPendingTaskJSON)
+	assert.NotNil(suite.T(), err, "Expected ab error when adding unversioned task with invalid version")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskEmptyClusterName() {
@@ -705,6 +744,37 @@ func (suite *TaskStoreTestSuite) TestStreamTasksCloseDownstreamChannel() {
 
 	_, ok := <-taskRespChan
 	assert.False(suite.T(), ok, "Expected task response channel to be closed")
+}
+
+func (suite *TaskStoreTestSuite) TestDeleteTaskEmptyClusterName() {
+	err := suite.taskStore.DeleteTask("", taskARN1)
+	assert.Error(suite.T(), err, "Expected an error when cluster name is empty in DeleteTask")
+}
+
+func (suite *TaskStoreTestSuite) TestDeleteTaskEmptyTaskARN() {
+	err := suite.taskStore.DeleteTask(clusterName1, "")
+	assert.Error(suite.T(), err, "Expected an error when task ARN is empty in DeleteTask")
+}
+
+func (suite *TaskStoreTestSuite) TestDeleteTaskDeleteTaskFails() {
+	suite.datastore.EXPECT().Delete(suite.taskKey1).Return(int64(0), errors.New("Error when deleting key"))
+
+	err := suite.taskStore.DeleteTask(clusterName1, taskARN1)
+	assert.Error(suite.T(), err, "Expected an error when delete task fails")
+}
+
+func (suite *TaskStoreTestSuite) TestDeleteTaskDeleteNoError() {
+	suite.datastore.EXPECT().Delete(suite.taskKey1).Return(int64(1), nil)
+
+	err := suite.taskStore.DeleteTask(clusterName1, taskARN1)
+	assert.NoError(suite.T(), err, "Error when deleting task")
+}
+
+func (suite *TaskStoreTestSuite) TestDeleteTaskDeleteWithClusterNameAndTaskARN() {
+	suite.datastore.EXPECT().Delete(suite.taskKey1).Return(int64(1), nil)
+
+	err := suite.taskStore.DeleteTask(clusterARN1, taskARN1)
+	assert.NoError(suite.T(), err, "Error when deleting task")
 }
 
 func addTaskToDSChanAndReadFromTaskRespChan(taskToAdd string, dsChan chan map[string]string, taskRespChan chan storetypes.TaskErrorWrapper) storetypes.TaskErrorWrapper {

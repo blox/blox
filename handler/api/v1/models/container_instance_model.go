@@ -1,13 +1,13 @@
 // Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the License). You may
+// Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
 // License is located at
 //
 //     http://aws.amazon.com/apache2.0/
 //
-// or in the license file accompanying this file. This file is distributed
-// on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+// or in the "license" file accompanying this file. This file is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
@@ -51,7 +51,7 @@ type ContainerInstanceModel struct {
 
 	// pending tasks count
 	// Required: true
-	PendingTasksCount *int32 `json:"pendingTasksCount"`
+	PendingTasksCount *int64 `json:"pendingTasksCount"`
 
 	// registered resources
 	// Required: true
@@ -63,7 +63,7 @@ type ContainerInstanceModel struct {
 
 	// running tasks count
 	// Required: true
-	RunningTasksCount *int32 `json:"runningTasksCount"`
+	RunningTasksCount *int64 `json:"runningTasksCount"`
 
 	// status
 	// Required: true
@@ -75,7 +75,7 @@ type ContainerInstanceModel struct {
 
 	// version
 	// Required: true
-	Version *int32 `json:"version"`
+	Version *int64 `json:"version"`
 
 	// version info
 	// Required: true

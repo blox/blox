@@ -23,10 +23,10 @@ var (
 	clusterARN1        = "arn:aws:ecs:us-east-1:123456789012:cluster/" + clusterName1
 	containerARN1      = "arn:aws:ecs:us-east-1:123456789012:container/57156e30-e410-4773-9a9e-ae8264c10bbd"
 	agentConnected1    = true
-	pendingTaskCount1  = 0
-	runningTasksCount1 = 1
+	pendingTaskCount1  = int64(0)
+	runningTasksCount1 = int64(1)
 	instanceStatus1    = "active"
-	version1           = 0
+	version1           = int64(1)
 	updatedAt1         = "2016-10-20T18:53:29.005Z"
 	taskStatus1        = "pending"
 	taskStatus2        = "stopped"

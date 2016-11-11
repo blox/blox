@@ -1,13 +1,13 @@
 // Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the License). You may
+// Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
 // License is located at
 //
 //     http://aws.amazon.com/apache2.0/
 //
-// or in the license file accompanying this file. This file is distributed
-// on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+// or in the "license" file accompanying this file. This file is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
@@ -24,88 +24,61 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*ContainerInstanceModel container instance model
-
-swagger:model ContainerInstanceModel
-*/
+// ContainerInstanceModel container instance model
+// swagger:model ContainerInstanceModel
 type ContainerInstanceModel struct {
 
-	/* e c2 instance ID
-	 */
+	// e c2 instance ID
 	EC2InstanceID string `json:"EC2InstanceID,omitempty"`
 
-	/* agent connected
-
-	Required: true
-	*/
+	// agent connected
+	// Required: true
 	AgentConnected *bool `json:"agentConnected"`
 
-	/* agent update status
-	 */
+	// agent update status
 	AgentUpdateStatus string `json:"agentUpdateStatus,omitempty"`
 
-	/* attributes
-	 */
-	Attributes []*ContainerInstanceAttributeModel `json:"attributes,omitempty"`
+	// attributes
+	Attributes []*ContainerInstanceAttributeModel `json:"attributes"`
 
-	/* cluster a r n
-
-	Required: true
-	*/
+	// cluster a r n
+	// Required: true
 	ClusterARN *string `json:"clusterARN"`
 
-	/* container instance a r n
-
-	Required: true
-	*/
+	// container instance a r n
+	// Required: true
 	ContainerInstanceARN *string `json:"containerInstanceARN"`
 
-	/* pending tasks count
+	// pending tasks count
+	// Required: true
+	PendingTasksCount *int64 `json:"pendingTasksCount"`
 
-	Required: true
-	*/
-	PendingTasksCount *int32 `json:"pendingTasksCount"`
-
-	/* registered resources
-
-	Required: true
-	*/
+	// registered resources
+	// Required: true
 	RegisteredResources []*ContainerInstanceRegisteredResourceModel `json:"registeredResources"`
 
-	/* remaining resources
-
-	Required: true
-	*/
+	// remaining resources
+	// Required: true
 	RemainingResources []*ContainerInstanceRemainingResourceModel `json:"remainingResources"`
 
-	/* running tasks count
+	// running tasks count
+	// Required: true
+	RunningTasksCount *int64 `json:"runningTasksCount"`
 
-	Required: true
-	*/
-	RunningTasksCount *int32 `json:"runningTasksCount"`
-
-	/* status
-
-	Required: true
-	*/
+	// status
+	// Required: true
 	Status *string `json:"status"`
 
-	/* updated at
-
-	Required: true
-	*/
+	// updated at
+	// Required: true
 	UpdatedAt *string `json:"updatedAt"`
 
-	/* version
+	// version
+	// Required: true
+	Version *int64 `json:"version"`
 
-	Required: true
-	*/
-	Version *int32 `json:"version"`
-
-	/* version info
-
-	Required: true
-	*/
+	// version info
+	// Required: true
 	VersionInfo *ContainerInstanceVersionInfoModel `json:"versionInfo"`
 }
 

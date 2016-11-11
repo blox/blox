@@ -15,6 +15,7 @@ package clients
 
 import (
 	"time"
+
 	etcd "github.com/coreos/etcd/clientv3"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -47,6 +48,9 @@ type EtcdInterface interface {
 	// might be canceled from the server-side and the chan will be closed.
 	// 'opts' can be: 'WithRev' and/or 'WithPrefix'.
 	Watch(ctx context.Context, key string, opts ...etcd.OpOption) etcd.WatchChan
+
+	// Delete deletes a key, or optionally using WithRange(end), [key, end).
+	Delete(ctx context.Context, key string, opts ...etcd.OpOption) (*etcd.DeleteResponse, error)
 }
 
 var _ EtcdInterface = (*etcd.Client)(nil)

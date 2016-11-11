@@ -1,13 +1,13 @@
 // Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the License). You may
+// Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
 // License is located at
 //
 //     http://aws.amazon.com/apache2.0/
 //
-// or in the license file accompanying this file. This file is distributed
-// on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+// or in the "license" file accompanying this file. This file is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
@@ -23,32 +23,23 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskNetworkBindingModel task network binding model
-
-swagger:model TaskNetworkBindingModel
-*/
+// TaskNetworkBindingModel task network binding model
+// swagger:model TaskNetworkBindingModel
 type TaskNetworkBindingModel struct {
 
-	/* bind IP
-
-	Required: true
-	*/
+	// bind IP
+	// Required: true
 	BindIP *string `json:"bindIP"`
 
-	/* container port
+	// container port
+	// Required: true
+	ContainerPort *int64 `json:"containerPort"`
 
-	Required: true
-	*/
-	ContainerPort *int32 `json:"containerPort"`
+	// host port
+	// Required: true
+	HostPort *int64 `json:"hostPort"`
 
-	/* host port
-
-	Required: true
-	*/
-	HostPort *int32 `json:"hostPort"`
-
-	/* protocol
-	 */
+	// protocol
 	Protocol string `json:"protocol,omitempty"`
 }
 

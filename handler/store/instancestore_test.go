@@ -52,28 +52,26 @@ func NewContainerInstanceStoreMockContext(t *testing.T) *instanceStoreMockContex
 	context.mockCtrl = gomock.NewController(t)
 	context.datastore = mocks.NewMockDataStore(context.mockCtrl)
 
-	version := 1
-	instanceDetail1 := types.InstanceDetail{
-		ContainerInstanceARN: &containerInstanceARN1,
-		ClusterARN:           &clusterARN1,
-		Status:               &status1,
-		Version:              &version,
-	}
+	version := int64(1)
 	context.instance1 = types.ContainerInstance{
-		Detail: &instanceDetail1,
+		Detail: &types.InstanceDetail{
+			ContainerInstanceARN: &containerInstanceARN1,
+			ClusterARN:           &clusterARN1,
+			Status:               &status1,
+			Version:              &version,
+		},
 	}
 	context.instanceJSON1 = marshalInstance(t, context.instance1)
 	context.compressedInstanceJSON1 = compressInstanceJSON(t, context.instanceJSON1)
 	context.instanceKey1 = instanceKeyPrefix + clusterName1 + "/" + containerInstanceARN1
 
-	instanceDetail2 := types.InstanceDetail{
-		ContainerInstanceARN: &containerInstanceARN2,
-		ClusterARN:           &clusterARN2,
-		Status:               &status2,
-		Version:              &version,
-	}
 	context.instance2 = types.ContainerInstance{
-		Detail: &instanceDetail2,
+		Detail: &types.InstanceDetail{
+			ContainerInstanceARN: &containerInstanceARN2,
+			ClusterARN:           &clusterARN2,
+			Status:               &status2,
+			Version:              &version,
+		},
 	}
 	context.instanceJSON2 = marshalInstance(t, context.instance2)
 	context.compressedInstanceJSON2 = compressInstanceJSON(t, context.instanceJSON2)
@@ -147,11 +145,10 @@ func TestAddContainerInstanceContainerInstanceARNNotSet(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	instanceDetail := types.InstanceDetail{
-		ClusterARN: &clusterARN1,
-	}
 	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
+		Detail: &types.InstanceDetail{
+			ClusterARN: &clusterARN1,
+		},
 	}
 
 	instanceJSON, err := json.Marshal(instance)
@@ -168,11 +165,10 @@ func TestAddContainerInstanceClusterARNNotSet(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	instanceDetail := types.InstanceDetail{
-		ContainerInstanceARN: &containerInstanceARN1,
-	}
 	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
+		Detail: &types.InstanceDetail{
+			ContainerInstanceARN: &containerInstanceARN1,
+		},
 	}
 
 	instanceJSON, err := json.Marshal(instance)
@@ -190,12 +186,11 @@ func TestAddContainerInstanceEmptyContainerInstanceARN(t *testing.T) {
 	instanceStore := instanceStore(t, context)
 
 	instanceARN := ""
-	instanceDetail := types.InstanceDetail{
-		ContainerInstanceARN: &instanceARN,
-		ClusterARN:           &clusterARN1,
-	}
 	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
+		Detail: &types.InstanceDetail{
+			ContainerInstanceARN: &instanceARN,
+			ClusterARN:           &clusterARN1,
+		},
 	}
 
 	instanceJSON, err := json.Marshal(instance)
@@ -213,12 +208,11 @@ func TestAddContainerInstanceEmptyClusterARN(t *testing.T) {
 	instanceStore := instanceStore(t, context)
 
 	clusterARN := ""
-	instanceDetail := types.InstanceDetail{
-		ContainerInstanceARN: &containerInstanceARN1,
-		ClusterARN:           &clusterARN,
-	}
 	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
+		Detail: &types.InstanceDetail{
+			ContainerInstanceARN: &containerInstanceARN1,
+			ClusterARN:           &clusterARN,
+		},
 	}
 
 	instanceJSON, err := json.Marshal(instance)
@@ -322,14 +316,8 @@ func TestAddContainerInstanceHigherVersionInstanceExists(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	version := *(*context.instance1.Detail).Version + 1
-	instanceDetail := types.InstanceDetail{
-		ContainerInstanceARN: &containerInstanceARN1,
-		Version:              &version,
-	}
-	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
-	}
+	instance := context.instance1
+	*instance.Detail.Version = *(*context.instance1.Detail).Version + 1
 
 	instanceJSON := marshalInstance(t, instance)
 	compressedJSON := compressInstanceJSON(t, instanceJSON)
@@ -353,14 +341,8 @@ func TestAddContainerInstanceLowerVersionInstanceExists(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	version := *(*context.instance1.Detail).Version - 1
-	instanceDetail := types.InstanceDetail{
-		ContainerInstanceARN: &containerInstanceARN1,
-		Version:              &version,
-	}
-	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
-	}
+	instance := context.instance1
+	*instance.Detail.Version = *(*context.instance1.Detail).Version - 1
 
 	instanceJSON := marshalInstance(t, instance)
 	compressedJSON := compressInstanceJSON(t, instanceJSON)
@@ -384,14 +366,8 @@ func TestAddContainerInstanceFails(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	version := *(*context.instance1.Detail).Version - 1
-	instanceDetail := types.InstanceDetail{
-		ContainerInstanceARN: &containerInstanceARN1,
-		Version:              &version,
-	}
-	instance := types.ContainerInstance{
-		Detail: &instanceDetail,
-	}
+	instance := context.instance1
+	*instance.Detail.Version = *(*context.instance1.Detail).Version - 1
 
 	instanceJSON := marshalInstance(t, instance)
 	compressedJSON := compressInstanceJSON(t, instanceJSON)
@@ -409,14 +385,71 @@ func TestAddContainerInstanceFails(t *testing.T) {
 	}
 }
 
-func TestGetContainerInstanceEmptyClusterName(t *testing.T) {
+func TestAddUnversionedContainerInstanceSkipIfExistsTrue(t *testing.T) {
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
 
-	_, err := instanceStore.GetContainerInstance("", containerInstanceARN1)
+	resp := map[string]string{
+		containerInstanceARN1: context.compressedInstanceJSON1,
+	}
+	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
+	context.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
 
+	instance := context.instance1
+	*instance.Detail.Version = unversionedInstance
+	instanceJSON := marshalInstance(t, instance)
+
+	err := instanceStore.AddUnversionedContainerInstance(instanceJSON)
+
+	if err != nil {
+		t.Error("Unexpected error when adding unversioned container instance")
+	}
+}
+
+func TestAddUnversionedContainerInstanceEmptyVersion(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+
+	context.datastore.EXPECT().Get(gomock.Any()).Times(0)
+	context.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
+
+	instance := context.instance1
+	instance.Detail.Version = nil
+	instanceJSON := marshalInstance(t, instance)
+
+	err := instanceStore.AddUnversionedContainerInstance(instanceJSON)
+
+	if err == nil {
+		t.Error("Expected an error when adding unversioned container instance with empty version")
+	}
+}
+
+func TestAddUnversionedContainerInstanceInvalidVersion(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+
+	context.datastore.EXPECT().Get(gomock.Any()).Times(0)
+	context.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
+
+	err := instanceStore.AddUnversionedContainerInstance(context.instanceJSON1)
+
+	if err == nil {
+		t.Error("Expected an error when adding unversioned container instance with invalid version")
+	}
+}
+
+func TestGetContainerInstanceEmptyClusterName(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+	_, err := instanceStore.GetContainerInstance("", containerInstanceARN1)
 	if err == nil {
 		t.Error("Expected an error when instance ARN is empty in GetContainerInstance")
 	}
@@ -427,9 +460,7 @@ func TestGetContainerInstanceEmptyInstanceARN(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	_, err := instanceStore.GetContainerInstance(clusterName1, "")
-
 	if err == nil {
 		t.Error("Expected an error when instance ARN is empty in GetContainerInstance")
 	}
@@ -440,11 +471,8 @@ func TestGetContainerInstanceGetFails(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(nil, errors.New("Error when getting key"))
-
 	_, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
-
 	if err == nil {
 		t.Error("Expected an error when datastore get fails")
 	}
@@ -455,15 +483,11 @@ func TestGetContainerInstanceGetNoResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(make(map[string]string), nil)
-
 	instance, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
-
 	if err != nil {
 		t.Error("Unexpected error when datastore get returns empty results")
 	}
-
 	if instance != nil {
 		t.Error("Expected GetContainerInstance to return nil when get from datastore is empty")
 	}
@@ -474,15 +498,12 @@ func TestGetContainerInstanceGetMultipleResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	resp := map[string]string{
 		containerInstanceARN1: context.compressedInstanceJSON1,
 		containerInstanceARN2: context.compressedInstanceJSON2,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
-
 	_, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
-
 	if err == nil {
 		t.Error("Expected an error when datastore get returns multiple results")
 	}
@@ -498,9 +519,7 @@ func TestGetContainerInstanceGetInvalidJSONResult(t *testing.T) {
 		containerInstanceARN1: "invalidJSON",
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
-
 	_, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
-
 	if err == nil {
 		t.Error("Expected an error when datastore get returns invalid JSON results")
 	}
@@ -511,18 +530,14 @@ func TestGetContainerInstanceWithClusterNameAndInstanceARN(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	resp := map[string]string{
 		containerInstanceARN1: context.compressedInstanceJSON1,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
-
 	instance, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
-
 	if err != nil {
 		t.Error("Unexpected error when getting an instance")
 	}
-
 	if !reflect.DeepEqual(*instance, context.instance1) {
 		t.Error("Expected the returned instance to match the one returned from the datastore")
 	}
@@ -538,13 +553,10 @@ func TestGetContainerInstanceWithClusterARNAndInstanceARN(t *testing.T) {
 		containerInstanceARN1: context.compressedInstanceJSON1,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
-
 	instance, err := instanceStore.GetContainerInstance(clusterARN1, containerInstanceARN1)
-
 	if err != nil {
 		t.Error("Unexpected error when getting an instance")
 	}
-
 	if !reflect.DeepEqual(*instance, context.instance1) {
 		t.Error("Expected the returned instance to match the one returned from the datastore")
 	}
@@ -560,9 +572,7 @@ func TestListContainerInstancesGetWithPrefixInvalidJson(t *testing.T) {
 		containerInstanceARN1: "invalidJSON",
 	}
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(resp, nil)
-
 	_, err := instanceStore.ListContainerInstances()
-
 	if err == nil {
 		t.Error("Expected an error when datastore GetWithPrefix fails")
 	}
@@ -573,10 +583,8 @@ func TestListContainerInstancesGetWithPrefixFails(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(nil, errors.New("GetWithPrefix failed"))
 	_, err := instanceStore.ListContainerInstances()
-
 	if err == nil {
 		t.Error("Expected an error when datastore GetWithPrefix fails")
 	}
@@ -587,10 +595,8 @@ func TestListContainerInstancesGetWithPrefixNoResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(make(map[string]string), nil)
 	instances, err := instanceStore.ListContainerInstances()
-
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns empty")
 	}
@@ -605,7 +611,6 @@ func TestListContainerInstancesGetWithPrefixMultipleResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-
 	resp := map[string]string{
 		containerInstanceARN1: context.compressedInstanceJSON1,
 		containerInstanceARN2: context.compressedInstanceJSON2,
@@ -616,11 +621,9 @@ func TestListContainerInstancesGetWithPrefixMultipleResults(t *testing.T) {
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns empty")
 	}
-
 	if len(instances) != len(resp) {
 		t.Error("Expected ListContainerInstances result to be the same length as the GetWithPrefix result")
 	}
-
 	for _, v := range instances {
 		value, ok := resp[*v.Detail.ContainerInstanceARN]
 		if !ok {
@@ -952,6 +955,64 @@ func TestStreamContainerInstancesCloseDownstreamChannel(t *testing.T) {
 	_, ok := <-instanceRespChan
 	if ok {
 		t.Error("Expected instance response channel to be closed")
+	}
+}
+
+func TestDeleteContainerInstanceEmptyInstanceARN(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+	err := instanceStore.DeleteContainerInstance(clusterName1, "")
+	if err == nil {
+		t.Error("Expected an error when instance ARN is empty in DeleteContainerInstance")
+	}
+}
+
+func TestDeleteContainerInstanceEmptyClusterName(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+	err := instanceStore.DeleteContainerInstance("", containerInstanceARN1)
+	if err == nil {
+		t.Error("Expected an error when instance ARN is empty in DeleteContainerInstance")
+	}
+}
+
+func TestDeleteContainerInstanceDeleteFails(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+	context.datastore.EXPECT().Delete(context.instanceKey1).Return(int64(0), errors.New("Error when deleting key"))
+	err := instanceStore.DeleteContainerInstance(clusterName1, containerInstanceARN1)
+	if err == nil {
+		t.Error("Expected an error when datastore delete fails")
+	}
+}
+
+func TestDeleteContainerInstanceDeleteNoError(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+	context.datastore.EXPECT().Delete(context.instanceKey1).Return(int64(1), nil)
+	err := instanceStore.DeleteContainerInstance(clusterName1, containerInstanceARN1)
+	if err != nil {
+		t.Errorf("Error deleting container instance from data store: %v", err)
+	}
+}
+
+func TestDeleteContainerInstanceWithClusterARNAndInstanceARN(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instanceStore := instanceStore(t, context)
+	context.datastore.EXPECT().Delete(context.instanceKey1).Return(int64(1), nil)
+	err := instanceStore.DeleteContainerInstance(clusterARN1, containerInstanceARN1)
+	if err != nil {
+		t.Errorf("Error deleting container instance from data store: %v", err)
 	}
 }
 

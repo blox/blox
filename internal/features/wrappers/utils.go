@@ -35,7 +35,7 @@ func GetClusterName() (string, error) {
 func getECSEndpoint() (string, error) {
 	endpoint := os.Getenv(ecsEndpointEnvVarName)
 	if endpoint == "" {
-		return "", fmt.Errorf("Empty endpoit. Please specify the ECS endpoint name using the '%s' environment variable", ecsEndpointEnvVarName)
+		return "", fmt.Errorf("Empty endpoint. Please specify the ECS endpoint name using the '%s' environment variable", ecsEndpointEnvVarName)
 	}
 
 	return endpoint, nil

@@ -15,13 +15,16 @@ package run
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
+
+	log "github.com/cihub/seelog"
+	"github.com/pkg/errors"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/clients"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/event"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/reconcile"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/store"
 	"github.com/urfave/negroni"
 )
@@ -39,21 +42,40 @@ const (
 func StartEventStreamHandler(queueName string) error {
 	etcdClient, err := clients.NewEtcdClient()
 	if err != nil {
-		return fmt.Errorf("Could not start etcd: %+v", err)
+		return errors.Wrapf(err, "Could not start etcd")
 	}
 	defer etcdClient.Close()
 
 	// initialize the datastore
 	datastore, err := store.NewDataStore(etcdClient)
 	if err != nil {
-		return fmt.Errorf("Could not initialize the datastore: %+v", err)
+		return errors.Wrapf(err, "Could not initialize the datastore")
 	}
 
 	// initialize services
 	stores, err := store.NewStores(datastore)
 	if err != nil {
-		return fmt.Errorf("Could not initialize stores: %+v", err)
+		return errors.Wrapf(err, "Could not initialize stores")
 	}
+
+	awsSession, err := clients.NewAWSSession()
+	if err != nil {
+		return errors.Wrapf(err, "Could not load aws session")
+	}
+
+	ecsClient := clients.NewECSClient(awsSession)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	recon, err := reconcile.NewReconciler(ctx, stores, ecsClient, reconcile.ReconcileDuration)
+	if err != nil {
+		return errors.Wrapf(err, "Could not start reconciler")
+	}
+	err = recon.RunOnce()
+	if err != nil {
+		return errors.Wrapf(err, "Error bootstrapping")
+	}
+	log.Infof("Bootstrapping completed")
+	go recon.Run()
 
 	// initialize apis
 	apis := v1.NewAPIs(stores)
@@ -61,22 +83,15 @@ func StartEventStreamHandler(queueName string) error {
 	// start event processor
 	processor := event.NewProcessor(stores)
 
-	awsSession, err := clients.NewAWSSession()
-	if err != nil {
-		return fmt.Errorf("Could not load aws session: %+v", err)
-	}
-
 	sqsClient := clients.NewSQSClient(awsSession)
 
 	// start event consumer
 	consumer, err := event.NewConsumer(sqsClient, processor, queueName)
 	if err != nil {
-		return fmt.Errorf("Could not start the consumer: %+v", err)
+		return errors.Wrapf(err, "Could not start the consumer")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
 	go consumer.PollForEvents(ctx)
-	defer cancel()
 
 	// start server
 	router := v1.NewRouter(apis)

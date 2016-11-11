@@ -76,6 +76,8 @@ get-deps:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 	go get github.com/tools/godep
 	go get github.com/gucumber/gucumber/cmd/gucumber
+	go get github.com/golang/mock/gomock
+	go get github.com/golang/mock/mockgen
 
 .PHONY: unit-tests
 unit-tests:

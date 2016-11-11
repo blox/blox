@@ -1,9 +1,9 @@
 {
 	"ImportPath": "github.com/aws/amazon-ecs-event-stream-handler",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v75",
+	"GodepVersion": "v74",
 	"Packages": [
-		"./..."
+		"../amazon-ecs-event-stream-handler/..."
 	],
 	"Deps": [
 		{
@@ -146,6 +146,11 @@
 			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
 		},
 		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/ecs/ecsiface",
+			"Comment": "v1.4.20-4-g9e5bedb",
+			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
+		},
+		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/sqs",
 			"Comment": "v1.4.20-4-g9e5bedb",
 			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
@@ -222,8 +227,8 @@
 		},
 		{
 			"ImportPath": "github.com/fsnotify/fsnotify",
-			"Comment": "v1.4.2-2-gfd9ec7d",
-			"Rev": "fd9ec7deca8bf46ecd2a795baaacf2b3a9be1197"
+			"Comment": "v1.3.1-1-gf12c623",
+			"Rev": "f12c6236fe7b5cf6bcf30e5935d08cb079d78334"
 		},
 		{
 			"ImportPath": "github.com/ghodss/yaml",
@@ -320,39 +325,39 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/ast",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/parser",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/scanner",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/strconv",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/hcl/token",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/json/parser",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/json/scanner",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl/json/token",
-			"Rev": "6e968a3fcdcbab092f5307fd0d85479d5af1e4dc"
+			"Rev": "ef8133da8cda503718a74741312bf50821e6de79"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/mousetrap",
@@ -386,7 +391,7 @@
 		},
 		{
 			"ImportPath": "github.com/mitchellh/mapstructure",
-			"Rev": "f3009df150dadf309fdee4a54ed65c124afad715"
+			"Rev": "ca63d7c062ee3c9f34db231e352b60012b4fd0c1"
 		},
 		{
 			"ImportPath": "github.com/pelletier/go-buffruneio",
@@ -394,8 +399,8 @@
 		},
 		{
 			"ImportPath": "github.com/pelletier/go-toml",
-			"Comment": "v0.3.5-16-g45932ad",
-			"Rev": "45932ad32dfdd20826f5671da37a5f3ce9f26a8d"
+			"Comment": "v0.3.5-14-g31055c2",
+			"Rev": "31055c2ff0bb0c7f9095aec0d220aed21108121e"
 		},
 		{
 			"ImportPath": "github.com/pkg/errors",
@@ -404,7 +409,7 @@
 		},
 		{
 			"ImportPath": "github.com/pkg/sftp",
-			"Rev": "4d0e916071f68db74f8a73926335f809396d6b42"
+			"Rev": "8197a2e580736b78d704be0fc47b2324c0591a32"
 		},
 		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
@@ -417,19 +422,19 @@
 		},
 		{
 			"ImportPath": "github.com/spf13/afero",
-			"Rev": "52e4a6cfac46163658bd4f123c49b6ee7dc75f78"
+			"Rev": "20500e2abd0d1f4564a499e83d11d6c73cd58c27"
 		},
 		{
 			"ImportPath": "github.com/spf13/afero/mem",
-			"Rev": "52e4a6cfac46163658bd4f123c49b6ee7dc75f78"
+			"Rev": "20500e2abd0d1f4564a499e83d11d6c73cd58c27"
 		},
 		{
 			"ImportPath": "github.com/spf13/afero/sftp",
-			"Rev": "52e4a6cfac46163658bd4f123c49b6ee7dc75f78"
+			"Rev": "20500e2abd0d1f4564a499e83d11d6c73cd58c27"
 		},
 		{
 			"ImportPath": "github.com/spf13/cast",
-			"Rev": "2580bc98dc0e62908119e4737030cc2fdfc45e4c"
+			"Rev": "e31f36ffc91a2ba9ddb72a4b6a607ff9b3d3cb63"
 		},
 		{
 			"ImportPath": "github.com/spf13/cobra",
@@ -441,11 +446,11 @@
 		},
 		{
 			"ImportPath": "github.com/spf13/pflag",
-			"Rev": "5ccb023bc27df288a957c5e994cd44fd19619465"
+			"Rev": "c7e63cf4530bcd3ba943729cee0efeff2ebea63f"
 		},
 		{
 			"ImportPath": "github.com/spf13/viper",
-			"Rev": "651d9d916abc3c3d6a91a12549495caba5edffd2"
+			"Rev": "16990631d4aa7e38f73dbbbf37fa13e67c648531"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
@@ -469,19 +474,19 @@
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
-			"Rev": "9477e0b78b9ac3d0b03822fd95422e2fe07627cd"
+			"Rev": "81372b2fc2f10bef2a7f338da115c315a56b2726"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ed25519",
-			"Rev": "9477e0b78b9ac3d0b03822fd95422e2fe07627cd"
+			"Rev": "81372b2fc2f10bef2a7f338da115c315a56b2726"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ed25519/internal/edwards25519",
-			"Rev": "9477e0b78b9ac3d0b03822fd95422e2fe07627cd"
+			"Rev": "81372b2fc2f10bef2a7f338da115c315a56b2726"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh",
-			"Rev": "9477e0b78b9ac3d0b03822fd95422e2fe07627cd"
+			"Rev": "81372b2fc2f10bef2a7f338da115c315a56b2726"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
@@ -517,7 +522,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "c200b10b5d5e122be351b67af224adc6128af5bf"
+			"Rev": "8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9"
 		},
 		{
 			"ImportPath": "golang.org/x/text/cases",

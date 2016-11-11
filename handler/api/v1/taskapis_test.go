@@ -64,7 +64,6 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 
 	suite.taskAPIs = NewTaskAPIs(suite.taskStore)
 
-	version := 1
 	overrides := types.Overrides{
 		ContainerOverrides: []*types.ContainerOverrides{},
 	}
@@ -79,7 +78,7 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		TaskARN:              &taskARN1,
 		TaskDefinitionARN:    &taskDefinitionARN,
 		UpdatedAt:            &updatedAt1,
-		Version:              &version,
+		Version:              &version1,
 	}
 	suite.task1 = types.Task{
 		Account:   &accountID,

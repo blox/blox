@@ -84,7 +84,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 		Name:  &attributeName,
 		Value: &attributeVal,
 	}
-	pendingTaskCount := int32(pendingTaskCount1)
 	regResoureModel := models.ContainerInstanceRegisteredResourceModel{
 		Name:  &resourceName,
 		Type:  &resourceType,
@@ -95,8 +94,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 		Type:  &resourceType,
 		Value: &resourceVal,
 	}
-	runningTasksCount := int32(runningTasksCount1)
-	version := int32(version1)
 	suite.instanceModel = models.ContainerInstanceModel{
 		AgentConnected:       &agentConnected1,
 		AgentUpdateStatus:    agentUpdateStatus,
@@ -104,12 +101,12 @@ func (suite *TranslateTestSuite) SetupTest() {
 		ClusterARN:           &clusterARN1,
 		ContainerInstanceARN: &instanceARN1,
 		EC2InstanceID:        ecsInstanceID,
-		PendingTasksCount:    &pendingTaskCount,
+		PendingTasksCount:    &pendingTaskCount1,
 		RegisteredResources:  []*models.ContainerInstanceRegisteredResourceModel{&regResoureModel},
 		RemainingResources:   []*models.ContainerInstanceRemainingResourceModel{&remResoureModel},
-		RunningTasksCount:    &runningTasksCount,
+		RunningTasksCount:    &runningTasksCount1,
 		Status:               &instanceStatus1,
-		Version:              &version,
+		Version:              &version1,
 		VersionInfo:          &versionInfoModel,
 		UpdatedAt:            &updatedAt1,
 	}
@@ -169,7 +166,7 @@ func (suite *TranslateTestSuite) SetupTest() {
 		TaskARN:              &taskARN1,
 		TaskDefinitionARN:    &taskDefinitionARN,
 		UpdatedAt:            &updatedAt1,
-		Version:              &version,
+		Version:              &version1,
 	}
 }
 

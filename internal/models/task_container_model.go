@@ -1,13 +1,13 @@
 // Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the License). You may
+// Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
 // License is located at
 //
 //     http://aws.amazon.com/apache2.0/
 //
-// or in the license file accompanying this file. This file is distributed
-// on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+// or in the "license" file accompanying this file. This file is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
@@ -24,40 +24,29 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskContainerModel task container model
-
-swagger:model TaskContainerModel
-*/
+// TaskContainerModel task container model
+// swagger:model TaskContainerModel
 type TaskContainerModel struct {
 
-	/* container a r n
-
-	Required: true
-	*/
+	// container a r n
+	// Required: true
 	ContainerARN *string `json:"containerARN"`
 
-	/* exit code
-	 */
-	ExitCode int32 `json:"exitCode,omitempty"`
+	// exit code
+	ExitCode int64 `json:"exitCode,omitempty"`
 
-	/* last status
-
-	Required: true
-	*/
+	// last status
+	// Required: true
 	LastStatus *string `json:"lastStatus"`
 
-	/* name
-
-	Required: true
-	*/
+	// name
+	// Required: true
 	Name *string `json:"name"`
 
-	/* network bindings
-	 */
-	NetworkBindings []*TaskNetworkBindingModel `json:"networkBindings,omitempty"`
+	// network bindings
+	NetworkBindings []*TaskNetworkBindingModel `json:"networkBindings"`
 
-	/* reason
-	 */
+	// reason
 	Reason string `json:"reason,omitempty"`
 }
 

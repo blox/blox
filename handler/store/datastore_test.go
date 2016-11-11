@@ -289,6 +289,37 @@ func (testSuite *DataStoreTestSuite) TestStreamWithPrefixStreamTimeout() {
 	assert.False(testSuite.T(), ok, "Expected dschan to be closed")
 }
 
+func (testSuite *DataStoreTestSuite) TestDeleteEmptyKey() {
+	_, err := testSuite.datastore.Delete("")
+	assert.Error(testSuite.T(), err, "Expected an error when key is nil")
+}
+
+func (testSuite *DataStoreTestSuite) TestDeleteEtcdGetFails() {
+	testSuite.etcdInterface.EXPECT().Delete(gomock.Any(), key).Return(nil, errors.New("Delete failed"))
+
+	_, err := testSuite.datastore.Delete(key)
+	assert.Error(testSuite.T(), err, "Expected an error when etcd delete fails")
+}
+
+func (testSuite *DataStoreTestSuite) TestDeleteEtcdGetRespNil() {
+	testSuite.etcdInterface.EXPECT().Delete(gomock.Any(), key).Return((*etcd.DeleteResponse)(nil), nil)
+
+	resp, err := testSuite.datastore.Delete(key)
+	assert.Nil(testSuite.T(), err, "Unexpected error when etcd delete returns empty")
+	assert.Equal(testSuite.T(), resp, int64(0), "Unexpected response from delete")
+}
+
+func (testSuite *DataStoreTestSuite) TestDeleteEtcd() {
+	deleteResp := &etcd.DeleteResponse{
+		Deleted: 1,
+	}
+	testSuite.etcdInterface.EXPECT().Delete(gomock.Any(), key).Return(deleteResp, nil)
+
+	resp, err := testSuite.datastore.Delete(key)
+	assert.Nil(testSuite.T(), err, "Unexpected error when etcd get returns results")
+	assert.Equal(testSuite.T(), resp, int64(1), "Mismatch between expected and returned number of deleted keys")
+}
+
 func addToWatchChanAndReadFromDataChan(watchChan chan etcd.WatchResponse, dsChan chan map[string]string) map[string]string {
 	var dsVal map[string]string
 

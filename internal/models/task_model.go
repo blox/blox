@@ -1,13 +1,13 @@
 // Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
-// Licensed under the Apache License, Version 2.0 (the License). You may
+// Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
 // License is located at
 //
 //     http://aws.amazon.com/apache2.0/
 //
-// or in the license file accompanying this file. This file is distributed
-// on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+// or in the "license" file accompanying this file. This file is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
@@ -24,93 +24,65 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-/*TaskModel task model
-
-swagger:model TaskModel
-*/
+// TaskModel task model
+// swagger:model TaskModel
 type TaskModel struct {
 
-	/* cluster a r n
-
-	Required: true
-	*/
+	// cluster a r n
+	// Required: true
 	ClusterARN *string `json:"clusterARN"`
 
-	/* container instance a r n
-
-	Required: true
-	*/
+	// container instance a r n
+	// Required: true
 	ContainerInstanceARN *string `json:"containerInstanceARN"`
 
-	/* containers
-
-	Required: true
-	*/
+	// containers
+	// Required: true
 	Containers []*TaskContainerModel `json:"containers"`
 
-	/* created at
-
-	Required: true
-	*/
+	// created at
+	// Required: true
 	CreatedAt *string `json:"createdAt"`
 
-	/* desired status
-
-	Required: true
-	*/
+	// desired status
+	// Required: true
 	DesiredStatus *string `json:"desiredStatus"`
 
-	/* last status
-
-	Required: true
-	*/
+	// last status
+	// Required: true
 	LastStatus *string `json:"lastStatus"`
 
-	/* overrides
-
-	Required: true
-	*/
+	// overrides
+	// Required: true
 	Overrides *TaskOverrideModel `json:"overrides"`
 
-	/* started at
-	 */
+	// started at
 	StartedAt string `json:"startedAt,omitempty"`
 
-	/* started by
-	 */
+	// started by
 	StartedBy string `json:"startedBy,omitempty"`
 
-	/* stopped at
-	 */
+	// stopped at
 	StoppedAt string `json:"stoppedAt,omitempty"`
 
-	/* stopped reason
-	 */
+	// stopped reason
 	StoppedReason string `json:"stoppedReason,omitempty"`
 
-	/* task a r n
-
-	Required: true
-	*/
+	// task a r n
+	// Required: true
 	TaskARN *string `json:"taskARN"`
 
-	/* task definition a r n
-
-	Required: true
-	*/
+	// task definition a r n
+	// Required: true
 	TaskDefinitionARN *string `json:"taskDefinitionARN"`
 
-	/* updated at
-
-	Required: true
-	*/
+	// updated at
+	// Required: true
 	UpdatedAt *string `json:"updatedAt"`
 
-	/* version
-
-	Required: true
-	*/
-	Version *int32 `json:"version"`
+	// version
+	// Required: true
+	Version *int64 `json:"version"`
 }
 
 // Validate validates this task model

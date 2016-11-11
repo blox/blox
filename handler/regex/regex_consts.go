@@ -14,7 +14,7 @@
 package regex
 
 const (
-	clusterNameRegexWithoutStart = "[a-zA-Z0-9_]{1,255}$"
+	clusterNameRegexWithoutStart = "[a-zA-Z][a-zA-Z0-9_-]{1,254}$"
 	ClusterNameRegex             = "^" + clusterNameRegexWithoutStart
 	ClusterARNRegex              = "^(arn:aws:ecs:)([\\-\\w]+):[0-9]{12}:(cluster)/" + clusterNameRegexWithoutStart
 	ClusterNameAsARNSuffixRegex  = "/" + clusterNameRegexWithoutStart

@@ -31,15 +31,19 @@ const (
 	instanceKeyPrefix    = "ecs/instance/"
 	instanceStatusFilter = "status"
 	clusterFilter        = "cluster"
+
+	unversionedInstance = -1
 )
 
 // ContainerInstanceStore defines methods to access container instances from the datastore
 type ContainerInstanceStore interface {
 	AddContainerInstance(instance string) error
+	AddUnversionedContainerInstance(instance string) error
 	GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error)
 	ListContainerInstances() ([]types.ContainerInstance, error)
 	FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error)
 	StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error)
+	DeleteContainerInstance(cluster, instanceARN string) error
 }
 
 type eventInstanceStore struct {
@@ -56,43 +60,15 @@ func NewContainerInstanceStore(ds DataStore) (ContainerInstanceStore, error) {
 	}, nil
 }
 
-func generateInstanceKey(clusterName string, instanceARN string) (string, error) {
-	if !regex.IsClusterName(clusterName) {
-		return "", errors.New("Cluster name does not match expected regex")
-	}
-	if !regex.IsInstanceARN(instanceARN) {
-		return "", errors.New("Instance ARN does not match expected regex")
-	}
-	return instanceKeyPrefix + clusterName + "/" + instanceARN, nil
-}
-
 // AddContainerInstance adds a container instance represented in the instanceJSON to the datastore
 func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string) error {
-	if len(instanceJSON) == 0 {
-		return errors.New("Instance JSON should not be empty")
-	}
-
-	var instance types.ContainerInstance
-	err := json.UnmarshalJSON(instanceJSON, &instance)
+	instance, key, err := instanceStore.unmarshalInstanceAndGenerateKey(instanceJSON)
 	if err != nil {
 		return err
 	}
 
-	if instance.Detail == nil || instance.Detail.ClusterARN == nil || instance.Detail.ContainerInstanceARN == nil {
-		return errors.New("Cluster ARN and container instance ARN should not be empty in instance JSON")
-	}
+	log.Debugf("Instance store unmarshalled instance: %s, trying to add it to the store", instance.Detail.String())
 
-	clusterName, err := regex.GetClusterNameFromARN(aws.StringValue(instance.Detail.ClusterARN))
-	if err != nil {
-		return err
-	}
-
-	key, err := generateInstanceKey(clusterName, aws.StringValue(instance.Detail.ContainerInstanceARN))
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Instance store unmarshalled instance: %s, trying to add it to the store", instance.Detail.String())
 	// check if record exists with higher version number
 	existingInstance, err := instanceStore.getInstanceByKey(key)
 	if err != nil {
@@ -102,23 +78,18 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 	if existingInstance != nil {
 		existingInstanceDetail := existingInstance.Detail
 		currentInstanceDetail := instance.Detail
-		if aws.IntValue(existingInstanceDetail.Version) >= aws.IntValue(currentInstanceDetail.Version) {
+		if aws.Int64Value(existingInstanceDetail.Version) >= aws.Int64Value(currentInstanceDetail.Version) {
 			log.Infof("Higher or equal version %d of instance %s with version %d already exists",
-				aws.IntValue(existingInstance.Detail.Version),
+				aws.Int64Value(existingInstance.Detail.Version),
 				aws.StringValue(instance.Detail.ContainerInstanceARN),
-				aws.IntValue(instance.Detail.Version))
+				aws.Int64Value(instance.Detail.Version))
 
 			// do nothing. later version of the event has already been stored
 			return nil
 		}
 	}
 
-	compressedInstanceJSON, err := compress.Compress(instanceJSON)
-	if err != nil {
-		return err
-	}
-
-	err = instanceStore.datastore.Add(key, string(compressedInstanceJSON))
+	err = instanceStore.compressAndAddInstance(key, instanceJSON)
 	if err != nil {
 		return err
 	}
@@ -126,29 +97,46 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 	return nil
 }
 
+// AddUnversionedContainerInstance adds a container instance represented in the instanceJSON to the datastore only if the instance version is -1
+func (instanceStore eventInstanceStore) AddUnversionedContainerInstance(instanceJSON string) error {
+	instance, key, err := instanceStore.unmarshalInstanceAndGenerateKey(instanceJSON)
+	if err != nil {
+		return err
+	}
+
+	if instance.Detail.Version == nil || aws.Int64Value(instance.Detail.Version) != unversionedInstance {
+		return errors.Errorf("Instance version while adding unversioned instance should be set to %d", unversionedTask)
+	}
+
+	log.Debugf("Instance store unmarshalled unversioned instance: %s, trying to add it to the store", instance.Detail.String())
+
+	// If the instance key already exists, skip adding it again
+	existingInstance, err := instanceStore.getInstanceByKey(key)
+	if err != nil {
+		return errors.Wrapf(err, "Error checking if instance '%s'exists in data store",
+			aws.StringValue(instance.Detail.ContainerInstanceARN))
+	}
+
+	if existingInstance != nil {
+		log.Debugf("Instance found in store, not adding it: %s", existingInstance.Detail.String())
+		return nil
+	}
+
+	err = instanceStore.compressAndAddInstance(key, instanceJSON)
+	if err != nil {
+		return errors.Wrapf(err, "Error adding instance '%s' to the store",
+			aws.StringValue(instance.Detail.ContainerInstanceARN))
+	}
+
+	return nil
+}
+
 // GetContainerInstance gets a container with ARN 'instanceARN' belonging to cluster 'cluster'
 func (instanceStore eventInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error) {
-	if len(cluster) == 0 {
-		return nil, errors.New("Cluster should not be empty")
-	}
-	if len(instanceARN) == 0 {
-		return nil, errors.New("Instance ARN should not be empty")
-	}
-
-	clusterName := cluster
-	var err error
-	if regex.IsClusterARN(cluster) {
-		clusterName, err = regex.GetClusterNameFromARN(cluster)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	key, err := generateInstanceKey(clusterName, instanceARN)
+	key, err := instanceStore.getInstanceKey(cluster, instanceARN)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Could not generate instance key for cluster '%s' and instance '%s'", cluster, instanceARN)
 	}
-
 	return instanceStore.getInstanceByKey(key)
 }
 
@@ -171,6 +159,77 @@ func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey strin
 	default:
 		return nil, errors.Errorf("Unsupported filter key: %s", filterKey)
 	}
+}
+
+// StreamContainerInstances returns a stream of all changes in the container instance keyspace
+func (instanceStore eventInstanceStore) StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error) {
+	instanceStoreCtx, cancel := context.WithCancel(ctx) // go routine instanceStore.pipeBetweenChannels() handles canceling this context
+
+	dsChan, err := instanceStore.datastore.StreamWithPrefix(instanceStoreCtx, instanceKeyPrefix)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+
+	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper) // go routine instanceStore.pipeBetweenChannels() handles closing of this channel
+	go instanceStore.pipeBetweenChannels(instanceStoreCtx, cancel, dsChan, instanceRespChan)
+	return instanceRespChan, nil
+}
+
+// DeleteContainerInstance deletes the container instance record from the data store
+func (instanceStore eventInstanceStore) DeleteContainerInstance(cluster string, instanceARN string) error {
+	key, err := instanceStore.getInstanceKey(cluster, instanceARN)
+	if err != nil {
+		return errors.Wrapf(err, "Could not generate instance key for cluster '%s' and instance '%s'",
+			cluster, instanceARN)
+	}
+	numKeysDeleted, err := instanceStore.datastore.Delete(key)
+	log.Debugf("Deleted '%d' key(s) from the store for container instance '%s', belonging to cluster '%s'",
+		numKeysDeleted, instanceARN, cluster)
+	// TODO: Should numKeysDeleted != 1 cause an error as well?
+	return err
+}
+
+func (instanceStore eventInstanceStore) unmarshalInstanceAndGenerateKey(instanceJSON string) (types.ContainerInstance, string, error) {
+	var instance types.ContainerInstance
+	if len(instanceJSON) == 0 {
+		return instance, "", errors.New("Instance JSON should not be empty")
+	}
+
+	err := json.UnmarshalJSON(instanceJSON, &instance)
+	if err != nil {
+		return instance, "", err
+	}
+
+	if instance.Detail == nil || instance.Detail.ClusterARN == nil || instance.Detail.ContainerInstanceARN == nil {
+		return instance, "", errors.New("Cluster ARN and container instance ARN should not be empty in instance JSON")
+	}
+
+	clusterName, err := regex.GetClusterNameFromARN(aws.StringValue(instance.Detail.ClusterARN))
+	if err != nil {
+		return instance, "", err
+	}
+
+	key, err := generateInstanceKey(clusterName, aws.StringValue(instance.Detail.ContainerInstanceARN))
+	if err != nil {
+		return instance, "", err
+	}
+
+	return instance, key, err
+}
+
+func (instanceStore eventInstanceStore) compressAndAddInstance(key string, instanceJSON string) error {
+	compressedInstanceJSON, err := compress.Compress(instanceJSON)
+	if err != nil {
+		return err
+	}
+
+	err = instanceStore.datastore.Add(key, string(compressedInstanceJSON))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string) ([]types.ContainerInstance, error) {
@@ -199,46 +258,6 @@ func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluste
 
 	instancesForClusterPrefix := instanceKeyPrefix + clusterName + "/"
 	return instanceStore.getInstancesByKeyPrefix(instancesForClusterPrefix)
-}
-
-// StreamContainerInstances returns a stream of all changes in the container instance keyspace
-func (instanceStore eventInstanceStore) StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error) {
-	instanceStoreCtx, cancel := context.WithCancel(ctx) // go routine instanceStore.pipeBetweenChannels() handles canceling this context
-
-	dsChan, err := instanceStore.datastore.StreamWithPrefix(instanceStoreCtx, instanceKeyPrefix)
-	if err != nil {
-		cancel()
-		return nil, err
-	}
-
-	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper) // go routine instanceStore.pipeBetweenChannels() handles closing of this channel
-	go instanceStore.pipeBetweenChannels(instanceStoreCtx, cancel, dsChan, instanceRespChan)
-	return instanceRespChan, nil
-}
-
-func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context, cancel context.CancelFunc, dsChan chan map[string]string, instanceRespChan chan storetypes.ContainerInstanceErrorWrapper) {
-	defer close(instanceRespChan)
-	defer cancel()
-
-	for {
-		select {
-		case resp, ok := <-dsChan:
-			if !ok {
-				return
-			}
-			for _, v := range resp {
-				ins, err := instanceStore.uncompressAndUnmarshalInstance(v)
-				if err != nil {
-					instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: types.ContainerInstance{}, Err: err}
-					return
-				}
-				instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: ins, Err: nil}
-			}
-
-		case <-ctx.Done():
-			return
-		}
-	}
 }
 
 func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*types.ContainerInstance, error) {
@@ -318,4 +337,59 @@ func (instanceStore eventInstanceStore) uncompressAndUnmarshalInstance(val strin
 	}
 
 	return instance, nil
+}
+
+func (instanceStore eventInstanceStore) getInstanceKey(cluster string, instanceARN string) (string, error) {
+	if len(cluster) == 0 {
+		return "", errors.New("Cluster should not be empty")
+	}
+	if len(instanceARN) == 0 {
+		return "", errors.New("Instance ARN should not be empty")
+	}
+
+	clusterName := cluster
+	var err error
+	if regex.IsClusterARN(cluster) {
+		clusterName, err = regex.GetClusterNameFromARN(cluster)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return generateInstanceKey(clusterName, instanceARN)
+}
+
+func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context, cancel context.CancelFunc, dsChan chan map[string]string, instanceRespChan chan storetypes.ContainerInstanceErrorWrapper) {
+	defer close(instanceRespChan)
+	defer cancel()
+
+	for {
+		select {
+		case resp, ok := <-dsChan:
+			if !ok {
+				return
+			}
+			for _, v := range resp {
+				ins, err := instanceStore.uncompressAndUnmarshalInstance(v)
+				if err != nil {
+					instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: types.ContainerInstance{}, Err: err}
+					return
+				}
+				instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: ins, Err: nil}
+			}
+
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func generateInstanceKey(clusterName string, instanceARN string) (string, error) {
+	if !regex.IsClusterName(clusterName) {
+		return "", errors.New("Cluster name does not match expected regex")
+	}
+	if !regex.IsInstanceARN(instanceARN) {
+		return "", errors.New("Instance ARN does not match expected regex")
+	}
+	return instanceKeyPrefix + clusterName + "/" + instanceARN, nil
 }

@@ -15,6 +15,7 @@ package regex
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 )
 
@@ -24,7 +25,7 @@ func GetClusterNameFromARN(clusterARN string) (string, error) {
 	}
 
 	if !IsClusterARN(clusterARN) {
-		return "", errors.New("Invalid cluster ARN")
+		return "", fmt.Errorf("Invalid cluster ARN: %s", clusterARN)
 	}
 
 	re := regexp.MustCompile(ClusterNameAsARNSuffixRegex)

@@ -14,10 +14,31 @@
 package clients
 
 import (
+	"os"
+
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	log "github.com/cihub/seelog"
 )
 
-func NewECSClient(session *session.Session) *ecs.ECS {
-	return ecs.New(session)
+const ecsEndpointEnvVarName = "ECS_ENDPOINT"
+
+func NewECSClient(sess *session.Session) *ecs.ECS {
+	// TODO: Use session passed in args and get rid of the env var
+	endpoint := os.Getenv(ecsEndpointEnvVarName)
+	if endpoint == "" {
+		return ecs.New(sess)
+	}
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Endpoint: aws.String(endpoint),
+		},
+	})
+	if err != nil {
+		log.Critical("Error initializing ecs client")
+		return nil
+	}
+
+	return ecs.New(sess)
 }

@@ -14,7 +14,7 @@
 package regex
 
 const (
-	validClusterName = "cluster1"
+	validClusterName = "clust_er-1"
 	validClusterARN  = "arn:aws:ecs:us-east-1:123456789123:cluster/" + validClusterName
 
 	invalidClusterName                 = "cluster1/cluster1"

@@ -34,6 +34,7 @@ type DataStore interface {
 	Get(key string) (map[string]string, error)
 	Add(key string, value string) error
 	StreamWithPrefix(ctx context.Context, keyPrefix string) (chan map[string]string, error)
+	Delete(key string) (int64, error)
 }
 
 type etcdDataStore struct {
@@ -84,8 +85,7 @@ func (datastore etcdDataStore) GetWithPrefix(keyPrefix string) (map[string]strin
 		return nil, handleEtcdError(err)
 	}
 
-	kv, err := handleGetResponse(resp)
-	return kv, err
+	return handleGetResponse(resp), nil
 }
 
 // Get returns a map with one key-value pair where the key matches the provided key
@@ -102,8 +102,7 @@ func (datastore etcdDataStore) Get(key string) (map[string]string, error) {
 		return nil, handleEtcdError(err)
 	}
 
-	kv, err := handleGetResponse(resp)
-	return kv, err
+	return handleGetResponse(resp), nil
 }
 
 // StreamWithPrefix starts a go routine that streams key-value pairs whose keys start with keyPrefix into the channel returned
@@ -115,6 +114,26 @@ func (datastore etcdDataStore) StreamWithPrefix(ctx context.Context, keyPrefix s
 	kvChan := make(chan map[string]string) // go routine datastore.stream() handles closing of this channel
 	go datastore.stream(ctx, keyPrefix, kvChan)
 	return kvChan, nil
+}
+
+// Delete returns a map with one key-value pair where the key matches the provided key
+func (datastore etcdDataStore) Delete(key string) (int64, error) {
+	if len(key) == 0 {
+		return 0, errors.New("Key cannot be empty while deleting data from datastore by key")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	resp, err := datastore.etcdInterface.Delete(ctx, key)
+	defer cancel()
+
+	if err != nil {
+		return 0, handleEtcdError(err)
+	}
+
+	if resp == nil {
+		return 0, nil
+	}
+	return resp.Deleted, nil
 }
 
 func (datastore etcdDataStore) stream(ctx context.Context, keyPrefix string, kvChan chan map[string]string) {
@@ -156,18 +175,18 @@ func resetStreamIdleTimer(t *time.Timer) {
 	t.Reset(streamIdleTimeout)
 }
 
-func handleGetResponse(resp *etcd.GetResponse) (map[string]string, error) {
+func handleGetResponse(resp *etcd.GetResponse) map[string]string {
 	kv := make(map[string]string)
 
 	if resp == nil || resp.Kvs == nil {
-		return kv, nil
+		return kv
 	}
 
 	for _, response := range resp.Kvs {
 		kv[string(response.Key)] = string(response.Value)
 	}
 
-	return kv, nil
+	return kv
 }
 
 func handleEtcdError(err error) error {

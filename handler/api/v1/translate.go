@@ -64,21 +64,18 @@ func ToContainerInstanceModel(instance types.ContainerInstance) (models.Containe
 		DockerVersion: instance.Detail.VersionInfo.DockerVersion,
 	}
 
-	pendingTaskCount := int32(*instance.Detail.PendingTasksCount)
-	runningTaskCount := int32(*instance.Detail.RunningTasksCount)
-	version := int32(*instance.Detail.Version)
 	containerInstance := models.ContainerInstanceModel{
 		AgentConnected:       instance.Detail.AgentConnected,
 		AgentUpdateStatus:    instance.Detail.AgentUpdateStatus,
 		ClusterARN:           instance.Detail.ClusterARN,
 		ContainerInstanceARN: instance.Detail.ContainerInstanceARN,
 		EC2InstanceID:        instance.Detail.EC2InstanceID,
-		PendingTasksCount:    &pendingTaskCount,
+		PendingTasksCount:    instance.Detail.PendingTasksCount,
 		RegisteredResources:  regRes,
 		RemainingResources:   remRes,
-		RunningTasksCount:    &runningTaskCount,
+		RunningTasksCount:    instance.Detail.RunningTasksCount,
 		Status:               instance.Detail.Status,
-		Version:              &version,
+		Version:              instance.Detail.Version,
 		VersionInfo:          &versionInfo,
 		UpdatedAt:            instance.Detail.UpdatedAt,
 	}
@@ -119,10 +116,9 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 	containers := make([]*models.TaskContainerModel, len(task.Detail.Containers))
 	for i := range task.Detail.Containers {
 		c := task.Detail.Containers[i]
-		exitCode := int32(c.ExitCode)
 		containers[i] = &models.TaskContainerModel{
 			ContainerARN: c.ContainerARN,
-			ExitCode:     exitCode,
+			ExitCode:     c.ExitCode,
 			LastStatus:   c.LastStatus,
 			Name:         c.Name,
 			Reason:       c.Reason,
@@ -131,12 +127,10 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 			networkBindings := make([]*models.TaskNetworkBindingModel, len(c.NetworkBindings))
 			for j := range c.NetworkBindings {
 				n := c.NetworkBindings[j]
-				containerPort := int32(*n.ContainerPort)
-				hostPort := int32(*n.HostPort)
 				networkBindings[j] = &models.TaskNetworkBindingModel{
 					BindIP:        n.BindIP,
-					ContainerPort: &containerPort,
-					HostPort:      &hostPort,
+					ContainerPort: n.ContainerPort,
+					HostPort:      n.HostPort,
 					Protocol:      n.Protocol,
 				}
 			}
@@ -169,7 +163,6 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		TaskRoleArn:        task.Detail.Overrides.TaskRoleArn,
 	}
 
-	version := int32(*task.Detail.Version)
 	return models.TaskModel{
 		ClusterARN:           task.Detail.ClusterARN,
 		ContainerInstanceARN: task.Detail.ContainerInstanceARN,
@@ -185,6 +178,6 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		TaskARN:              task.Detail.TaskARN,
 		TaskDefinitionARN:    task.Detail.TaskDefinitionARN,
 		UpdatedAt:            task.Detail.UpdatedAt,
-		Version:              &version,
+		Version:              task.Detail.Version,
 	}, nil
 }

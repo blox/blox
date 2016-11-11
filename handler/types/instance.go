@@ -36,12 +36,12 @@ type InstanceDetail struct {
 	ClusterARN           *string      `json:"clusterArn"`
 	ContainerInstanceARN *string      `json:"containerInstanceArn"`
 	EC2InstanceID        string       `json:"ec2InstanceId,omitempty"`
-	PendingTasksCount    *int         `json:"pendingTasksCount"`
+	PendingTasksCount    *int64       `json:"pendingTasksCount"`
 	RegisteredResources  []*Resource  `json:"registeredResources"`
 	RemainingResources   []*Resource  `json:"remainingResources"`
-	RunningTasksCount    *int         `json:"runningTasksCount"`
+	RunningTasksCount    *int64       `json:"runningTasksCount"`
 	Status               *string      `json:"status"`
-	Version              *int         `json:"version"`
+	Version              *int64       `json:"version"`
 	VersionInfo          *VersionInfo `json:"versionInfo"`
 	UpdatedAt            *string      `json:"updatedAt"`
 }
@@ -49,12 +49,12 @@ type InstanceDetail struct {
 func (instanceDetail *InstanceDetail) String() string {
 	return fmt.Sprintf("Instance %s; Version: %d; Cluster: %s; EC2 Instance ID: %s; AgentConnected: %t; Status: %s; PendingTasksCount: %d; Updated at: %s",
 		aws.StringValue(instanceDetail.ContainerInstanceARN),
-		aws.IntValue(instanceDetail.Version),
+		aws.Int64Value(instanceDetail.Version),
 		aws.StringValue(instanceDetail.ClusterARN),
 		instanceDetail.EC2InstanceID,
 		aws.BoolValue(instanceDetail.AgentConnected),
 		aws.StringValue(instanceDetail.Status),
-		aws.IntValue(instanceDetail.PendingTasksCount),
+		aws.Int64Value(instanceDetail.PendingTasksCount),
 		aws.StringValue(instanceDetail.UpdatedAt))
 }
 
