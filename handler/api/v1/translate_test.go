@@ -37,10 +37,10 @@ var (
 
 type TranslateTestSuite struct {
 	suite.Suite
-	instance      types.ContainerInstance
-	instanceModel models.ContainerInstanceModel
-	task          types.Task
-	taskModel     models.TaskModel
+	instance    types.ContainerInstance
+	extInstance models.ContainerInstance
+	task        types.Task
+	extTask     models.Task
 }
 
 func (suite *TranslateTestSuite) SetupTest() {
@@ -49,7 +49,7 @@ func (suite *TranslateTestSuite) SetupTest() {
 		Name:  &attributeName,
 		Value: &attributeVal,
 	}
-	resoure := types.Resource{
+	resource := types.Resource{
 		Name:  &resourceName,
 		Type:  &resourceType,
 		Value: &resourceVal,
@@ -62,13 +62,11 @@ func (suite *TranslateTestSuite) SetupTest() {
 		ContainerInstanceARN: &instanceARN1,
 		EC2InstanceID:        ecsInstanceID,
 		PendingTasksCount:    &pendingTaskCount1,
-		RegisteredResources:  []*types.Resource{&resoure},
-		RemainingResources:   []*types.Resource{&resoure},
+		RegisteredResources:  []*types.Resource{&resource},
+		RemainingResources:   []*types.Resource{&resource},
 		RunningTasksCount:    &runningTasksCount1,
 		Status:               &instanceStatus1,
-		Version:              &version1,
 		VersionInfo:          &versionInfo,
-		UpdatedAt:            &updatedAt1,
 	}
 	suite.instance = types.ContainerInstance{
 		ID:        &id1,
@@ -79,36 +77,29 @@ func (suite *TranslateTestSuite) SetupTest() {
 		Detail:    &instanceDetail,
 	}
 
-	versionInfoModel := models.ContainerInstanceVersionInfoModel{}
-	attributeModel := models.ContainerInstanceAttributeModel{
+	versionInfoModel := models.ContainerInstanceVersionInfo{}
+	attributeModel := models.ContainerInstanceAttribute{
 		Name:  &attributeName,
 		Value: &attributeVal,
 	}
-	regResoureModel := models.ContainerInstanceRegisteredResourceModel{
+	extResource := models.ContainerInstanceResource{
 		Name:  &resourceName,
 		Type:  &resourceType,
 		Value: &resourceVal,
 	}
-	remResoureModel := models.ContainerInstanceRemainingResourceModel{
-		Name:  &resourceName,
-		Type:  &resourceType,
-		Value: &resourceVal,
-	}
-	suite.instanceModel = models.ContainerInstanceModel{
+	suite.extInstance = models.ContainerInstance{
 		AgentConnected:       &agentConnected1,
 		AgentUpdateStatus:    agentUpdateStatus,
-		Attributes:           []*models.ContainerInstanceAttributeModel{&attributeModel},
+		Attributes:           []*models.ContainerInstanceAttribute{&attributeModel},
 		ClusterARN:           &clusterARN1,
 		ContainerInstanceARN: &instanceARN1,
 		EC2InstanceID:        ecsInstanceID,
 		PendingTasksCount:    &pendingTaskCount1,
-		RegisteredResources:  []*models.ContainerInstanceRegisteredResourceModel{&regResoureModel},
-		RemainingResources:   []*models.ContainerInstanceRemainingResourceModel{&remResoureModel},
+		RegisteredResources:  []*models.ContainerInstanceResource{&extResource},
+		RemainingResources:   []*models.ContainerInstanceResource{&extResource},
 		RunningTasksCount:    &runningTasksCount1,
 		Status:               &instanceStatus1,
-		Version:              &version1,
 		VersionInfo:          &versionInfoModel,
-		UpdatedAt:            &updatedAt1,
 	}
 
 	container := types.Container{
@@ -132,8 +123,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 		Overrides:            &overrides,
 		TaskARN:              &taskARN1,
 		TaskDefinitionARN:    &taskDefinitionARN,
-		UpdatedAt:            &updatedAt1,
-		Version:              &version1,
 	}
 	suite.task = types.Task{
 		ID:        &id1,
@@ -144,29 +133,27 @@ func (suite *TranslateTestSuite) SetupTest() {
 		Detail:    &taskDetail,
 	}
 
-	containerModel := models.TaskContainerModel{
+	containerModel := models.TaskContainer{
 		ContainerARN: &containerARN1,
 		LastStatus:   &taskStatus1,
 		Name:         &taskName,
 	}
-	containerOverridesModel := models.TaskContainerOverrideModel{
+	containerOverridesModel := models.TaskContainerOverride{
 		Name: &taskName,
 	}
-	overridesModel := models.TaskOverrideModel{
-		ContainerOverrides: []*models.TaskContainerOverrideModel{&containerOverridesModel},
+	overridesModel := models.TaskOverride{
+		ContainerOverrides: []*models.TaskContainerOverride{&containerOverridesModel},
 	}
-	suite.taskModel = models.TaskModel{
+	suite.extTask = models.Task{
 		ClusterARN:           &clusterARN1,
 		ContainerInstanceARN: &instanceARN1,
-		Containers:           []*models.TaskContainerModel{&containerModel},
+		Containers:           []*models.TaskContainer{&containerModel},
 		CreatedAt:            &createdAt,
 		DesiredStatus:        &taskStatus1,
 		LastStatus:           &taskStatus1,
 		Overrides:            &overridesModel,
 		TaskARN:              &taskARN1,
 		TaskDefinitionARN:    &taskDefinitionARN,
-		UpdatedAt:            &updatedAt1,
-		Version:              &version1,
 	}
 }
 
@@ -174,193 +161,165 @@ func TestTranslateTestSuite(t *testing.T) {
 	suite.Run(t, new(TranslateTestSuite))
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModel() {
-	translatedModel, err := ToContainerInstanceModel(suite.instance)
+func (suite *TranslateTestSuite) TestToContainerInstance() {
+	translatedModel, err := ToContainerInstance(suite.instance)
 	assert.Nil(suite.T(), err, "Unexpected error when translating container instance")
-	assert.Equal(suite.T(), suite.instanceModel, translatedModel, "Translated model does not match expected model")
+	assert.Equal(suite.T(), suite.extInstance, translatedModel, "Translated model does not match expected model")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyDetail() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyDetail() {
 	instance := suite.instance
 	instance.Detail = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty detail")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyAgentConnected() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyAgentConnected() {
 	instance := suite.instance
 	instance.Detail.AgentConnected = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty agent connected")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyAttributes() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyAttributes() {
 	instance := suite.instance
 	instance.Detail.Attributes = nil
-	translatedModel, err := ToContainerInstanceModel(instance)
+	translatedModel, err := ToContainerInstance(instance)
 
 	assert.Nil(suite.T(), err, "Unexpected error when translating container instance with empty attributes")
-	expectedModel := suite.instanceModel
+	expectedModel := suite.extInstance
 	expectedModel.Attributes = nil
 	assert.Equal(suite.T(), expectedModel, translatedModel, "Translated model does not match expected model with empty attributes")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyClusterARN() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyClusterARN() {
 	instance := suite.instance
 	instance.Detail.ClusterARN = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty cluster ARN")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyContainerInstanceARN() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyContainerInstanceARN() {
 	instance := suite.instance
 	instance.Detail.ContainerInstanceARN = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty instance ARN")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyPendingTasksCount() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyPendingTasksCount() {
 	instance := suite.instance
 	instance.Detail.PendingTasksCount = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty pending tasks count")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyRegisteredResources() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyRegisteredResources() {
 	instance := suite.instance
 	instance.Detail.RegisteredResources = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty registered resources")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyRemainingResources() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyRemainingResources() {
 	instance := suite.instance
 	instance.Detail.RemainingResources = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty remaining resources")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyRunningTasksCount() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyRunningTasksCount() {
 	instance := suite.instance
 	instance.Detail.RunningTasksCount = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty running tasks count")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyStatus() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyStatus() {
 	instance := suite.instance
 	instance.Detail.Status = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty status")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyVersion() {
-	instance := suite.instance
-	instance.Detail.Version = nil
-	_, err := ToContainerInstanceModel(instance)
-	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty version")
-}
-
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyVersionInfo() {
+func (suite *TranslateTestSuite) TestToContainerInstanceEmptyVersionInfo() {
 	instance := suite.instance
 	instance.Detail.VersionInfo = nil
-	_, err := ToContainerInstanceModel(instance)
+	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty version info")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceModelEmptyUpdatedAt() {
-	instance := suite.instance
-	instance.Detail.UpdatedAt = nil
-	_, err := ToContainerInstanceModel(instance)
-	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty updated at")
-}
-
-func (suite *TranslateTestSuite) TestToTaskModel() {
-	translatedModel, err := ToTaskModel(suite.task)
+func (suite *TranslateTestSuite) TestToTask() {
+	translatedModel, err := ToTask(suite.task)
 	assert.Nil(suite.T(), err, "Unexpected error when translating container instance")
-	assert.Equal(suite.T(), suite.taskModel, translatedModel, "Translated model does not match expected model")
+	assert.Equal(suite.T(), suite.extTask, translatedModel, "Translated model does not match expected model")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyDetail() {
+func (suite *TranslateTestSuite) TestToTaskEmptyDetail() {
 	task := suite.task
 	task.Detail = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty detail")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyClusterARN() {
+func (suite *TranslateTestSuite) TestToTaskEmptyClusterARN() {
 	task := suite.task
 	task.Detail.ClusterARN = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty cluster ARN")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyContainerInstanceARN() {
+func (suite *TranslateTestSuite) TestToTaskEmptyContainerInstanceARN() {
 	task := suite.task
 	task.Detail.ContainerInstanceARN = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty container instance ARN")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyContainers() {
+func (suite *TranslateTestSuite) TestToTaskEmptyContainers() {
 	task := suite.task
 	task.Detail.Containers = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty containers")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyCreatedAt() {
+func (suite *TranslateTestSuite) TestToTaskEmptyCreatedAt() {
 	task := suite.task
 	task.Detail.CreatedAt = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty created at")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyDesiredStatus() {
+func (suite *TranslateTestSuite) TestToTaskEmptyDesiredStatus() {
 	task := suite.task
 	task.Detail.DesiredStatus = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty desired status")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyLastStatus() {
+func (suite *TranslateTestSuite) TestToTaskEmptyLastStatus() {
 	task := suite.task
 	task.Detail.LastStatus = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty last status")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyOverrides() {
+func (suite *TranslateTestSuite) TestToTaskEmptyOverrides() {
 	task := suite.task
 	task.Detail.Overrides = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty overrides")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyTaskARN() {
+func (suite *TranslateTestSuite) TestToTaskEmptyTaskARN() {
 	task := suite.task
 	task.Detail.TaskARN = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty task ARN")
 }
 
-func (suite *TranslateTestSuite) TestToTaskModelEmptyTaskDefinitionARN() {
+func (suite *TranslateTestSuite) TestToTaskEmptyTaskDefinitionARN() {
 	task := suite.task
 	task.Detail.TaskDefinitionARN = nil
-	_, err := ToTaskModel(task)
+	_, err := ToTask(task)
 	assert.NotNil(suite.T(), err, "Expected error when translating task with empty task definition ARN")
-}
-
-func (suite *TranslateTestSuite) TestToTaskModelEmptyUpdatedAt() {
-	task := suite.task
-	task.Detail.UpdatedAt = nil
-	_, err := ToTaskModel(task)
-	assert.NotNil(suite.T(), err, "Expected error when translating task with empty updated at")
-}
-
-func (suite *TranslateTestSuite) TestToTaskModelEmptyVersion() {
-	task := suite.task
-	task.Detail.Version = nil
-	_, err := ToTaskModel(task)
-	assert.NotNil(suite.T(), err, "Expected error when translating task with empty version")
 }

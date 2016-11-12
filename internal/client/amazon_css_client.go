@@ -25,11 +25,11 @@ import (
 	"github.com/aws/amazon-ecs-event-stream-handler/internal/client/operations"
 )
 
-// Default amazon ecs esh HTTP client.
+// Default amazon CSS HTTP client.
 var Default = NewHTTPClient(nil)
 
-// NewHTTPClient creates a new amazon ecs esh HTTP client.
-func NewHTTPClient(formats strfmt.Registry) *AmazonEcsEsh {
+// NewHTTPClient creates a new amazon CSS HTTP client.
+func NewHTTPClient(formats strfmt.Registry) *AmazonCSS {
 	if formats == nil {
 		formats = strfmt.Default
 	}
@@ -37,9 +37,9 @@ func NewHTTPClient(formats strfmt.Registry) *AmazonEcsEsh {
 	return New(transport, formats)
 }
 
-// New creates a new amazon ecs esh client
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *AmazonEcsEsh {
-	cli := new(AmazonEcsEsh)
+// New creates a new amazon CSS client
+func New(transport runtime.ClientTransport, formats strfmt.Registry) *AmazonCSS {
+	cli := new(AmazonCSS)
 	cli.Transport = transport
 
 	cli.Operations = operations.New(transport, formats)
@@ -47,15 +47,15 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *AmazonEcsE
 	return cli
 }
 
-// AmazonEcsEsh is a client for amazon ecs esh
-type AmazonEcsEsh struct {
+// AmazonCSS is a client for amazon CSS
+type AmazonCSS struct {
 	Operations *operations.Client
 
 	Transport runtime.ClientTransport
 }
 
 // SetTransport changes the transport on the client and all its subresources
-func (c *AmazonEcsEsh) SetTransport(transport runtime.ClientTransport) {
+func (c *AmazonCSS) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 
 	c.Operations.SetTransport(transport)

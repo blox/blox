@@ -784,7 +784,7 @@ func TestFilterContainerInstancesClusterNameFilter(t *testing.T) {
 	context.datastore.EXPECT().GetWithPrefix(instancesForClusterPrefix).Return(resp, nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(clusterFilter, clusterName1)
+	instances, err := instanceStore.FilterContainerInstances(instanceClusterFilter, clusterName1)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")
@@ -803,7 +803,7 @@ func TestFilterContainerInstancesMultipleResultsMatchClusterArnFilter(t *testing
 	context.datastore.EXPECT().GetWithPrefix(instancesForClusterPrefix).Return(resp, nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(clusterFilter, clusterARN1)
+	instances, err := instanceStore.FilterContainerInstances(instanceClusterFilter, clusterARN1)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")

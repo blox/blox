@@ -68,7 +68,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 		return
 	}
 
-	instanceModel, err := ToContainerInstanceModel(*instance)
+	extInstance, err := ToContainerInstance(*instance)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(internalServerErrMsg)
@@ -78,7 +78,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
-	err = json.NewEncoder(w).Encode(instanceModel)
+	err = json.NewEncoder(w).Encode(extInstance)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(encodingServerErrMsg)
@@ -98,16 +98,22 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
-	instanceModels := make([]models.ContainerInstanceModel, len(instances))
+	extInstanceItems := make([]*models.ContainerInstance, len(instances))
 	for i := range instances {
-		instanceModels[i], err = ToContainerInstanceModel(instances[i])
+		ins, err := ToContainerInstance(instances[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
+		extInstanceItems[i] = &ins
 	}
-	err = json.NewEncoder(w).Encode(instanceModels)
+
+	extInstances := models.ContainerInstances{
+		Items: extInstanceItems,
+	}
+
+	err = json.NewEncoder(w).Encode(extInstances)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(encodingServerErrMsg)
@@ -149,17 +155,22 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
-	instanceModels := make([]models.ContainerInstanceModel, len(instances))
+	extInstanceItems := make([]*models.ContainerInstance, len(instances))
 	for i := range instances {
-		instanceModels[i], err = ToContainerInstanceModel(instances[i])
+		ins, err := ToContainerInstance(instances[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
+		extInstanceItems[i] = &ins
 	}
 
-	err = json.NewEncoder(w).Encode(instanceModels)
+	extInstances := models.ContainerInstances{
+		Items: extInstanceItems,
+	}
+
+	err = json.NewEncoder(w).Encode(extInstances)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(encodingServerErrMsg)
@@ -194,13 +205,13 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
-		instanceModel, err := ToContainerInstanceModel(instanceResp.ContainerInstance)
+		extInstance, err := ToContainerInstance(instanceResp.ContainerInstance)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
-		err = json.NewEncoder(w).Encode(instanceModel)
+		err = json.NewEncoder(w).Encode(extInstance)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(encodingServerErrMsg)

@@ -22,31 +22,31 @@ import (
 
 func init() {
 
-	eshWrapper := wrappers.NewESHWrapper()
+	cssWrapper := wrappers.NewCSSWrapper()
 
 	When(`^I list tasks$`, func() {
 		time.Sleep(15 * time.Second)
-		eshTasks, err := eshWrapper.ListTasks()
+		cssTasks, err := cssWrapper.ListTasks()
 		if err != nil {
 			T.Errorf(err.Error())
 		}
-		for _, t := range eshTasks {
-			eshTaskList = append(eshTaskList, *t)
+		for _, t := range cssTasks {
+			cssTaskList = append(cssTaskList, *t)
 		}
 	})
 
 	Then(`^the list tasks response contains at least (\d+) tasks$`, func(numTasks int) {
-		if len(eshTaskList) < numTasks {
-			T.Errorf("Number of tasks in list tasks response is less than expected")
+		if len(cssTaskList) < numTasks {
+			T.Errorf("Number of tasks in list tasks response is less than expected. ")
 		}
 	})
 
 	And(`^all (\d+) tasks are present in the list tasks response$`, func(numTasks int) {
 		if len(ecsTaskList) != numTasks {
-			T.Errorf("Error memorizing tasks started using ECS client")
+			T.Errorf("Error memorizing tasks started using ECS client. ")
 		}
 		for _, t := range ecsTaskList {
-			err := ValidateListContainsTask(t, eshTaskList)
+			err := ValidateListContainsTask(t, cssTaskList)
 			if err != nil {
 				T.Errorf(err.Error())
 			}

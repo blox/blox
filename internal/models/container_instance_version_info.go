@@ -22,9 +22,9 @@ import (
 	"github.com/go-openapi/errors"
 )
 
-// ContainerInstanceVersionInfoModel container instance version info model
-// swagger:model ContainerInstanceVersionInfoModel
-type ContainerInstanceVersionInfoModel struct {
+// ContainerInstanceVersionInfo container instance version info
+// swagger:model ContainerInstanceVersionInfo
+type ContainerInstanceVersionInfo struct {
 
 	// agent hash
 	AgentHash string `json:"agentHash,omitempty"`
@@ -36,8 +36,8 @@ type ContainerInstanceVersionInfoModel struct {
 	DockerVersion string `json:"dockerVersion,omitempty"`
 }
 
-// Validate validates this container instance version info model
-func (m *ContainerInstanceVersionInfoModel) Validate(formats strfmt.Registry) error {
+// Validate validates this container instance version info
+func (m *ContainerInstanceVersionInfo) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if len(res) > 0 {

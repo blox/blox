@@ -26,21 +26,21 @@ const (
 	getInstanceNotFoundException = "GetInstanceNotFound"
 )
 
-type ESHWrapper struct {
-	client *client.AmazonEcsEsh
+type CSSWrapper struct {
+	client *client.AmazonCSS
 }
 
-func NewESHWrapper() ESHWrapper {
-	return ESHWrapper{
+func NewCSSWrapper() CSSWrapper {
+	return CSSWrapper{
 		client: client.NewHTTPClient(nil),
 	}
 }
 
-func (eshWrapper ESHWrapper) GetTask(clusterName string, taskARN string) (*models.TaskModel, error) {
+func (wrapper CSSWrapper) GetTask(clusterName string, taskARN string) (*models.Task, error) {
 	in := operations.NewGetTaskParams()
 	in.SetCluster(clusterName)
 	in.SetArn(taskARN)
-	resp, err := eshWrapper.client.Operations.GetTask(in)
+	resp, err := wrapper.client.Operations.GetTask(in)
 	if err != nil {
 		return nil, err
 	}
@@ -48,46 +48,56 @@ func (eshWrapper ESHWrapper) GetTask(clusterName string, taskARN string) (*model
 	return task, nil
 }
 
-func (eshWrapper ESHWrapper) TryGetTask(taskARN string) (string, error) {
+func (wrapper CSSWrapper) TryGetTask(taskARN string) (string, error) {
 	in := operations.NewGetTaskParams()
 	in.SetArn(taskARN)
-	_, err := eshWrapper.client.Operations.GetTask(in)
+	_, err := wrapper.client.Operations.GetTask(in)
 	if err != nil {
 		if _, ok := err.(*operations.GetTaskNotFound); ok {
 			return getTaskNotFoundException, nil
-		} else {
-			return "", errors.New("Unknown exception when calling Get Task")
 		}
+		return "", errors.New("Unknown exception when calling Get Task")
 	}
 	return "", errors.New("Expected an exception when calling Get Task, but none received")
 }
 
-func (eshWrapper ESHWrapper) ListTasks() ([]*models.TaskModel, error) {
+func (wrapper CSSWrapper) ListTasks() ([]*models.Task, error) {
 	in := operations.NewListTasksParams()
-	resp, err := eshWrapper.client.Operations.ListTasks(in)
+	resp, err := wrapper.client.Operations.ListTasks(in)
 	if err != nil {
 		return nil, err
 	}
 	tasks := resp.Payload
-	return tasks, nil
+	return tasks.Items, nil
 }
 
-func (eshWrapper ESHWrapper) FilterTasksByStatus(status string) ([]*models.TaskModel, error) {
+func (wrapper CSSWrapper) FilterTasksByStatus(status string) ([]*models.Task, error) {
 	in := operations.NewFilterTasksParams()
 	in.SetStatus(status)
-	resp, err := eshWrapper.client.Operations.FilterTasks(in)
+	resp, err := wrapper.client.Operations.FilterTasks(in)
 	if err != nil {
 		return nil, err
 	}
 	tasks := resp.Payload
-	return tasks, nil
+	return tasks.Items, nil
 }
 
-func (eshWrapper ESHWrapper) GetInstance(clusterName string, instanceARN string) (*models.ContainerInstanceModel, error) {
+func (wrapper CSSWrapper) FilterTasksByCluster(cluster string) ([]*models.Task, error) {
+	in := operations.NewFilterTasksParams()
+	in.SetCluster(cluster)
+	resp, err := wrapper.client.Operations.FilterTasks(in)
+	if err != nil {
+		return nil, err
+	}
+	tasks := resp.Payload
+	return tasks.Items, nil
+}
+
+func (wrapper CSSWrapper) GetInstance(clusterName string, instanceARN string) (*models.ContainerInstance, error) {
 	in := operations.NewGetInstanceParams()
 	in.SetCluster(clusterName)
 	in.SetArn(instanceARN)
-	resp, err := eshWrapper.client.Operations.GetInstance(in)
+	resp, err := wrapper.client.Operations.GetInstance(in)
 	if err != nil {
 		return nil, err
 	}
@@ -95,37 +105,36 @@ func (eshWrapper ESHWrapper) GetInstance(clusterName string, instanceARN string)
 	return instance, nil
 }
 
-func (eshWrapper ESHWrapper) TryGetInstance(instanceARN string) (string, error) {
+func (wrapper CSSWrapper) TryGetInstance(instanceARN string) (string, error) {
 	in := operations.NewGetInstanceParams()
 	in.SetArn(instanceARN)
-	_, err := eshWrapper.client.Operations.GetInstance(in)
+	_, err := wrapper.client.Operations.GetInstance(in)
 	if err != nil {
 		if _, ok := err.(*operations.GetInstanceNotFound); ok {
 			return getInstanceNotFoundException, nil
-		} else {
-			return "", errors.New("Unknown exception when calling Get Instance")
 		}
+		return "", errors.New("Unknown exception when calling Get Instance")
 	}
 	return "", errors.New("Expected an exception when calling Get Instance, but none received")
 }
 
-func (eshWrapper ESHWrapper) ListInstances() ([]*models.ContainerInstanceModel, error) {
+func (wrapper CSSWrapper) ListInstances() ([]*models.ContainerInstance, error) {
 	in := operations.NewListInstancesParams()
-	resp, err := eshWrapper.client.Operations.ListInstances(in)
+	resp, err := wrapper.client.Operations.ListInstances(in)
 	if err != nil {
 		return nil, err
 	}
 	instances := resp.Payload
-	return instances, nil
+	return instances.Items, nil
 }
 
-func (eshWrapper ESHWrapper) FilterInstancesByClusterName(clusterName string) ([]*models.ContainerInstanceModel, error) {
+func (wrapper CSSWrapper) FilterInstancesByClusterName(clusterName string) ([]*models.ContainerInstance, error) {
 	in := operations.NewFilterInstancesParams()
 	in.SetCluster(clusterName)
-	resp, err := eshWrapper.client.Operations.FilterInstances(in)
+	resp, err := wrapper.client.Operations.FilterInstances(in)
 	if err != nil {
 		return nil, err
 	}
 	instances := resp.Payload
-	return instances, nil
+	return instances.Items, nil
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/api/v1/models"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/store"
+	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
 	"github.com/gorilla/mux"
 )
 
@@ -28,7 +29,8 @@ const (
 	taskARNKey     = "arn"
 	taskClusterKey = "cluster"
 
-	taskStatusFilter = "status"
+	taskStatusFilter  = "status"
+	taskClusterFilter = "cluster"
 )
 
 type TaskAPIs struct {
@@ -69,14 +71,14 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
-	taskModel, err := ToTaskModel(*task)
+	extTask, err := ToTask(*task)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(internalServerErrMsg)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(taskModel)
+	err = json.NewEncoder(w).Encode(extTask)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(encodingServerErrMsg)
@@ -96,17 +98,22 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
-	taskModels := make([]models.TaskModel, len(tasks))
+	extTaskItems := make([]*models.Task, len(tasks))
 	for i := range tasks {
-		taskModels[i], err = ToTaskModel(tasks[i])
+		t, err := ToTask(tasks[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
+		extTaskItems[i] = &t
 	}
 
-	err = json.NewEncoder(w).Encode(taskModels)
+	extTasks := models.Tasks{
+		Items: extTaskItems,
+	}
+
+	err = json.NewEncoder(w).Encode(extTasks)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(encodingServerErrMsg)
@@ -117,14 +124,27 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	status := vars[taskStatusFilter]
+	cluster := vars[taskClusterFilter]
 
-	if len(status) == 0 {
+	if len(status) != 0 && len(cluster) != 0 {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(routingServerErrMsg)
 		return
 	}
 
-	tasks, err := taskAPIs.taskStore.FilterTasks(taskStatusFilter, status)
+	var tasks []types.Task
+	var err error
+
+	switch {
+	case len(status) != 0:
+		tasks, err = taskAPIs.taskStore.FilterTasks(taskStatusFilter, status)
+	case len(cluster) != 0:
+		tasks, err = taskAPIs.taskStore.FilterTasks(taskClusterFilter, cluster)
+	default:
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(routingServerErrMsg)
+		return
+	}
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -135,17 +155,22 @@ func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentTypeKey, contentTypeVal)
 	w.WriteHeader(http.StatusOK)
 
-	taskModels := make([]models.TaskModel, len(tasks))
+	extTaskItems := make([]*models.Task, len(tasks))
 	for i := range tasks {
-		taskModels[i], err = ToTaskModel(tasks[i])
+		t, err := ToTask(tasks[i])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
+		extTaskItems[i] = &t
 	}
 
-	err = json.NewEncoder(w).Encode(taskModels)
+	extTasks := models.Tasks{
+		Items: extTaskItems,
+	}
+
+	err = json.NewEncoder(w).Encode(extTasks)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(encodingServerErrMsg)
@@ -180,13 +205,13 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
-		taskModel, err := ToTaskModel(taskResp.Task)
+		extTask, err := ToTask(taskResp.Task)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(internalServerErrMsg)
 			return
 		}
-		err = json.NewEncoder(w).Encode(taskModel)
+		err = json.NewEncoder(w).Encode(extTask)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(encodingServerErrMsg)

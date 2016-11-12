@@ -24,23 +24,20 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskOverrideModel task override model
-// swagger:model TaskOverrideModel
-type TaskOverrideModel struct {
+// ContainerInstances List of container instances
+// swagger:model ContainerInstances
+type ContainerInstances struct {
 
-	// container overrides
+	// items
 	// Required: true
-	ContainerOverrides []*TaskContainerOverrideModel `json:"containerOverrides"`
-
-	// task role arn
-	TaskRoleArn string `json:"taskRoleArn,omitempty"`
+	Items []*ContainerInstance `json:"items"`
 }
 
-// Validate validates this task override model
-func (m *TaskOverrideModel) Validate(formats strfmt.Registry) error {
+// Validate validates this container instances
+func (m *ContainerInstances) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateContainerOverrides(formats); err != nil {
+	if err := m.validateItems(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -51,21 +48,21 @@ func (m *TaskOverrideModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskOverrideModel) validateContainerOverrides(formats strfmt.Registry) error {
+func (m *ContainerInstances) validateItems(formats strfmt.Registry) error {
 
-	if err := validate.Required("containerOverrides", "body", m.ContainerOverrides); err != nil {
+	if err := validate.Required("items", "body", m.Items); err != nil {
 		return err
 	}
 
-	for i := 0; i < len(m.ContainerOverrides); i++ {
+	for i := 0; i < len(m.Items); i++ {
 
-		if swag.IsZero(m.ContainerOverrides[i]) { // not required
+		if swag.IsZero(m.Items[i]) { // not required
 			continue
 		}
 
-		if m.ContainerOverrides[i] != nil {
+		if m.Items[i] != nil {
 
-			if err := m.ContainerOverrides[i].Validate(formats); err != nil {
+			if err := m.Items[i].Validate(formats); err != nil {
 				return err
 			}
 		}

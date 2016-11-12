@@ -31,6 +31,7 @@ const (
 	taskKeyPrefix       = "ecs/task/"
 	taskStatusFilter    = "status"
 	taskStartedByFilter = "startedBy"
+	taskClusterFilter   = "cluster"
 
 	unversionedTask = -1
 )
@@ -115,7 +116,6 @@ func (taskStore eventTaskStore) AddUnversionedTask(taskJSON string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Error checking if task '%s'exists in data store",
 			aws.StringValue(task.Detail.TaskARN))
-		return err
 	}
 
 	if existingTask != nil {
@@ -159,6 +159,8 @@ func (taskStore eventTaskStore) FilterTasks(filterKey string, filterValue string
 		return taskStore.filterTasks(isTaskStatus, filterValue)
 	case filterKey == taskStartedByFilter:
 		return taskStore.filterTasks(isTaskStartedBy, filterValue)
+	case filterKey == taskClusterFilter:
+		return taskStore.filterTasksByCluster(filterValue)
 	default:
 		return nil, errors.Errorf("Unsupported filter key: %s", filterKey)
 	}
@@ -261,6 +263,20 @@ func (taskStore eventTaskStore) filterTasks(filter taskFilter, filterValue strin
 	}
 
 	return result, nil
+}
+
+func (taskStore eventTaskStore) filterTasksByCluster(cluster string) ([]types.Task, error) {
+	clusterName := cluster
+	var err error
+	if regex.IsClusterARN(cluster) {
+		clusterName, err = regex.GetClusterNameFromARN(cluster)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tasksForClusterPrefix := taskKeyPrefix + clusterName + "/"
+	return taskStore.getTasksByKeyPrefix(tasksForClusterPrefix)
 }
 
 func (taskStore eventTaskStore) getTaskKey(cluster string, taskARN string) (string, error) {

@@ -31,9 +31,10 @@ import (
 )
 
 const (
-	getTaskPrefix             = "/v1/tasks"
-	listTasksPrefix           = "/v1/tasks"
-	filterTasksByStatusPrefix = "/v1/tasks/filter?status="
+	getTaskPrefix              = "/v1/tasks"
+	listTasksPrefix            = "/v1/tasks"
+	filterTasksByStatusPrefix  = "/v1/tasks/filter?status="
+	filterTasksByClusterPrefix = "/v1/tasks/filter?cluster="
 
 	filterTasksByStatusQueryValue = "{status:pending|running|stopped}"
 
@@ -48,8 +49,8 @@ type TaskAPIsTestSuite struct {
 	taskAPIs       TaskAPIs
 	task1          types.Task
 	task2          types.Task
-	taskModel1     models.TaskModel
-	taskModel2     models.TaskModel
+	extTask1       models.Task
+	extTask2       models.Task
 	responseHeader http.Header
 
 	// We need a router because some of the apis use mux.Vars() which uses the URL
@@ -89,11 +90,11 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		Time:      &time,
 	}
 
-	taskModel, err := ToTaskModel(suite.task1)
+	extTask, err := ToTask(suite.task1)
 	if err != nil {
-		suite.T().Error("Cannot setup testSuite: Error when tranlating task to external model")
+		suite.T().Error("Cannot setup testSuite: Error when tranlating task to external task")
 	}
-	suite.taskModel1 = taskModel
+	suite.extTask1 = extTask
 
 	taskDetail2 := taskDetail1
 	taskDetail2.TaskARN = &taskARN2
@@ -108,11 +109,11 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		Time:      &time,
 	}
 
-	taskModel, err = ToTaskModel(suite.task2)
+	extTask, err = ToTask(suite.task2)
 	if err != nil {
 		suite.T().Error("Cannot setup testSuite: Error when tranlating task to external model")
 	}
-	suite.taskModel2 = taskModel
+	suite.extTask2 = extTask
 
 	suite.responseHeader = http.Header{responseContentTypeKey: []string{responseContentTypeVal}}
 
@@ -138,10 +139,10 @@ func (suite *TaskAPIsTestSuite) TestGetReturnsTask() {
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
 
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	taskInResponse := models.TaskModel{}
+	taskInResponse := models.Task{}
 	err := json.NewDecoder(reader).Decode(&taskInResponse)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
-	assert.Exactly(suite.T(), suite.taskModel1, taskInResponse, "Task in response is invalid")
+	assert.Exactly(suite.T(), suite.extTask1, taskInResponse, "Task in response is invalid")
 }
 
 func (suite *TaskAPIsTestSuite) TestGetTaskNoTask() {
@@ -183,15 +184,19 @@ func (suite *TaskAPIsTestSuite) TestGetTaskWithoutTaskARN() {
 func (suite *TaskAPIsTestSuite) TestListTasksReturnsTasks() {
 	taskList := []types.Task{suite.task1, suite.task2}
 	suite.taskStore.EXPECT().ListTasks().Return(taskList, nil)
-	taskModelList := []models.TaskModel{suite.taskModel1, suite.taskModel2}
-	suite.listTaskTester(taskModelList)
+	extTasks := models.Tasks{
+		Items: []*models.Task{&suite.extTask1, &suite.extTask2},
+	}
+	suite.listTaskTester(extTasks)
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksNoTasks() {
 	emptyTaskList := make([]types.Task, 0)
 	suite.taskStore.EXPECT().ListTasks().Return(emptyTaskList, nil)
-	emptyTaskModelList := make([]models.TaskModel, 0)
-	suite.listTaskTester(emptyTaskModelList)
+	emptyExtTasks := models.Tasks{
+		Items: []*models.Task{},
+	}
+	suite.listTaskTester(emptyExtTasks)
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksStoreReturnsError() {
@@ -205,24 +210,86 @@ func (suite *TaskAPIsTestSuite) TestListTasksStoreReturnsError() {
 	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
 }
 
-func (suite *TaskAPIsTestSuite) TestFilterTasksReturnsTasks() {
+func (suite *TaskAPIsTestSuite) TestFilterTasksByStatusReturnsTasks() {
 	taskList := []types.Task{suite.task1}
 	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(taskList, nil)
-	taskModelList := []models.TaskModel{suite.taskModel1}
-	suite.filterTasksTester(taskModelList)
+	extTasks := models.Tasks{
+		Items: []*models.Task{&suite.extTask1},
+	}
+	suite.filterTasksByStatusTester(extTasks)
 }
 
-func (suite *TaskAPIsTestSuite) TestFilterTasksNoTasks() {
+func (suite *TaskAPIsTestSuite) TestFilterTasksByStatusNoTasks() {
 	emptyTaskList := make([]types.Task, 0)
 	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(emptyTaskList, nil)
-	emptyTaskModelList := make([]models.TaskModel, 0)
-	suite.filterTasksTester(emptyTaskModelList)
+	emptyExtTasks := models.Tasks{
+		Items: []*models.Task{},
+	}
+	suite.filterTasksByStatusTester(emptyExtTasks)
 }
 
-func (suite *TaskAPIsTestSuite) TestFilterTasksStoreReturnsError() {
+func (suite *TaskAPIsTestSuite) TestFilterTasksByStatusStoreReturnsError() {
 	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(nil, errors.New("Error when filtering tasks"))
 
-	request := suite.filterTasksRequest()
+	request := suite.filterTasksByStatusRequest()
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
+}
+
+func (suite *TaskAPIsTestSuite) TestFilterTasksByClusterNameReturnsTasks() {
+	taskList := []types.Task{suite.task1}
+	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, clusterName1).Return(taskList, nil)
+	extTasks := models.Tasks{
+		Items: []*models.Task{&suite.extTask1},
+	}
+	suite.filterTasksByClusterTester(clusterName1, extTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestFilterTasksByClusterNameNoTasks() {
+	emptyTaskList := make([]types.Task, 0)
+	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, clusterName1).Return(emptyTaskList, nil)
+	emptyExtTasks := models.Tasks{
+		Items: []*models.Task{},
+	}
+	suite.filterTasksByClusterTester(clusterName1, emptyExtTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestFilterTasksByClusterNameStoreReturnsError() {
+	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, clusterName1).Return(nil, errors.New("Error when filtering tasks"))
+
+	request := suite.filterTasksByClusterRequest(clusterName1)
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
+}
+
+func (suite *TaskAPIsTestSuite) TestFilterTasksByClusterARNReturnsTasks() {
+	taskList := []types.Task{suite.task1}
+	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, clusterARN1).Return(taskList, nil)
+	extTasks := models.Tasks{
+		Items: []*models.Task{&suite.extTask1},
+	}
+	suite.filterTasksByClusterTester(clusterARN1, extTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestFilterTasksByClusterARNNoTasks() {
+	emptyTaskList := make([]types.Task, 0)
+	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, clusterARN1).Return(emptyTaskList, nil)
+	emptyExtTasks := models.Tasks{
+		Items: []*models.Task{},
+	}
+	suite.filterTasksByClusterTester(clusterARN1, emptyExtTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestFilterTasksByClusterARNStoreReturnsError() {
+	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, clusterARN1).Return(nil, errors.New("Error when filtering tasks"))
+
+	request := suite.filterTasksByClusterRequest(clusterARN1)
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
@@ -258,31 +325,48 @@ func (suite *TaskAPIsTestSuite) listTasksRequest() *http.Request {
 	return request
 }
 
-func (suite *TaskAPIsTestSuite) filterTasksRequest() *http.Request {
+func (suite *TaskAPIsTestSuite) filterTasksByStatusRequest() *http.Request {
 	url := filterTasksByStatusPrefix + taskStatus1
 	request, err := http.NewRequest("GET", url, nil)
-	assert.Nil(suite.T(), err, "Unexpected error creating task get request")
+	assert.Nil(suite.T(), err, "Unexpected error creating filter tasks by status request")
 	return request
 }
 
-func (suite *TaskAPIsTestSuite) listTaskTester(taskList []models.TaskModel) {
+func (suite *TaskAPIsTestSuite) filterTasksByClusterRequest(cluster string) *http.Request {
+	url := filterTasksByClusterPrefix + cluster
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating filter tasks by cluster request")
+	return request
+}
+
+func (suite *TaskAPIsTestSuite) listTaskTester(tasks models.Tasks) {
 	request := suite.listTasksRequest()
 	responseRecorder := httptest.NewRecorder()
 
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	suite.validateTasksInListOrFilterTasksResponse(responseRecorder, taskList)
+	suite.validateTasksInListOrFilterTasksResponse(responseRecorder, tasks)
 }
 
-func (suite *TaskAPIsTestSuite) filterTasksTester(taskList []models.TaskModel) {
-	request := suite.filterTasksRequest()
+func (suite *TaskAPIsTestSuite) filterTasksByStatusTester(tasks models.Tasks) {
+	request := suite.filterTasksByStatusRequest()
 	responseRecorder := httptest.NewRecorder()
 
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	suite.validateTasksInListOrFilterTasksResponse(responseRecorder, taskList)
+	suite.validateTasksInListOrFilterTasksResponse(responseRecorder, tasks)
+}
+
+func (suite *TaskAPIsTestSuite) filterTasksByClusterTester(cluster string, tasks models.Tasks) {
+	request := suite.filterTasksByClusterRequest(cluster)
+	responseRecorder := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	suite.validateTasksInListOrFilterTasksResponse(responseRecorder, tasks)
 }
 
 func (suite *TaskAPIsTestSuite) getRouter() *mux.Router {
@@ -298,7 +382,17 @@ func (suite *TaskAPIsTestSuite) getRouter() *mux.Router {
 		HandlerFunc(suite.taskAPIs.ListTasks)
 
 	s.Path(filterTasksPath).
-		Queries(taskStatusFilter, filterTasksByStatusQueryValue).
+		Queries(statusKey, taskStatusVal).
+		Methods("GET").
+		HandlerFunc(suite.taskAPIs.FilterTasks)
+
+	s.Path(filterTasksPath).
+		Queries(clusterKey, clusterNameVal).
+		Methods("GET").
+		HandlerFunc(suite.taskAPIs.FilterTasks)
+
+	s.Path(filterTasksPath).
+		Queries(clusterKey, clusterARNVal).
 		Methods("GET").
 		HandlerFunc(suite.taskAPIs.FilterTasks)
 
@@ -327,9 +421,9 @@ func (suite *TaskAPIsTestSuite) validateErrorResponseHeaderAndStatus(responseRec
 	assert.Equal(suite.T(), errorCode, responseRecorder.Code, "Http response status is invalid")
 }
 
-func (suite *TaskAPIsTestSuite) validateTasksInListOrFilterTasksResponse(responseRecorder *httptest.ResponseRecorder, expectedTasks []models.TaskModel) {
+func (suite *TaskAPIsTestSuite) validateTasksInListOrFilterTasksResponse(responseRecorder *httptest.ResponseRecorder, expectedTasks models.Tasks) {
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	tasksInResponse := new([]models.TaskModel)
+	tasksInResponse := new(models.Tasks)
 	err := json.NewDecoder(reader).Decode(tasksInResponse)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
 	assert.Exactly(suite.T(), expectedTasks, *tasksInResponse, "Tasks in response is invalid")

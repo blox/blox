@@ -24,23 +24,23 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskContainerOverrideModel task container override model
-// swagger:model TaskContainerOverrideModel
-type TaskContainerOverrideModel struct {
+// TaskContainerOverride task container override
+// swagger:model TaskContainerOverride
+type TaskContainerOverride struct {
 
 	// command
 	Command []string `json:"command"`
 
 	// environment
-	Environment []*TaskEnvironmentModel `json:"environment"`
+	Environment []*TaskEnvironment `json:"environment"`
 
 	// name
 	// Required: true
 	Name *string `json:"name"`
 }
 
-// Validate validates this task container override model
-func (m *TaskContainerOverrideModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task container override
+func (m *TaskContainerOverride) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCommand(formats); err != nil {
@@ -64,7 +64,7 @@ func (m *TaskContainerOverrideModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskContainerOverrideModel) validateCommand(formats strfmt.Registry) error {
+func (m *TaskContainerOverride) validateCommand(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Command) { // not required
 		return nil
@@ -73,7 +73,7 @@ func (m *TaskContainerOverrideModel) validateCommand(formats strfmt.Registry) er
 	return nil
 }
 
-func (m *TaskContainerOverrideModel) validateEnvironment(formats strfmt.Registry) error {
+func (m *TaskContainerOverride) validateEnvironment(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Environment) { // not required
 		return nil
@@ -97,7 +97,7 @@ func (m *TaskContainerOverrideModel) validateEnvironment(formats strfmt.Registry
 	return nil
 }
 
-func (m *TaskContainerOverrideModel) validateName(formats strfmt.Registry) error {
+func (m *TaskContainerOverride) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err

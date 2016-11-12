@@ -72,7 +72,7 @@ func NewGetTaskOK() *GetTaskOK {
 Get task using cluster name and task ARN - success
 */
 type GetTaskOK struct {
-	Payload *models.TaskModel
+	Payload *models.Task
 }
 
 func (o *GetTaskOK) Error() string {
@@ -81,7 +81,7 @@ func (o *GetTaskOK) Error() string {
 
 func (o *GetTaskOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.TaskModel)
+	o.Payload = new(models.Task)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

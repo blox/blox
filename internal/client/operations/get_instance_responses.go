@@ -72,7 +72,7 @@ func NewGetInstanceOK() *GetInstanceOK {
 Get instance using cluster name and instance ARN - success
 */
 type GetInstanceOK struct {
-	Payload *models.ContainerInstanceModel
+	Payload *models.ContainerInstance
 }
 
 func (o *GetInstanceOK) Error() string {
@@ -81,7 +81,7 @@ func (o *GetInstanceOK) Error() string {
 
 func (o *GetInstanceOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ContainerInstanceModel)
+	o.Payload = new(models.ContainerInstance)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

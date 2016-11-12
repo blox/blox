@@ -65,7 +65,7 @@ func NewFilterTasksOK() *FilterTasksOK {
 Filter tasks - success
 */
 type FilterTasksOK struct {
-	Payload []*models.TaskModel
+	Payload *models.Tasks
 }
 
 func (o *FilterTasksOK) Error() string {
@@ -74,8 +74,10 @@ func (o *FilterTasksOK) Error() string {
 
 func (o *FilterTasksOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.Tasks)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

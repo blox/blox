@@ -73,6 +73,18 @@ func NewRouter(apis APIs) *mux.Router {
 		Methods("GET").
 		HandlerFunc(apis.TaskApis.FilterTasks)
 
+	// Filter tasks by cluser name
+	s.Path(filterTasksPath).
+		Queries(clusterKey, clusterNameVal).
+		Methods("GET").
+		HandlerFunc(apis.TaskApis.FilterTasks)
+
+	// Filter tasks by cluster ARN
+	s.Path(filterTasksPath).
+		Queries(clusterKey, clusterARNVal).
+		Methods("GET").
+		HandlerFunc(apis.TaskApis.FilterTasks)
+
 	// Stream tasks
 	s.Path(streamTasksPath).
 		Methods("GET").

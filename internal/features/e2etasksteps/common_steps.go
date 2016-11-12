@@ -23,7 +23,7 @@ import (
 var (
 	// Lists to memorize results required for the subsequent steps
 	ecsTaskList   = []ecs.Task{}
-	eshTaskList   = []models.TaskModel{}
+	cssTaskList   = []models.Task{}
 	exceptionList = []string{}
 
 	taskDefnARN = ""
@@ -69,7 +69,7 @@ func init() {
 
 	Given(`^I start (\d+) task(?:|s) in the ECS cluster$`, func(numTasks int) {
 		ecsTaskList = nil
-		eshTaskList = nil
+		cssTaskList = nil
 
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
@@ -87,10 +87,10 @@ func init() {
 
 	Then(`^I get a (.+?) task exception$`, func(exception string) {
 		if len(exceptionList) != 1 {
-			T.Errorf("Error memorizing exception")
+			T.Errorf("Error memorizing exception. ")
 		}
 		if exception != exceptionList[0] {
-			T.Errorf("Expected exception '%s' but got '%s'", exception, exceptionList[0])
+			T.Errorf("Expected exception '%s' but got '%s'. ", exception, exceptionList[0])
 		}
 	})
 }

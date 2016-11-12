@@ -18,34 +18,29 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/validate"
 )
 
-// ContainerInstanceAttributeModel container instance attribute model
-// swagger:model ContainerInstanceAttributeModel
-type ContainerInstanceAttributeModel struct {
+// TaskOverride task override
+// swagger:model TaskOverride
+type TaskOverride struct {
 
-	// name
+	// container overrides
 	// Required: true
-	Name *string `json:"name"`
+	ContainerOverrides []*TaskContainerOverride `json:"containerOverrides"`
 
-	// value
-	// Required: true
-	Value *string `json:"value"`
+	// task role arn
+	TaskRoleArn string `json:"taskRoleArn,omitempty"`
 }
 
-// Validate validates this container instance attribute model
-func (m *ContainerInstanceAttributeModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task override
+func (m *TaskOverride) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateName(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateValue(formats); err != nil {
+	if err := m.validateContainerOverrides(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -56,19 +51,25 @@ func (m *ContainerInstanceAttributeModel) Validate(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *ContainerInstanceAttributeModel) validateName(formats strfmt.Registry) error {
+func (m *TaskOverride) validateContainerOverrides(formats strfmt.Registry) error {
 
-	if err := validate.Required("name", "body", m.Name); err != nil {
+	if err := validate.Required("containerOverrides", "body", m.ContainerOverrides); err != nil {
 		return err
 	}
 
-	return nil
-}
+	for i := 0; i < len(m.ContainerOverrides); i++ {
 
-func (m *ContainerInstanceAttributeModel) validateValue(formats strfmt.Registry) error {
+		if swag.IsZero(m.ContainerOverrides[i]) { // not required
+			continue
+		}
 
-	if err := validate.Required("value", "body", m.Value); err != nil {
-		return err
+		if m.ContainerOverrides[i] != nil {
+
+			if err := m.ContainerOverrides[i].Validate(formats); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil

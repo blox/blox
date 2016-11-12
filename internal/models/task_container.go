@@ -24,9 +24,9 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskContainerModel task container model
-// swagger:model TaskContainerModel
-type TaskContainerModel struct {
+// TaskContainer task container
+// swagger:model TaskContainer
+type TaskContainer struct {
 
 	// container a r n
 	// Required: true
@@ -44,14 +44,14 @@ type TaskContainerModel struct {
 	Name *string `json:"name"`
 
 	// network bindings
-	NetworkBindings []*TaskNetworkBindingModel `json:"networkBindings"`
+	NetworkBindings []*TaskNetworkBinding `json:"networkBindings"`
 
 	// reason
 	Reason string `json:"reason,omitempty"`
 }
 
-// Validate validates this task container model
-func (m *TaskContainerModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task container
+func (m *TaskContainer) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateContainerARN(formats); err != nil {
@@ -80,7 +80,7 @@ func (m *TaskContainerModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskContainerModel) validateContainerARN(formats strfmt.Registry) error {
+func (m *TaskContainer) validateContainerARN(formats strfmt.Registry) error {
 
 	if err := validate.Required("containerARN", "body", m.ContainerARN); err != nil {
 		return err
@@ -89,7 +89,7 @@ func (m *TaskContainerModel) validateContainerARN(formats strfmt.Registry) error
 	return nil
 }
 
-func (m *TaskContainerModel) validateLastStatus(formats strfmt.Registry) error {
+func (m *TaskContainer) validateLastStatus(formats strfmt.Registry) error {
 
 	if err := validate.Required("lastStatus", "body", m.LastStatus); err != nil {
 		return err
@@ -98,7 +98,7 @@ func (m *TaskContainerModel) validateLastStatus(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskContainerModel) validateName(formats strfmt.Registry) error {
+func (m *TaskContainer) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -107,7 +107,7 @@ func (m *TaskContainerModel) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskContainerModel) validateNetworkBindings(formats strfmt.Registry) error {
+func (m *TaskContainer) validateNetworkBindings(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.NetworkBindings) { // not required
 		return nil

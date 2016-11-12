@@ -24,9 +24,9 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// TaskModel task model
-// swagger:model TaskModel
-type TaskModel struct {
+// Task task
+// swagger:model Task
+type Task struct {
 
 	// cluster a r n
 	// Required: true
@@ -38,7 +38,7 @@ type TaskModel struct {
 
 	// containers
 	// Required: true
-	Containers []*TaskContainerModel `json:"containers"`
+	Containers []*TaskContainer `json:"containers"`
 
 	// created at
 	// Required: true
@@ -54,7 +54,7 @@ type TaskModel struct {
 
 	// overrides
 	// Required: true
-	Overrides *TaskOverrideModel `json:"overrides"`
+	Overrides *TaskOverride `json:"overrides"`
 
 	// started at
 	StartedAt string `json:"startedAt,omitempty"`
@@ -75,18 +75,10 @@ type TaskModel struct {
 	// task definition a r n
 	// Required: true
 	TaskDefinitionARN *string `json:"taskDefinitionARN"`
-
-	// updated at
-	// Required: true
-	UpdatedAt *string `json:"updatedAt"`
-
-	// version
-	// Required: true
-	Version *int64 `json:"version"`
 }
 
-// Validate validates this task model
-func (m *TaskModel) Validate(formats strfmt.Registry) error {
+// Validate validates this task
+func (m *Task) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateClusterARN(formats); err != nil {
@@ -134,23 +126,13 @@ func (m *TaskModel) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateUpdatedAt(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateVersion(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
 }
 
-func (m *TaskModel) validateClusterARN(formats strfmt.Registry) error {
+func (m *Task) validateClusterARN(formats strfmt.Registry) error {
 
 	if err := validate.Required("clusterARN", "body", m.ClusterARN); err != nil {
 		return err
@@ -159,7 +141,7 @@ func (m *TaskModel) validateClusterARN(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskModel) validateContainerInstanceARN(formats strfmt.Registry) error {
+func (m *Task) validateContainerInstanceARN(formats strfmt.Registry) error {
 
 	if err := validate.Required("containerInstanceARN", "body", m.ContainerInstanceARN); err != nil {
 		return err
@@ -168,7 +150,7 @@ func (m *TaskModel) validateContainerInstanceARN(formats strfmt.Registry) error 
 	return nil
 }
 
-func (m *TaskModel) validateContainers(formats strfmt.Registry) error {
+func (m *Task) validateContainers(formats strfmt.Registry) error {
 
 	if err := validate.Required("containers", "body", m.Containers); err != nil {
 		return err
@@ -192,7 +174,7 @@ func (m *TaskModel) validateContainers(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskModel) validateCreatedAt(formats strfmt.Registry) error {
+func (m *Task) validateCreatedAt(formats strfmt.Registry) error {
 
 	if err := validate.Required("createdAt", "body", m.CreatedAt); err != nil {
 		return err
@@ -201,7 +183,7 @@ func (m *TaskModel) validateCreatedAt(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskModel) validateDesiredStatus(formats strfmt.Registry) error {
+func (m *Task) validateDesiredStatus(formats strfmt.Registry) error {
 
 	if err := validate.Required("desiredStatus", "body", m.DesiredStatus); err != nil {
 		return err
@@ -210,7 +192,7 @@ func (m *TaskModel) validateDesiredStatus(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskModel) validateLastStatus(formats strfmt.Registry) error {
+func (m *Task) validateLastStatus(formats strfmt.Registry) error {
 
 	if err := validate.Required("lastStatus", "body", m.LastStatus); err != nil {
 		return err
@@ -219,7 +201,7 @@ func (m *TaskModel) validateLastStatus(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskModel) validateOverrides(formats strfmt.Registry) error {
+func (m *Task) validateOverrides(formats strfmt.Registry) error {
 
 	if err := validate.Required("overrides", "body", m.Overrides); err != nil {
 		return err
@@ -235,7 +217,7 @@ func (m *TaskModel) validateOverrides(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskModel) validateTaskARN(formats strfmt.Registry) error {
+func (m *Task) validateTaskARN(formats strfmt.Registry) error {
 
 	if err := validate.Required("taskARN", "body", m.TaskARN); err != nil {
 		return err
@@ -244,27 +226,9 @@ func (m *TaskModel) validateTaskARN(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskModel) validateTaskDefinitionARN(formats strfmt.Registry) error {
+func (m *Task) validateTaskDefinitionARN(formats strfmt.Registry) error {
 
 	if err := validate.Required("taskDefinitionARN", "body", m.TaskDefinitionARN); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *TaskModel) validateUpdatedAt(formats strfmt.Registry) error {
-
-	if err := validate.Required("updatedAt", "body", m.UpdatedAt); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *TaskModel) validateVersion(formats strfmt.Registry) error {
-
-	if err := validate.Required("version", "body", m.Version); err != nil {
 		return err
 	}
 

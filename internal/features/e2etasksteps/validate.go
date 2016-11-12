@@ -19,26 +19,26 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ValidateTasksMatch(ecsTask ecs.Task, eshTask models.TaskModel) error {
-	if *ecsTask.TaskArn != *eshTask.TaskARN ||
-		*ecsTask.ClusterArn != *eshTask.ClusterARN ||
-		*ecsTask.ContainerInstanceArn != *eshTask.ContainerInstanceARN {
-		return errors.New("Tasks don't match")
+func ValidateTasksMatch(ecsTask ecs.Task, cssTask models.Task) error {
+	if *ecsTask.TaskArn != *cssTask.TaskARN ||
+		*ecsTask.ClusterArn != *cssTask.ClusterARN ||
+		*ecsTask.ContainerInstanceArn != *cssTask.ContainerInstanceARN {
+		return errors.New("Tasks don't match.")
 	}
 	return nil
 }
 
-func ValidateListContainsTask(ecsTask ecs.Task, eshTaskList []models.TaskModel) error {
+func ValidateListContainsTask(ecsTask ecs.Task, cssTaskList []models.Task) error {
 	taskARN := *ecsTask.TaskArn
-	var eshTask models.TaskModel
-	for _, t := range eshTaskList {
+	var cssTask models.Task
+	for _, t := range cssTaskList {
 		if *t.TaskARN == taskARN {
-			eshTask = t
+			cssTask = t
 			break
 		}
 	}
-	if eshTask.TaskARN == nil {
-		return errors.Errorf("Task with ARN '%s' not found in response", taskARN)
+	if cssTask.TaskARN == nil {
+		return errors.Errorf("Task with ARN '%s' not found in response. ", taskARN)
 	}
-	return ValidateTasksMatch(ecsTask, eshTask)
+	return ValidateTasksMatch(ecsTask, cssTask)
 }

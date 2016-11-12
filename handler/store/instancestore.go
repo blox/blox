@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	instanceKeyPrefix    = "ecs/instance/"
-	instanceStatusFilter = "status"
-	clusterFilter        = "cluster"
+	instanceKeyPrefix     = "ecs/instance/"
+	instanceStatusFilter  = "status"
+	instanceClusterFilter = "cluster"
 
 	unversionedInstance = -1
 )
@@ -154,7 +154,7 @@ func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey strin
 	switch {
 	case filterKey == instanceStatusFilter:
 		return instanceStore.filterContainerInstancesByStatus(filterValue)
-	case filterKey == clusterFilter:
+	case filterKey == instanceClusterFilter:
 		return instanceStore.filterContainerInstancesByCluster(filterValue)
 	default:
 		return nil, errors.Errorf("Unsupported filter key: %s", filterKey)

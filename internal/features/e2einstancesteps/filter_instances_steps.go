@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	eshWrapper := wrappers.NewESHWrapper()
+	cssWrapper := wrappers.NewCSSWrapper()
 
 	When(`^I filter instances by the same ECS cluster name$`, func() {
 		clusterName, err := wrappers.GetClusterName()
@@ -27,21 +27,21 @@ func init() {
 			T.Errorf(err.Error())
 		}
 
-		eshInstances, err := eshWrapper.FilterInstancesByClusterName(clusterName)
+		cssInstances, err := cssWrapper.FilterInstancesByClusterName(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
 		}
-		for _, i := range eshInstances {
-			eshContainerInstanceList = append(eshContainerInstanceList, *i)
+		for _, i := range cssInstances {
+			cssContainerInstanceList = append(cssContainerInstanceList, *i)
 		}
 	})
 
 	Then(`^the filter instances response contains all the instances registered with the cluster$`, func() {
-		if len(ecsContainerInstanceList) != len(eshContainerInstanceList) {
-			T.Errorf("Unexpected number of instances in the filter instances response")
+		if len(ecsContainerInstanceList) != len(cssContainerInstanceList) {
+			T.Errorf("Unexpected number of instances in the filter instances response. ")
 		}
 		for _, ecsInstance := range ecsContainerInstanceList {
-			err := ValidateListContainsInstance(ecsInstance, eshContainerInstanceList)
+			err := ValidateListContainsInstance(ecsInstance, cssContainerInstanceList)
 			if err != nil {
 				T.Errorf(err.Error())
 			}

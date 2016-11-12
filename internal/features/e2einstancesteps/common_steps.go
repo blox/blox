@@ -23,7 +23,7 @@ import (
 var (
 	// Lists to memorize results required for the subsequent steps
 	ecsContainerInstanceList = []ecs.ContainerInstance{}
-	eshContainerInstanceList = []models.ContainerInstanceModel{}
+	cssContainerInstanceList = []models.ContainerInstance{}
 	exceptionList            = []string{}
 )
 
@@ -33,7 +33,7 @@ func init() {
 
 	Given(`^I have some instances registered with the ECS cluster$`, func() {
 		ecsContainerInstanceList = nil
-		eshContainerInstanceList = nil
+		cssContainerInstanceList = nil
 
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
@@ -45,7 +45,7 @@ func init() {
 			T.Errorf(err.Error())
 		}
 		if len(instanceARNs) < 1 {
-			T.Errorf("No container instances registered to the cluster '%s'", clusterName)
+			T.Errorf("No container instances registered to the cluster '%s'. ", clusterName)
 		}
 		for _, instanceARN := range instanceARNs {
 			ecsInstance, err := ecsWrapper.DescribeContainerInstance(clusterName, *instanceARN)
@@ -61,7 +61,7 @@ func init() {
 			T.Errorf("Error memorizing exception")
 		}
 		if exception != exceptionList[0] {
-			T.Errorf("Expected exception '%s' but got '%s'", exception, exceptionList[0])
+			T.Errorf("Expected exception '%s' but got '%s'. ", exception, exceptionList[0])
 		}
 	})
 }

@@ -19,25 +19,25 @@ import (
 	"github.com/pkg/errors"
 )
 
-func ValidateInstancesMatch(ecsInstance ecs.ContainerInstance, eshInstance models.ContainerInstanceModel) error {
-	if *ecsInstance.ContainerInstanceArn != *eshInstance.ContainerInstanceARN ||
-		*ecsInstance.Status != *eshInstance.Status {
-		return errors.New("Container instances don't match")
+func ValidateInstancesMatch(ecsInstance ecs.ContainerInstance, cssInstance models.ContainerInstance) error {
+	if *ecsInstance.ContainerInstanceArn != *cssInstance.ContainerInstanceARN ||
+		*ecsInstance.Status != *cssInstance.Status {
+		return errors.New("Container instances don't match. ")
 	}
 	return nil
 }
 
-func ValidateListContainsInstance(ecsInstance ecs.ContainerInstance, eshInstanceList []models.ContainerInstanceModel) error {
+func ValidateListContainsInstance(ecsInstance ecs.ContainerInstance, cssInstanceList []models.ContainerInstance) error {
 	instanceARN := *ecsInstance.ContainerInstanceArn
-	var eshInstance models.ContainerInstanceModel
-	for _, i := range eshInstanceList {
+	var cssInstance models.ContainerInstance
+	for _, i := range cssInstanceList {
 		if *i.ContainerInstanceARN == instanceARN {
-			eshInstance = i
+			cssInstance = i
 			break
 		}
 	}
-	if eshInstance.ContainerInstanceARN == nil {
-		return errors.Errorf("Instance with ARN '%s' not found in response", instanceARN)
+	if cssInstance.ContainerInstanceARN == nil {
+		return errors.Errorf("Instance with ARN '%s' not found in response. ", instanceARN)
 	}
-	return ValidateInstancesMatch(ecsInstance, eshInstance)
+	return ValidateInstancesMatch(ecsInstance, cssInstance)
 }

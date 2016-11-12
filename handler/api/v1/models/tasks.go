@@ -18,34 +18,26 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/validate"
 )
 
-// TaskEnvironmentModel task environment model
-// swagger:model TaskEnvironmentModel
-type TaskEnvironmentModel struct {
+// Tasks List of tasks
+// swagger:model Tasks
+type Tasks struct {
 
-	// name
+	// items
 	// Required: true
-	Name *string `json:"name"`
-
-	// value
-	// Required: true
-	Value *string `json:"value"`
+	Items []*Task `json:"items"`
 }
 
-// Validate validates this task environment model
-func (m *TaskEnvironmentModel) Validate(formats strfmt.Registry) error {
+// Validate validates this tasks
+func (m *Tasks) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateName(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateValue(formats); err != nil {
+	if err := m.validateItems(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -56,19 +48,25 @@ func (m *TaskEnvironmentModel) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *TaskEnvironmentModel) validateName(formats strfmt.Registry) error {
+func (m *Tasks) validateItems(formats strfmt.Registry) error {
 
-	if err := validate.Required("name", "body", m.Name); err != nil {
+	if err := validate.Required("items", "body", m.Items); err != nil {
 		return err
 	}
 
-	return nil
-}
+	for i := 0; i < len(m.Items); i++ {
 
-func (m *TaskEnvironmentModel) validateValue(formats strfmt.Registry) error {
+		if swag.IsZero(m.Items[i]) { // not required
+			continue
+		}
 
-	if err := validate.Required("value", "body", m.Value); err != nil {
-		return err
+		if m.Items[i] != nil {
+
+			if err := m.Items[i].Validate(formats); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil

@@ -63,6 +63,11 @@ for the filter tasks operation typically these are written to a http.Request
 */
 type FilterTasksParams struct {
 
+	/*Cluster
+	  Cluster name or ARN to filter tasks by
+
+	*/
+	Cluster string
 	/*Status
 	  Status to filter tasks by
 
@@ -95,6 +100,17 @@ func (o *FilterTasksParams) SetContext(ctx context.Context) {
 	o.Context = ctx
 }
 
+// WithCluster adds the cluster to the filter tasks params
+func (o *FilterTasksParams) WithCluster(cluster string) *FilterTasksParams {
+	o.SetCluster(cluster)
+	return o
+}
+
+// SetCluster adds the cluster to the filter tasks params
+func (o *FilterTasksParams) SetCluster(cluster string) {
+	o.Cluster = cluster
+}
+
 // WithStatus adds the status to the filter tasks params
 func (o *FilterTasksParams) WithStatus(status string) *FilterTasksParams {
 	o.SetStatus(status)
@@ -111,6 +127,15 @@ func (o *FilterTasksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 	r.SetTimeout(o.timeout)
 	var res []error
+
+	// query param cluster
+	qrCluster := o.Cluster
+	qCluster := qrCluster
+	if qCluster != "" {
+		if err := r.SetQueryParam("cluster", qCluster); err != nil {
+			return err
+		}
+	}
 
 	// query param status
 	qrStatus := o.Status

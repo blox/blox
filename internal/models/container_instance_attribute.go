@@ -23,33 +23,24 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// ContainerInstanceRegisteredResourceModel container instance registered resource model
-// swagger:model ContainerInstanceRegisteredResourceModel
-type ContainerInstanceRegisteredResourceModel struct {
+// ContainerInstanceAttribute container instance attribute
+// swagger:model ContainerInstanceAttribute
+type ContainerInstanceAttribute struct {
 
 	// name
 	// Required: true
 	Name *string `json:"name"`
-
-	// type
-	// Required: true
-	Type *string `json:"type"`
 
 	// value
 	// Required: true
 	Value *string `json:"value"`
 }
 
-// Validate validates this container instance registered resource model
-func (m *ContainerInstanceRegisteredResourceModel) Validate(formats strfmt.Registry) error {
+// Validate validates this container instance attribute
+func (m *ContainerInstanceAttribute) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateName(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateType(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -65,7 +56,7 @@ func (m *ContainerInstanceRegisteredResourceModel) Validate(formats strfmt.Regis
 	return nil
 }
 
-func (m *ContainerInstanceRegisteredResourceModel) validateName(formats strfmt.Registry) error {
+func (m *ContainerInstanceAttribute) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -74,16 +65,7 @@ func (m *ContainerInstanceRegisteredResourceModel) validateName(formats strfmt.R
 	return nil
 }
 
-func (m *ContainerInstanceRegisteredResourceModel) validateType(formats strfmt.Registry) error {
-
-	if err := validate.Required("type", "body", m.Type); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstanceRegisteredResourceModel) validateValue(formats strfmt.Registry) error {
+func (m *ContainerInstanceAttribute) validateValue(formats strfmt.Registry) error {
 
 	if err := validate.Required("value", "body", m.Value); err != nil {
 		return err

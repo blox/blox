@@ -53,7 +53,7 @@ type InstanceAPIsTestSuite struct {
 	instanceStore  *mocks.MockContainerInstanceStore
 	instanceAPIs   ContainerInstanceAPIs
 	instance1      types.ContainerInstance
-	instanceModel1 models.ContainerInstanceModel
+	extInstance1   models.ContainerInstance
 	responseHeader http.Header
 
 	// We need a router because some of the apis use mux.Vars() which uses the URL
@@ -91,11 +91,11 @@ func (suite *InstanceAPIsTestSuite) SetupTest() {
 		Detail:    &instanceDetail,
 	}
 
-	instanceModel, err := ToContainerInstanceModel(suite.instance1)
+	instanceModel, err := ToContainerInstance(suite.instance1)
 	if err != nil {
 		suite.T().Error("Cannot setup testSuite: Error when tranlating instance to external model")
 	}
-	suite.instanceModel1 = instanceModel
+	suite.extInstance1 = instanceModel
 
 	suite.responseHeader = http.Header{responseContentTypeKey: []string{responseContentTypeVal}}
 
@@ -116,10 +116,10 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsInstance() {
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
 
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	instanceInResponse := models.ContainerInstanceModel{}
+	instanceInResponse := models.ContainerInstance{}
 	err := json.NewDecoder(reader).Decode(&instanceInResponse)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
-	assert.Exactly(suite.T(), suite.instanceModel1, instanceInResponse, "Instance in response is invalid")
+	assert.Exactly(suite.T(), suite.extInstance1, instanceInResponse, "Instance in response is invalid")
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsNoInstance() {
@@ -167,8 +167,10 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsInstances() {
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	instanceModelList := []models.ContainerInstanceModel{suite.instanceModel1}
-	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, instanceModelList)
+	extInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{&suite.extInstance1},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, extInstances)
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsNoInstances() {
@@ -180,8 +182,10 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsNoInstances() {
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	emptyInstanceModelList := make([]models.ContainerInstanceModel, 0)
-	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, emptyInstanceModelList)
+	emptyExtInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, emptyExtInstances)
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesStoreReturnsError() {
@@ -205,8 +209,10 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesByStatusReturnsInstances(
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	instanceModelList := []models.ContainerInstanceModel{suite.instanceModel1}
-	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, instanceModelList)
+	extInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{&suite.extInstance1},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, extInstances)
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesByStatusReturnsNoInstances() {
@@ -219,8 +225,10 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesByStatusReturnsNoInstance
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	emptyInstanceModelList := []models.ContainerInstanceModel{}
-	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, emptyInstanceModelList)
+	extInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, extInstances)
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesByStatusStoreReturnsError() {
@@ -245,8 +253,10 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesByClusterReturnsInstances
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	instanceModelList := []models.ContainerInstanceModel{suite.instanceModel1}
-	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, instanceModelList)
+	extInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{&suite.extInstance1},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, extInstances)
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesByClusterReturnsNoInstances() {
@@ -259,8 +269,10 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesByClusterReturnsNoInstanc
 	suite.router.ServeHTTP(responseRecorder, request)
 
 	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
-	emptyInstanceModelList := []models.ContainerInstanceModel{}
-	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, emptyInstanceModelList)
+	emptyExtInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, emptyExtInstances)
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesByClusterStoreReturnsError() {
@@ -374,10 +386,10 @@ func (suite *InstanceAPIsTestSuite) decodeErrorResponseAndValidate(responseRecor
 	assert.Equal(suite.T(), expectedErrMsg, str)
 }
 
-func (suite *InstanceAPIsTestSuite) validateInstancesInListOrFilterInstancesResponse(responseRecorder *httptest.ResponseRecorder, expectedInstanceModels []models.ContainerInstanceModel) {
+func (suite *InstanceAPIsTestSuite) validateInstancesInListOrFilterInstancesResponse(responseRecorder *httptest.ResponseRecorder, expectedInstances models.ContainerInstances) {
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	instancesInResponse := new([]models.ContainerInstanceModel)
+	instancesInResponse := new(models.ContainerInstances)
 	err := json.NewDecoder(reader).Decode(instancesInResponse)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
-	assert.Exactly(suite.T(), expectedInstanceModels, *instancesInResponse, "Instances in response are invalid")
+	assert.Exactly(suite.T(), expectedInstances, *instancesInResponse, "Instances in response are invalid")
 }

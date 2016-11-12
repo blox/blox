@@ -58,5 +58,5 @@ AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@
 
 ***Note:*** The the ESH client used by the tests are checked in. However, if there is any change in 'swagger.json' file in the handler, re-generate the models using the following command from inside the ./internal directory.
 ```
-swagger generate client -f ../handler/api/v1/swagger/swagger.json -A amazon_ecs_esh
+swagger generate client -f ../handler/api/v1/swagger/swagger.json -A amazon_css
 ```

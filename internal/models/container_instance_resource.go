@@ -23,9 +23,9 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// ContainerInstanceRemainingResourceModel container instance remaining resource model
-// swagger:model ContainerInstanceRemainingResourceModel
-type ContainerInstanceRemainingResourceModel struct {
+// ContainerInstanceResource container instance resource
+// swagger:model ContainerInstanceResource
+type ContainerInstanceResource struct {
 
 	// name
 	// Required: true
@@ -40,8 +40,8 @@ type ContainerInstanceRemainingResourceModel struct {
 	Value *string `json:"value"`
 }
 
-// Validate validates this container instance remaining resource model
-func (m *ContainerInstanceRemainingResourceModel) Validate(formats strfmt.Registry) error {
+// Validate validates this container instance resource
+func (m *ContainerInstanceResource) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateName(formats); err != nil {
@@ -65,7 +65,7 @@ func (m *ContainerInstanceRemainingResourceModel) Validate(formats strfmt.Regist
 	return nil
 }
 
-func (m *ContainerInstanceRemainingResourceModel) validateName(formats strfmt.Registry) error {
+func (m *ContainerInstanceResource) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -74,7 +74,7 @@ func (m *ContainerInstanceRemainingResourceModel) validateName(formats strfmt.Re
 	return nil
 }
 
-func (m *ContainerInstanceRemainingResourceModel) validateType(formats strfmt.Registry) error {
+func (m *ContainerInstanceResource) validateType(formats strfmt.Registry) error {
 
 	if err := validate.Required("type", "body", m.Type); err != nil {
 		return err
@@ -83,7 +83,7 @@ func (m *ContainerInstanceRemainingResourceModel) validateType(formats strfmt.Re
 	return nil
 }
 
-func (m *ContainerInstanceRemainingResourceModel) validateValue(formats strfmt.Registry) error {
+func (m *ContainerInstanceResource) validateValue(formats strfmt.Registry) error {
 
 	if err := validate.Required("value", "body", m.Value); err != nil {
 		return err

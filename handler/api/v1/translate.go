@@ -26,45 +26,45 @@ func validateContainerInstance(instance types.ContainerInstance) error {
 	if detail == nil || detail.AgentConnected == nil || detail.ClusterARN == nil ||
 		detail.ContainerInstanceARN == nil || detail.PendingTasksCount == nil ||
 		detail.RegisteredResources == nil || detail.RemainingResources == nil ||
-		detail.RunningTasksCount == nil || detail.Status == nil || detail.Version == nil ||
-		detail.VersionInfo == nil || detail.UpdatedAt == nil {
+		detail.RunningTasksCount == nil || detail.Status == nil || detail.VersionInfo == nil {
 		return errors.New("Instance detail is invalid")
 	}
 	return nil
 }
 
-func ToContainerInstanceModel(instance types.ContainerInstance) (models.ContainerInstanceModel, error) {
+// ToContainerInstance tranlates a container instance represented by the internal structure (types.ContainerInstance) to it's external representation (models.ContainerInstance)
+func ToContainerInstance(instance types.ContainerInstance) (models.ContainerInstance, error) {
 	err := validateContainerInstance(instance)
 	if err != nil {
-		return models.ContainerInstanceModel{}, err
+		return models.ContainerInstance{}, err
 	}
-	regRes := make([]*models.ContainerInstanceRegisteredResourceModel, len(instance.Detail.RegisteredResources))
+	regRes := make([]*models.ContainerInstanceResource, len(instance.Detail.RegisteredResources))
 	for i := range instance.Detail.RegisteredResources {
 		r := instance.Detail.RegisteredResources[i]
-		regRes[i] = &models.ContainerInstanceRegisteredResourceModel{
+		regRes[i] = &models.ContainerInstanceResource{
 			Name:  r.Name,
 			Type:  r.Type,
 			Value: r.Value,
 		}
 	}
 
-	remRes := make([]*models.ContainerInstanceRemainingResourceModel, len(instance.Detail.RemainingResources))
+	remRes := make([]*models.ContainerInstanceResource, len(instance.Detail.RemainingResources))
 	for i := range instance.Detail.RegisteredResources {
 		r := instance.Detail.RemainingResources[i]
-		remRes[i] = &models.ContainerInstanceRemainingResourceModel{
+		remRes[i] = &models.ContainerInstanceResource{
 			Name:  r.Name,
 			Type:  r.Type,
 			Value: r.Value,
 		}
 	}
 
-	versionInfo := models.ContainerInstanceVersionInfoModel{
+	versionInfo := models.ContainerInstanceVersionInfo{
 		AgentHash:     instance.Detail.VersionInfo.AgentHash,
 		AgentVersion:  instance.Detail.VersionInfo.AgentVersion,
 		DockerVersion: instance.Detail.VersionInfo.DockerVersion,
 	}
 
-	containerInstance := models.ContainerInstanceModel{
+	containerInstance := models.ContainerInstance{
 		AgentConnected:       instance.Detail.AgentConnected,
 		AgentUpdateStatus:    instance.Detail.AgentUpdateStatus,
 		ClusterARN:           instance.Detail.ClusterARN,
@@ -75,16 +75,14 @@ func ToContainerInstanceModel(instance types.ContainerInstance) (models.Containe
 		RemainingResources:   remRes,
 		RunningTasksCount:    instance.Detail.RunningTasksCount,
 		Status:               instance.Detail.Status,
-		Version:              instance.Detail.Version,
 		VersionInfo:          &versionInfo,
-		UpdatedAt:            instance.Detail.UpdatedAt,
 	}
 
 	if instance.Detail.Attributes != nil {
-		attributes := make([]*models.ContainerInstanceAttributeModel, len(instance.Detail.Attributes))
+		attributes := make([]*models.ContainerInstanceAttribute, len(instance.Detail.Attributes))
 		for i := range instance.Detail.Attributes {
 			a := instance.Detail.Attributes[i]
-			attributes[i] = &models.ContainerInstanceAttributeModel{
+			attributes[i] = &models.ContainerInstanceAttribute{
 				Name:  a.Name,
 				Value: a.Value,
 			}
@@ -95,28 +93,29 @@ func ToContainerInstanceModel(instance types.ContainerInstance) (models.Containe
 	return containerInstance, nil
 }
 
-func validateTaskModel(task types.Task) error {
+func validateTask(task types.Task) error {
 	// TODO: Validate inner structs in task.Detail
 	detail := task.Detail
 	if detail == nil || detail.ClusterARN == nil || detail.ContainerInstanceARN == nil ||
 		detail.Containers == nil || detail.CreatedAt == nil || detail.DesiredStatus == nil ||
 		detail.LastStatus == nil || detail.Overrides == nil || detail.TaskARN == nil ||
-		detail.TaskDefinitionARN == nil || detail.UpdatedAt == nil || detail.Version == nil {
+		detail.TaskDefinitionARN == nil {
 		return errors.New("Task detail is invalid")
 	}
 	return nil
 }
 
-func ToTaskModel(task types.Task) (models.TaskModel, error) {
-	err := validateTaskModel(task)
+// ToTask tranlates a task represented by the internal structure (types.Task) to it's external representation (models.Task)
+func ToTask(task types.Task) (models.Task, error) {
+	err := validateTask(task)
 	if err != nil {
-		return models.TaskModel{}, err
+		return models.Task{}, err
 	}
 
-	containers := make([]*models.TaskContainerModel, len(task.Detail.Containers))
+	containers := make([]*models.TaskContainer, len(task.Detail.Containers))
 	for i := range task.Detail.Containers {
 		c := task.Detail.Containers[i]
-		containers[i] = &models.TaskContainerModel{
+		containers[i] = &models.TaskContainer{
 			ContainerARN: c.ContainerARN,
 			ExitCode:     c.ExitCode,
 			LastStatus:   c.LastStatus,
@@ -124,10 +123,10 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 			Reason:       c.Reason,
 		}
 		if c.NetworkBindings != nil {
-			networkBindings := make([]*models.TaskNetworkBindingModel, len(c.NetworkBindings))
+			networkBindings := make([]*models.TaskNetworkBinding, len(c.NetworkBindings))
 			for j := range c.NetworkBindings {
 				n := c.NetworkBindings[j]
-				networkBindings[j] = &models.TaskNetworkBindingModel{
+				networkBindings[j] = &models.TaskNetworkBinding{
 					BindIP:        n.BindIP,
 					ContainerPort: n.ContainerPort,
 					HostPort:      n.HostPort,
@@ -138,18 +137,18 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		}
 	}
 
-	containerOverrides := make([]*models.TaskContainerOverrideModel, len(task.Detail.Overrides.ContainerOverrides))
+	containerOverrides := make([]*models.TaskContainerOverride, len(task.Detail.Overrides.ContainerOverrides))
 	for i := range task.Detail.Overrides.ContainerOverrides {
 		c := task.Detail.Overrides.ContainerOverrides[i]
-		containerOverrides[i] = &models.TaskContainerOverrideModel{
+		containerOverrides[i] = &models.TaskContainerOverride{
 			Command: c.Command,
 			Name:    c.Name,
 		}
 		if c.Environment != nil {
-			env := make([]*models.TaskEnvironmentModel, len(c.Environment))
+			env := make([]*models.TaskEnvironment, len(c.Environment))
 			for j := range c.Environment {
 				e := c.Environment[j]
-				env[j] = &models.TaskEnvironmentModel{
+				env[j] = &models.TaskEnvironment{
 					Name:  e.Name,
 					Value: e.Value,
 				}
@@ -158,12 +157,12 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		}
 	}
 
-	overrides := models.TaskOverrideModel{
+	overrides := models.TaskOverride{
 		ContainerOverrides: containerOverrides,
 		TaskRoleArn:        task.Detail.Overrides.TaskRoleArn,
 	}
 
-	return models.TaskModel{
+	return models.Task{
 		ClusterARN:           task.Detail.ClusterARN,
 		ContainerInstanceARN: task.Detail.ContainerInstanceARN,
 		Containers:           containers,
@@ -177,7 +176,5 @@ func ToTaskModel(task types.Task) (models.TaskModel, error) {
 		StoppedReason:        task.Detail.StoppedReason,
 		TaskARN:              task.Detail.TaskARN,
 		TaskDefinitionARN:    task.Detail.TaskDefinitionARN,
-		UpdatedAt:            task.Detail.UpdatedAt,
-		Version:              task.Detail.Version,
 	}, nil
 }

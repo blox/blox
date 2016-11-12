@@ -23,13 +23,12 @@ const (
 )
 
 func init() {
-
 	ecsWrapper := wrappers.NewECSWrapper()
-	eshWrapper := wrappers.NewESHWrapper()
+	cssWrapper := wrappers.NewCSSWrapper()
 
 	Given(`^I have an instance registered with the ECS cluster$`, func() {
 		ecsContainerInstanceList = nil
-		eshContainerInstanceList = nil
+		cssContainerInstanceList = nil
 
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
@@ -41,7 +40,7 @@ func init() {
 			T.Errorf(err.Error())
 		}
 		if len(instanceARNs) < 1 {
-			T.Errorf("No container instances registered to the cluster '%s'", clusterName)
+			T.Errorf("No container instances registered to the cluster '%s'. ", clusterName)
 		}
 		ecsInstance, err := ecsWrapper.DescribeContainerInstance(clusterName, *instanceARNs[0])
 		if err != nil {
@@ -57,23 +56,23 @@ func init() {
 		}
 
 		if len(ecsContainerInstanceList) != 1 {
-			T.Errorf("Error memorizing container instance registered to ECS")
+			T.Errorf("Error memorizing container instance registered to ECS. ")
 		}
 		instanceARN := *ecsContainerInstanceList[0].ContainerInstanceArn
-		eshInstance, err := eshWrapper.GetInstance(clusterName, instanceARN)
+		cssInstance, err := cssWrapper.GetInstance(clusterName, instanceARN)
 		if err != nil {
 			T.Errorf(err.Error())
 		}
-		eshContainerInstanceList = append(eshContainerInstanceList, *eshInstance)
+		cssContainerInstanceList = append(cssContainerInstanceList, *cssInstance)
 	})
 
 	Then(`^I get an instance that matches the registered instance$`, func() {
-		if len(ecsContainerInstanceList) != 1 || len(eshContainerInstanceList) != 1 {
-			T.Errorf("Error memorizing results to validate them")
+		if len(ecsContainerInstanceList) != 1 || len(cssContainerInstanceList) != 1 {
+			T.Errorf("Error memorizing results to validate them. ")
 		}
 		ecsInstance := ecsContainerInstanceList[0]
-		eshInstance := eshContainerInstanceList[0]
-		err := ValidateInstancesMatch(ecsInstance, eshInstance)
+		cssInstance := cssContainerInstanceList[0]
+		err := ValidateInstancesMatch(ecsInstance, cssInstance)
 		if err != nil {
 			T.Errorf(err.Error())
 		}
@@ -81,7 +80,7 @@ func init() {
 
 	When(`^I try to get instance with a non-existent ARN$`, func() {
 		exceptionList = nil
-		exception, err := eshWrapper.TryGetInstance(nonExistentInstanceARN)
+		exception, err := cssWrapper.TryGetInstance(nonExistentInstanceARN)
 		if err != nil {
 			T.Errorf(err.Error())
 		}

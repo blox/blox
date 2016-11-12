@@ -2,8 +2,12 @@
   "swagger": "2.0",
   "info": {
     "version": "1.0.0",
-    "title": "Amazon ECS Event Stream Handler",
-    "description": "APIs supported by the Amazon ECS Event Stream Handler"
+    "title": "Amazon Cluster State Service",
+    "description": "APIs supported by the Amazon Cluster State Service",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
   },
   "host": "localhost:3000",
   "basePath": "/v1",
@@ -41,7 +45,7 @@
           "200": {
             "description": "Get instance using cluster name and instance ARN - success",
             "schema": {
-              "$ref": "#/definitions/ContainerInstanceModel"
+              "$ref": "#/definitions/ContainerInstance"
             }
           },
           "404": {
@@ -67,10 +71,7 @@
           "200": {
             "description": "List instances - success",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ContainerInstanceModel"
-              }
+              "$ref": "#/definitions/ContainerInstances"
             }
           },
           "500": {
@@ -106,10 +107,7 @@
           "200": {
             "description": "Filter instances - success",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ContainerInstanceModel"
-              }
+              "$ref": "#/definitions/ContainerInstances"
             }
           },
           "500": {
@@ -145,7 +143,7 @@
           "200": {
             "description": "Get task using cluster name and task ARN - success",
             "schema": {
-              "$ref": "#/definitions/TaskModel"
+              "$ref": "#/definitions/Task"
             }
           },
           "404": {
@@ -171,10 +169,7 @@
           "200": {
             "description": "List tasks - success",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/TaskModel"
-              }
+              "$ref": "#/definitions/Tasks"
             }
           },
           "500": {
@@ -197,16 +192,20 @@
             "description": "Status to filter tasks by",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "cluster",
+            "in": "query",
+            "description": "Cluster name or ARN to filter tasks by",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
           "200": {
             "description": "Filter tasks - success",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/TaskModel"
-              }
+              "$ref": "#/definitions/Tasks"
             }
           },
           "500": {
@@ -220,7 +219,7 @@
     }
   },
   "definitions": {
-    "ContainerInstanceModel": {
+    "ContainerInstance": {
       "type": "object",
       "required": [
         "agentConnected",
@@ -231,9 +230,7 @@
         "remainingResources",
         "runningTasksCount",
         "status",
-        "version",
         "versionInfo",
-        "updatedAt"
       ],
       "properties": {
         "agentConnected": {
@@ -245,7 +242,7 @@
         "attributes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ContainerInstanceAttributeModel"
+            "$ref": "#/definitions/ContainerInstanceAttribute"
           }
         },
         "clusterARN": {
@@ -264,13 +261,13 @@
         "registeredResources": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ContainerInstanceRegisteredResourceModel"
+            "$ref": "#/definitions/ContainerInstanceResource"
           }
         },
         "remainingResources": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ContainerInstanceRemainingResourceModel"
+            "$ref": "#/definitions/ContainerInstanceResource"
           }
         },
         "runningTasksCount": {
@@ -280,19 +277,27 @@
         "status": {
           "type": "string"
         },
-        "version": {
-          "type": "integer",
-          "format": "int64"
-        },
         "versionInfo": {
-          "$ref": "#/definitions/ContainerInstanceVersionInfoModel"
-        },
-        "updatedAt": {
-          "type": "string"
+          "$ref": "#/definitions/ContainerInstanceVersionInfo"
         }
       }
     },
-    "ContainerInstanceAttributeModel": {
+    "ContainerInstances": {
+      "description": "List of container instances",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ContainerInstance"
+          }
+        }
+      },
+    },
+    "ContainerInstanceAttribute": {
       "type": "object",
       "required": [
         "name",
@@ -307,26 +312,7 @@
         }
       }
     },
-    "ContainerInstanceRegisteredResourceModel": {
-      "type": "object",
-      "required": [
-        "name",
-        "type",
-        "value"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      }
-    },
-    "ContainerInstanceRemainingResourceModel": {
+    "ContainerInstanceResource": {
       "type": "object",
       "required": [
         "name",
@@ -345,7 +331,7 @@
         }
       }
     },
-    "ContainerInstanceVersionInfoModel": {
+    "ContainerInstanceVersionInfo": {
       "type": "object",
       "properties": {
         "agentHash": {
@@ -359,7 +345,7 @@
         }
       }
     },
-    "TaskModel": {
+    "Task": {
       "type": "object",
       "required": [
         "clusterARN",
@@ -369,10 +355,8 @@
         "desiredStatus",
         "lastStatus",
         "overrides",
-        "updatedAt",
         "taskARN",
         "taskDefinitionARN",
-        "version"
       ],
       "properties": {
         "clusterARN": {
@@ -384,7 +368,7 @@
         "containers": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskContainerModel"
+            "$ref": "#/definitions/TaskContainer"
           }
         },
         "createdAt": {
@@ -397,7 +381,7 @@
           "type": "string"
         },
         "overrides": {
-          "$ref": "#/definitions/TaskOverrideModel"
+          "$ref": "#/definitions/TaskOverride"
         },
         "startedAt": {
           "type": "string"
@@ -411,22 +395,30 @@
         "stoppedReason": {
           "type": "string"
         },
-        "updatedAt": {
-          "type": "string"
-        },
         "taskARN": {
           "type": "string"
         },
         "taskDefinitionARN": {
           "type": "string"
-        },
-        "version": {
-          "type": "integer",
-          "format": "int64"
         }
       }
     },
-    "TaskContainerModel": {
+    "Tasks": {
+      "description": "List of tasks",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Task"
+          }
+        }
+      },
+    },
+    "TaskContainer": {
       "type": "object",
       "required": [
         "containerARN",
@@ -450,7 +442,7 @@
         "networkBindings": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskNetworkBindingModel"
+            "$ref": "#/definitions/TaskNetworkBinding"
           }
         },
         "reason": {
@@ -458,7 +450,7 @@
         }
       }
     },
-    "TaskNetworkBindingModel": {
+    "TaskNetworkBinding": {
       "type": "object",
       "required": [
         "bindIP",
@@ -482,7 +474,7 @@
         }
       }
     },
-    "TaskOverrideModel": {
+    "TaskOverride": {
       "type": "object",
       "required": [
         "containerOverrides"
@@ -491,7 +483,7 @@
         "containerOverrides": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskContainerOverrideModel"
+            "$ref": "#/definitions/TaskContainerOverride"
           }
         },
         "taskRoleArn": {
@@ -499,7 +491,7 @@
         }
       }
     },
-    "TaskContainerOverrideModel": {
+    "TaskContainerOverride": {
       "type": "object",
       "required": [
         "name"
@@ -514,7 +506,7 @@
         "environment": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskEnvironmentModel"
+            "$ref": "#/definitions/TaskEnvironment"
           }
         },
         "name": {
@@ -522,7 +514,7 @@
         }
       }
     },
-    "TaskEnvironmentModel": {
+    "TaskEnvironment": {
       "type": "object",
       "required": [
         "name",
