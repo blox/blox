@@ -15,6 +15,7 @@ package regex
 
 import "regexp"
 
+// IsClusterName validates a cluster name against the cluster name regex
 func IsClusterName(clusterName string) bool {
 	validClusterName := regexp.MustCompile(ClusterNameRegex)
 	if validClusterName.MatchString(clusterName) {
@@ -23,6 +24,7 @@ func IsClusterName(clusterName string) bool {
 	return false
 }
 
+// IsClusterARN validates a cluster ARN against the cluster ARN regex
 func IsClusterARN(clusterARN string) bool {
 	validClusterARN := regexp.MustCompile(ClusterARNRegex)
 	if validClusterARN.MatchString(clusterARN) {
@@ -31,6 +33,7 @@ func IsClusterARN(clusterARN string) bool {
 	return false
 }
 
+// IsTaskARN validates a task ARN against the task ARN regex
 func IsTaskARN(taskARN string) bool {
 	validTaskARN := regexp.MustCompile(TaskARNRegex)
 	if validTaskARN.MatchString(taskARN) {
@@ -39,6 +42,7 @@ func IsTaskARN(taskARN string) bool {
 	return false
 }
 
+// IsInstanceARN validates an instance ARN against the instance ARN regex
 func IsInstanceARN(instanceARN string) bool {
 	validInstanceARN := regexp.MustCompile(InstanceARNRegex)
 	if validInstanceARN.MatchString(instanceARN) {

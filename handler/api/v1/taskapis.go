@@ -33,16 +33,19 @@ const (
 	taskClusterFilter = "cluster"
 )
 
+// TaskAPIs encapsulates the backend datastore with which the task APIs interact
 type TaskAPIs struct {
 	taskStore store.TaskStore
 }
 
+// NewTaskAPIs initializes the TaskAPIs struct
 func NewTaskAPIs(taskStore store.TaskStore) TaskAPIs {
 	return TaskAPIs{
 		taskStore: taskStore,
 	}
 }
 
+// GetTask gets a task using the cluster name to which the task belongs to and the task ARN
 func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	taskARN := vars[taskARNKey]
@@ -86,6 +89,7 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListTasks lists all tasks across all clusters
 func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	tasks, err := taskAPIs.taskStore.ListTasks()
 
@@ -121,6 +125,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// FilterTasks filters tasks across all clusters by status
 func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	status := vars[taskStatusFilter]
@@ -178,6 +183,7 @@ func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// StreamTasks streams tasks that change (status etc.) across all clusters
 func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()

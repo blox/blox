@@ -17,9 +17,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io/ioutil"
+
 	"github.com/pkg/errors"
 )
 
+// Compress gzip compresses a string
 func Compress(s string) ([]byte, error) {
 	var buf bytes.Buffer
 	gzWriter := gzip.NewWriter(&buf)
@@ -37,6 +39,7 @@ func Compress(s string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Uncompress uncompresses a gzipped byte representation of a string
 func Uncompress(b []byte) (string, error) {
 	gzReader, err := gzip.NewReader(bytes.NewReader(b))
 	if err != nil {

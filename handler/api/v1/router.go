@@ -51,6 +51,7 @@ var (
 	instanceStatusVal = "{" + statusKey + ":active|inactive}"
 )
 
+// NewRouter initializes a new router with registered routes redirected to appropriate handler functions
 func NewRouter(apis APIs) *mux.Router {
 	r := mux.NewRouter().StrictSlash(true)
 	s := r.Path("/v1").Subrouter()

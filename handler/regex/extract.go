@@ -19,6 +19,7 @@ import (
 	"regexp"
 )
 
+// GetClusterNameFromARN extracts the cluster name from a cluster ARN
 func GetClusterNameFromARN(clusterARN string) (string, error) {
 	if len(clusterARN) == 0 {
 		return "", errors.New("Cluster ARN cannot be empty")

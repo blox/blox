@@ -33,16 +33,19 @@ const (
 	instanceClusterFilter = "cluster"
 )
 
+// ContainerInstanceAPIs encapsulates the backend datastore with which the container instance APIs interact
 type ContainerInstanceAPIs struct {
 	instanceStore store.ContainerInstanceStore
 }
 
+// NewContainerInstanceAPIs initializes the ContainerInstanceAPIs struct
 func NewContainerInstanceAPIs(instanceStore store.ContainerInstanceStore) ContainerInstanceAPIs {
 	return ContainerInstanceAPIs{
 		instanceStore: instanceStore,
 	}
 }
 
+// GetInstance gets a container instance using the cluster name to which the instance belongs to and the instance ARN
 func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	instanceARN := vars[instanceARNKey]
@@ -86,6 +89,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 	}
 }
 
+// ListInstances lists all container instances across all clusters
 func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r *http.Request) {
 	instances, err := instanceAPIs.instanceStore.ListContainerInstances()
 
@@ -121,6 +125,10 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 	}
 }
 
+// FilterInstances filters container instances across all clusters by one of the following filter keys -
+// * status
+// * cluster name
+// * cluster ARN
 func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	status := vars[instanceStatusFilter]
@@ -178,6 +186,7 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 	}
 }
 
+// StreamInstances streams container instances that change (status, resources, etc.) across all clusters
 func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
