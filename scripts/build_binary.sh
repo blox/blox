@@ -12,15 +12,14 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 
-# Usage instructions - From one level above the scripts directory, running 
-# the following command generates the binary into <path-to-binary-destination>
-# ./scripts/build_binary.sh <path-to-binary-destination>
-
-# Normalize to working directory being build root (up one level from ./scripts)
+# Usage:
+# build_binary.sh  <relative-path-to-binary-destination-from-build-root>
 set -e
 
+# Normalize to working directory being build root (up one level from ./scripts)
 ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )
 
+cd "${ROOT}"
 BINARY_DESTINATION_DIR=$1
 mkdir -p ${BINARY_DESTINATION_DIR}
 

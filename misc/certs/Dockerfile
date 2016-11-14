@@ -21,12 +21,5 @@ RUN apt-get update &&  \
     rm -rf /var/lib/apt/lists/*
 
 RUN cp /etc/ca-certificates.conf /tmp/caconf && cat /tmp/caconf | \
-    grep -v "mozilla/CNNIC_ROOT\.crt"  | \
-    grep -v "mozilla/StartCom_Certification_Authority\.crt" | \
-    grep -v "mozilla/StartCom_Certification_Authority_2\.crt" | \
-    grep -v "mozilla/StartCom_Certification_Authority_G2\.crt" | \
-    grep -v "mozilla/CA_WoSign_ECC_Root\.crt" | \
-    grep -v "mozilla/Certification_Authority_of_WoSign_G2\.crt"| \
-    grep -v "mozilla/WoSign\.crt" | \
-    grep -v "mozilla/WoSign_China\.crt" >> /etc/ca-certificates.conf && \
+    grep -v "mozilla/CNNIC_ROOT\.crt" > /etc/ca-certificates.conf && \
     update-ca-certificates --fresh
