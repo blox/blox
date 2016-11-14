@@ -42,8 +42,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 	taskARN := "arn:aws:ecs:us-east-1:123456789012:task/271022c0-f894-4aa2-b063-25bae55088d5"
 	taskDefinitionARN := "arn:aws:ecs:us-east-1:123456789012:task-definition/testTask:1"
 	ec2InstanceID := "i-12345678"
-	pendingTaskCount := int64(1)
-	runningTaskCount := int64(0)
 	attributeName := "Name"
 	attributeVal := "com.amazonaws.ecs.capability.privileged-container"
 	resourceName := "CPU"
@@ -75,7 +73,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 		},
 		ContainerInstanceArn: &containerInstanceARN,
 		Ec2InstanceId:        &ec2InstanceID,
-		PendingTasksCount:    &pendingTaskCount,
 		RegisteredResources: []*ecs.Resource{
 			&ecs.Resource{
 				Name:         &resourceName,
@@ -90,8 +87,7 @@ func (suite *TranslateTestSuite) SetupTest() {
 				IntegerValue: &resourceIntVal,
 			},
 		},
-		RunningTasksCount: &runningTaskCount,
-		Status:            &containerStatus,
+		Status: &containerStatus,
 		VersionInfo: &ecs.VersionInfo{
 			AgentHash:     &agentHash,
 			AgentVersion:  &agentVersion,
@@ -114,7 +110,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 			ClusterARN:           &clusterARN,
 			ContainerInstanceARN: &containerInstanceARN,
 			EC2InstanceID:        ec2InstanceID,
-			PendingTasksCount:    &pendingTaskCount,
 			RegisteredResources: []*types.Resource{
 				&types.Resource{
 					Name:  &resourceName,
@@ -129,9 +124,8 @@ func (suite *TranslateTestSuite) SetupTest() {
 					Value: &resourceVal,
 				},
 			},
-			RunningTasksCount: &runningTaskCount,
-			Status:            &containerStatus,
-			Version:           &instanceVersion,
+			Status:  &containerStatus,
+			Version: &instanceVersion,
 			VersionInfo: &types.VersionInfo{
 				AgentHash:     agentHash,
 				AgentVersion:  agentVersion,

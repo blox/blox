@@ -225,10 +225,8 @@
         "agentConnected",
         "clusterARN",
         "containerInstanceARN",
-        "pendingTasksCount",
         "registeredResources",
         "remainingResources",
-        "runningTasksCount",
         "status",
         "versionInfo",
       ],
@@ -254,10 +252,6 @@
         "EC2InstanceID": {
           "type": "string"
         },
-        "pendingTasksCount": {
-          "type": "integer",
-          "format": "int64"
-        },
         "registeredResources": {
           "type": "array",
           "items": {
@@ -269,10 +263,6 @@
           "items": {
             "$ref": "#/definitions/ContainerInstanceResource"
           }
-        },
-        "runningTasksCount": {
-          "type": "integer",
-          "format": "int64"
         },
         "status": {
           "type": "string"

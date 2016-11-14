@@ -49,10 +49,6 @@ type ContainerInstance struct {
 	// Required: true
 	ContainerInstanceARN *string `json:"containerInstanceARN"`
 
-	// pending tasks count
-	// Required: true
-	PendingTasksCount *int64 `json:"pendingTasksCount"`
-
 	// registered resources
 	// Required: true
 	RegisteredResources []*ContainerInstanceResource `json:"registeredResources"`
@@ -60,10 +56,6 @@ type ContainerInstance struct {
 	// remaining resources
 	// Required: true
 	RemainingResources []*ContainerInstanceResource `json:"remainingResources"`
-
-	// running tasks count
-	// Required: true
-	RunningTasksCount *int64 `json:"runningTasksCount"`
 
 	// status
 	// Required: true
@@ -98,22 +90,12 @@ func (m *ContainerInstance) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validatePendingTasksCount(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
 	if err := m.validateRegisteredResources(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
 	if err := m.validateRemainingResources(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateRunningTasksCount(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -185,15 +167,6 @@ func (m *ContainerInstance) validateContainerInstanceARN(formats strfmt.Registry
 	return nil
 }
 
-func (m *ContainerInstance) validatePendingTasksCount(formats strfmt.Registry) error {
-
-	if err := validate.Required("pendingTasksCount", "body", m.PendingTasksCount); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m *ContainerInstance) validateRegisteredResources(formats strfmt.Registry) error {
 
 	if err := validate.Required("registeredResources", "body", m.RegisteredResources); err != nil {
@@ -237,15 +210,6 @@ func (m *ContainerInstance) validateRemainingResources(formats strfmt.Registry) 
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateRunningTasksCount(formats strfmt.Registry) error {
-
-	if err := validate.Required("runningTasksCount", "body", m.RunningTasksCount); err != nil {
-		return err
 	}
 
 	return nil

@@ -61,10 +61,8 @@ func (suite *TranslateTestSuite) SetupTest() {
 		ClusterARN:           &clusterARN1,
 		ContainerInstanceARN: &instanceARN1,
 		EC2InstanceID:        ecsInstanceID,
-		PendingTasksCount:    &pendingTaskCount1,
 		RegisteredResources:  []*types.Resource{&resource},
 		RemainingResources:   []*types.Resource{&resource},
-		RunningTasksCount:    &runningTasksCount1,
 		Status:               &instanceStatus1,
 		VersionInfo:          &versionInfo,
 	}
@@ -94,10 +92,8 @@ func (suite *TranslateTestSuite) SetupTest() {
 		ClusterARN:           &clusterARN1,
 		ContainerInstanceARN: &instanceARN1,
 		EC2InstanceID:        ecsInstanceID,
-		PendingTasksCount:    &pendingTaskCount1,
 		RegisteredResources:  []*models.ContainerInstanceResource{&extResource},
 		RemainingResources:   []*models.ContainerInstanceResource{&extResource},
-		RunningTasksCount:    &runningTasksCount1,
 		Status:               &instanceStatus1,
 		VersionInfo:          &versionInfoModel,
 	}
@@ -206,13 +202,6 @@ func (suite *TranslateTestSuite) TestToContainerInstanceEmptyContainerInstanceAR
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty instance ARN")
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstanceEmptyPendingTasksCount() {
-	instance := suite.instance
-	instance.Detail.PendingTasksCount = nil
-	_, err := ToContainerInstance(instance)
-	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty pending tasks count")
-}
-
 func (suite *TranslateTestSuite) TestToContainerInstanceEmptyRegisteredResources() {
 	instance := suite.instance
 	instance.Detail.RegisteredResources = nil
@@ -225,13 +214,6 @@ func (suite *TranslateTestSuite) TestToContainerInstanceEmptyRemainingResources(
 	instance.Detail.RemainingResources = nil
 	_, err := ToContainerInstance(instance)
 	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty remaining resources")
-}
-
-func (suite *TranslateTestSuite) TestToContainerInstanceEmptyRunningTasksCount() {
-	instance := suite.instance
-	instance.Detail.RunningTasksCount = nil
-	_, err := ToContainerInstance(instance)
-	assert.NotNil(suite.T(), err, "Expected error when translating container instance with empty running tasks count")
 }
 
 func (suite *TranslateTestSuite) TestToContainerInstanceEmptyStatus() {

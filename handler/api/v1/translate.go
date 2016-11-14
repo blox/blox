@@ -23,11 +23,29 @@ import (
 func validateContainerInstance(instance types.ContainerInstance) error {
 	// TODO: Validate inner structs in instance.Detail
 	detail := instance.Detail
-	if detail == nil || detail.AgentConnected == nil || detail.ClusterARN == nil ||
-		detail.ContainerInstanceARN == nil || detail.PendingTasksCount == nil ||
-		detail.RegisteredResources == nil || detail.RemainingResources == nil ||
-		detail.RunningTasksCount == nil || detail.Status == nil || detail.VersionInfo == nil {
-		return errors.New("Instance detail is invalid")
+	if detail == nil {
+		return errors.New("Instance detail cannot be empty")
+	}
+	if detail.AgentConnected == nil {
+		return errors.New("Instance agent connected cannot be empty")
+	}
+	if detail.ClusterARN == nil {
+		return errors.New("Instance cluster ARN cannot be empty")
+	}
+	if detail.ContainerInstanceARN == nil {
+		return errors.New("Instance ARN cannot be empty")
+	}
+	if detail.RegisteredResources == nil {
+		return errors.New("Instance registered resources cannot be empty")
+	}
+	if detail.RemainingResources == nil {
+		return errors.New("Instance remaining resources cannot be empty")
+	}
+	if detail.Status == nil {
+		return errors.New("Instance status cannot be empty")
+	}
+	if detail.VersionInfo == nil {
+		return errors.New("Instance version info cannot be empty")
 	}
 	return nil
 }
@@ -70,10 +88,8 @@ func ToContainerInstance(instance types.ContainerInstance) (models.ContainerInst
 		ClusterARN:           instance.Detail.ClusterARN,
 		ContainerInstanceARN: instance.Detail.ContainerInstanceARN,
 		EC2InstanceID:        instance.Detail.EC2InstanceID,
-		PendingTasksCount:    instance.Detail.PendingTasksCount,
 		RegisteredResources:  regRes,
 		RemainingResources:   remRes,
-		RunningTasksCount:    instance.Detail.RunningTasksCount,
 		Status:               instance.Detail.Status,
 		VersionInfo:          &versionInfo,
 	}
@@ -96,11 +112,35 @@ func ToContainerInstance(instance types.ContainerInstance) (models.ContainerInst
 func validateTask(task types.Task) error {
 	// TODO: Validate inner structs in task.Detail
 	detail := task.Detail
-	if detail == nil || detail.ClusterARN == nil || detail.ContainerInstanceARN == nil ||
-		detail.Containers == nil || detail.CreatedAt == nil || detail.DesiredStatus == nil ||
-		detail.LastStatus == nil || detail.Overrides == nil || detail.TaskARN == nil ||
-		detail.TaskDefinitionARN == nil {
-		return errors.New("Task detail is invalid")
+	if detail == nil {
+		return errors.New("Task detail cannot be empty")
+	}
+	if detail.ClusterARN == nil {
+		return errors.New("Task cluster ARN cannot be empty")
+	}
+	if detail.ContainerInstanceARN == nil {
+		return errors.New("Task container instance ARN cannot be empty")
+	}
+	if detail.Containers == nil {
+		return errors.New("Task containers cannot be empty")
+	}
+	if detail.CreatedAt == nil {
+		return errors.New("Task created at cannot be empty")
+	}
+	if detail.DesiredStatus == nil {
+		return errors.New("Task desired status cannot be empty")
+	}
+	if detail.LastStatus == nil {
+		return errors.New("Task last status cannot be empty")
+	}
+	if detail.Overrides == nil {
+		return errors.New("Task overrides cannot be empty")
+	}
+	if detail.TaskARN == nil {
+		return errors.New("Task ARN cannot be empty")
+	}
+	if detail.TaskDefinitionARN == nil {
+		return errors.New("Task definition ARN cannot be empty")
 	}
 	return nil
 }

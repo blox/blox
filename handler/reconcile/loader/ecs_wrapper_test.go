@@ -96,8 +96,6 @@ func (suite *ECSWrapperTestSuite) SetupTest() {
 	}
 
 	agentConnected := true
-	pendingTaskCount := int64(1)
-	runningTaskCount := int64(0)
 	containerStatus := "ACTIVE"
 	instanceVersion := version
 	suite.instance = types.ContainerInstance{
@@ -106,26 +104,20 @@ func (suite *ECSWrapperTestSuite) SetupTest() {
 			Attributes:           []*types.Attribute{},
 			ClusterARN:           &ecsClusterARN1,
 			ContainerInstanceARN: &ecsInstanceARN1,
-			PendingTasksCount:    &pendingTaskCount,
 			RegisteredResources:  []*types.Resource{},
 			RemainingResources:   []*types.Resource{},
-			RunningTasksCount:    &runningTaskCount,
 			Status:               &containerStatus,
 			Version:              &instanceVersion,
 			VersionInfo:          &types.VersionInfo{},
 		},
 	}
 
-	ecsPendingTaskCount := int64(pendingTaskCount)
-	ecsRunningTaskCount := int64(runningTaskCount)
 	suite.ecsInstance = ecs.ContainerInstance{
 		AgentConnected:       &agentConnected,
 		Attributes:           []*ecs.Attribute{},
 		ContainerInstanceArn: &ecsInstanceARN1,
-		PendingTasksCount:    &ecsPendingTaskCount,
 		RegisteredResources:  []*ecs.Resource{},
 		RemainingResources:   []*ecs.Resource{},
-		RunningTasksCount:    &ecsRunningTaskCount,
 		Status:               &containerStatus,
 		VersionInfo:          &ecs.VersionInfo{},
 	}

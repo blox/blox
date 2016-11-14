@@ -60,8 +60,6 @@ func (suite *InstanceLoaderTestSuite) SetupTest() {
 	suite.clusterARNList = []*string{&instanceClusterARN1, &instanceClusterARN2}
 
 	agentConnected := true
-	pendingTaskCount := int64(1)
-	runningTaskCount := int64(0)
 	containerStatus := "ACTIVE"
 	instanceVersion := version
 	suite.instance = types.ContainerInstance{
@@ -70,10 +68,8 @@ func (suite *InstanceLoaderTestSuite) SetupTest() {
 			Attributes:           []*types.Attribute{},
 			ClusterARN:           &instanceClusterARN1,
 			ContainerInstanceARN: &instanceARN1,
-			PendingTasksCount:    &pendingTaskCount,
 			RegisteredResources:  []*types.Resource{},
 			RemainingResources:   []*types.Resource{},
-			RunningTasksCount:    &runningTaskCount,
 			Status:               &containerStatus,
 			Version:              &instanceVersion,
 			VersionInfo:          &types.VersionInfo{},

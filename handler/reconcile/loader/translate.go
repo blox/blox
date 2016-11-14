@@ -135,6 +135,7 @@ func toEnvironment(ecsEnvironment []*ecs.KeyValuePair) []*types.Environment {
 	return environment
 }
 
+// ToContainerInstance tranlates an ECS container instance to the internal container instance type
 func ToContainerInstance(ecsInstance ecs.ContainerInstance, clusterARN string) types.ContainerInstance {
 	instanceVersion := version
 	updatedAt := currentTime()
@@ -145,10 +146,8 @@ func ToContainerInstance(ecsInstance ecs.ContainerInstance, clusterARN string) t
 		ClusterARN:           &clusterARN,
 		ContainerInstanceARN: ecsInstance.ContainerInstanceArn,
 		EC2InstanceID:        aws.StringValue(ecsInstance.Ec2InstanceId),
-		PendingTasksCount:    ecsInstance.PendingTasksCount,
 		RegisteredResources:  toResources(ecsInstance.RegisteredResources),
 		RemainingResources:   toResources(ecsInstance.RemainingResources),
-		RunningTasksCount:    ecsInstance.RunningTasksCount,
 		Status:               ecsInstance.Status,
 		Version:              &instanceVersion,
 		VersionInfo:          toVersionInfo(ecsInstance.VersionInfo),
