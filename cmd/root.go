@@ -21,6 +21,7 @@ import (
 
 const (
 	sqsQueueNameFlag = "queue"
+	cssBindFlag = "bind"
 	etcdEndpointFlag = "etcd-endpoint"
 )
 
@@ -45,6 +46,7 @@ provides you a near-real-time view of your cluster state.`,
 	}
 	// TODO: Fix the description
 	rootCmd.PersistentFlags().StringVar(&config.SQSQueueName, sqsQueueNameFlag, "", "SQS queue name")
+	rootCmd.PersistentFlags().StringVar(&config.CSSBindAddr, cssBindFlag, "", "Cluster State Service listen address")
 	rootCmd.PersistentFlags().StringArrayVar(&config.EtcdEndpoints, etcdEndpointFlag, make([]string, 0), "Etcd node addresses")
 	return rootCmd
 }

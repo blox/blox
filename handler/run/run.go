@@ -15,6 +15,7 @@ package run
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -30,7 +31,6 @@ import (
 )
 
 const (
-	serverAddress     = "localhost:3000"
 	serverReadTimeout = 10 * time.Second
 )
 
@@ -39,7 +39,11 @@ const (
 // events from the SQS queue. It also starts the RESTful server and blocks on
 // the listen method of the same to listen to requests that query for task and
 // instance state from the store.
-func StartEventStreamHandler(queueName string, etcdEndpoints []string) error {
+func StartEventStreamHandler(queueName string, bindAddr string, etcdEndpoints []string) error {
+	if bindAddr == "" {
+		return fmt.Errorf("The cluster state service listen address is not set")
+	}
+
 	etcdClient, err := clients.NewEtcdClient(etcdEndpoints)
 	if err != nil {
 		return errors.Wrapf(err, "Could not start etcd")
@@ -100,7 +104,7 @@ func StartEventStreamHandler(queueName string, etcdEndpoints []string) error {
 	n.UseHandler(router)
 
 	s := &http.Server{
-		Addr:        serverAddress,
+		Addr:        bindAddr,
 		Handler:     n,
 		ReadTimeout: serverReadTimeout,
 	}

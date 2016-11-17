@@ -5,3 +5,5 @@ amazon-ecs-event-stream-handler
 /var/
 /bin/
 *.swp
+.idea/
+*.iml

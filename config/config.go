@@ -18,3 +18,7 @@ var EtcdEndpoints []string
 
 // SQSQueueName represents the SQS queue name to listen to for ECS events.
 var SQSQueueName string
+
+// CSSBindAddr represents the address CSS listens on.
+var CSSBindAddr string
+
