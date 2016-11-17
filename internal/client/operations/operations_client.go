@@ -54,6 +54,7 @@ func (a *Client) FilterInstances(params *FilterInstancesParams) (*FilterInstance
 		Params:             params,
 		Reader:             &FilterInstancesReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -81,6 +82,7 @@ func (a *Client) FilterTasks(params *FilterTasksParams) (*FilterTasksOK, error) 
 		Params:             params,
 		Reader:             &FilterTasksReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -108,6 +110,7 @@ func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) 
 		Params:             params,
 		Reader:             &GetInstanceReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -135,6 +138,7 @@ func (a *Client) GetTask(params *GetTaskParams) (*GetTaskOK, error) {
 		Params:             params,
 		Reader:             &GetTaskReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -162,6 +166,7 @@ func (a *Client) ListInstances(params *ListInstancesParams) (*ListInstancesOK, e
 		Params:             params,
 		Reader:             &ListInstancesReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -189,6 +194,7 @@ func (a *Client) ListTasks(params *ListTasksParams) (*ListTasksOK, error) {
 		Params:             params,
 		Reader:             &ListTasksReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
