@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
 	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
@@ -37,36 +36,33 @@ var (
 
 type TaskStoreTestSuite struct {
 	suite.Suite
-	datastore                                    *mocks.MockDataStore
-	taskStore                                    TaskStore
-	taskKey1                                     string
-	firstPendingTask                             types.Task
-	firstPendingTaskJSON                         string
-	firstPendingTaskCompressedJSON               string
-	secondPendingTask                            types.Task
-	secondPendingTaskJSON                        string
-	secondPendingTaskCompressedJSON              string
-	firstTaskStartedBySomeoneElse                types.Task
-	firstTaskStartedBySomeoneElseJSON            string
-	firstTaskStartedBySomeoneElseCompressedJSON  string
-	secondTaskStartedBySomeoneElse               types.Task
-	secondTaskStartedBySomeoneElseJSON           string
-	secondTaskStartedBySomeoneElseCompressedJSON string
-	firstTaskOfFirstCluster                      types.Task
-	firstTaskOfFirstClusterJSON                  string
-	firstTaskOfFirstClusterCompressedJSON        string
-	secondTaskOfFirstCluster                     types.Task
-	secondTaskOfFirstClusterJSON                 string
-	secondTaskOfFirstClusterCompressedJSON       string
+	datastore                          *mocks.MockDataStore
+	etcdTxStore                        *mocks.MockEtcdTXStore
+	taskStore                          TaskStore
+	taskKey1                           string
+	firstPendingTask                   types.Task
+	firstPendingTaskJSON               string
+	secondPendingTask                  types.Task
+	secondPendingTaskJSON              string
+	firstTaskStartedBySomeoneElse      types.Task
+	firstTaskStartedBySomeoneElseJSON  string
+	secondTaskStartedBySomeoneElse     types.Task
+	secondTaskStartedBySomeoneElseJSON string
+	firstTaskOfFirstCluster            types.Task
+	firstTaskOfFirstClusterJSON        string
+	secondTaskOfFirstCluster           types.Task
+	secondTaskOfFirstClusterJSON       string
 }
 
 func (suite *TaskStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.datastore = mocks.NewMockDataStore(mockCtrl)
+	suite.etcdTxStore = mocks.NewMockEtcdTXStore(mockCtrl)
+
 	suite.taskKey1 = taskKeyPrefix + clusterName1 + "/" + taskARN1
 
 	var err error
-	suite.taskStore, err = NewTaskStore(suite.datastore)
+	suite.taskStore, err = NewTaskStore(suite.datastore, suite.etcdTxStore)
 	assert.Nil(suite.T(), err, "Cannot setup testSuite: Unexpected error when calling NewTaskStore")
 
 	version1 := int64(1)
@@ -78,7 +74,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 			Version:    &version1,
 		},
 	}
-	suite.firstPendingTaskJSON, suite.firstPendingTaskCompressedJSON = suite.setupTask(suite.firstPendingTask)
+	suite.firstPendingTaskJSON = suite.setupTask(suite.firstPendingTask)
 	suite.firstTaskStartedBySomeoneElse = types.Task{
 		Detail: &types.TaskDetail{
 			TaskARN:    &taskARN1,
@@ -88,7 +84,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 			StartedBy:  someoneElse,
 		},
 	}
-	suite.firstTaskStartedBySomeoneElseJSON, suite.firstTaskStartedBySomeoneElseCompressedJSON = suite.setupTask(suite.firstTaskStartedBySomeoneElse)
+	suite.firstTaskStartedBySomeoneElseJSON = suite.setupTask(suite.firstTaskStartedBySomeoneElse)
 
 	version2 := version1 + 1
 	suite.secondPendingTask = types.Task{
@@ -99,7 +95,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 			Version:    &version2,
 		},
 	}
-	suite.secondPendingTaskJSON, suite.secondPendingTaskCompressedJSON = suite.setupTask(suite.secondPendingTask)
+	suite.secondPendingTaskJSON = suite.setupTask(suite.secondPendingTask)
 	suite.secondTaskStartedBySomeoneElse = types.Task{
 		Detail: &types.TaskDetail{
 			TaskARN:    &taskARN2,
@@ -109,8 +105,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 			StartedBy:  someoneElse,
 		},
 	}
-	suite.secondTaskStartedBySomeoneElseJSON, suite.secondTaskStartedBySomeoneElseCompressedJSON = suite.setupTask(suite.secondTaskStartedBySomeoneElse)
-
+	suite.secondTaskStartedBySomeoneElseJSON = suite.setupTask(suite.secondTaskStartedBySomeoneElse)
 	suite.firstTaskOfFirstCluster = types.Task{
 		Detail: &types.TaskDetail{
 			TaskARN:    &taskARN1,
@@ -119,7 +114,7 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 			Version:    &version1,
 		},
 	}
-	suite.firstTaskOfFirstClusterJSON, suite.firstTaskOfFirstClusterCompressedJSON = suite.setupTask(suite.firstTaskOfFirstCluster)
+	suite.firstTaskOfFirstClusterJSON = suite.setupTask(suite.firstTaskOfFirstCluster)
 
 	suite.secondTaskOfFirstCluster = types.Task{
 		Detail: &types.TaskDetail{
@@ -129,16 +124,14 @@ func (suite *TaskStoreTestSuite) SetupTest() {
 			Version:    &version2,
 		},
 	}
-	suite.secondTaskOfFirstClusterJSON, suite.secondTaskOfFirstClusterCompressedJSON = suite.setupTask(suite.secondTaskOfFirstCluster)
+	suite.secondTaskOfFirstClusterJSON = suite.setupTask(suite.secondTaskOfFirstCluster)
 }
 
-func (suite *TaskStoreTestSuite) setupTask(task types.Task) (string, string) {
+func (suite *TaskStoreTestSuite) setupTask(task types.Task) string {
 	taskJSON, err := json.Marshal(task)
 	assert.Nil(suite.T(), err, "Cannot setup testSuite: Error when json marhsaling task %v", task)
 	taskJSONString := string(taskJSON)
-	compressedTaskJSON, err := compress.Compress(taskJSONString)
-	assert.Nil(suite.T(), err, "Cannot setup testSuite: Error when compressing task json %v", taskJSONString)
-	return taskJSONString, string(compressedTaskJSON)
+	return taskJSONString
 }
 
 func TestTaskStoreTestSuite(t *testing.T) {
@@ -146,12 +139,17 @@ func TestTaskStoreTestSuite(t *testing.T) {
 }
 
 func (suite *TaskStoreTestSuite) TestNewTaskStoreNilDatastore() {
-	_, err := NewTaskStore(nil)
+	_, err := NewTaskStore(nil, suite.etcdTxStore)
 	assert.Error(suite.T(), err, "Expected an error when datastore is nil")
 }
 
+func (suite *TaskStoreTestSuite) TestNewTaskStoreNilEtcdTXStore() {
+	_, err := NewTaskStore(suite.datastore, nil)
+	assert.Error(suite.T(), err, "Expected an error when etcd transactional store is nil")
+}
+
 func (suite *TaskStoreTestSuite) TestNewTaskStore() {
-	taskStore, err := NewTaskStore(suite.datastore)
+	taskStore, err := NewTaskStore(suite.datastore, suite.etcdTxStore)
 	assert.Nil(suite.T(), err, "Unexpected error when calling NewTaskStore")
 	assert.NotNil(suite.T(), taskStore, "TaskStore should not be nil")
 }
@@ -246,113 +244,11 @@ func (suite *TaskStoreTestSuite) TestAddTaskInvalidClusterARNWithNoName() {
 	assert.Error(suite.T(), err, "Expected an error when cluster ARN has no name")
 }
 
-func (suite *TaskStoreTestSuite) TestAddTaskGetTaskFails() {
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(nil, errors.New("Error when getting key"))
-
+func (suite *TaskStoreTestSuite) TestAddTaskSTMRepeatableFails() {
+	suite.etcdTxStore.EXPECT().GetV3Client().Return(nil)
+	suite.etcdTxStore.EXPECT().NewSTMRepeatable(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("Error when getting key"))
 	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Error(suite.T(), err, "Expected an error when get task fails")
-}
-
-func (suite *TaskStoreTestSuite) TestAddTaskGetTaskNoResults() {
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(make(map[string]string), nil)
-	suite.datastore.EXPECT().Add(suite.taskKey1, suite.firstPendingTaskCompressedJSON).Return(nil)
-
-	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Nil(suite.T(), err, "Unexpected error when datastore returns empty results")
-}
-
-func (suite *TaskStoreTestSuite) TestAddTaskGetTaskMultipleResults() {
-	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-		taskARN2: suite.secondPendingTaskCompressedJSON,
-	}
-
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-
-	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Error(suite.T(), err, "Expected an error when datastore returns multiple results")
-}
-
-func (suite *TaskStoreTestSuite) TestAddTaskGetTaskInvalidJSONResult() {
-	compressedInvalidJSON := suite.compressString("invalidJSON")
-
-	resp := map[string]string{
-		taskARN1: compressedInvalidJSON,
-	}
-
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-
-	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Error(suite.T(), err, "Expected an error when datastore returns invalid json results")
-}
-
-func (suite *TaskStoreTestSuite) TestAddTaskSameVersionTaskExists() {
-	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-	}
-
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey1, suite.firstPendingTaskJSON).Times(0)
-
-	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Nil(suite.T(), err, "Unexpected error when same version task exists")
-}
-
-func (suite *TaskStoreTestSuite) TestAddTaskHigherVersionTaskExists() {
-	resp := map[string]string{
-		taskARN1: suite.secondPendingTaskCompressedJSON,
-	}
-
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey1, gomock.Any()).Times(0)
-
-	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Nil(suite.T(), err, "Unexpected error when higher version task exists")
-}
-
-func (suite *TaskStoreTestSuite) TestAddTaskLowerVersionTaskExists() {
-	task := suite.firstPendingTask
-	*task.Detail.Version--
-
-	taskJSON, err := json.Marshal(task)
-	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", task)
-
-	compressedTaskJSON := suite.compressString(string(taskJSON))
-
-	resp := map[string]string{
-		taskARN1: compressedTaskJSON,
-	}
-
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-	suite.datastore.EXPECT().Add(suite.taskKey1, suite.firstPendingTaskCompressedJSON).Return(nil)
-
-	err = suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Nil(suite.T(), err, "Unexpected error when lower version task exists")
-}
-
-func (suite *TaskStoreTestSuite) TestAddTaskFails() {
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(make(map[string]string), nil)
-	suite.datastore.EXPECT().Add(suite.taskKey1, suite.firstPendingTaskCompressedJSON).Return(errors.New("Add task failed"))
-
-	err := suite.taskStore.AddTask(suite.firstPendingTaskJSON)
-	assert.Error(suite.T(), err, "Expected an error when add task fails")
-}
-
-func (suite *TaskStoreTestSuite) TestAddUnversionedTaskSkipIfExistsTrue() {
-	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-	}
-	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-	suite.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
-
-	task := suite.firstPendingTask
-	*task.Detail.Version = unversionedTask
-
-	taskJSON, err := json.Marshal(task)
-	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", task)
-
-	err = suite.taskStore.AddUnversionedTask(string(taskJSON))
-	assert.Nil(suite.T(), err, "Unexpected error when adding unversioned task")
+	assert.Error(suite.T(), err, "Expected error when STM repeatable fails to execute with an error")
 }
 
 func (suite *TaskStoreTestSuite) TestAddUnversionedTaskEmptyVersion() {
@@ -404,8 +300,8 @@ func (suite *TaskStoreTestSuite) TestGetTaskGetTaskNoResults() {
 
 func (suite *TaskStoreTestSuite) TestGetTaskGetMultipleResults() {
 	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-		taskARN2: suite.secondPendingTaskCompressedJSON,
+		taskARN1: suite.firstPendingTaskJSON,
+		taskARN2: suite.secondPendingTaskJSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
@@ -415,35 +311,28 @@ func (suite *TaskStoreTestSuite) TestGetTaskGetMultipleResults() {
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskGetInvalidJSONResult() {
-	compressedInvalidJSON := suite.compressString("invalidJSON")
-
 	resp := map[string]string{
-		taskARN1: compressedInvalidJSON,
+		taskARN1: "invalidJSON",
 	}
-
 	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-
 	_, err := suite.taskStore.GetTask(clusterName1, taskARN1)
 	assert.Error(suite.T(), err, "Expected an error when datastore returns invalid json results")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskWithClusterNameAndTaskARN() {
 	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
+		taskARN1: suite.firstPendingTaskJSON,
 	}
-
 	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
-
 	task, err := suite.taskStore.GetTask(clusterName1, taskARN1)
 	assert.Nil(suite.T(), err, "Unexpected error when getting task")
 	assert.NotNil(suite.T(), task, "Expected a non-nil task when calling GetTask")
-
 	assert.Exactly(suite.T(), suite.firstPendingTask, *task, "Expected the returned task to match the one returned from the datastore")
 }
 
 func (suite *TaskStoreTestSuite) TestGetTaskWithClusterARNAndTaskARN() {
 	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
+		taskARN1: suite.firstPendingTaskJSON,
 	}
 
 	suite.datastore.EXPECT().Get(suite.taskKey1).Return(resp, nil)
@@ -456,10 +345,8 @@ func (suite *TaskStoreTestSuite) TestGetTaskWithClusterARNAndTaskARN() {
 }
 
 func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixInvalidJSON() {
-	compressedInvalidJSON := suite.compressString("invalidJSON")
-
 	resp := map[string]string{
-		taskARN1: compressedInvalidJSON,
+		taskARN1: "invalidJSON",
 	}
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
 
@@ -486,8 +373,8 @@ func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixReturnsNoResults() {
 
 func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixReturnsMultipleResults() {
 	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-		taskARN2: suite.secondPendingTaskCompressedJSON,
+		taskARN1: suite.firstPendingTaskJSON,
+		taskARN2: suite.secondPendingTaskJSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
@@ -504,10 +391,8 @@ func (suite *TaskStoreTestSuite) TestListTasksGetWithPrefixReturnsMultipleResult
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as ListTasks result. Missing %v", v)
 		} else {
-			uncompressedTaskJSON, err := compress.Uncompress([]byte(value))
-			assert.Nil(suite.T(), err, "Unexpected error when uncompressing task json %v", uncompressedTaskJSON)
 			var taskInResp types.Task
-			json.Unmarshal([]byte(uncompressedTaskJSON), &taskInResp)
+			json.Unmarshal([]byte(value), &taskInResp)
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as ListTasks result.")
 		}
 	}
@@ -547,14 +432,11 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByStatusGetWithPrefixReturnsNoRe
 
 func (suite *TaskStoreTestSuite) TestFilterTasksByStatusGetWithPrefixReturnsMultipleResultsNoneMatchFilter() {
 	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-		taskARN2: suite.secondPendingTaskCompressedJSON,
+		taskARN1: suite.firstPendingTaskJSON,
+		taskARN2: suite.secondPendingTaskJSON,
 	}
-
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
-
 	tasks, err := suite.taskStore.FilterTasks(taskStatusFilter, "randomFilter")
-
 	assert.Nil(suite.T(), err, "Unexpected error when filter does not match")
 	assert.NotNil(suite.T(), tasks, "Result should be empty when filter does not match")
 	assert.Empty(suite.T(), tasks, "Result should be empty when filter does not match")
@@ -562,23 +444,16 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByStatusGetWithPrefixReturnsMult
 
 func (suite *TaskStoreTestSuite) TestFilterTasksByStatusGetWithPrefixReturnsMultipleResultsOneMatchesFilter() {
 	filterStatus := "testStatus"
-
 	taskMatchingStatus := suite.secondPendingTask
 	taskMatchingStatus.Detail.LastStatus = &filterStatus
 	taskMatchingStatusJSON, err := json.Marshal(taskMatchingStatus)
 	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", taskMatchingStatusJSON)
-
-	compressedTaskMatchingStatusJSON := suite.compressString(string(taskMatchingStatusJSON))
-
 	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-		taskARN2: compressedTaskMatchingStatusJSON,
+		taskARN1: suite.firstPendingTaskJSON,
+		taskARN2: string(taskMatchingStatusJSON),
 	}
-
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
-
 	tasks, err := suite.taskStore.FilterTasks(taskStatusFilter, filterStatus)
-
 	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
 	assert.Equal(suite.T(), 1, len(tasks), "Expected the length of the FilterTasks result to be 1")
 	assert.Exactly(suite.T(), taskMatchingStatus, tasks[0], "Expected one result when one matches filter")
@@ -586,27 +461,22 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByStatusGetWithPrefixReturnsMult
 
 func (suite *TaskStoreTestSuite) TestFilterTasksByStatusGetWithPrefixReturnsMultipleResultsMultipleMatchFilter() {
 	resp := map[string]string{
-		taskARN1: suite.firstPendingTaskCompressedJSON,
-		taskARN2: suite.secondPendingTaskCompressedJSON,
+		taskARN1: suite.firstPendingTaskJSON,
+		taskARN2: suite.secondPendingTaskJSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
-
 	tasks, err := suite.taskStore.FilterTasks(taskStatusFilter, pendingStatus)
-
 	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
 	assert.Equal(suite.T(), 2, len(tasks), "Expected one result when multiple match filter")
-
 	for _, v := range tasks {
 		//attempt to grab the same task from resp
 		value, ok := resp[*v.Detail.TaskARN]
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as FilterTasks result. Missing %v", v)
 		} else {
-			uncompressedTaskJSON, err := compress.Uncompress([]byte(value))
-			assert.Nil(suite.T(), err, "Unexpected error when uncompresseing task json %v", uncompressedTaskJSON)
 			var taskInResp types.Task
-			json.Unmarshal([]byte(uncompressedTaskJSON), &taskInResp)
+			json.Unmarshal([]byte(value), &taskInResp)
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as FilterTasks result.")
 		}
 	}
@@ -631,8 +501,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByListTasksReturnsNoRes
 
 func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByListTasksReturnsMultipleResultsNoneMatchFilter() {
 	resp := map[string]string{
-		taskARN1: suite.firstTaskStartedBySomeoneElseCompressedJSON,
-		taskARN2: suite.secondTaskStartedBySomeoneElseCompressedJSON,
+		taskARN1: suite.firstTaskStartedBySomeoneElseJSON,
+		taskARN2: suite.secondTaskStartedBySomeoneElseJSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
@@ -652,11 +522,9 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByListTasksReturnsMulti
 	taskMatchingStartedByJSON, err := json.Marshal(taskMatchingStartedBy)
 	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", taskMatchingStartedByJSON)
 
-	compressedTaskMatchingStatusJSON := suite.compressString(string(taskMatchingStartedByJSON))
-
 	resp := map[string]string{
-		taskARN1: suite.firstTaskStartedBySomeoneElseCompressedJSON,
-		taskARN2: compressedTaskMatchingStatusJSON,
+		taskARN1: suite.firstTaskStartedBySomeoneElseJSON,
+		taskARN2: string(taskMatchingStartedByJSON),
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
@@ -670,8 +538,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByListTasksReturnsMulti
 
 func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByListTasksReturnsMultipleResultsMultipleMatchFilter() {
 	resp := map[string]string{
-		taskARN1: suite.firstTaskStartedBySomeoneElseCompressedJSON,
-		taskARN2: suite.secondTaskStartedBySomeoneElseCompressedJSON,
+		taskARN1: suite.firstTaskStartedBySomeoneElseJSON,
+		taskARN2: suite.secondTaskStartedBySomeoneElseJSON,
 	}
 
 	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
@@ -687,10 +555,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByListTasksReturnsMulti
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as FilterTasks result. Missing %v", v)
 		} else {
-			uncompressedTaskJSON, err := compress.Uncompress([]byte(value))
-			assert.Nil(suite.T(), err, "Unexpected error when uncompresseing task json %v", uncompressedTaskJSON)
 			var taskInResp types.Task
-			json.Unmarshal([]byte(uncompressedTaskJSON), &taskInResp)
+			json.Unmarshal([]byte(value), &taskInResp)
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as FilterTasks result.")
 		}
 	}
@@ -714,8 +580,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByClusterARNGetWithPrefixFails()
 
 func (suite *TaskStoreTestSuite) TestFilterTasksByClusterNameGetWithPrefixReturnsTasks() {
 	resp := map[string]string{
-		taskARN1: suite.firstTaskOfFirstClusterCompressedJSON,
-		taskARN2: suite.secondTaskOfFirstClusterCompressedJSON,
+		taskARN1: suite.firstTaskOfFirstClusterJSON,
+		taskARN2: suite.secondTaskOfFirstClusterJSON,
 	}
 
 	clusterKey := taskKeyPrefix + clusterName1 + "/"
@@ -732,10 +598,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByClusterNameGetWithPrefixReturn
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as FilterTasks result. Missing %v", v)
 		} else {
-			uncompressedTaskJSON, err := compress.Uncompress([]byte(value))
-			assert.Nil(suite.T(), err, "Unexpected error when uncompresseing task json %v", uncompressedTaskJSON)
 			var taskInResp types.Task
-			json.Unmarshal([]byte(uncompressedTaskJSON), &taskInResp)
+			json.Unmarshal([]byte(value), &taskInResp)
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as FilterTasks result.")
 		}
 	}
@@ -743,8 +607,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByClusterNameGetWithPrefixReturn
 
 func (suite *TaskStoreTestSuite) TestFilterTasksByClusterARNGetWithPrefixReturnsTasks() {
 	resp := map[string]string{
-		taskARN1: suite.firstTaskOfFirstClusterCompressedJSON,
-		taskARN2: suite.secondTaskOfFirstClusterCompressedJSON,
+		taskARN1: suite.firstTaskOfFirstClusterJSON,
+		taskARN2: suite.secondTaskOfFirstClusterJSON,
 	}
 
 	clusterKey := taskKeyPrefix + clusterName1 + "/"
@@ -761,10 +625,8 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByClusterARNGetWithPrefixReturns
 		if !ok {
 			suite.T().Errorf("Expected GetWithPrefix result to contain the same elements as FilterTasks result. Missing %v", v)
 		} else {
-			uncompressedTaskJSON, err := compress.Uncompress([]byte(value))
-			assert.Nil(suite.T(), err, "Unexpected error when uncompresseing task json %v", uncompressedTaskJSON)
 			var taskInResp types.Task
-			json.Unmarshal([]byte(uncompressedTaskJSON), &taskInResp)
+			json.Unmarshal([]byte(value), &taskInResp)
 			assert.Exactly(suite.T(), taskInResp, v, "Expected GetWithPrefix result to contain the same elements as FilterTasks result.")
 		}
 	}
@@ -789,7 +651,7 @@ func (suite *TaskStoreTestSuite) TestStreamTasksValidJSONInDSChannel() {
 	assert.Nil(suite.T(), err, "Unexpected error when calling stream tasks")
 	assert.NotNil(suite.T(), taskRespChan)
 
-	taskResp := addTaskToDSChanAndReadFromTaskRespChan(suite.firstPendingTaskCompressedJSON, dsChan, taskRespChan)
+	taskResp := addTaskToDSChanAndReadFromTaskRespChan(suite.firstPendingTaskJSON, dsChan, taskRespChan)
 
 	assert.Nil(suite.T(), taskResp.Err, "Unexpected error when reading task from channel")
 	assert.Equal(suite.T(), suite.firstPendingTask, taskResp.Task, "Expected task in task response to match that in the stream")
@@ -805,8 +667,7 @@ func (suite *TaskStoreTestSuite) TestStreamTasksInvalidJSONInDSChannel() {
 	assert.Nil(suite.T(), err, "Unexpected error when calling stream tasks")
 	assert.NotNil(suite.T(), taskRespChan)
 
-	compressedInvalidJSON := suite.compressString("invalidJSON")
-	taskResp := addTaskToDSChanAndReadFromTaskRespChan(compressedInvalidJSON, dsChan, taskRespChan)
+	taskResp := addTaskToDSChanAndReadFromTaskRespChan("invalidJSON", dsChan, taskRespChan)
 
 	assert.Error(suite.T(), taskResp.Err, "Expected an error when dsChannel returns an invalid task json")
 	assert.Equal(suite.T(), types.Task{}, taskResp.Task, "Expected empty task in response when there is a decode error")
@@ -892,10 +753,4 @@ func addTaskToDSChanAndReadFromTaskRespChan(taskToAdd string, dsChan chan map[st
 	<-doneChan
 
 	return taskResp
-}
-
-func (suite *TaskStoreTestSuite) compressString(str string) string {
-	compressedVal, err := compress.Compress(str)
-	assert.Nil(suite.T(), err, "Error when compressing string %v", str)
-	return string(compressedVal)
 }

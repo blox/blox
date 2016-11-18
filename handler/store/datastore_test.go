@@ -43,10 +43,9 @@ type DataStoreTestSuite struct {
 func (testSuite *DataStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(testSuite.T())
 	testSuite.etcdInterface = mocks.NewMockEtcdInterface(mockCtrl)
-
-	var err error
-	testSuite.datastore, err = NewDataStore(testSuite.etcdInterface)
-	assert.Nil(testSuite.T(), err, "Cannot initialize DataStoreTestSuite")
+	testSuite.datastore = &etcdDataStore{
+		etcdInterface: testSuite.etcdInterface,
+	}
 }
 
 func TestDataStoreTestSuite(t *testing.T) {
@@ -54,11 +53,6 @@ func TestDataStoreTestSuite(t *testing.T) {
 }
 
 func (testSuite *DataStoreTestSuite) TestNewDataStoreEmptyEtcd() {
-	_, err := NewDataStore(nil)
-	assert.Error(testSuite.T(), err, "Expected an error when etcd client is nil")
-}
-
-func (testSuite *DataStoreTestSuite) TestNewDataStore() {
 	_, err := NewDataStore(nil)
 	assert.Error(testSuite.T(), err, "Expected an error when etcd client is nil")
 }

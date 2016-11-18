@@ -14,10 +14,14 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/pkg/errors"
 )
+
+const invalidTaskVersion = int64(-100)
 
 // Task defines the structure of the task json received from the event stream
 type Task struct {
@@ -90,4 +94,20 @@ type ContainerOverrides struct {
 type Environment struct {
 	Name  *string `json: "name"`
 	Value *string `json: "value"`
+}
+
+// GetVersion retrieces the version of the the container instance represented by the instanceJSON string
+func (task Task) GetVersion(taskJSON string) (int64, error) {
+	t := &Task{}
+	err := json.Unmarshal([]byte(taskJSON), t)
+	if err != nil {
+		return invalidTaskVersion, errors.Wrapf(err, "Error unmarshaling task")
+	}
+	if t.Detail == nil {
+		return invalidTaskVersion, errors.New("Task detail is not set")
+	}
+	if t.Detail.Version == nil {
+		return invalidTaskVersion, errors.New("Task version is not set")
+	}
+	return aws.Int64Value(t.Detail.Version), nil
 }

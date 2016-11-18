@@ -19,6 +19,8 @@ package mocks
 import (
 	context "context"
 
+	clientv3 "github.com/coreos/etcd/clientv3"
+	concurrency "github.com/coreos/etcd/clientv3/concurrency"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -75,6 +77,16 @@ func (_mr *_MockDataStoreRecorder) Get(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", arg0)
 }
 
+func (_m *MockDataStore) GetV3Client() *clientv3.Client {
+	ret := _m.ctrl.Call(_m, "GetV3Client")
+	ret0, _ := ret[0].(*clientv3.Client)
+	return ret0
+}
+
+func (_mr *_MockDataStoreRecorder) GetV3Client() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetV3Client")
+}
+
 func (_m *MockDataStore) GetWithPrefix(_param0 string) (map[string]string, error) {
 	ret := _m.ctrl.Call(_m, "GetWithPrefix", _param0)
 	ret0, _ := ret[0].(map[string]string)
@@ -84,6 +96,17 @@ func (_m *MockDataStore) GetWithPrefix(_param0 string) (map[string]string, error
 
 func (_mr *_MockDataStoreRecorder) GetWithPrefix(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetWithPrefix", arg0)
+}
+
+func (_m *MockDataStore) NewSTMRepeatable(_param0 context.Context, _param1 *clientv3.Client, _param2 func(concurrency.STM) error) (*clientv3.TxnResponse, error) {
+	ret := _m.ctrl.Call(_m, "NewSTMRepeatable", _param0, _param1, _param2)
+	ret0, _ := ret[0].(*clientv3.TxnResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDataStoreRecorder) NewSTMRepeatable(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "NewSTMRepeatable", arg0, arg1, arg2)
 }
 
 func (_m *MockDataStore) StreamWithPrefix(_param0 context.Context, _param1 string) (chan map[string]string, error) {

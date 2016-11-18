@@ -56,8 +56,13 @@ func StartEventStreamHandler(queueName string, bindAddr string, etcdEndpoints []
 		return errors.Wrapf(err, "Could not initialize the datastore")
 	}
 
+	etcdTXStore, err := store.NewEtcdTXStore(etcdClient)
+	if err != nil {
+		return errors.Wrapf(err, "Could not initialize the etcd transactional store")
+	}
+
 	// initialize services
-	stores, err := store.NewStores(datastore)
+	stores, err := store.NewStores(datastore, etcdTXStore)
 	if err != nil {
 		return errors.Wrapf(err, "Could not initialize stores")
 	}

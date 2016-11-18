@@ -14,7 +14,8 @@
 package event
 
 import (
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
+	"encoding/json"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/store"
 	"github.com/pkg/errors"
 )
@@ -47,15 +48,15 @@ func NewProcessor(stores store.Stores) Processor {
 
 // ProcessEvent takes an event JSON, unmarhsals and stores it in the datastore
 func (processor eventProcessor) ProcessEvent(event string) error {
-	if len(event) == 0 {
+	if event == "" {
 		return errors.New("Event cannot be empty")
 	}
 
 	// Determine the type of event based on the detail-type in the message
 	var et eventType
-	err := json.UnmarshalJSON(event, &et)
+	err := json.Unmarshal([]byte(event), &et)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Error unmarshaling event '%s' in the processor", event)
 	}
 
 	switch et.Type {

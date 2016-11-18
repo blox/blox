@@ -15,10 +15,9 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
@@ -47,16 +46,22 @@ type ContainerInstanceStore interface {
 }
 
 type eventInstanceStore struct {
-	datastore DataStore
+	datastore   DataStore
+	etcdTXStore EtcdTXStore
 }
 
-func NewContainerInstanceStore(ds DataStore) (ContainerInstanceStore, error) {
+// NewContainerInstanceStore inistializes the eventInstanceStore struct
+func NewContainerInstanceStore(ds DataStore, ts EtcdTXStore) (ContainerInstanceStore, error) {
 	if ds == nil {
-		return nil, errors.New("The datastore cannot be nil")
+		return nil, errors.New("Datastore is not initialized")
+	}
+	if ts == nil {
+		return nil, errors.New("Etcd transactional store is not initialized")
 	}
 
 	return eventInstanceStore{
-		datastore: ds,
+		datastore:   ds,
+		etcdTXStore: ts,
 	}, nil
 }
 
@@ -69,32 +74,18 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 
 	log.Debugf("Instance store unmarshalled instance: %s, trying to add it to the store", instance.Detail.String())
 
-	// check if record exists with higher version number
-	existingInstance, err := instanceStore.getInstanceByKey(key)
-	if err != nil {
-		return err
+	applier := &STMApplier{
+		record:     types.ContainerInstance{},
+		recordKey:  key,
+		recordJSON: instanceJSON,
 	}
+	// TODO: NewSTMRepeatble panics if there's any error from the etcd
+	// client. We should find a better way to handle that
+	_, err = instanceStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
+		instanceStore.etcdTXStore.GetV3Client(),
+		applier.applyVersionedRecord)
 
-	if existingInstance != nil {
-		existingInstanceDetail := existingInstance.Detail
-		currentInstanceDetail := instance.Detail
-		if aws.Int64Value(existingInstanceDetail.Version) >= aws.Int64Value(currentInstanceDetail.Version) {
-			log.Infof("Higher or equal version %d of instance %s with version %d already exists",
-				aws.Int64Value(existingInstance.Detail.Version),
-				aws.StringValue(instance.Detail.ContainerInstanceARN),
-				aws.Int64Value(instance.Detail.Version))
-
-			// do nothing. later version of the event has already been stored
-			return nil
-		}
-	}
-
-	err = instanceStore.compressAndAddInstance(key, instanceJSON)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // AddUnversionedContainerInstance adds a container instance represented in the instanceJSON to the datastore only if the instance version is -1
@@ -110,25 +101,18 @@ func (instanceStore eventInstanceStore) AddUnversionedContainerInstance(instance
 
 	log.Debugf("Instance store unmarshalled unversioned instance: %s, trying to add it to the store", instance.Detail.String())
 
-	// If the instance key already exists, skip adding it again
-	existingInstance, err := instanceStore.getInstanceByKey(key)
-	if err != nil {
-		return errors.Wrapf(err, "Error checking if instance '%s'exists in data store",
-			aws.StringValue(instance.Detail.ContainerInstanceARN))
+	applier := &STMApplier{
+		record:     types.ContainerInstance{},
+		recordKey:  key,
+		recordJSON: instanceJSON,
 	}
+	// TODO: NewSTMRepeatble panics if there's any error from the etcd
+	// client. We should find a better way to handle that
+	_, err = instanceStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
+		instanceStore.etcdTXStore.GetV3Client(),
+		applier.applyUnversionedRecord)
 
-	if existingInstance != nil {
-		log.Debugf("Instance found in store, not adding it: %s", existingInstance.Detail.String())
-		return nil
-	}
-
-	err = instanceStore.compressAndAddInstance(key, instanceJSON)
-	if err != nil {
-		return errors.Wrapf(err, "Error adding instance '%s' to the store",
-			aws.StringValue(instance.Detail.ContainerInstanceARN))
-	}
-
-	return nil
+	return err
 }
 
 // GetContainerInstance gets a container with ARN 'instanceARN' belonging to cluster 'cluster'
@@ -190,46 +174,38 @@ func (instanceStore eventInstanceStore) DeleteContainerInstance(cluster string, 
 	return err
 }
 
-func (instanceStore eventInstanceStore) unmarshalInstanceAndGenerateKey(instanceJSON string) (types.ContainerInstance, string, error) {
-	var instance types.ContainerInstance
+func (instanceStore eventInstanceStore) unmarshalInstanceAndGenerateKey(instanceJSON string) (*types.ContainerInstance, string, error) {
 	if len(instanceJSON) == 0 {
-		return instance, "", errors.New("Instance JSON should not be empty")
+		return nil, "", errors.New("Instance JSON should not be empty")
 	}
 
-	err := json.UnmarshalJSON(instanceJSON, &instance)
+	instance, err := instanceStore.unmarshalInstance(instanceJSON)
 	if err != nil {
-		return instance, "", err
+		return nil, "", err
 	}
 
-	if instance.Detail == nil || instance.Detail.ClusterARN == nil || instance.Detail.ContainerInstanceARN == nil {
-		return instance, "", errors.New("Cluster ARN and container instance ARN should not be empty in instance JSON")
+	if instance.Detail == nil {
+		return nil, "", errors.New("Instance detail not initialized in JSON")
+	}
+	if aws.StringValue(instance.Detail.ClusterARN) == "" {
+		return nil, "", errors.New("Cluster ARN should not be empty in instance JSON")
+	}
+	if aws.StringValue(instance.Detail.ContainerInstanceARN) == "" {
+		return nil, "", errors.New("Container instance ARN should not be empty in instance JSON")
 	}
 
-	clusterName, err := regex.GetClusterNameFromARN(aws.StringValue(instance.Detail.ClusterARN))
+	clusterARN := aws.StringValue(instance.Detail.ClusterARN)
+	clusterName, err := regex.GetClusterNameFromARN(clusterARN)
 	if err != nil {
-		return instance, "", err
+		return nil, "", errors.Wrapf(err, "Error retrieving cluster name from ARN '%s' for instance", clusterARN)
 	}
 
 	key, err := generateInstanceKey(clusterName, aws.StringValue(instance.Detail.ContainerInstanceARN))
 	if err != nil {
-		return instance, "", err
+		return nil, "", err
 	}
 
-	return instance, key, err
-}
-
-func (instanceStore eventInstanceStore) compressAndAddInstance(key string, instanceJSON string) error {
-	compressedInstanceJSON, err := compress.Compress(instanceJSON)
-	if err != nil {
-		return err
-	}
-
-	err = instanceStore.datastore.Add(key, string(compressedInstanceJSON))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &instance, key, nil
 }
 
 func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string) ([]types.ContainerInstance, error) {
@@ -280,11 +256,7 @@ func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*types.Con
 
 	var instance types.ContainerInstance
 	for _, v := range resp {
-		uncompressedVal, err := compress.Uncompress([]byte(v))
-		if err != nil {
-			return nil, err
-		}
-		err = json.UnmarshalJSON(uncompressedVal, &instance)
+		instance, err = instanceStore.unmarshalInstance(v)
 		if err != nil {
 			return nil, err
 		}
@@ -309,34 +281,13 @@ func (instanceStore eventInstanceStore) getInstancesByKeyPrefix(key string) ([]t
 
 	instances := []types.ContainerInstance{}
 	for _, v := range resp {
-		uncompressedVal, err := compress.Uncompress([]byte(v))
-		if err != nil {
-			return nil, err
-		}
-
-		var instance types.ContainerInstance
-		err = json.UnmarshalJSON(uncompressedVal, &instance)
+		instance, err := instanceStore.unmarshalInstance(string(v))
 		if err != nil {
 			return nil, err
 		}
 		instances = append(instances, instance)
 	}
 	return instances, nil
-}
-
-func (instanceStore eventInstanceStore) uncompressAndUnmarshalInstance(val string) (types.ContainerInstance, error) {
-	var instance types.ContainerInstance
-
-	uncompressedVal, err := compress.Uncompress([]byte(val))
-	if err != nil {
-		return instance, err
-	}
-	err = json.UnmarshalJSON(uncompressedVal, &instance)
-	if err != nil {
-		return instance, err
-	}
-
-	return instance, nil
 }
 
 func (instanceStore eventInstanceStore) getInstanceKey(cluster string, instanceARN string) (string, error) {
@@ -370,7 +321,7 @@ func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context,
 				return
 			}
 			for _, v := range resp {
-				ins, err := instanceStore.uncompressAndUnmarshalInstance(v)
+				ins, err := instanceStore.unmarshalInstance(v)
 				if err != nil {
 					instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: types.ContainerInstance{}, Err: err}
 					return
@@ -384,12 +335,22 @@ func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context,
 	}
 }
 
+func (instanceStore eventInstanceStore) unmarshalInstance(val string) (types.ContainerInstance, error) {
+	var instance types.ContainerInstance
+	err := json.Unmarshal([]byte(val), &instance)
+	if err != nil {
+		return instance, errors.Wrapf(err, "Error unmarshaling instance '%s'", val)
+	}
+
+	return instance, nil
+}
+
 func generateInstanceKey(clusterName string, instanceARN string) (string, error) {
 	if !regex.IsClusterName(clusterName) {
-		return "", errors.New("Cluster name does not match expected regex")
+		return "", errors.Errorf("Error generating instance key. Cluster name '%s' does not match expected regex", clusterName)
 	}
 	if !regex.IsInstanceARN(instanceARN) {
-		return "", errors.New("Instance ARN does not match expected regex")
+		return "", errors.Errorf("Error generating instance key. Instance ARN '%s' does not match expected regex", instanceARN)
 	}
 	return instanceKeyPrefix + clusterName + "/" + instanceARN, nil
 }

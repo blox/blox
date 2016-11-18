@@ -15,10 +15,9 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/compress"
-	"github.com/aws/amazon-ecs-event-stream-handler/handler/json"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/regex"
 	storetypes "github.com/aws/amazon-ecs-event-stream-handler/handler/store/types"
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/types"
@@ -48,16 +47,22 @@ type TaskStore interface {
 }
 
 type eventTaskStore struct {
-	datastore DataStore
+	datastore   DataStore
+	etcdTXStore EtcdTXStore
 }
 
-func NewTaskStore(ds DataStore) (TaskStore, error) {
+// NewTaskStore initializes the eventTaskStore struct
+func NewTaskStore(ds DataStore, ts EtcdTXStore) (TaskStore, error) {
 	if ds == nil {
-		return nil, errors.Errorf("The datastore cannot be nil")
+		return nil, errors.Errorf("Datastore is not initialized")
+	}
+	if ts == nil {
+		return nil, errors.Errorf("Etcd transactional store is not initialized")
 	}
 
 	return eventTaskStore{
-		datastore: ds,
+		datastore:   ds,
+		etcdTXStore: ts,
 	}, nil
 }
 
@@ -70,32 +75,17 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 
 	log.Debugf("Task store unmarshalled task: %s, trying to add it to the store", task.Detail.String())
 
-	// check if record exists with higher version number
-	existingTask, err := taskStore.getTaskByKey(key)
-	if err != nil {
-		return err
+	applier := &STMApplier{
+		record:     types.Task{},
+		recordKey:  key,
+		recordJSON: taskJSON,
 	}
-
-	if existingTask != nil {
-		existingTaskDetail := existingTask.Detail
-		currentTaskDetail := task.Detail
-		if aws.Int64Value(existingTaskDetail.Version) >= aws.Int64Value(currentTaskDetail.Version) {
-			log.Infof("Higher or equal version %d of task %s with version %d already exists",
-				aws.Int64Value(existingTask.Detail.Version),
-				aws.StringValue(task.Detail.TaskARN),
-				aws.Int64Value(task.Detail.Version))
-
-			// do nothing. later version of the event has already been stored
-			return nil
-		}
-	}
-
-	err = taskStore.compressAndAddTask(key, taskJSON)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	// TODO: NewSTMRepeatble panics if there's any error from the etcd
+	// client. We should find a better way to handle that
+	_, err = taskStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
+		taskStore.etcdTXStore.GetV3Client(),
+		applier.applyVersionedRecord)
+	return err
 }
 
 // AddUnversionedTask adds a task represented in the taskJSON to the datastore only if the task version is set to -1
@@ -111,25 +101,17 @@ func (taskStore eventTaskStore) AddUnversionedTask(taskJSON string) error {
 
 	log.Debugf("Task store unmarshalled unversioned task: %s, trying to add it to the store", task.Detail.String())
 
-	// If the task key already exists, skip adding it again
-	existingTask, err := taskStore.getTaskByKey(key)
-	if err != nil {
-		return errors.Wrapf(err, "Error checking if task '%s'exists in data store",
-			aws.StringValue(task.Detail.TaskARN))
+	applier := &STMApplier{
+		record:     types.Task{},
+		recordKey:  key,
+		recordJSON: taskJSON,
 	}
-
-	if existingTask != nil {
-		log.Debugf("Task found in store, not adding it: %s", existingTask.Detail.String())
-		return nil
-	}
-
-	err = taskStore.compressAndAddTask(key, taskJSON)
-	if err != nil {
-		return errors.Wrapf(err, "Error adding task '%s' to the store",
-			aws.StringValue(task.Detail.ContainerInstanceARN))
-	}
-
-	return nil
+	// TODO: NewSTMRepeatble panics if there's any error from the etcd
+	// client. We should find a better way to handle that
+	_, err = taskStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
+		taskStore.etcdTXStore.GetV3Client(),
+		applier.applyUnversionedRecord)
+	return err
 }
 
 // GetTask gets a task with ARN 'taskARN' belonging to cluster 'cluster'
@@ -197,46 +179,32 @@ func (taskStore eventTaskStore) DeleteTask(cluster string, taskARN string) error
 	return err
 }
 
-func (taskStore eventTaskStore) unmarshalTaskAndGenerateKey(taskJSON string) (types.Task, string, error) {
-	var task types.Task
-
+func (taskStore eventTaskStore) unmarshalTaskAndGenerateKey(taskJSON string) (*types.Task, string, error) {
 	if len(taskJSON) == 0 {
-		return task, "", errors.New("Task json should not be empty")
+		return nil, "", errors.New("Task json should not be empty")
 	}
 
-	err := json.UnmarshalJSON(taskJSON, &task)
+	task, err := taskStore.unmarshalString(taskJSON)
 	if err != nil {
-		return task, "", err
+		return nil, "", err
 	}
 
 	if task.Detail == nil || task.Detail.ClusterARN == nil || task.Detail.TaskARN == nil {
-		return task, "", errors.New("Cluster ARN and task ARN should not be empty in task JSON")
+		return nil, "", errors.New("Cluster ARN and task ARN should not be empty in task JSON")
 	}
 
-	clusterName, err := regex.GetClusterNameFromARN(aws.StringValue(task.Detail.ClusterARN))
+	clusterARN := aws.StringValue(task.Detail.ClusterARN)
+	clusterName, err := regex.GetClusterNameFromARN(clusterARN)
 	if err != nil {
-		return task, "", err
+		return nil, "", errors.Wrapf(err, "Error retrieving cluster name from ARN '%s' for task", clusterARN)
 	}
 
 	key, err := generateTaskKey(clusterName, aws.StringValue(task.Detail.TaskARN))
 	if err != nil {
-		return task, "", err
+		return nil, "", err
 	}
 
-	return task, key, nil
-}
-
-func (taskStore eventTaskStore) compressAndAddTask(key string, taskJSON string) error {
-	compressedTaskJSON, err := compress.Compress(taskJSON)
-	if err != nil {
-		return err
-	}
-
-	err = taskStore.datastore.Add(key, string(compressedTaskJSON))
-	if err != nil {
-		return err
-	}
-	return nil
+	return &task, key, nil
 }
 
 type taskFilter func(string, types.Task) bool
@@ -311,7 +279,7 @@ func (taskStore eventTaskStore) pipeBetweenChannels(ctx context.Context, cancel 
 				return
 			}
 			for _, v := range resp {
-				t, err := taskStore.uncompressAndUnmarshalString(v)
+				t, err := taskStore.unmarshalString(v)
 				if err != nil {
 					taskRespChan <- storetypes.TaskErrorWrapper{Task: types.Task{}, Err: err}
 					return
@@ -345,7 +313,7 @@ func (taskStore eventTaskStore) getTaskByKey(key string) (*types.Task, error) {
 
 	var task types.Task
 	for _, v := range resp {
-		task, err = taskStore.uncompressAndUnmarshalString(v)
+		task, err = taskStore.unmarshalString(v)
 		if err != nil {
 			return nil, err
 		}
@@ -370,7 +338,7 @@ func (taskStore eventTaskStore) getTasksByKeyPrefix(key string) ([]types.Task, e
 
 	tasks := []types.Task{}
 	for _, v := range resp {
-		task, err := taskStore.uncompressAndUnmarshalString(v)
+		task, err := taskStore.unmarshalString(v)
 		if err != nil {
 			return nil, err
 		}
@@ -380,16 +348,11 @@ func (taskStore eventTaskStore) getTasksByKeyPrefix(key string) ([]types.Task, e
 	return tasks, nil
 }
 
-func (taskStore eventTaskStore) uncompressAndUnmarshalString(val string) (types.Task, error) {
+func (taskStore eventTaskStore) unmarshalString(val string) (types.Task, error) {
 	var task types.Task
-
-	uncompressedVal, err := compress.Uncompress([]byte(val))
+	err := json.Unmarshal([]byte(val), &task)
 	if err != nil {
-		return task, err
-	}
-	err = json.UnmarshalJSON(uncompressedVal, &task)
-	if err != nil {
-		return task, err
+		return task, errors.Wrapf(err, "Error unmarshaling task '%s'", val)
 	}
 
 	return task, nil
@@ -397,10 +360,10 @@ func (taskStore eventTaskStore) uncompressAndUnmarshalString(val string) (types.
 
 func generateTaskKey(clusterName string, taskARN string) (string, error) {
 	if !regex.IsClusterName(clusterName) {
-		return "", errors.New("Cluster name does not match expected regex")
+		return "", errors.Errorf("Error generating task key. Cluster name '%s' does not match expected regex", clusterName)
 	}
 	if !regex.IsTaskARN(taskARN) {
-		return "", errors.New("Task ARN does not match expected regex")
+		return "", errors.Errorf("Error generating task key. Task ARN '%s' does not match expected regex", taskARN)
 	}
 	return taskKeyPrefix + clusterName + "/" + taskARN, nil
 }

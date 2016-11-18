@@ -1,9 +1,9 @@
 {
 	"ImportPath": "github.com/aws/amazon-ecs-event-stream-handler",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v74",
+	"GodepVersion": "v75",
 	"Packages": [
-		"../amazon-ecs-event-stream-handler/..."
+		"./..."
 	],
 	"Deps": [
 		{
@@ -203,6 +203,11 @@
 			"ImportPath": "github.com/coreos/etcd/clientv3",
 			"Comment": "v3.1.0-rc.0-275-g377f19b",
 			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/clientv3/concurrency",
+			"Comment": "v3.1.0-rc.0-97-gddc94aa",
+			"Rev": "ddc94aaf9e1890fb533af62937d684f812da1493"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes",

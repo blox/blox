@@ -14,21 +14,24 @@
 package store
 
 import (
+	"testing"
+
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type StoreTestSuite struct {
 	suite.Suite
-	datastore *mocks.MockDataStore
+	datastore   *mocks.MockDataStore
+	etcdTxStore *mocks.MockEtcdTXStore
 }
 
 func (testSuite *StoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(testSuite.T())
 	testSuite.datastore = mocks.NewMockDataStore(mockCtrl)
+	testSuite.etcdTxStore = mocks.NewMockEtcdTXStore(mockCtrl)
 }
 
 func TestStoreTestSuite(t *testing.T) {
@@ -36,12 +39,17 @@ func TestStoreTestSuite(t *testing.T) {
 }
 
 func (testSuite *StoreTestSuite) TestNewStoresDatastoreNil() {
-	_, err := NewStores(nil)
-	assert.Error(testSuite.T(), err, "Expected an error when NewStores is initialized with nil")
+	_, err := NewStores(nil, testSuite.etcdTxStore)
+	assert.Error(testSuite.T(), err, "Expected an error when NewStores is initialized with nil datastore")
+}
+
+func (testSuite *StoreTestSuite) TestNewStoresEtcdTxStoreNil() {
+	_, err := NewStores(testSuite.datastore, nil)
+	assert.Error(testSuite.T(), err, "Expected an error when NewStores is initialized with nil etcd transaction store")
 }
 
 func (testSuite *StoreTestSuite) TestNewStores() {
-	stores, err := NewStores(testSuite.datastore)
+	stores, err := NewStores(testSuite.datastore, testSuite.etcdTxStore)
 	assert.Nil(testSuite.T(), err, "Unexpected error when calling NewStores")
 	assert.NotNil(testSuite.T(), stores, "Stores should not be nil")
 	assert.NotNil(testSuite.T(), stores.TaskStore, "TaskStore should not be nil")

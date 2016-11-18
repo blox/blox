@@ -18,13 +18,13 @@ type Stores struct {
 	ContainerInstanceStore ContainerInstanceStore
 }
 
-func NewStores(datastore DataStore) (Stores, error) {
-	taskStore, err := NewTaskStore(datastore)
+func NewStores(datastore DataStore, etcdTXStore EtcdTXStore) (Stores, error) {
+	taskStore, err := NewTaskStore(datastore, etcdTXStore)
 	if err != nil {
 		return Stores{}, err
 	}
 
-	containerInstanceStore, err := NewContainerInstanceStore(datastore)
+	containerInstanceStore, err := NewContainerInstanceStore(datastore, etcdTXStore)
 	if err != nil {
 		return Stores{}, err
 	}

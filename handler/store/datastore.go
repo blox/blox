@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/aws/amazon-ecs-event-stream-handler/handler/clients"
-	etcd "github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/pkg/errors"
 )
@@ -41,6 +41,7 @@ type etcdDataStore struct {
 	etcdInterface clients.EtcdInterface
 }
 
+// NewDataStore initializes the etcdDataStore struct
 func NewDataStore(etcdInterface clients.EtcdInterface) (DataStore, error) {
 	if etcdInterface == nil {
 		return nil, errors.Errorf("Invalid etcd input")
@@ -78,7 +79,7 @@ func (datastore etcdDataStore) GetWithPrefix(keyPrefix string) (map[string]strin
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-	resp, err := datastore.etcdInterface.Get(ctx, keyPrefix, etcd.WithPrefix())
+	resp, err := datastore.etcdInterface.Get(ctx, keyPrefix, clientv3.WithPrefix())
 	defer cancel()
 
 	if err != nil {
@@ -142,7 +143,7 @@ func (datastore etcdDataStore) stream(ctx context.Context, keyPrefix string, kvC
 	etcdCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	watchChan := datastore.etcdInterface.Watch(etcdCtx, keyPrefix, etcd.WithPrefix())
+	watchChan := datastore.etcdInterface.Watch(etcdCtx, keyPrefix, clientv3.WithPrefix())
 	streamIdleTimer := time.NewTimer(streamIdleTimeout)
 	defer streamIdleTimer.Stop()
 
@@ -175,7 +176,7 @@ func resetStreamIdleTimer(t *time.Timer) {
 	t.Reset(streamIdleTimeout)
 }
 
-func handleGetResponse(resp *etcd.GetResponse) map[string]string {
+func handleGetResponse(resp *clientv3.GetResponse) map[string]string {
 	kv := make(map[string]string)
 
 	if resp == nil || resp.Kvs == nil {

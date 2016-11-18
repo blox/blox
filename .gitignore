@@ -7,3 +7,7 @@ amazon-ecs-event-stream-handler
 *.swp
 .idea/
 *.iml
+/internal/features/e2einstancesteps/importmarker__.go
+/internal/features/e2etasksteps/importmarker__.go
+/internal/features/wrappers/importmarker__.go
+/internal/features/_test/

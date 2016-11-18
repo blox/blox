@@ -14,10 +14,14 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/pkg/errors"
 )
+
+const invalidInstanceVersion = int64(-100)
 
 // ContainerInstance defines the structure of the container instance json received from the event stream
 type ContainerInstance struct {
@@ -70,4 +74,20 @@ type VersionInfo struct {
 	AgentHash     string `json:"agentHash,omitempty"`
 	AgentVersion  string `json:"agentVersion,omitempty"`
 	DockerVersion string `json:"dockerVersion,omitempty"`
+}
+
+// GetVersion retrieces the version of the the container instance represented by the instanceJSON string
+func (instance ContainerInstance) GetVersion(instanceJSON string) (int64, error) {
+	ins := &ContainerInstance{}
+	err := json.Unmarshal([]byte(instanceJSON), ins)
+	if err != nil {
+		return invalidInstanceVersion, errors.Wrapf(err, "Error unmarshaling instance")
+	}
+	if ins.Detail == nil {
+		return invalidInstanceVersion, errors.New("Instance detail is not set")
+	}
+	if ins.Detail.Version == nil {
+		return invalidInstanceVersion, errors.New("Instance version is not set")
+	}
+	return aws.Int64Value(ins.Detail.Version), nil
 }
