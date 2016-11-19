@@ -21,6 +21,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	describeInstancesPageSize = 100
+	describeTasksPageSize     = 100
+)
+
 // ECSWrapper defines methods to access wrapper methods to call ECS APIs
 type ECSWrapper interface {
 	ListAllClusters() ([]*string, error)
@@ -115,25 +120,31 @@ func (wrapper clientWrapper) DescribeTasks(clusterARN *string, taskARNs []*strin
 	if aws.StringValue(clusterARN) == "" {
 		return nil, nil, errors.New("Failed to describe ECS tasks. Error: Cluster cannot be empty")
 	}
+	tasks := make([]types.Task, 0)
+	failedTaskARNS := make([]string, 0)
 
-	// TODO: If len(taskARNs) > 100, split and make multiple ECS calls
-	in := ecs.DescribeTasksInput{
-		Cluster: clusterARN,
-		Tasks:   taskARNs,
-	}
+	for i := 0; i < len(taskARNs); i += describeTasksPageSize {
+		high := i + describeTasksPageSize
+		if high > len(taskARNs) {
+			high = len(taskARNs)
+		}
 
-	resp, err := wrapper.client.DescribeTasks(&in)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "Failed to describe ECS tasks.")
-	}
-	tasks := make([]types.Task, len(resp.Tasks))
-	for i := range resp.Tasks {
-		task := ToTask(*resp.Tasks[i])
-		tasks[i] = task
-	}
-	failedTaskARNS := make([]string, len(resp.Failures))
-	for i := range resp.Failures {
-		failedTaskARNS[i] = aws.StringValue(resp.Failures[i].Arn)
+		in := ecs.DescribeTasksInput{
+			Cluster: clusterARN,
+			Tasks:   taskARNs[i:high],
+		}
+
+		resp, err := wrapper.client.DescribeTasks(&in)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "Failed to describe ECS tasks.")
+		}
+		for i := range resp.Tasks {
+			task := ToTask(*resp.Tasks[i])
+			tasks = append(tasks, task)
+		}
+		for i := range resp.Failures {
+			failedTaskARNS = append(failedTaskARNS, aws.StringValue(resp.Failures[i].Arn))
+		}
 	}
 	return tasks, failedTaskARNS, nil
 }
@@ -180,25 +191,30 @@ func (wrapper clientWrapper) DescribeContainerInstances(clusterARN *string, inst
 	if aws.StringValue(clusterARN) == "" {
 		return nil, nil, errors.New("Failed to describe ECS container instances. Error: Cluster cannot be empty")
 	}
+	instances := make([]types.ContainerInstance, 0)
+	failedInstanceARNS := make([]string, 0)
 
-	// TODO: If len(instanceARNs) > 100, split and make multiple ECS calls
-	in := ecs.DescribeContainerInstancesInput{
-		Cluster:            clusterARN,
-		ContainerInstances: instanceARNs,
-	}
+	for i := 0; i < len(instanceARNs); i += describeInstancesPageSize {
+		high := i + describeInstancesPageSize
+		if high > len(instanceARNs) {
+			high = len(instanceARNs)
+		}
+		in := ecs.DescribeContainerInstancesInput{
+			Cluster:            clusterARN,
+			ContainerInstances: instanceARNs[i:high],
+		}
 
-	resp, err := wrapper.client.DescribeContainerInstances(&in)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "Failed to describe ECS container instances.")
-	}
-	instances := make([]types.ContainerInstance, len(resp.ContainerInstances))
-	for i := range resp.ContainerInstances {
-		ins := ToContainerInstance(*resp.ContainerInstances[i], *clusterARN)
-		instances[i] = ins
-	}
-	failedInstanceARNS := make([]string, len(resp.Failures))
-	for i := range resp.Failures {
-		failedInstanceARNS[i] = aws.StringValue(resp.Failures[i].Arn)
+		resp, err := wrapper.client.DescribeContainerInstances(&in)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "Failed to describe ECS container instances.")
+		}
+		for i := range resp.ContainerInstances {
+			ins := ToContainerInstance(*resp.ContainerInstances[i], *clusterARN)
+			instances = append(instances, ins)
+		}
+		for i := range resp.Failures {
+			failedInstanceARNS = append(failedInstanceARNS, aws.StringValue(resp.Failures[i].Arn))
+		}
 	}
 	return instances, failedInstanceARNS, nil
 }
