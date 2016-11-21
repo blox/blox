@@ -18,10 +18,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
+	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
+	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -156,7 +157,6 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentThereIsAnInProgressDeploym
 		}).Return(suite.deploymentEnvironment, nil)
 
 	suite.clusterState.EXPECT().ListInstances(gomock.Any()).Times(0)
-	suite.ecs.EXPECT().ListInstances(gomock.Any()).Times(0)
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -178,9 +178,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesFails() {
 			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(suite.deploymentEnvironment, nil)
 
-	//TODO: uncomment when using css
-	//suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
-	suite.ecs.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
+	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -201,9 +199,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsNil() {
 			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(suite.deploymentEnvironment, nil)
 
-	//TODO: uncomment when using css
-	//suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
-	suite.ecs.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, nil)
+	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, nil)
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -224,9 +220,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsEmpty() {
 			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(suite.deploymentEnvironment, nil)
 
-	//TODO: uncomment when using css
-	//suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
-	suite.ecs.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return([]*string{}, nil)
+	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return([]*models.ContainerInstance{}, nil)
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -247,9 +241,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentStartTasksFails() {
 			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(suite.deploymentEnvironment, nil)
 
-	//TODO: uncomment when using css
-	//suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
-	suite.ecs.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(suite.instanceARNs, nil)
+	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(createContainerInstances(suite.instanceARNs), nil)
 	suite.ecs.EXPECT().StartTask(suite.deploymentEnvironment.Cluster, suite.instanceARNs,
 		gomock.Any(), suite.deploymentEnvironment.DesiredTaskDefinition).Return(nil, errors.New("Start tasks failed"))
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
@@ -271,9 +263,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentUpdateDeploymentFails() {
 			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(suite.deploymentEnvironment, nil)
 
-	//TODO: uncomment when using css
-	//suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
-	suite.ecs.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(suite.instanceARNs, nil)
+	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(createContainerInstances(suite.instanceARNs), nil)
 
 	suite.ecs.EXPECT().StartTask(suite.deploymentEnvironment.Cluster, suite.instanceARNs,
 		gomock.Any(), suite.deploymentEnvironment.DesiredTaskDefinition).Return(suite.startTaskOutput, nil)
@@ -315,9 +305,7 @@ func createDeployment(suite *DeploymentTestSuite, token string) {
 			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(suite.deploymentEnvironment, nil)
 
-	//TODO: uncomment when using css
-	//suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
-	suite.ecs.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(suite.instanceARNs, nil)
+	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(createContainerInstances(suite.instanceARNs), nil)
 
 	suite.ecs.EXPECT().StartTask(suite.deploymentEnvironment.Cluster, suite.instanceARNs,
 		gomock.Any(), suite.deploymentEnvironment.DesiredTaskDefinition).Return(suite.startTaskOutput, nil)
@@ -479,4 +467,16 @@ func (suite *DeploymentTestSuite) TestListDeployments() {
 			}
 		}
 	}
+}
+
+func createContainerInstances(instanceARNs []*string) []*models.ContainerInstance {
+	containerInstances := make([]*models.ContainerInstance, 0, len(instanceARNs))
+	for _, i := range instanceARNs {
+		containerInstance := &models.ContainerInstance{
+			ContainerInstanceARN: i,
+		}
+		containerInstances = append(containerInstances, containerInstance)
+	}
+
+	return containerInstances
 }

@@ -90,9 +90,7 @@ func (d deployment) CreateDeployment(ctx context.Context,
 		return deployment, nil
 	}
 
-	//TODO: switch back to using css when bootstrapping is done
-	//instanceARNs, err := d.getInstanceARNs(*env)
-	instanceARNs, err := d.getECSClusterInstanceArns(*env)
+	instanceARNs, err := d.getInstanceARNs(*env)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error getting instances in cluster for environment %s", environmentName)
 	}
@@ -213,10 +211,6 @@ func (d deployment) getEnvironmentDeployments(ctx context.Context,
 	}
 
 	return deployments, nil
-}
-
-func (d deployment) getECSClusterInstanceArns(env types.Environment) ([]*string, error) {
-	return d.ecs.ListInstances(env.Cluster)
 }
 
 func (d deployment) getInstanceARNs(env types.Environment) ([]*string, error) {

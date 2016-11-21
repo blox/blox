@@ -53,17 +53,6 @@ func (_mr *_MockECSRecorder) StartTask(arg0, arg1, arg2, arg3 interface{}) *gomo
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "StartTask", arg0, arg1, arg2, arg3)
 }
 
-func (_m *MockECS) ListInstances(clusterArn string) ([]*string, error) {
-	ret := _m.ctrl.Call(_m, "ListInstances", clusterArn)
-	ret0, _ := ret[0].([]*string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-func (_mr *_MockECSRecorder) ListInstances(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListInstances", arg0)
-}
-
 func (_m *MockECS) ListClusters() ([]*string, error) {
 	ret := _m.ctrl.Call(_m, "ListClusters")
 	ret0, _ := ret[0].([]*string)

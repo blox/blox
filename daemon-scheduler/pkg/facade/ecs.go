@@ -31,7 +31,6 @@ type ECS interface {
 		startedBy string,
 		taskDefinition string) (*ecs.StartTaskOutput, error)
 
-	ListInstances(clusterArn string) ([]*string, error)
 	ListClusters() ([]*string, error)
 	DescribeCluster(cluster *string) (*ecs.Cluster, error)
 	DescribeTaskDefinition(taskDefinition *string) (*ecs.TaskDefinition, error)
@@ -83,35 +82,6 @@ func (c ecsClient) StartTask(
 
 	}
 	return output, nil
-}
-
-func (c ecsClient) ListInstances(clusterArn string) ([]*string, error) {
-	instances := []*string{}
-	var nextToken *string
-
-	for {
-		input := &ecs.ListContainerInstancesInput{
-			Cluster: aws.String(clusterArn),
-		}
-
-		//NOTE: can use ListContainerInstancesPages but we may want to collect as many as we can instead of short-circuiting on first error
-		resp, err := c.ecs.ListContainerInstances(input)
-		if err != nil {
-			return nil, err
-		}
-
-		if resp.ContainerInstanceArns != nil {
-			instances = append(instances, resp.ContainerInstanceArns...)
-		}
-
-		if aws.StringValue(nextToken) == "" {
-			break
-		}
-
-		input.NextToken = nextToken
-	}
-
-	return instances, nil
 }
 
 func (c ecsClient) DescribeCluster(cluster *string) (*ecs.Cluster, error) {

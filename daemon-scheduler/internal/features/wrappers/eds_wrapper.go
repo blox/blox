@@ -28,7 +28,7 @@ const (
 )
 
 type EDSWrapper struct {
-	client *client.AmazonEcsDaemonScheduler
+	client *client.BloxDaemonScheduler
 }
 
 func NewEDSWrapper() EDSWrapper {
