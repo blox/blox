@@ -1,5 +1,5 @@
-misc/certs/ca-certificates.crt
-out/
+*/misc/certs/ca-certificates.crt
+*/out/
 amazon-ecs-event-stream-handler
 *coverage.out
 /var/
