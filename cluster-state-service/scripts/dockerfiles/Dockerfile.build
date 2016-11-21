@@ -17,9 +17,9 @@ MAINTAINER Amazon Web Services, Inc.
 RUN mkdir -p /out
 VOLUME ['/out']
 
-RUN mkdir -p /go/src/github.com/aws/
+RUN mkdir -p /go/src/github.com/blox/
 
-WORKDIR /go/src/github.com/aws/amazon-ecs-event-stream-handler
+WORKDIR /go/src/github.com/blox/blox/cluster-state-service
 
 CMD ["make", "build"]
 

@@ -19,7 +19,7 @@ set -e
 package=${1?Must provide package}
 interfaces=${2?Must provide interface names}
 outputfile=${3?Must provide an output file}
-PROJECT_VENDOR="github.com\/aws\/amazon-ecs-event-stream-handler\/vendor\/"
+PROJECT_VENDOR="github.com\/blox\/blox\/vendor\/"
 
 export PATH="${GOPATH//://bin:}/bin:$PATH"
 

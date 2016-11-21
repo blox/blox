@@ -13,10 +13,10 @@
 
 # Not from scratch because we also want a little directory structure,
 # specifically /tmp
-FROM amazon/ecs-event-stream-handler-scratch:make
+FROM amazon/blox-cluster-state-service-scratch:make
 MAINTAINER Amazon Web Services, Inc.
 
-COPY out/ecs-event-stream-handler /ecs-event-stream-handler
+COPY out/cluster-state-service /cluster-state-service
 COPY ["LICENSE", "NOTICE", "/"]
 
 # Copy our bundled certs to the first place go will check: see
@@ -24,5 +24,5 @@ COPY ["LICENSE", "NOTICE", "/"]
 COPY misc/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 EXPOSE 80
-ENTRYPOINT ["/ecs-event-stream-handler"]
+ENTRYPOINT ["/cluster-state-service"]
 

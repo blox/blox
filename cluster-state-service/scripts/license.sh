@@ -16,7 +16,7 @@
 
 set -e
 outputfile=${1?Must provide an output file}
-inputfile="$(<../LICENSE)"
+inputfile="$(<../../LICENSE)"
 
 appendRepoLicense() {
   repo=$1
@@ -35,7 +35,7 @@ appendRepoLicense() {
 }
 
 for registry in github.com golang.org; do
-  for user in ./../vendor/$registry/*; do
+  for user in ./../../vendor/$registry/*; do
     for repo in $user/*; do
       appendRepoLicense $repo
     done;

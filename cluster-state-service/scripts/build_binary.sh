@@ -24,4 +24,4 @@ BINARY_DESTINATION_DIR=$1
 mkdir -p ${BINARY_DESTINATION_DIR}
 
 # Builds the handler binary from source in the specified destination paths
-GOOS=$TARGET_GOOS CGO_ENABLED=0 go build -installsuffix cgo -a -ldflags '-s' -o ${BINARY_DESTINATION_DIR}/ecs-event-stream-handler ./
+GOOS=$TARGET_GOOS CGO_ENABLED=0 go build -installsuffix cgo -a -ldflags '-s' -o ${BINARY_DESTINATION_DIR}/cluster-state-service ./

@@ -15,7 +15,7 @@
 # Create a scratch-like image that contains data/directories the agent expects
 # to exist. Currently there are no directories actually required here.
 
-mkdir ecs-event-stream-handler-scratch # include other directories that are needed here
-cd ecs-event-stream-handler-scratch
-tar -cv . | docker import - "amazon/ecs-event-stream-handler-scratch:make"
+mkdir blox-cluster-state-service-scratch # include other directories that are needed here
+cd blox-cluster-state-service-scratch
+tar -cv . | docker import - "amazon/blox-cluster-state-service-scratch:make"
 cd ..

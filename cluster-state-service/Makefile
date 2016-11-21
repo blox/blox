@@ -13,7 +13,7 @@
 
 SOURCEDIR=.
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
-LOCAL_BINARY=bin/local/ecs-event-stream-handler
+LOCAL_BINARY=out/cluster-state-service
 ROOT := $(shell pwd)
 
 .PHONY: all
@@ -21,7 +21,7 @@ all: clean build unit-tests
 
 .PHONY: generate-models
 generate-models:
-	. ./scripts/v1/generate_swagger_models.sh
+	./scripts/v1/generate_swagger_models.sh
 	@echo "Generated swagger models"
 
 .PHONY: build
@@ -29,47 +29,45 @@ build:	$(LOCAL_BINARY)
 
 $(LOCAL_BINARY): $(SOURCES)
 	./scripts/build_binary.sh ./out
-	@echo "Built event-stream handler"
+	@echo "Built cluster state service"
 
 .PHONY: generate
 generate: generate-models $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
 
-.PHONY: docker-build
-docker-build:
-	docker run -v $(shell pwd):/usr/src/app/src/github.com/aws/amazon-ecs-event-stream-handler \
-		--workdir=/usr/src/app/src/github.com/aws/amazon-ecs-event-stream-handler \
-		--env GOPATH=/usr/src/app \
-		golang:1.7 make $(LOCAL_BINARY)
-
 .PHONY: build-in-docker
 build-in-docker:
-	@docker build -f scripts/dockerfiles/Dockerfile.build -t "amazon/amazon-ecs-event-stream-handler-build:make" .
-	@docker run --net=none -v "$(shell pwd)/out:/out" -v "$(shell pwd):/go/src/github.com/aws/amazon-ecs-event-stream-handler" "amazon/amazon-ecs-event-stream-handler-build:make"
+	@docker build -f scripts/dockerfiles/Dockerfile.build -t "amazon/blox-cluster-state-service-build:make" .
+	@docker run --net=none -v "$(shell pwd)/out:/out" \
+	    -v "$(shell pwd):/go/src/github.com/blox/blox/cluster-state-service" \
+	    -v "$(shell dirname ${ROOT}):/go/src/github.com/blox/blox" \
+	    "amazon/blox-cluster-state-service-build:make"
 
 .PHONY: certs
 certs: misc/certs/ca-certificates.crt
 misc/certs/ca-certificates.crt:
-	docker build -t "amazon/amazon-ecs-event-stream-handler-cert-source:make" misc/certs/
-	docker run "amazon/amazon-ecs-event-stream-handler-cert-source:make" cat /etc/ssl/certs/ca-certificates.crt > misc/certs/ca-certificates.crt
+	docker build -t "amazon/blox-cluster-state-service-cert-source:make" misc/certs/
+	docker run "amazon/blox-cluster-state-service-cert-source:make" cat /etc/ssl/certs/ca-certificates.crt > misc/certs/ca-certificates.crt
 
 .PHONY: docker
 docker: certs build-in-docker
-	@cd scripts && ./create-ecs-event-stream-handler-scratch
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/amazon-ecs-event-stream-handler:make" .
-	@echo "Built Docker image \"amazon/amazon-ecs-event-stream-handler:make\""
+	@cd scripts && ./create-cluster-state-service-scratch
+	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/blox-cluster-state-service:make" .
+	@echo "Built Docker image \"amazon/blox-cluster-state-service:make\""
 
 .PHONY: docker-release
 docker-release:
-	@docker build -f scripts/dockerfiles/Dockerfile.cleanbuild -t "amazon/amazon-ecs-event-stream-handler-cleanbuild:make" .
-	@echo "Built Docker image \"amazon/amazon-ecs-event-stream-handler-cleanbuild:make\""
-	@docker run --net=none -v "$(shell pwd)/out:/out" -v "$(shell pwd):/src/amazon-ecs-event-stream-handler" "amazon/amazon-ecs-event-stream-handler-cleanbuild:make"
+	@docker build -f scripts/dockerfiles/Dockerfile.cleanbuild -t "amazon/blox-cluster-state-service-cleanbuild:make" .
+	@echo "Built Docker image \"amazon/blox-cluster-state-service-cleanbuild:make\""
+	@docker run --net=none -v "$(shell pwd)/out:/out" \
+	    -v "$(shell dirname ${ROOT}):/src/blox" \
+	    "amazon/blox-cluster-state-service-cleanbuild:make"
 
 .PHONY: release
 release: certs docker-release
-	@cd scripts && ./create-ecs-event-stream-handler-scratch
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/amazon-ecs-event-stream-handler:latest" .
-	@echo "Built Docker image \"amazon/amazon-ecs-event-stream-handler:latest\""
+	@cd scripts && ./create-cluster-state-service-scratch
+	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/blox-cluster-state-service:latest" .
+	@echo "Built Docker image \"amazon/blox-cluster-state-service:latest\""
 
 .PHONY: get-deps
 get-deps:
