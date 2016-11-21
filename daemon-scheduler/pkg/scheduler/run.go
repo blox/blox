@@ -62,6 +62,12 @@ func Run(schedulerBindAddr string) error {
 		return err
 	}
 
+	taskStore, err := store.NewTaskStore(datastore)
+	if err != nil {
+		log.Criticalf("Could not initialize the task store: %+v", err)
+		return err
+	}
+
 	ecsClient, err := clients.NewECSClient()
 	if err != nil {
 		log.Criticalf("Could not initialize ecs client: %+v", err)
@@ -77,7 +83,7 @@ func Run(schedulerBindAddr string) error {
 		return err
 	}
 
-	environment, err := deployment.NewEnvironment(environmentStore)
+	environment, err := deployment.NewEnvironment(environmentStore, taskStore)
 	if err != nil {
 		log.Criticalf("Could not initialize environment: %+v", err)
 		return err
