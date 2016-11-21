@@ -47,5 +47,6 @@ it launches the task in those nodes as well.`,
 	}
 	rootCmd.PersistentFlags().StringArrayVar(&config.EtcdEndpoints, "etcd-endpoint", make([]string, 0), "Etcd node addresses")
 	rootCmd.PersistentFlags().StringVar(&config.SchedulerBindAddr, "bind", "", "Scheduler bind address")
+	rootCmd.PersistentFlags().StringVar(&config.ClusterStateServiceEndpoint, "css-endpoint", "", "Cluster state service address")
 	return rootCmd
 }
