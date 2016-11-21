@@ -45,6 +45,7 @@ clean:
 
 $(SWAGGER_GEN): $(SWAGGER_SPEC)
 	./scripts/generate_swagger_artifacts.sh
+	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
 
 .PHONY: generate
 generate: $(SWAGGER_GEN) $(SOURCES)
