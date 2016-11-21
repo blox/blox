@@ -19,3 +19,4 @@ mkdir blox-cluster-state-service-scratch # include other directories that are ne
 cd blox-cluster-state-service-scratch
 tar -cv . | docker import - "amazon/blox-cluster-state-service-scratch:make"
 cd ..
+rmdir blox-cluster-state-service-scratch

@@ -17,7 +17,7 @@ FROM amazon/blox-cluster-state-service-scratch:make
 MAINTAINER Amazon Web Services, Inc.
 
 COPY out/cluster-state-service /cluster-state-service
-COPY ["LICENSE", "NOTICE", "/"]
+COPY out/LICENSE /LICENSE
 
 # Copy our bundled certs to the first place go will check: see
 # https://golang.org/src/pkg/crypto/x509/root_unix.go

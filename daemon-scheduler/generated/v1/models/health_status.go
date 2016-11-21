@@ -37,16 +37,17 @@ const (
 // for schema
 var healthStatusEnum []interface{}
 
-func (m HealthStatus) validateHealthStatusEnum(path, location string, value HealthStatus) error {
-	if healthStatusEnum == nil {
-		var res []HealthStatus
-		if err := json.Unmarshal([]byte(`["healthy","unhealthy"]`), &res); err != nil {
-			return err
-		}
-		for _, v := range res {
-			healthStatusEnum = append(healthStatusEnum, v)
-		}
+func init() {
+	var res []HealthStatus
+	if err := json.Unmarshal([]byte(`["healthy","unhealthy"]`), &res); err != nil {
+		panic(err)
 	}
+	for _, v := range res {
+		healthStatusEnum = append(healthStatusEnum, v)
+	}
+}
+
+func (m HealthStatus) validateHealthStatusEnum(path, location string, value HealthStatus) error {
 	if err := validate.Enum(path, location, value, healthStatusEnum); err != nil {
 		return err
 	}

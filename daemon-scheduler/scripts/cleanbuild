@@ -17,7 +17,7 @@
 
 echo "Starting cleanbuild"
 
-cd /src/amazon-ecs-daemon-scheduler
+cd /src/blox
 DIRTY_WARNING=$(cat <<EOW
 ***WARNING***
 You currently have uncommitted or unstaged changes in your git repository.
@@ -29,11 +29,11 @@ EOW
 [ ! -z "$(git status --porcelain)" ] && echo "$DIRTY_WARNING"
 
 # Fresh clone to ensure our build doesn't rely on anything outside of vcs
-git clone --quiet /src/amazon-ecs-daemon-scheduler /go/src/github.com/aws/amazon-ecs-daemon-scheduler
+git clone --quiet /src/blox /go/src/github.com/blox/blox
 
 # Allows the build to be marked as 'clean' so we can distinguish a properly
 # created build.
-export AMAZON_ECS_DAEMON_SCHEDULER="cleanbuild"
+export BLOX_DAEMON_SCHEDULER="cleanbuild"
 
-cd /go/src/github.com/aws/amazon-ecs-daemon-scheduler
+cd /go/src/github.com/blox/blox/daemon-scheduler
 exec ./scripts/build_binary.sh /out

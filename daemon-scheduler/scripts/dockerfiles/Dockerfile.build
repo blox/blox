@@ -17,8 +17,8 @@ MAINTAINER Amazon Web Services, Inc.
 RUN mkdir -p /out
 VOLUME ['/out']
 
-RUN mkdir -p /go/src/github.com/aws/
+RUN mkdir -p /go/src/github.com/blox/
 
-WORKDIR /go/src/github.com/aws/amazon-ecs-daemon-scheduler
+WORKDIR /go/src/github.com/blox/blox/daemon-scheduler
 
 CMD ["make", "build"]

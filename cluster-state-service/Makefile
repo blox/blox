@@ -35,10 +35,11 @@ $(LOCAL_BINARY): $(SOURCES)
 generate: generate-models $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
 
-.PHONY: build-in-docker
+.PHONY: generate build-in-docker
 build-in-docker:
 	@docker build -f scripts/dockerfiles/Dockerfile.build -t "amazon/blox-cluster-state-service-build:make" .
-	@docker run --net=none -v "$(shell pwd)/out:/out" \
+	@docker run --net=none \
+	    -v "$(shell pwd)/out:/out" \
 	    -v "$(shell pwd):/go/src/github.com/blox/blox/cluster-state-service" \
 	    -v "$(shell dirname ${ROOT}):/go/src/github.com/blox/blox" \
 	    "amazon/blox-cluster-state-service-build:make"
@@ -59,7 +60,8 @@ docker: certs build-in-docker
 docker-release:
 	@docker build -f scripts/dockerfiles/Dockerfile.cleanbuild -t "amazon/blox-cluster-state-service-cleanbuild:make" .
 	@echo "Built Docker image \"amazon/blox-cluster-state-service-cleanbuild:make\""
-	@docker run --net=none -v "$(shell pwd)/out:/out" \
+	@docker run --net=none \
+	    -v "$(shell pwd)/out:/out" \
 	    -v "$(shell dirname ${ROOT}):/src/blox" \
 	    "amazon/blox-cluster-state-service-cleanbuild:make"
 

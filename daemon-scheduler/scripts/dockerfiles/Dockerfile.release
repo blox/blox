@@ -13,15 +13,15 @@
 
 # Not from scratch because we also want a little directory structure,
 # specifically /tmp
-FROM amazon/ecs-daemon-scheduler-scratch:make
+FROM amazon/blox-daemon-scheduler-scratch:make
 MAINTAINER Amazon Web Services, Inc.
 
-COPY out/ecs-daemon-scheduler /ecs-daemon-scheduler
-COPY ["LICENSE", "NOTICE", "/"]
+COPY out/daemon-scheduler /daemon-scheduler
+COPY out/LICENSE /LICENSE
 
 # Copy our bundled certs to the first place go will check: see
 # https://golang.org/src/pkg/crypto/x509/root_unix.go
 COPY misc/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 EXPOSE 2000
-ENTRYPOINT ["/ecs-daemon-scheduler"]
+ENTRYPOINT ["/daemon-scheduler"]

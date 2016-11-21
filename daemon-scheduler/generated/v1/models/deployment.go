@@ -31,14 +31,14 @@ import (
 type Deployment struct {
 
 	// List of ECS task ARNs started by this deployment
-	CurrentTasks []string `json:"currentTasks,omitempty"`
+	CurrentTasks []string `json:"currentTasks"`
 
 	// environment name
 	// Required: true
 	EnvironmentName *string `json:"environmentName"`
 
 	// List of ECS container-instance ARNs where deployment failed
-	FailedInstances []string `json:"failedInstances,omitempty"`
+	FailedInstances []string `json:"failedInstances"`
 
 	// id
 	// Required: true
@@ -131,6 +131,16 @@ func (m *Deployment) validateID(formats strfmt.Registry) error {
 
 var deploymentTypeStatusPropEnum []interface{}
 
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["pending","running","completed"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		deploymentTypeStatusPropEnum = append(deploymentTypeStatusPropEnum, v)
+	}
+}
+
 const (
 	deploymentStatusPending   string = "pending"
 	deploymentStatusRunning   string = "running"
@@ -139,15 +149,6 @@ const (
 
 // prop value enum
 func (m *Deployment) validateStatusEnum(path, location string, value string) error {
-	if deploymentTypeStatusPropEnum == nil {
-		var res []string
-		if err := json.Unmarshal([]byte(`["pending","running","completed"]`), &res); err != nil {
-			return err
-		}
-		for _, v := range res {
-			deploymentTypeStatusPropEnum = append(deploymentTypeStatusPropEnum, v)
-		}
-	}
 	if err := validate.Enum(path, location, value, deploymentTypeStatusPropEnum); err != nil {
 		return err
 	}

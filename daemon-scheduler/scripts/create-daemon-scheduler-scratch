@@ -15,7 +15,8 @@
 # Create a scratch-like image that contains data/directories the agent expects
 # to exist. Currently there are no directories actually required here.
 
-mkdir ecs-daemon-scheduler-scratch # include other directories that are needed here
-cd ecs-daemon-scheduler-scratch
-tar -cv . | docker import - "amazon/ecs-daemon-scheduler-scratch:make"
+mkdir blox-daemon-scheduler-scratch # include other directories that are needed here
+cd blox-daemon-scheduler-scratch
+tar -cv . | docker import - "amazon/blox-daemon-scheduler-scratch:make"
 cd ..
+rmdir blox-daemon-scheduler-scratch

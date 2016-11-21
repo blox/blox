@@ -15,24 +15,24 @@ SOURCEDIR=.
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 SWAGGER_SPEC := generated/v1/swagger.json
 SWAGGER_GEN := $(shell find ./generated/v1 -name '*.go')
-LOCAL_BINARY=bin/local/ecs-daemon-scheduler
-GOINSTALL_BINARY=$(GOPATH)/bin/amazon-ecs-daemon-scheduler
+LOCAL_BINARY=out/daemon-scheduler
+GOINSTALL_BINARY=$(GOPATH)/bin/daemon-scheduler
 ROOT := $(shell pwd)
 
 .PHONY: all
 all: clean build unit-tests
-
-.PHONY: build
-build: generate $(LOCAL_BINARY)
 
 .PHONY: build-incr
 build-incr: generate
 	go install ./...
 	cp $(GOINSTALL_BINARY) $(LOCAL_BINARY)
 
+.PHONY: build
+build: $(LOCAL_BINARY)
+
 $(LOCAL_BINARY): $(SOURCES)
 	./scripts/build_binary.sh ./out
-	@echo "Built ECS Daemon Scheduler"
+	@echo "Built Blox Daemon Scheduler"
 
 .PHONY: unit-tests
 unit-tests:
@@ -50,41 +50,41 @@ $(SWAGGER_GEN): $(SWAGGER_SPEC)
 generate: $(SWAGGER_GEN) $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
 
-.PHONY: docker-build
-docker-build:
-	docker run -v $(shell pwd):/usr/src/app/src/github.com/aws/amazon-ecs-daemon-scheduler \
-		--workdir=/usr/src/app/src/github.com/aws/amazon-ecs-daemon-scheduler \
-		--env GOPATH=/usr/src/app \
-		golang:1.7 make $(LOCAL_BINARY)
-
-.PHONY: build-in-docker
+.PHONY: generate build-in-docker
 build-in-docker:
-	@docker build -f scripts/dockerfiles/Dockerfile.build -t "amazon/amazon-ecs-daemon-scheduler-build:make" .
-	@docker run --net=none -v "$(shell pwd)/out:/out" -v "$(shell pwd):/go/src/github.com/aws/amazon-ecs-daemon-scheduler" "amazon/amazon-ecs-daemon-scheduler-build:make"
+	@docker build -f scripts/dockerfiles/Dockerfile.build -t "amazon/blox-daemon-scheduler:make" .
+	@docker run --net=none \
+	    -v "$(shell pwd)/out:/out" \
+	    -v "$(shell pwd):/go/src/github.com/blox/blox/daemon-scheduler" \
+	    -v "$(shell dirname ${ROOT}):/go/src/github.com/blox/blox" \
+	    "amazon/blox-daemon-scheduler:make"
 
 .PHONY: certs
 certs: misc/certs/ca-certificates.crt
 misc/certs/ca-certificates.crt:
-	docker build -t "amazon/amazon-ecs-daemon-scheduler-cert-source:make" misc/certs/
-	docker run "amazon/amazon-ecs-daemon-scheduler-cert-source:make" cat /etc/ssl/certs/ca-certificates.crt > misc/certs/ca-certificates.crt
+	docker build -t "amazon/blox-daemon-scheduler-cert-source:make" misc/certs/
+	docker run "amazon/blox-daemon-scheduler-cert-source:make" cat /etc/ssl/certs/ca-certificates.crt > misc/certs/ca-certificates.crt
 
 .PHONY: docker
-docker: certs build-in-docker
-	@cd scripts && ./create-ecs-daemon-scheduler-scratch
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/amazon-ecs-daemon-scheduler:make" .
-	@echo "Built Docker image \"amazon/amazon-ecs-daemon-scheduler:make\""
+docker: certs generate build-in-docker
+	@cd scripts && ./create-daemon-scheduler-scratch
+	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/blox-daemon-scheduler:make" .
+	@echo "Built Docker image \"amazon/blox-daemon-scheduler:make\""
 
 .PHONY: docker-release
 docker-release:
-	@docker build -f scripts/dockerfiles/Dockerfile.cleanbuild -t "amazon/amazon-ecs-daemon-scheduler-cleanbuild:make" .
-	@echo "Built Docker image \"amazon/amazon-ecs-daemon-scheduler-cleanbuild:make\""
-	@docker run --net=none -v "$(shell pwd)/out:/out" -v "$(shell pwd):/src/amazon-ecs-daemon-scheduler" "amazon/amazon-ecs-daemon-scheduler-cleanbuild:make"
+	@docker build -f scripts/dockerfiles/Dockerfile.cleanbuild -t "amazon/blox-daemon-scheduler-cleanbuild:make" .
+	@echo "Built Docker image \"amazon/blox-daemon-scheduler-cleanbuild:make\""
+	@docker run --net=none \
+	    -v "$(shell pwd)/out:/out" \
+	    -v "$(shell dirname ${ROOT}):/src/blox" \
+	    "amazon/blox-daemon-scheduler-cleanbuild:make"
 
 .PHONY: release
-release: certs docker-release
-	@cd scripts && ./create-ecs-daemon-scheduler-scratch
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/amazon-ecs-daemon-scheduler:latest" .
-	@echo "Built Docker image \"amazon/amazon-ecs-daemon-scheduler:latest\""
+release: certs generate docker-release
+	@cd scripts && ./create-daemon-scheduler-scratch
+	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/blox-daemon-scheduler:latest" .
+	@echo "Built Docker image \"amazon/blox-daemon-scheduler:latest\""
 
 .PHONY: get-deps
 get-deps:
