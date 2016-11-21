@@ -313,9 +313,20 @@ func init() {
 
 	Then(`^the deployment should have (\d+) task(?:|s) running within (\d+) seconds$`, func(count int, seconds int) {
 		ok, err := doSomething(time.Duration(seconds)*time.Second, 1*time.Second, func() (bool, error) {
-			tasks, err := ecsWrapper.ListTasks(cluster)
+			tasks, err := ecsWrapper.ListTasks(cluster, aws.String(deploymentID))
 			if err != nil {
-				return false, err
+				return false, errors.Wrapf(err, "Error calling ListTasks for cluster %s and deployment %s", cluster, deploymentID)
+			}
+			runningTasks := []*string{}
+
+			for _, task := range tasks {
+				ecsTask, err := ecsWrapper.DescribeTask(cluster, aws.StringValue(task))
+				if err != nil {
+					return false, err
+				}
+				if aws.StringValue(ecsTask.LastStatus) == taskRunning {
+					runningTasks = append(runningTasks, ecsTask.TaskArn)
+				}
 			}
 			return count == len(tasks), nil
 		})
@@ -344,7 +355,7 @@ func init() {
 	})
 
 	And(`^I stop the tasks running in cluster$`, func() {
-		tasks, err := ecsWrapper.ListTasks(cluster)
+		tasks, err := ecsWrapper.ListTasks(cluster, nil)
 		if err != nil {
 			T.Errorf(err.Error())
 			return

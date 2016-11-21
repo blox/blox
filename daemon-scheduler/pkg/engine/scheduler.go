@@ -41,18 +41,29 @@ type Scheduler struct {
 	deploymentSvc  deployment.Deployment
 	css            facade.ClusterState
 	events         chan<- Event
+	executionState map[string]environmentExecutionState
+	inProgress     bool
+	inProgressLock sync.RWMutex
+}
+
+type environmentExecutionState struct {
+	environment    types.Environment
+	trackingInfo   map[string]time.Time
 	inProgress     bool
 	inProgressLock sync.RWMutex
 }
 
 type instanceLookupResult struct {
-	newInstances      []*string
-	deployedInstances map[string][]*deployedTask
+	totalInstanceCount int
+	newInstances       []*string
+	deployedInstances  map[string][]*deployedTask
 }
 
 type deployedTask struct {
-	task       string
-	deployment *types.Deployment
+	taskARN                 string
+	instanceARN             string
+	deploymentID            string
+	availableInClusterState bool
 }
 
 func StartScheduler(ctx context.Context, events chan<- Event, environmentSvc deployment.Environment,
@@ -63,6 +74,7 @@ func StartScheduler(ctx context.Context, events chan<- Event, environmentSvc dep
 		deploymentSvc:  deploymentSvc,
 		css:            css,
 		events:         events,
+		executionState: make(map[string]environmentExecutionState),
 		inProgress:     false,
 	}
 	scheduler.loop()
@@ -104,17 +116,28 @@ func (scheduler Scheduler) runOnce() error {
 		return errors.Wrapf(err, "Error getting environment")
 	}
 
+	log.Debugf("Found %d environments", len(environments))
+
 	for _, environment := range environments {
+		_, ok := scheduler.executionState[environment.Name]
+		if !ok {
+			scheduler.executionState[environment.Name] = environmentExecutionState{
+				environment:  environment,
+				trackingInfo: make(map[string]time.Time),
+				inProgress:   false,
+			}
+		}
+		state := scheduler.executionState[environment.Name]
 		// processing for environments is independent, so we can do them concurrently
-		go func(environment types.Environment) {
-			err := scheduler.runForEnvironment(&environment)
+		go func(state environmentExecutionState) {
+			err := scheduler.runForEnvironment(&state)
 			if err != nil {
 				// TODO: we may want to report this for better ux
-				log.Errorf("Error running this iteration of Scheduler for environment %s: %v", environment.Name, err)
+				log.Errorf("[%s] Error running this iteration of Scheduler for environment : %v", state.environment.Name, err)
 				return
 			}
-			log.Infof("Done running this iteration of scheduler for environment %s", environment.Name)
-		}(environment)
+			log.Infof("[%s] Done running this iteration of scheduler for environment", state.environment.Name)
+		}(state)
 	}
 
 	return nil
@@ -132,25 +155,52 @@ func (scheduler Scheduler) isInProgress() bool {
 	return scheduler.inProgress
 }
 
-func (scheduler Scheduler) runForEnvironment(environment *types.Environment) error {
-	currentDeployment, err := scheduler.getCurrentDeployment(environment)
+func (state *environmentExecutionState) setInProgress(val bool) {
+	lock := state.inProgressLock
+	lock.Lock()
+	defer lock.Unlock()
+	state.inProgress = val
+}
+
+func (state *environmentExecutionState) isInProgress() bool {
+	lock := state.inProgressLock
+	lock.RLock()
+	defer lock.RUnlock()
+	return state.inProgress
+}
+
+func (scheduler Scheduler) runForEnvironment(state *environmentExecutionState) error {
+	environment := state.environment
+	if state.isInProgress() {
+		log.Info("Execution for environment %s is already in progress", environment.Name)
+		return nil
+	}
+	state.setInProgress(true)
+	defer state.setInProgress(false)
+
+	log.Debugf("[%s] Instances tracked under environment = %d", environment.Name, len(state.trackingInfo))
+
+	currentDeployment, err := scheduler.getCurrentDeployment(&environment)
 	if err != nil {
 		return err
 	}
 
 	if currentDeployment == nil {
-		log.Infof("No deployment available for environment %s", environment.Name)
+		log.Infof("[%s] No deployment available for environment", environment.Name)
 		return nil
 	}
 
-	lookupResult, err := scheduler.lookupInstances(environment)
+	lookupResult, err := scheduler.lookupInstances(state)
 	if err != nil {
 		return errors.Wrapf(err, "Error finding instances to deploy for environment %s", environment.Name)
 	}
 
-	scheduler.deployToNewInstances(environment, lookupResult)
+	log.Debugf("[%s] Instance lookup result: new=%d, deployed=%d, total=%d",
+		environment.Name, len(lookupResult.newInstances), len(lookupResult.deployedInstances), lookupResult.totalInstanceCount)
 
-	err = scheduler.updateDeployedInstances(environment, currentDeployment, lookupResult)
+	scheduler.deployToNewInstances(state, lookupResult)
+
+	err = scheduler.updateDeployedInstances(state, currentDeployment, lookupResult)
 	if err != nil {
 		return errors.Wrapf(err, "Error updating deployed instances for environment %s", environment.Name)
 	}
@@ -169,37 +219,53 @@ func (scheduler Scheduler) getCurrentDeployment(environment *types.Environment) 
 }
 
 // updateDeployedInstances performs deployment on instances which already have some version of environment deployed
-func (scheduler Scheduler) updateDeployedInstances(environment *types.Environment, currentDeployment *types.Deployment, result *instanceLookupResult) error {
+func (scheduler Scheduler) updateDeployedInstances(state *environmentExecutionState, currentDeployment *types.Deployment, result *instanceLookupResult) error {
+	environment := state.environment
 	// go through already deployed instances and select the tasks which need to be replaced
 	for instanceARN, deployedTasks := range result.deployedInstances {
-		instanceRunningCurrent := false
-		tasks := make([]string, 0)
+		shouldDeploy := true
+		tasksToStop := make([]string, 0)
 		for _, dt := range deployedTasks {
-			if dt.deployment.ID == currentDeployment.ID {
-				//NOTE: in a pathological scenario there can be > 1 tasks corresponding
-				//to current deployment running, we will stop all but one of those
-				if !instanceRunningCurrent {
-					instanceRunningCurrent = true
-					continue
+			if dt.availableInClusterState {
+				if dt.deploymentID == currentDeployment.ID {
+					//now that we know this deployment made it to instance we can safely delete from our tracking data
+					delete(state.trackingInfo, instanceARN)
+					//NOTE: in a pathological scenario there can be > 1 tasks corresponding
+					//to current deployment running, we will stop all but one of those
+					if shouldDeploy {
+						shouldDeploy = false
+						continue
+					}
+				}
+				log.Debugf("[%s] Adding task %s to stop tasks list", environment.Name, dt.taskARN)
+				tasksToStop = append(tasksToStop, dt.taskARN)
+			} else {
+				deployedAt, ok := state.trackingInfo[instanceARN]
+				if ok {
+					//if deployment happened 30secs ago and we haven't heard from cluster-state we assume something is wrong and we should deploy
+					if time.Now().UTC().Sub(deployedAt) < maxClusterStateLag {
+						//we assume that we already deployed and skip
+						shouldDeploy = false
+					}
 				}
 			}
-			tasks = append(tasks, dt.task)
 		}
 
 		// order is to stop existing task(s) and start new one
-		if len(tasks) > 0 {
-			log.Debugf("Sending StopTasksEvent with %d tasks", len(tasks))
+		if len(tasksToStop) > 0 {
+			log.Debugf("[%s] Sending StopTasksEvent with %d tasks", environment.Name, len(tasksToStop))
 			scheduler.events <- StopTasksEvent{
 				Cluster:     environment.Cluster,
-				Tasks:       tasks,
-				Environment: *environment,
+				Tasks:       tasksToStop,
+				Environment: environment,
 			}
 		}
 
-		if !instanceRunningCurrent {
-			log.Debugf("Sending StartDeploymentEvent for deployment %s to instance %s", currentDeployment.ID, instanceARN)
+		if shouldDeploy {
+			log.Debugf("[%s] Sending StartDeploymentEvent for deployment %s to instance %s", environment.Name, currentDeployment.ID, instanceARN)
+			state.trackingInfo[instanceARN] = time.Now().UTC()
 			scheduler.events <- StartDeploymentEvent{
-				Environment: *environment,
+				Environment: environment,
 				Instances:   []*string{aws.String(instanceARN)},
 			}
 		}
@@ -209,18 +275,23 @@ func (scheduler Scheduler) updateDeployedInstances(environment *types.Environmen
 }
 
 // deployToNewInstances performs deployment on instances which never got any deployment for the given environment
-func (scheduler Scheduler) deployToNewInstances(environment *types.Environment, result *instanceLookupResult) {
+func (scheduler Scheduler) deployToNewInstances(state *environmentExecutionState, result *instanceLookupResult) {
 	if len(result.newInstances) > 0 {
+		for _, instanceARN := range result.newInstances {
+			state.trackingInfo[aws.StringValue(instanceARN)] = time.Now().UTC()
+		}
 		event := StartDeploymentEvent{
-			Environment: *environment,
+			Environment: state.environment,
 			Instances:   result.newInstances,
 		}
 		scheduler.events <- event
+		log.Debugf("Sent event to start tasks on %d instances", len(result.newInstances))
 	}
 }
 
 // lookupInstances returns instanceLookupResult struct containing the state of all instances in the cluster corresponding to environment
-func (scheduler Scheduler) lookupInstances(environment *types.Environment) (*instanceLookupResult, error) {
+func (scheduler Scheduler) lookupInstances(state *environmentExecutionState) (*instanceLookupResult, error) {
+	environment := state.environment
 
 	// get all instances in Cluster
 	instances, err := scheduler.css.ListInstances(environment.Cluster)
@@ -235,11 +306,12 @@ func (scheduler Scheduler) lookupInstances(environment *types.Environment) (*ins
 	}
 
 	result := &instanceLookupResult{
-		newInstances:      make([]*string, 0),
-		deployedInstances: make(map[string][]*deployedTask),
+		totalInstanceCount: 0,
+		newInstances:       make([]*string, 0),
+		deployedInstances:  make(map[string][]*deployedTask),
 	}
 
-	result, err = scheduler.loadInstancesAlreadyDeployed(environment, instanceARNToInstance, result)
+	result, err = scheduler.loadInstancesAlreadyDeployed(state, instanceARNToInstance, result)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding instances where environment %s is already deployed", environment.Name)
 	}
@@ -251,6 +323,7 @@ func (scheduler Scheduler) lookupInstances(environment *types.Environment) (*ins
 			delete(result.deployedInstances, instanceARN)
 			continue
 		}
+		result.totalInstanceCount++
 		_, ok := result.deployedInstances[instanceARN]
 		if !ok {
 			result.newInstances = append(result.newInstances, i.ContainerInstanceARN)
@@ -261,8 +334,12 @@ func (scheduler Scheduler) lookupInstances(environment *types.Environment) (*ins
 
 // loadInstancesAlreadyDeployed populates instanceLookupResult struct with the state of instances derived from
 // state of environments, deployments and cluster
-func (scheduler Scheduler) loadInstancesAlreadyDeployed(environment *types.Environment,
-	instanceARNToInstance map[string]*models.ContainerInstance, result *instanceLookupResult) (*instanceLookupResult, error) {
+func (scheduler Scheduler) loadInstancesAlreadyDeployed(state *environmentExecutionState,
+	instanceARNToInstance map[string]*models.ContainerInstance,
+	result *instanceLookupResult) (*instanceLookupResult, error) {
+
+	environment := state.environment
+
 	tasks, err := scheduler.getRunningTasks(environment.Cluster)
 	if err != nil {
 		return result, err
@@ -271,36 +348,55 @@ func (scheduler Scheduler) loadInstancesAlreadyDeployed(environment *types.Envir
 	deployments, err := scheduler.deploymentSvc.ListDeployments(scheduler.ctx, environment.Name)
 	if err != nil {
 		return result, errors.Wrapf(err, "Error calling ListDeployments with environment %s", environment.Name)
+
 	}
 
 	// preparing a map for easy lookup
 	deploymentsMap := make(map[string]*types.Deployment)
 	for _, d := range deployments {
 		deploymentsMap[d.ID] = &d
+
 	}
 
 	// for each task find the deployment it corresponds to and tag the instance of the task as deployed
 	for _, task := range tasks {
-		deployment, ok := deploymentsMap[task.StartedBy]
-		if ok {
-			instanceARN := aws.StringValue(task.ContainerInstanceARN)
-			instance, ok := instanceARNToInstance[instanceARN]
-			if !ok || aws.StringValue(instance.Status) == inactiveInstanceStatus {
-				continue
-			}
-			deployedTasks, ok := result.deployedInstances[instanceARN]
-			if !ok {
-				deployedTasks = make([]*deployedTask, 0)
-			}
-
-			taskARN := aws.StringValue(task.TaskARN)
-			_, ok = tasks[taskARN]
-			if ok {
-				deployedTasks = append(deployedTasks, &deployedTask{task: taskARN, deployment: deployment})
-			}
-
-			result.deployedInstances[instanceARN] = deployedTasks
+		// ignore if task does not belong to this environment
+		_, ok := deploymentsMap[task.StartedBy]
+		if !ok {
+			continue
 		}
+		instanceARN := aws.StringValue(task.ContainerInstanceARN)
+		instance, ok := instanceARNToInstance[instanceARN]
+		if !ok || aws.StringValue(instance.Status) == inactiveInstanceStatus {
+			continue
+		}
+
+		deployedTasks, ok := result.deployedInstances[instanceARN]
+		if !ok {
+			deployedTasks = make([]*deployedTask, 0)
+		}
+
+		deployedTasks = append(deployedTasks, &deployedTask{
+			instanceARN:             instanceARN,
+			taskARN:                 aws.StringValue(task.TaskARN),
+			deploymentID:            task.StartedBy,
+			availableInClusterState: true,
+		})
+
+		result.deployedInstances[instanceARN] = deployedTasks
+	}
+
+	// Also add tasks which are not yet available in cluster-state, this happens when events are delayed.
+	for instanceARN, _ := range state.trackingInfo {
+		deployedTasks, ok := result.deployedInstances[instanceARN]
+		if !ok {
+			deployedTasks = make([]*deployedTask, 0)
+		}
+		deployedTasks = append(deployedTasks, &deployedTask{
+			instanceARN:             instanceARN,
+			availableInClusterState: false,
+		})
+		result.deployedInstances[instanceARN] = deployedTasks
 	}
 
 	return result, nil
