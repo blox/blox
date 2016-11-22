@@ -86,6 +86,28 @@ func (_mr *_MockECSRecorder) DescribeTaskDefinition(arg0 interface{}) *gomock.Ca
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeTaskDefinition", arg0)
 }
 
+func (_m *MockECS) ListTasks(cluster string, startedBy string) ([]*string, error) {
+	ret := _m.ctrl.Call(_m, "ListTasks", cluster, startedBy)
+	ret0, _ := ret[0].([]*string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockECSRecorder) ListTasks(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListTasks", arg0, arg1)
+}
+
+func (_m *MockECS) DescribeTasks(cluster string, tasks []*string) (*ecs.DescribeTasksOutput, error) {
+	ret := _m.ctrl.Call(_m, "DescribeTasks", cluster, tasks)
+	ret0, _ := ret[0].(*ecs.DescribeTasksOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockECSRecorder) DescribeTasks(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeTasks", arg0, arg1)
+}
+
 func (_m *MockECS) StopTask(clusterArn string, taskArn string) error {
 	ret := _m.ctrl.Call(_m, "StopTask", clusterArn, taskArn)
 	ret0, _ := ret[0].(error)

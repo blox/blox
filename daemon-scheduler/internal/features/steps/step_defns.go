@@ -353,6 +353,27 @@ func init() {
 		}
 	})
 
+	Then(`^the deployment should complete in (\d+) seconds$`, func(seconds int) {
+		ok, err := doSomething(time.Duration(seconds)*time.Second, 1*time.Second, func() (bool, error) {
+			deployment, err := edsWrapper.GetDeployment(aws.String(environment), aws.String(deploymentID))
+			if err != nil {
+				return false, errors.Wrapf(err, "Error calling GetDeployment for environment %s and deployment %s", environment, deploymentID)
+			}
+
+			return aws.StringValue(deployment.Status) == models.DeploymentStatusCompleted, nil
+		})
+
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+
+		if !ok {
+			T.Errorf("Expecting the deployment status to be %v", taskRunning)
+			return
+		}
+	})
+
 	And(`^Deployment should be marked as completed$`, func() {
 		deployment, err := edsWrapper.GetDeployment(aws.String(environment), aws.String(deploymentID))
 		if err != nil {

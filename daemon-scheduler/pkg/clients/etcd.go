@@ -14,7 +14,6 @@
 package clients
 
 import (
-	"fmt"
 	"time"
 
 	etcd "github.com/coreos/etcd/clientv3"
@@ -56,7 +55,7 @@ const (
 // NewEtcdClient initializes an etcd client
 func NewEtcdClient(endpoints []string) (*etcd.Client, error) {
 	if len(endpoints) == 0 {
-		return nil, fmt.Errorf("etcd endpoints cannot be empty")
+		return nil, errors.New("Etcd endpoints should not be empty")
 	}
 	etcd, err := etcd.New(etcd.Config{
 		Endpoints:   endpoints,

@@ -15,7 +15,6 @@ package deployment
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
@@ -139,7 +138,7 @@ func (d deployment) CreateSubDeployment(ctx context.Context, environmentName str
 	}
 
 	if deployment == nil {
-		return nil, fmt.Errorf(
+		return nil, errors.Errorf(
 			"There is no in progress deployment for environment with name '%s' to create a sub-deployment",
 			environmentName)
 	}
@@ -251,7 +250,7 @@ func (d deployment) getEnvironment(ctx context.Context,
 	}
 
 	if env == nil {
-		return nil, types.NewNotFoundError(fmt.Errorf("Environment with name %s is missing", environmentName))
+		return nil, types.NewNotFoundError(errors.Errorf("Environment with name %s is missing", environmentName))
 	}
 
 	return env, err

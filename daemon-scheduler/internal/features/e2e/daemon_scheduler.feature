@@ -10,6 +10,7 @@ Feature:
         And I update the desired-capacity of cluster to 1 instances and wait for a max of 300 seconds
         And I call CreateDeployment API
         Then the deployment should have 1 task running within 300 seconds
+        And the deployment should complete in 100 seconds
         When I update the desired-capacity of cluster to 2 instances and wait for a max of 300 seconds
         Then the deployment should have 2 tasks running within 120 seconds
         When I stop the tasks running in cluster

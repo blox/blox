@@ -105,11 +105,28 @@ func (suite *DeploymentTestSuite) TestUpdateDeploymentInProgressHealthy() {
 	assert.Empty(suite.T(), d.FailedInstances, "Deployment failed instances does not match expected")
 }
 
-func (suite *DeploymentTestSuite) TestUpdateDeploymentCompleted() {
+func (suite *DeploymentTestSuite) TestUpdateDeploymentCompletedUnhealthy() {
 	unhealthyDeployment, err := suite.deployment.UpdateDeploymentInProgress(
 		desiredTaskCount, suite.failures)
 
-	d := unhealthyDeployment.UpdateDeploymentCompleted()
+	d := unhealthyDeployment.UpdateDeploymentCompleted(suite.failures)
+	assert.Nil(suite.T(), err, "Unexpected error when setting deployment to completed")
+	assert.NotNil(suite.T(), d, "Deployment should not be nil")
+	assert.NotEmpty(suite.T(), d.ID, "Deployment ID should not be empty")
+	assert.Exactly(suite.T(), DeploymentCompleted, d.Status, "Deployment status should be completed")
+	assert.Exactly(suite.T(), DeploymentUnhealthy, d.Health, "Deployment should not be healthy")
+	assert.Exactly(suite.T(), desiredTaskCount, d.DesiredTaskCount, "Deployment desired task count should match expected")
+	assert.NotNil(suite.T(), d.StartTime, "Deployment startTime should not be empty")
+	assert.NotNil(suite.T(), d.EndTime, "Deployment endtime should not be empty")
+	assert.Exactly(suite.T(), taskDefinition, d.TaskDefinition, "Deployment taskDefintion does not match expected")
+	assert.Exactly(suite.T(), suite.failures, d.FailedInstances, "Deployment failed instances does not match expected")
+}
+
+func (suite *DeploymentTestSuite) TestUpdateDeploymentCompletedHealthy() {
+	unhealthyDeployment, err := suite.deployment.UpdateDeploymentInProgress(
+		desiredTaskCount, suite.failures)
+
+	d := unhealthyDeployment.UpdateDeploymentCompleted(nil)
 	assert.Nil(suite.T(), err, "Unexpected error when setting deployment to completed")
 	assert.NotNil(suite.T(), d, "Deployment should not be nil")
 	assert.NotEmpty(suite.T(), d.ID, "Deployment ID should not be empty")
@@ -119,5 +136,5 @@ func (suite *DeploymentTestSuite) TestUpdateDeploymentCompleted() {
 	assert.NotNil(suite.T(), d.StartTime, "Deployment startTime should not be empty")
 	assert.NotNil(suite.T(), d.EndTime, "Deployment endtime should not be empty")
 	assert.Exactly(suite.T(), taskDefinition, d.TaskDefinition, "Deployment taskDefintion does not match expected")
-	assert.Nil(suite.T(), d.FailedInstances, "Deployment failed instances does not match expected")
+	assert.Empty(suite.T(), d.FailedInstances, "Deployment failed instances does not match expected")
 }

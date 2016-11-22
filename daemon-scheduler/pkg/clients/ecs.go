@@ -14,12 +14,12 @@
 package clients
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 func getECSEndpoint() (string, error) {
 	endpoint := os.Getenv(ecsEndpointEnvVarName)
 	if endpoint == "" {
-		return "", fmt.Errorf("Empty endpoint. Please specify the ECS endpoint name using the '%s' environment variable", ecsEndpointEnvVarName)
+		return "", errors.Errorf("Empty endpoint. Please specify the ECS endpoint name using the '%s' environment variable", ecsEndpointEnvVarName)
 	}
 
 	return endpoint, nil

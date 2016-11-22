@@ -25,9 +25,9 @@ import (
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
 	log "github.com/cihub/seelog"
 	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/pkg/errors"
 	"github.com/urfave/negroni"
 
-	"fmt"
 	"net/http"
 	"time"
 )
@@ -40,10 +40,10 @@ const (
 // Run kickstarts the daemon scheduler service.
 func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 	if schedulerBindAddr == "" {
-		return fmt.Errorf("The address for scheduler endpoint is not set")
+		return errors.Errorf("The address for scheduler endpoint is not set")
 	}
 	if clusterStateServiceEndpoint == "" {
-		return fmt.Errorf("The address for cluster state service endpoint is not set")
+		return errors.Errorf("The address for cluster state service endpoint is not set")
 	}
 
 	etcdClient, err := clients.NewEtcdClient(config.EtcdEndpoints)
@@ -88,11 +88,16 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 		log.Criticalf("Could not initialize environment: %+v", err)
 		return err
 	}
+
+	deploymentWorker := deployment.NewDeploymentWorker(environment, ecs, css)
 	deployment := deployment.NewDeployment(environment, css, ecs)
 
 	ctx := context.Background()
-	events := engine.StartDispatcher(ctx, environment, deployment, ecs, css)
+	events := engine.StartDispatcher(ctx, environment, deployment, ecs, css, deploymentWorker)
 	engine.StartScheduler(ctx, events, environment, deployment, css)
+
+	monitor := engine.NewMonitor(ctx, environment, events)
+	monitor.InProgressMonitorLoop()
 
 	api := v1.NewAPI(environment, deployment, ecs)
 

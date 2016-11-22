@@ -15,14 +15,17 @@ package engine
 
 import "github.com/blox/blox/daemon-scheduler/pkg/types"
 
+type EventType string
+
 const (
-	StartDeploymentEventType = "StartDeploymentEvent"
-	StopTasksEventType       = "StopTasksEvent"
+	StartDeploymentEventType            EventType = "StartDeploymentEvent"
+	StopTasksEventType                            = "StopTasksEvent"
+	UpdateInProgressDeploymentEventType           = "UpdateInProgressDeploymentEvent"
 )
 
 type Event interface {
 	//GetType returns event-type
-	GetType() string
+	GetType() EventType
 }
 
 // StartDeploymentEvent is message used to notify actors to perform a deployment using environment
@@ -31,7 +34,7 @@ type StartDeploymentEvent struct {
 	Environment types.Environment
 }
 
-func (e StartDeploymentEvent) GetType() string {
+func (e StartDeploymentEvent) GetType() EventType {
 	return StartDeploymentEventType
 }
 
@@ -42,6 +45,14 @@ type StopTasksEvent struct {
 	Environment types.Environment
 }
 
-func (e StopTasksEvent) GetType() string {
+func (e StopTasksEvent) GetType() EventType {
 	return StopTasksEventType
+}
+
+type UpdateInProgressDeploymentEvent struct {
+	Environment types.Environment
+}
+
+func (e UpdateInProgressDeploymentEvent) GetType() EventType {
+	return UpdateInProgressDeploymentEventType
 }

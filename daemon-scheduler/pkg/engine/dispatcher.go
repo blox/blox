@@ -15,7 +15,6 @@ package engine
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
@@ -30,7 +29,10 @@ const (
 )
 
 // StartDispatcher starts dispatcher. dispatcher listens to events on channel and forwards them to workers
-func StartDispatcher(ctx context.Context, environmentSvc deployment.Environment, deploymentSvc deployment.Deployment, ecs facade.ECS, css facade.ClusterState) chan<- Event {
+func StartDispatcher(ctx context.Context, environmentSvc deployment.Environment,
+	deploymentSvc deployment.Deployment, ecs facade.ECS, css facade.ClusterState,
+	deploymentWorker deployment.DeploymentWorker) chan<- Event {
+
 	events := make(chan Event, capacity)
 
 	go func() {
@@ -39,10 +41,11 @@ func StartDispatcher(ctx context.Context, environmentSvc deployment.Environment,
 			case event := <-events:
 				go func(event Event) {
 					worker := worker{
-						environmentSvc: environmentSvc,
-						deploymentSvc:  deploymentSvc,
-						ecs:            ecs,
-						css:            css,
+						environmentSvc:   environmentSvc,
+						deploymentSvc:    deploymentSvc,
+						deploymentWorker: deploymentWorker,
+						ecs:              ecs,
+						css:              css,
 					}
 					err := worker.handleEvent(ctx, event)
 					if err != nil {
@@ -63,27 +66,45 @@ func StartDispatcher(ctx context.Context, environmentSvc deployment.Environment,
 
 // Worker is actor which handles an event appropriately
 type worker struct {
-	environmentSvc deployment.Environment
-	deploymentSvc  deployment.Deployment
-	ecs            facade.ECS
-	css            facade.ClusterState
+	environmentSvc   deployment.Environment
+	deploymentSvc    deployment.Deployment
+	deploymentWorker deployment.DeploymentWorker
+	ecs              facade.ECS
+	css              facade.ClusterState
 }
 
 func (w *worker) handleEvent(ctx context.Context, event Event) error {
-	switch eType := event.GetType(); eType {
+	switch event.GetType() {
 	case StartDeploymentEventType:
 		return w.handleStartDeploymentEvent(ctx, event)
 	case StopTasksEventType:
 		return w.handleStopTasksEvent(ctx, event)
+	case UpdateInProgressDeploymentEventType:
+		return w.handleUpdateInProgressDeploymentEvent(ctx, event)
 	default:
-		return fmt.Errorf("Unexpected event of type %s received", eType)
+		return errors.Errorf("Unexpected event of type %s received", event.GetType())
 	}
+}
+
+func (w *worker) handleUpdateInProgressDeploymentEvent(ctx context.Context, event Event) error {
+	deploymentEvent, ok := event.(UpdateInProgressDeploymentEvent)
+	if !ok {
+		return errors.Errorf("Expected event with event-type %v to be of struct-type UpdateInProgressDeploymentEvent",
+			event.GetType())
+	}
+
+	_, err := w.deploymentWorker.UpdateInProgressDeployment(ctx, deploymentEvent.Environment.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *worker) handleStartDeploymentEvent(ctx context.Context, event Event) error {
 	deploymentEvent, ok := event.(StartDeploymentEvent)
 	if !ok {
-		return fmt.Errorf("Expected event with event-type %s to be of struct-type StartDeploymentEvent", event.GetType())
+		return errors.Errorf("Expected event with event-type %s to be of struct-type StartDeploymentEvent", event.GetType())
 	}
 
 	deployment, err := w.deploymentSvc.CreateSubDeployment(ctx, deploymentEvent.Environment.Name, deploymentEvent.Instances)
@@ -100,7 +121,7 @@ func (w *worker) handleStartDeploymentEvent(ctx context.Context, event Event) er
 func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 	stopTasksEvent, ok := event.(StopTasksEvent)
 	if !ok {
-		return fmt.Errorf("Expected event with event-type %s to be of struct-type StopTasksEvent", event.GetType())
+		return errors.Errorf("Expected event with event-type %s to be of struct-type StopTasksEvent", event.GetType())
 	}
 
 	tasksInCluster, err := w.css.ListTasks(stopTasksEvent.Cluster)

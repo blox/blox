@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	startTaskPartitionSize = 10
+	startTaskPartitionSize    = 10
+	describeTaskPartitionSize = 100
 )
 
 type ECS interface {
@@ -34,6 +35,8 @@ type ECS interface {
 	ListClusters() ([]*string, error)
 	DescribeCluster(cluster *string) (*ecs.Cluster, error)
 	DescribeTaskDefinition(taskDefinition *string) (*ecs.TaskDefinition, error)
+	ListTasks(cluster string, startedBy string) ([]*string, error)
+	DescribeTasks(cluster string, tasks []*string) (*ecs.DescribeTasksOutput, error)
 	StopTask(clusterArn string, taskArn string) error
 }
 
@@ -111,6 +114,37 @@ func (c ecsClient) DescribeTaskDefinition(td *string) (*ecs.TaskDefinition, erro
 	return resp.TaskDefinition, nil
 }
 
+func (c ecsClient) DescribeTasks(cluster string, tasks []*string) (*ecs.DescribeTasksOutput, error) {
+	output := &ecs.DescribeTasksOutput{
+		Failures: []*ecs.Failure{},
+		Tasks:    []*ecs.Task{},
+	}
+
+	//NOTE: DescribeTasks takes 100 tasks at a time
+	for i := 0; i < len(tasks); i += describeTaskPartitionSize {
+		high := i + describeTaskPartitionSize
+		if high > len(tasks) {
+			high = len(tasks)
+		}
+		partition := tasks[i:high]
+
+		input := &ecs.DescribeTasksInput{
+			Cluster: aws.String(cluster),
+			Tasks:   partition,
+		}
+
+		resp, err := c.ecs.DescribeTasks(input)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error calling DescribeTasks for cluster %s and tasks %v", cluster, tasks)
+		}
+
+		output.Failures = append(output.Failures, resp.Failures...)
+		output.Tasks = append(output.Tasks, resp.Tasks...)
+	}
+
+	return output, nil
+}
+
 func (c ecsClient) ListClusters() ([]*string, error) {
 	clusters := []*string{}
 	var nextToken *string
@@ -134,6 +168,20 @@ func (c ecsClient) ListClusters() ([]*string, error) {
 	}
 
 	return clusters, nil
+}
+
+func (c ecsClient) ListTasks(cluster string, startedBy string) ([]*string, error) {
+	input := &ecs.ListTasksInput{
+		Cluster:   aws.String(cluster),
+		StartedBy: aws.String(startedBy),
+	}
+
+	resp, err := c.ecs.ListTasks(input)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to list ECS tasks in cluster %v startedBy %v", cluster, startedBy)
+	}
+
+	return resp.TaskArns, nil
 }
 
 func (c ecsClient) StopTask(clusterArn string, taskArn string) error {
