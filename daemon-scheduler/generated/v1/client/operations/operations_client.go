@@ -54,7 +54,6 @@ func (a *Client) CreateDeployment(params *CreateDeploymentParams) (*CreateDeploy
 		Params:             params,
 		Reader:             &CreateDeploymentReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -82,7 +81,6 @@ func (a *Client) CreateEnvironment(params *CreateEnvironmentParams) (*CreateEnvi
 		Params:             params,
 		Reader:             &CreateEnvironmentReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -110,7 +108,6 @@ func (a *Client) DeleteEnvironment(params *DeleteEnvironmentParams) (*DeleteEnvi
 		Params:             params,
 		Reader:             &DeleteEnvironmentReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -138,7 +135,6 @@ func (a *Client) GetDeployment(params *GetDeploymentParams) (*GetDeploymentOK, e
 		Params:             params,
 		Reader:             &GetDeploymentReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -166,7 +162,6 @@ func (a *Client) GetEnvironment(params *GetEnvironmentParams) (*GetEnvironmentOK
 		Params:             params,
 		Reader:             &GetEnvironmentReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -194,7 +189,6 @@ func (a *Client) ListDeployments(params *ListDeploymentsParams) (*ListDeployment
 		Params:             params,
 		Reader:             &ListDeploymentsReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -222,7 +216,6 @@ func (a *Client) ListEnvironments(params *ListEnvironmentsParams) (*ListEnvironm
 		Params:             params,
 		Reader:             &ListEnvironmentsReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -250,7 +243,6 @@ func (a *Client) Ping(params *PingParams) (*PingOK, error) {
 		Params:             params,
 		Reader:             &PingReader{formats: a.formats},
 		Context:            params.Context,
-		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err

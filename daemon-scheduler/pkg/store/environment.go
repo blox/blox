@@ -21,6 +21,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	environmentKeyPrefix = "ecs/environment/"
+)
+
 type EnvironmentStore interface {
 	PutEnvironment(ctx context.Context, environment types.Environment) error
 	GetEnvironment(ctx context.Context, name string) (*types.Environment, error)
@@ -42,8 +46,15 @@ func NewEnvironmentStore(ds DataStore) (EnvironmentStore, error) {
 	}, nil
 }
 
+func generateEnvironmentKey(environment types.Environment) (string, error) {
+	if len(environment.Name) == 0 {
+		return "", errors.New("Environment name is missing")
+	}
+	return environmentKeyPrefix + environment.Name, nil
+}
+
 func (e environmentStore) PutEnvironment(ctx context.Context, environment types.Environment) error {
-	key, err := GenerateEnvironmentKey(environment.Name)
+	key, err := generateEnvironmentKey(environment)
 	if err != nil {
 		return err
 	}
@@ -66,7 +77,10 @@ func (e environmentStore) GetEnvironment(ctx context.Context, name string) (*typ
 		return nil, errors.New("Environment name is missing")
 	}
 
-	key, err := GenerateEnvironmentKey(name)
+	var environment types.Environment
+	environment.Name = name
+
+	key, err := generateEnvironmentKey(environment)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +98,6 @@ func (e environmentStore) GetEnvironment(ctx context.Context, name string) (*typ
 		return nil, errors.Errorf("Multiple entries exist with the key %v", key)
 	}
 
-	var environment types.Environment
 	for _, v := range resp {
 		err = json.UnmarshalJSON(v, &environment)
 		if err != nil {
@@ -97,7 +110,7 @@ func (e environmentStore) GetEnvironment(ctx context.Context, name string) (*typ
 }
 
 func (e environmentStore) DeleteEnvironment(ctx context.Context, environment types.Environment) error {
-	key, err := GenerateEnvironmentKey(environment.Name)
+	key, err := generateEnvironmentKey(environment)
 	if err != nil {
 		return err
 	}

@@ -16,9 +16,9 @@ package deployment
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	"github.com/aws/aws-sdk-go/service/ecs"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -45,19 +45,14 @@ type Environment interface {
 
 type environment struct {
 	environmentStore store.EnvironmentStore
-	taskStore        store.TaskStore
 }
 
-func NewEnvironment(environmentStore store.EnvironmentStore, taskStore store.TaskStore) (Environment, error) {
+func NewEnvironment(environmentStore store.EnvironmentStore) (Environment, error) {
 	if environmentStore == nil {
-		return nil, errors.New("Environment store is not initialized")
-	}
-	if taskStore == nil {
-		return nil, errors.New("Task store is not initialized")
+		return nil, errors.New("Environment is not initialized")
 	}
 	return environment{
 		environmentStore: environmentStore,
-		taskStore:        taskStore,
 	}, nil
 }
 
@@ -179,16 +174,11 @@ func (e environment) UpdateDeployment(ctx context.Context, environment types.Env
 	environment.Deployments[deployment.ID] = deployment
 	environment.DesiredTaskCount = deployment.DesiredTaskCount
 
-	tasks, err := e.getCurrentTasks(deployment)
+	updatedEnv, err := e.updateCurrentTasks(environment, deployment)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error retrieving current tasks for deployment %s of environment %s", deployment.ID, environment.Name)
+		return nil, errors.Wrapf(err, "Error updating current tasks for deployment %s of environment %s", deployment.ID, environment.Name)
 	}
-	for _, t := range tasks {
-		err = e.addTask(ctx, environment.Name, t)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error adding current task with ARN '%s' for deployment %s of environment %s", t.TaskARN, deployment.ID, environment.Name)
-		}
-	}
+	environment = *updatedEnv
 
 	if deployment.Health == types.DeploymentHealthy {
 		environment.Health = types.EnvironmentHealthy
@@ -214,28 +204,33 @@ func (e environment) GetCurrentDeployment(ctx context.Context, name string) (*ty
 	return env.GetInProgressDeployment()
 }
 
-func (e environment) getCurrentTasks(deployment types.Deployment) ([]*types.Task, error) {
-	tasks := make([]*types.Task, len(deployment.CurrentTasks))
-	for i := range deployment.CurrentTasks {
-		t := deployment.CurrentTasks[i]
-		if aws.StringValue(t.TaskDefinitionArn) != deployment.TaskDefinition {
+// TODO: update current tasks when partial deployment completes
+func (e environment) updateCurrentTasks(environment types.Environment,
+	deployment types.Deployment) (*types.Environment, error) {
+
+	if len(deployment.CurrentTasks) == 0 {
+		return &environment, nil
+	}
+
+	// TODO: list all tasks by startedBy+group to get current state and
+	//replace the previous taskDefinition tasks
+	// TODO: will current tasks be up to date if tasks fail in ECS?
+	//technically, they should be updated when we get a failed task event
+	//and a partial deployment tries to restart the failed task
+	taskMap, ok := environment.CurrentTasks[deployment.TaskDefinition]
+	if !ok {
+		taskMap = make(map[string]*ecs.Task)
+	}
+
+	for _, t := range deployment.CurrentTasks {
+		if *t.TaskDefinitionArn != deployment.TaskDefinition {
 			return nil, errors.Errorf("Inconsistent state: started task has different task definition %s than the deployment %s",
-				aws.StringValue(t.TaskDefinitionArn), deployment.TaskDefinition)
+				*t.TaskDefinitionArn, deployment.TaskDefinition)
 		}
-		task, err := types.NewTask(aws.StringValue(t.TaskArn), aws.StringValue(t.ContainerInstanceArn))
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to update list of current tasks for environment")
-		}
-		tasks[i] = task
+
+		taskMap[*t.TaskArn] = t
 	}
 
-	return tasks, nil
-}
-
-func (e environment) addTask(ctx context.Context, envName string, task *types.Task) error {
-	err := e.taskStore.PutTask(ctx, envName, *task)
-	if err != nil {
-		return errors.Wrap(err, "Failed to add task")
-	}
-	return nil
+	environment.CurrentTasks[deployment.TaskDefinition] = taskMap
+	return &environment, nil
 }

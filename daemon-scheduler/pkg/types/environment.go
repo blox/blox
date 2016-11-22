@@ -16,6 +16,7 @@ package types
 import (
 	"sort"
 
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 )
@@ -34,6 +35,10 @@ type Environment struct {
 	DesiredTaskCount      int
 	Cluster               string
 	Health                EnvironmentHealth
+
+	//TODO: use an internal type instead of ECS Task
+	// taskdef -> [taskArn -> Task]
+	CurrentTasks map[string]map[string]*ecs.Task
 
 	// deploymentID -> deployment
 	Deployments map[string]Deployment
@@ -74,6 +79,7 @@ func NewEnvironment(name string, taskDefinition string, cluster string) (*Enviro
 		Cluster:               cluster,
 		Health:                EnvironmentHealthy,
 		Deployments:           make(map[string]Deployment),
+		CurrentTasks:          make(map[string]map[string]*ecs.Task),
 	}, nil
 }
 

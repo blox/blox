@@ -17,7 +17,6 @@ package operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"net/http"
 	"time"
 
 	"golang.org/x/net/context"
@@ -63,9 +62,8 @@ func NewPingParamsWithContext(ctx context.Context) *PingParams {
 for the ping operation typically these are written to a http.Request
 */
 type PingParams struct {
-	timeout    time.Duration
-	Context    context.Context
-	HTTPClient *http.Client
+	timeout time.Duration
+	Context context.Context
 }
 
 // WithTimeout adds the timeout to the ping params

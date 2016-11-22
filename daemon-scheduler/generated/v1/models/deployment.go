@@ -142,9 +142,9 @@ func init() {
 }
 
 const (
-	DeploymentStatusPending   string = "pending"
-	DeploymentStatusRunning   string = "running"
-	DeploymentStatusCompleted string = "completed"
+	deploymentStatusPending   string = "pending"
+	deploymentStatusRunning   string = "running"
+	deploymentStatusCompleted string = "completed"
 )
 
 // prop value enum
