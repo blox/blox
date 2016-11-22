@@ -37,7 +37,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := scheduler.Run(config.SchedulerBindAddr); err != nil {
+	if err := scheduler.Run(config.SchedulerBindAddr, config.ClusterStateServiceEndpoint); err != nil {
 		log.Criticalf("Error running scheduler: %v", err)
 		os.Exit(1)
 	}

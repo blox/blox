@@ -18,3 +18,6 @@ var EtcdEndpoints []string
 
 // SchedulerBindAddr represents the endpoint scheduler listens on.
 var SchedulerBindAddr string
+
+// ClusterStateServiceEndpoint represents the css endpoint to connect to.
+var ClusterStateServiceEndpoint string
