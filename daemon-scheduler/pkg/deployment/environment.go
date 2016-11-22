@@ -18,7 +18,6 @@ import (
 
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
-	"github.com/aws/aws-sdk-go/service/ecs"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -174,19 +173,13 @@ func (e environment) UpdateDeployment(ctx context.Context, environment types.Env
 	environment.Deployments[deployment.ID] = deployment
 	environment.DesiredTaskCount = deployment.DesiredTaskCount
 
-	updatedEnv, err := e.updateCurrentTasks(environment, deployment)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error updating current tasks for deployment %s of environment %s", deployment.ID, environment.Name)
-	}
-	environment = *updatedEnv
-
 	if deployment.Health == types.DeploymentHealthy {
 		environment.Health = types.EnvironmentHealthy
 	} else {
 		environment.Health = types.EnvironmentUnhealthy
 	}
 
-	err = e.environmentStore.PutEnvironment(ctx, environment)
+	err := e.environmentStore.PutEnvironment(ctx, environment)
 	if err != nil {
 		return nil, err
 	}
@@ -202,35 +195,4 @@ func (e environment) GetCurrentDeployment(ctx context.Context, name string) (*ty
 
 	//TODO: Update this logic based on our understanding, e.g. handling completed deployments
 	return env.GetInProgressDeployment()
-}
-
-// TODO: update current tasks when partial deployment completes
-func (e environment) updateCurrentTasks(environment types.Environment,
-	deployment types.Deployment) (*types.Environment, error) {
-
-	if len(deployment.CurrentTasks) == 0 {
-		return &environment, nil
-	}
-
-	// TODO: list all tasks by startedBy+group to get current state and
-	//replace the previous taskDefinition tasks
-	// TODO: will current tasks be up to date if tasks fail in ECS?
-	//technically, they should be updated when we get a failed task event
-	//and a partial deployment tries to restart the failed task
-	taskMap, ok := environment.CurrentTasks[deployment.TaskDefinition]
-	if !ok {
-		taskMap = make(map[string]*ecs.Task)
-	}
-
-	for _, t := range deployment.CurrentTasks {
-		if *t.TaskDefinitionArn != deployment.TaskDefinition {
-			return nil, errors.Errorf("Inconsistent state: started task has different task definition %s than the deployment %s",
-				*t.TaskDefinitionArn, deployment.TaskDefinition)
-		}
-
-		taskMap[*t.TaskArn] = t
-	}
-
-	environment.CurrentTasks[deployment.TaskDefinition] = taskMap
-	return &environment, nil
 }

@@ -17,10 +17,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
+	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +70,7 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.updatedDeployment, err = suite.deployment.UpdateDeploymentInProgress(
-		desiredTaskCount, nil, nil)
+		desiredTaskCount, nil)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	failedTask := ecs.Failure{
@@ -78,7 +78,7 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 	}
 
 	suite.unhealthyDeployment, err = suite.deployment.UpdateDeploymentInProgress(
-		desiredTaskCount, nil, []*ecs.Failure{&failedTask})
+		desiredTaskCount, []*ecs.Failure{&failedTask})
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.environment1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)
@@ -275,29 +275,9 @@ func (suite *EnvironmentTestSuite) TestUpdateDeploymentUnhealthy() {
 	verifyEnvironment(suite.T(), suite.updatedEnvironment, env)
 }
 
-func (suite *EnvironmentTestSuite) TestUpdateDeploymentInvalidCurrentTaskState() {
-	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
-
-	//update TaskDefinition on the deployment so it doesn't match the currentTasks task def
-	suite.updatedDeployment.TaskDefinition = "invalid"
-	suite.updatedDeployment.CurrentTasks = suite.currentTasks
-	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
-
-	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Any()).Do(func(_ interface{}, e types.Environment) {
-		verifyEnvironment(suite.T(), suite.updatedEnvironment, &e)
-	}).Return(nil)
-
-	_, err := suite.environment.UpdateDeployment(suite.ctx, *suite.environment1, *suite.updatedDeployment)
-	assert.Error(suite.T(), err, "Expected an error when deployment task definition does not match current task task definition")
-}
-
 func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentDoesNotHaveCurrentTasks() {
 	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
 
-	suite.updatedDeployment.CurrentTasks = suite.currentTasks
-	suite.updatedEnvironment.CurrentTasks = map[string]map[string]*ecs.Task{
-		suite.updatedDeployment.TaskDefinition: suite.taskMap,
-	}
 	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
 
 	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Any()).Do(func(_ interface{}, e types.Environment) {
@@ -312,15 +292,6 @@ func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentDoesNotHaveCur
 func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentCurrentTasksContainsADifferentTaskDef() {
 	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
 
-	differentTaskDef := suite.updatedDeployment.TaskDefinition + "1"
-	suite.environment1.CurrentTasks = map[string]map[string]*ecs.Task{
-		differentTaskDef: suite.taskMap,
-	}
-
-	suite.updatedDeployment.CurrentTasks = suite.currentTasks
-
-	suite.updatedEnvironment.CurrentTasks[taskDefinition] = suite.taskMap
-	suite.updatedEnvironment.CurrentTasks[differentTaskDef] = suite.taskMap
 	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
 
 	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Any()).Do(func(_ interface{}, e types.Environment) {
@@ -338,14 +309,6 @@ func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentCurrentTasksCo
 	taskMapWithOneTask := make(map[string]*ecs.Task)
 	taskMapWithOneTask[*suite.currentTasks[0].TaskArn] = suite.currentTasks[0]
 
-	suite.environment1.CurrentTasks = map[string]map[string]*ecs.Task{
-		taskDefinition: taskMapWithOneTask,
-	}
-
-	suite.updatedDeployment.CurrentTasks = suite.currentTasks
-
-	//update map to include the new taskDef -> taskMap
-	suite.updatedEnvironment.CurrentTasks[taskDefinition] = suite.taskMap
 	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
 
 	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Any()).Do(func(_ interface{}, e types.Environment) {
@@ -364,6 +327,5 @@ func verifyEnvironment(t *testing.T, expected *types.Environment, actual *types.
 	assert.Exactly(t, expected.DesiredTaskCount, actual.DesiredTaskCount, "Desired task count should match")
 	assert.Exactly(t, expected.Cluster, actual.Cluster, "Cluster should match")
 	assert.Exactly(t, expected.Health, actual.Health, "Health should match")
-	assert.Exactly(t, expected.CurrentTasks, actual.CurrentTasks, "Current tasks should match")
 	assert.Exactly(t, expected.Deployments, actual.Deployments, "Deployments should match")
 }

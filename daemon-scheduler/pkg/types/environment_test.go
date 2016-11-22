@@ -64,7 +64,6 @@ func (suite *EnvironmentTestSuite) TestNewEnvironment() {
 	assert.Exactly(suite.T(), 0, e.DesiredTaskCount, "Task count should match")
 	assert.Exactly(suite.T(), cluster, e.Cluster, "Cluster should match")
 	assert.Exactly(suite.T(), EnvironmentHealthy, e.Health, "Should be healthy")
-	assert.Empty(suite.T(), e.CurrentTasks, "Current tasks should be empty")
 	assert.Empty(suite.T(), e.Deployments, "Deployments should be empty")
 }
 

@@ -30,7 +30,9 @@ import (
 type HealthStatus string
 
 const (
-	HealthStatusHealthy   HealthStatus = "healthy"
+	// HealthStatusHealthy captures enum value "healthy"
+	HealthStatusHealthy HealthStatus = "healthy"
+	// HealthStatusUnhealthy captures enum value "unhealthy"
 	HealthStatusUnhealthy HealthStatus = "unhealthy"
 )
 

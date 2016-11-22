@@ -369,13 +369,6 @@
                 "environmentName": {
                     "type": "string"
                 },
-                "currentTasks": {
-                    "type": "array",
-                    "description": "List of ECS task ARNs started by this deployment",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "failedInstances": {
                     "type": "array",
                     "description": "List of ECS container-instance ARNs where deployment failed",

@@ -272,7 +272,6 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentUpdateDeploymentFails() {
 	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
 	updatedDeployment.Health = types.DeploymentUnhealthy
 	updatedDeployment.Status = types.DeploymentInProgress
-	updatedDeployment.CurrentTasks = suite.startTaskOutput.Tasks
 	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
 
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
@@ -314,7 +313,6 @@ func createDeployment(suite *DeploymentTestSuite, token string) {
 	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
 	updatedDeployment.Health = types.DeploymentUnhealthy
 	updatedDeployment.Status = types.DeploymentInProgress
-	updatedDeployment.CurrentTasks = suite.startTaskOutput.Tasks
 	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
 
 	updatedEnvironment := *suite.deploymentEnvironment
@@ -335,8 +333,6 @@ func verifyDeployment(t *testing.T, expected *types.Deployment, actual *types.De
 	assert.Exactly(t, expected.Health, actual.Health, "Deployment health should match")
 	assert.Exactly(t, expected.TaskDefinition, actual.TaskDefinition, "Deployment task definition should match")
 	assert.Exactly(t, expected.DesiredTaskCount, actual.DesiredTaskCount, "Deployment desired task count should match")
-	assert.Exactly(t, expected.CurrentTasks, actual.CurrentTasks, "Deployment current tasks should match")
-	assert.Exactly(t, expected.FailedInstances, actual.FailedInstances, "Deployment failed instances should match")
 	assert.NotEmpty(t, actual.StartTime, "Deployment start time should not be empty")
 	assert.Exactly(t, expected.EndTime, actual.EndTime, "Deployment end time should match")
 }

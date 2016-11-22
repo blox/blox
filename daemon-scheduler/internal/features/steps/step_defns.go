@@ -19,10 +19,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/daemon-scheduler/generated/v1/client/operations"
 	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/internal/features/wrappers"
-	"github.com/aws/aws-sdk-go/aws"
 	. "github.com/gucumber/gucumber"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -313,23 +313,11 @@ func init() {
 
 	Then(`^the deployment should have (\d+) task(?:|s) running within (\d+) seconds$`, func(count int, seconds int) {
 		ok, err := doSomething(time.Duration(seconds)*time.Second, 1*time.Second, func() (bool, error) {
-			deployment, err := edsWrapper.GetDeployment(aws.String(environment), aws.String(deploymentID))
+			tasks, err := ecsWrapper.ListTasks(cluster)
 			if err != nil {
-				return false, errors.Wrapf(err, "Error calling GetDeployment for environment %s and deployment %s", environment, deploymentID)
+				return false, err
 			}
-			runningTasks := []*string{}
-
-			for _, task := range deployment.CurrentTasks {
-				ecsTask, err := ecsWrapper.DescribeTask(cluster, task)
-				if err != nil {
-					return false, err
-				}
-				if aws.StringValue(ecsTask.LastStatus) == taskRunning {
-					runningTasks = append(runningTasks, ecsTask.TaskArn)
-				}
-			}
-
-			return count == len(runningTasks), nil
+			return count == len(tasks), nil
 		})
 
 		if err != nil {

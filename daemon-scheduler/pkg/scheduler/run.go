@@ -23,8 +23,8 @@ import (
 	"github.com/blox/blox/daemon-scheduler/pkg/engine"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
-	httptransport "github.com/go-openapi/runtime/client"
 	log "github.com/cihub/seelog"
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/urfave/negroni"
 
 	"fmt"
@@ -45,7 +45,6 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 	if clusterStateServiceEndpoint == "" {
 		return fmt.Errorf("The address for cluster state service endpoint is not set")
 	}
-
 
 	etcdClient, err := clients.NewEtcdClient(config.EtcdEndpoints)
 	if err != nil {
@@ -76,7 +75,6 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 	cssClient := clients.NewCSSClient()
 	cssTransport := httptransport.New(clusterStateServiceEndpoint, "/v1", []string{"http"})
 	cssClient.SetTransport(cssTransport)
-
 
 	ecs := facade.NewECS(ecsClient)
 	css, err := facade.NewClusterState(cssClient)
