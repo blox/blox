@@ -34,12 +34,12 @@ const (
 	serverReadTimeout = 10 * time.Second
 )
 
-// StartEventStreamHandler starts the event stream handler. It creates an ETCD
+// StartClusterStateService starts the Cluster State Service. It creates an ETCD
 // client, a data store using this client and an event processor to process
 // events from the SQS queue. It also starts the RESTful server and blocks on
 // the listen method of the same to listen to requests that query for task and
 // instance state from the store.
-func StartEventStreamHandler(queueName string, bindAddr string, etcdEndpoints []string) error {
+func StartClusterStateService(queueName string, bindAddr string, etcdEndpoints []string) error {
 	if bindAddr == "" {
 		return fmt.Errorf("The cluster state service listen address is not set")
 	}
