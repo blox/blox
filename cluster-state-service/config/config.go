@@ -22,3 +22,5 @@ var SQSQueueName string
 // CSSBindAddr represents the address CSS listens on.
 var CSSBindAddr string
 
+// PrintVersion represents the flag to set when printing version information.
+var PrintVersion bool

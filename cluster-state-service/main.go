@@ -20,6 +20,7 @@ import (
 	"github.com/blox/blox/cluster-state-service/config"
 	"github.com/blox/blox/cluster-state-service/handler/run"
 	"github.com/blox/blox/cluster-state-service/logger"
+	"github.com/blox/blox/cluster-state-service/versioning"
 
 	log "github.com/cihub/seelog"
 
@@ -38,7 +39,11 @@ func main() {
 		log.Criticalf("Error executing: %v", err)
 		os.Exit(errorCode)
 	}
-	if err := run.StartClusterStateService(config.SQSQueueName, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
+	if config.PrintVersion {
+		versioning.PrintVersion()
+		os.Exit(0)
+	}
+	if err := run.StartEventStreamHandler(config.SQSQueueName, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
 		log.Criticalf("Error starting event stream handler: %v", err)
 		os.Exit(errorCode)
 	}

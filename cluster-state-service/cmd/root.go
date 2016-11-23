@@ -23,6 +23,7 @@ const (
 	sqsQueueNameFlag = "queue"
 	cssBindFlag      = "bind"
 	etcdEndpointFlag = "etcd-endpoint"
+	versionFlag      = "version"
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -47,6 +48,7 @@ a localized data store, which provides you a near-real-time view of your cluster
 	rootCmd.PersistentFlags().StringVar(&config.SQSQueueName, sqsQueueNameFlag, "", "SQS queue name")
 	rootCmd.PersistentFlags().StringVar(&config.CSSBindAddr, cssBindFlag, "", "Cluster State Service listen address")
 	rootCmd.PersistentFlags().StringArrayVar(&config.EtcdEndpoints, etcdEndpointFlag, make([]string, 0), "Etcd node addresses")
+	rootCmd.PersistentFlags().BoolVar(&config.PrintVersion, versionFlag, false, "Print version and exit")
 	return rootCmd
 }
 
