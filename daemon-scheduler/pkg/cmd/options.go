@@ -37,9 +37,9 @@ func initConfig() {
 
 func createRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "ecs-daemon-scheduler",
-		Short: "ecs-daemon-scheduler ",
-		Long: `ecs-daemon-scheduler supports launching daemon like tasks that need to
+		Use:   "daemon-scheduler",
+		Short: "daemon-scheduler ",
+		Long: `daemon-scheduler supports launching daemon like tasks that need to
 be launched only once in every node of an ECS cluster. As new nodes join the cluster,
 it launches the task in those nodes as well.`,
 		Run: func(cmd *cobra.Command, args []string) {
