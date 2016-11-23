@@ -1,0 +1,91 @@
+{
+  "Description": "Template to deploy Blox framework locally",
+
+  "Parameters": {
+    "QueueName": {
+      "Type": "String",
+      "Description": "SQS Queue Name",
+      "Default": "blox_queue"
+    }
+  },
+
+  "Resources": {
+
+    "CloudWatchEvents": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "CloudWatch ECS events",
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              { "Ref": "QueueName" },
+              "Events"
+            ]
+          ]
+        },
+        "EventPattern": {
+          "source": [
+            "aws.ecs"
+          ],
+          "detail-type": [
+            "ECS Task State Change",
+            "ECS Container Instance State Change"
+          ]
+        },
+        "Targets": [
+          {
+            "Arn": { "Fn::GetAtt": ["Queue", "Arn"] },
+            "Id": "SQSTarget"
+          }
+        ]
+      }
+    },
+    "Queue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": { "Ref": "QueueName" }
+      }
+    },
+    "QueuePolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "Queues": [ {"Ref": "Queue"} ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Id": { "Fn::Join": [ "", [ { "Fn::GetAtt": ["Queue", "Arn"] }, "/SQSDefaultPolicy" ] ] },
+          "Statement":[
+            {
+              "Sid": "TrustCWEToSendEventsToMyQueue",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Action": "sqs:SendMessage",
+              "Resource": { "Fn::GetAtt": ["Queue", "Arn"] },
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": { "Fn::GetAtt": ["CloudWatchEvents", "Arn"] }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+
+  },
+
+  "Outputs": {
+    "QueueName": {
+      "Description": "SQS Queue Name",
+      "Value": { "Ref": "QueueName" }
+    },
+    "QueueUrl": {
+      "Description": "SQS Queue URL",
+      "Value": { "Ref": "Queue" }
+    }
+  },
+
+  "AWSTemplateFormatVersion": "2010-09-09"
+}
