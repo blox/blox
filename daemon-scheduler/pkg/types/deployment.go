@@ -43,8 +43,6 @@ type Deployment struct {
 	TaskDefinition   string
 	DesiredTaskCount int
 
-	//TODO: use an internal type instead of ECS Task
-	CurrentTasks    []*ecs.Task
 	FailedInstances []*ecs.Failure
 	StartTime       time.Time
 	EndTime         time.Time
@@ -66,7 +64,6 @@ func NewDeployment(taskDefinition string) (*Deployment, error) {
 
 func (d Deployment) UpdateDeploymentInProgress(
 	desiredTaskCount int,
-	currentTasks []*ecs.Task,
 	failedInstances []*ecs.Failure) (*Deployment, error) {
 
 	if d.Status == DeploymentCompleted {
@@ -81,18 +78,15 @@ func (d Deployment) UpdateDeploymentInProgress(
 
 	d.Status = DeploymentInProgress
 	d.DesiredTaskCount = desiredTaskCount
-	d.CurrentTasks = currentTasks
 	d.FailedInstances = failedInstances
 
 	return &d, nil
 }
 
-func (d Deployment) UpdateDeploymentCompleted(
-	CurrentTasks []*ecs.Task) *Deployment {
+func (d Deployment) UpdateDeploymentCompleted() *Deployment {
 
 	d.Status = DeploymentCompleted
 	d.Health = DeploymentHealthy
-	d.CurrentTasks = CurrentTasks
 	d.FailedInstances = nil
 	d.EndTime = time.Now()
 

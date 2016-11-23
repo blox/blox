@@ -14,9 +14,9 @@
 package v1
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
-	"github.com/aws/aws-sdk-go/aws"
 )
 
 func toEnvironmentModel(envType types.Environment) models.Environment {
@@ -35,11 +35,6 @@ func toEnvironmentModel(envType types.Environment) models.Environment {
 }
 
 func toDeploymentModel(envName *string, depType types.Deployment) *models.Deployment {
-	taskArns := []string{}
-	for _, task := range depType.CurrentTasks {
-		taskArns = append(taskArns, aws.StringValue(task.TaskArn))
-	}
-
 	instanceArns := []string{}
 	for _, failure := range depType.FailedInstances {
 		instanceArns = append(instanceArns, aws.StringValue(failure.Arn))
@@ -50,7 +45,6 @@ func toDeploymentModel(envName *string, depType types.Deployment) *models.Deploy
 		ID:              &depType.ID,
 		Status:          aws.String(toDeploymentStatus(depType.Status)),
 		TaskDefinition:  aws.String(depType.TaskDefinition),
-		CurrentTasks:    taskArns,
 		FailedInstances: instanceArns,
 	}
 }

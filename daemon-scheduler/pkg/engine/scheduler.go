@@ -303,29 +303,6 @@ func (scheduler Scheduler) loadInstancesAlreadyDeployed(environment *types.Envir
 		}
 	}
 
-	// Also add tasks which are not yet available in cluster-state, this happens when events are delayed.
-	// In this case we will rely on deployment's state as authority
-	for id, deployment := range deploymentsMap {
-		for _, task := range deployment.CurrentTasks {
-			instanceARN := aws.StringValue(task.ContainerInstanceArn)
-			taskARN := aws.StringValue(task.TaskArn)
-			deployedTasks, ok := result.deployedInstances[instanceARN]
-			if !ok {
-				deployedTasks = make([]*deployedTask, 0)
-			}
-
-			_, ok = tasks[taskARN]
-			if !ok {
-				timeSince := time.Now().UTC().Sub(*task.CreatedAt)
-				if timeSince < maxClusterStateLag {
-					log.Infof("Task %s of deployment %s is missing in cluster-state. TimeSince=%s", taskARN, id, timeSince)
-					deployedTasks = append(deployedTasks, &deployedTask{task: taskARN, deployment: deployment})
-				}
-			}
-			result.deployedInstances[instanceARN] = deployedTasks
-		}
-	}
-
 	return result, nil
 }
 

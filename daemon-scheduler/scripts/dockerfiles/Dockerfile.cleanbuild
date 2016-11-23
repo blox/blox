@@ -20,6 +20,5 @@ VOLUME ['/out']
 RUN mkdir -p /go/src/github.com/aws/
 
 COPY ./scripts/cleanbuild /scripts/cleanbuild
-WORKDIR /go/src/github.com/aws/amazon-ecs-daemon-scheduler
 
 ENTRYPOINT /scripts/cleanbuild

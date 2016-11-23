@@ -134,16 +134,11 @@ func (d deployment) startDeployment(ctx context.Context, env *types.Environment,
 		return nil, errors.Wrap(err, "Error starting tasks")
 	}
 
-	tasks := resp.Tasks
-	if deployment.CurrentTasks != nil {
-		tasks = append(tasks, deployment.CurrentTasks...)
-	}
 	failures := resp.Failures
 	if deployment.FailedInstances != nil {
 		failures = append(failures, deployment.FailedInstances...)
 	}
-	updatedDeployment, err := deployment.UpdateDeploymentInProgress(
-		len(instanceARNs), tasks, failures)
+	updatedDeployment, err := deployment.UpdateDeploymentInProgress(len(instanceARNs), failures)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Error updating deployment")

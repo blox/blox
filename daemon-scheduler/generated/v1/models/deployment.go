@@ -30,9 +30,6 @@ import (
 // swagger:model Deployment
 type Deployment struct {
 
-	// List of ECS task ARNs started by this deployment
-	CurrentTasks []string `json:"currentTasks"`
-
 	// environment name
 	// Required: true
 	EnvironmentName *string `json:"environmentName"`
@@ -56,11 +53,6 @@ type Deployment struct {
 // Validate validates this deployment
 func (m *Deployment) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateCurrentTasks(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
 
 	if err := m.validateEnvironmentName(formats); err != nil {
 		// prop
@@ -90,15 +82,6 @@ func (m *Deployment) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *Deployment) validateCurrentTasks(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.CurrentTasks) { // not required
-		return nil
-	}
-
 	return nil
 }
 
@@ -142,9 +125,12 @@ func init() {
 }
 
 const (
-	deploymentStatusPending   string = "pending"
-	deploymentStatusRunning   string = "running"
-	deploymentStatusCompleted string = "completed"
+	// DeploymentStatusPending captures enum value "pending"
+	DeploymentStatusPending string = "pending"
+	// DeploymentStatusRunning captures enum value "running"
+	DeploymentStatusRunning string = "running"
+	// DeploymentStatusCompleted captures enum value "completed"
+	DeploymentStatusCompleted string = "completed"
 )
 
 // prop value enum
