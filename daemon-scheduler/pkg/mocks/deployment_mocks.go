@@ -17,9 +17,10 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	context "context"
-	types "github.com/blox/blox/daemon-scheduler/pkg/types"
+
+	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // Mock of Deployment interface

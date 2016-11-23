@@ -95,9 +95,10 @@ func (ecsWrapper ECSWrapper) DeregisterTaskDefinition(taskDefnARN string) error 
 	return nil
 }
 
-func (ecsWrapper ECSWrapper) ListTasks(clusterName string) ([]*string, error) {
+func (ecsWrapper ECSWrapper) ListTasks(clusterName string, startedBy *string) ([]*string, error) {
 	in := ecs.ListTasksInput{
-		Cluster: &clusterName,
+		Cluster:   aws.String(clusterName),
+		StartedBy: startedBy,
 	}
 	resp, err := ecsWrapper.client.ListTasks(&in)
 	if err != nil {
@@ -152,7 +153,6 @@ func (ecsWrapper ECSWrapper) RegisterTaskDefinition(taskDefinition string) (stri
 	taskDefnARN, err := ecsWrapper.DescribeTaskDefinition(taskDefinition)
 	if err == nil {
 		return taskDefnARN, nil
-
 	}
 
 	name := "sleep"

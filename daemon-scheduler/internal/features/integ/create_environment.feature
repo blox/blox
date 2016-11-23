@@ -29,5 +29,4 @@ Feature: Integration tests of CreateEnvironment API
     Scenario: CreateEnvironment API should fail for empty name
         Given a cluster "ecs-daemon-scheduler-test"
         And a registered "sleep" task-definition
-        And I deregister task-definition
         When I create an environment with name " " it should fail with BadRequest
