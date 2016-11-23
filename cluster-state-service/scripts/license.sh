@@ -42,7 +42,7 @@ for registry in github.com golang.org; do
   done;
 done;
 
-for repo in ./../vendor/gopkg.in/* ./../vendor/google.golang.org/*; do
+for repo in ./../../vendor/gopkg.in/* ./../../vendor/google.golang.org/*; do
   appendRepoLicense $repo
 done;
 
