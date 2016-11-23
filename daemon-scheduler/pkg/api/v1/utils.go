@@ -41,5 +41,6 @@ func handleBackendError(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
 	writeInternalServerError(w, err)
 }

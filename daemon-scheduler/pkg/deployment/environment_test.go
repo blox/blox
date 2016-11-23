@@ -66,25 +66,24 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 		suite.taskMap[*v.TaskArn] = v
 	}
 
-	suite.deployment, err = types.NewDeployment(taskDefinition)
-	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
-
-	suite.updatedDeployment, err = suite.deployment.UpdateDeploymentInProgress(
-		desiredTaskCount, nil)
-	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
-
 	failedTask := ecs.Failure{
 		Arn: aws.String(instanceARN),
 	}
-
-	suite.unhealthyDeployment, err = suite.deployment.UpdateDeploymentInProgress(
-		desiredTaskCount, []*ecs.Failure{&failedTask})
-	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.environment1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.environment2, err = types.NewEnvironment(environmentName2, taskDefinition, cluster)
+	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+
+	suite.deployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
+	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+
+	suite.updatedDeployment, err = suite.deployment.UpdateDeploymentInProgress(desiredTaskCount, nil)
+	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+
+	suite.unhealthyDeployment, err = suite.deployment.UpdateDeploymentInProgress(
+		desiredTaskCount, []*ecs.Failure{&failedTask})
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.updatedEnvironment, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)

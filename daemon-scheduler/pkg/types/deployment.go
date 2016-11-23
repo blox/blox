@@ -42,15 +42,20 @@ type Deployment struct {
 	Health           DeploymentHealth
 	TaskDefinition   string
 	DesiredTaskCount int
+	Token            string
 
 	FailedInstances []*ecs.Failure
 	StartTime       time.Time
 	EndTime         time.Time
 }
 
-func NewDeployment(taskDefinition string) (*Deployment, error) {
+func NewDeployment(taskDefinition string, token string) (*Deployment, error) {
 	if len(taskDefinition) == 0 {
 		return nil, errors.New("Task definition cannot be empty")
+	}
+
+	if len(token) == 0 {
+		return nil, errors.New("Token cannot be empty")
 	}
 
 	return &Deployment{
@@ -59,6 +64,7 @@ func NewDeployment(taskDefinition string) (*Deployment, error) {
 		Health:         DeploymentHealthy,
 		StartTime:      time.Now(),
 		TaskDefinition: taskDefinition,
+		Token:          token,
 	}, nil
 }
 

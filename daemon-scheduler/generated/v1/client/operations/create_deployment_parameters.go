@@ -68,7 +68,7 @@ type CreateDeploymentParams struct {
 	  Deployment token
 
 	*/
-	DeploymentToken *string
+	DeploymentToken string
 	/*Name
 	  Name of environment
 
@@ -103,13 +103,13 @@ func (o *CreateDeploymentParams) SetContext(ctx context.Context) {
 }
 
 // WithDeploymentToken adds the deploymentToken to the create deployment params
-func (o *CreateDeploymentParams) WithDeploymentToken(deploymentToken *string) *CreateDeploymentParams {
+func (o *CreateDeploymentParams) WithDeploymentToken(deploymentToken string) *CreateDeploymentParams {
 	o.SetDeploymentToken(deploymentToken)
 	return o
 }
 
 // SetDeploymentToken adds the deploymentToken to the create deployment params
-func (o *CreateDeploymentParams) SetDeploymentToken(deploymentToken *string) {
+func (o *CreateDeploymentParams) SetDeploymentToken(deploymentToken string) {
 	o.DeploymentToken = deploymentToken
 }
 
@@ -130,20 +130,13 @@ func (o *CreateDeploymentParams) WriteToRequest(r runtime.ClientRequest, reg str
 	r.SetTimeout(o.timeout)
 	var res []error
 
-	if o.DeploymentToken != nil {
-
-		// query param deploymentToken
-		var qrDeploymentToken string
-		if o.DeploymentToken != nil {
-			qrDeploymentToken = *o.DeploymentToken
+	// query param deploymentToken
+	qrDeploymentToken := o.DeploymentToken
+	qDeploymentToken := qrDeploymentToken
+	if qDeploymentToken != "" {
+		if err := r.SetQueryParam("deploymentToken", qDeploymentToken); err != nil {
+			return err
 		}
-		qDeploymentToken := qrDeploymentToken
-		if qDeploymentToken != "" {
-			if err := r.SetQueryParam("deploymentToken", qDeploymentToken); err != nil {
-				return err
-			}
-		}
-
 	}
 
 	// path param name

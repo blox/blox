@@ -118,7 +118,7 @@ func (eds EDSWrapper) CreateDeployment(ctx context.Context, envName *string,
 	deploymentToken *string) (*models.Deployment, error) {
 	params := &operations.CreateDeploymentParams{
 		Name:            *envName,
-		DeploymentToken: deploymentToken,
+		DeploymentToken: *deploymentToken,
 		Context:         ctx,
 	}
 	resp, err := eds.client.Operations.CreateDeployment(params)

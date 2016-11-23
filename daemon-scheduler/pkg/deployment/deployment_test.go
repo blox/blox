@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	environmentVersion = uuid.NewRandom().String()
+	token = uuid.NewRandom().String()
 )
 
 type DeploymentTestSuite struct {
@@ -93,7 +93,12 @@ func (suite *DeploymentTestSuite) TestNewDeployment() {
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeploymentEmptyEnvironmentName() {
-	_, err := suite.deployment.CreateDeployment(suite.ctx, "", environmentVersion)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, "", token)
+	assert.Error(suite.T(), err, "Expected an error when environment name is empty")
+}
+
+func (suite *DeploymentTestSuite) TestCreateDeploymentEmptyToken() {
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, "")
 	assert.Error(suite.T(), err, "Expected an error when environment name is empty")
 }
 
@@ -101,7 +106,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(nil, errors.New("Get environment failed"))
 
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, environmentVersion)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, token)
 	assert.Error(suite.T(), err, "Expected an error when get environment fails")
 }
 
@@ -109,7 +114,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentIsNil() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(nil, nil)
 
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, environmentVersion)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, token)
 	assert.Error(suite.T(), err, "Expected an error when get environment is nil")
 }
 
@@ -121,11 +126,23 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentOutdatedToken() {
 	assert.Error(suite.T(), err, "Expected an error when token is outdated")
 }
 
+func (suite *DeploymentTestSuite) TestCreateDeploymentExistingToken() {
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
+	assert.Nil(suite.T(), err, "Deployment creation failed")
+
+	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
+
+	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
+	assert.Error(suite.T(), err, "Expected an error when a deployment with token exists")
+}
+
 func (suite *DeploymentTestSuite) TestCreateDeploymentAddDeploymentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 
 	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
@@ -140,7 +157,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentAddDeploymentFails() {
 func (suite *DeploymentTestSuite) TestCreateDeploymentThereIsAnInProgressDeployment() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 
 	inprogressDeployment := &types.Deployment{
@@ -151,24 +168,20 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentThereIsAnInProgressDeploym
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
 	suite.deploymentEnvironment.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), deployment, &d)
-		}).Return(suite.deploymentEnvironment, nil)
+	suite.environment.EXPECT().AddDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
 	suite.clusterState.EXPECT().ListInstances(gomock.Any()).Times(0)
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
-	d, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Unexpected error when there is an in-progress deployment")
-	verifyDeployment(suite.T(), deployment, d)
+	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
+	assert.Error(suite.T(), err, "Expected an error when there is an in-progress deployment")
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
@@ -189,7 +202,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesFails() {
 func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsNil() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
@@ -210,7 +223,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsNil() {
 func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsEmpty() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
@@ -231,7 +244,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsEmpty() {
 func (suite *DeploymentTestSuite) TestCreateDeploymentStartTasksFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
@@ -253,7 +266,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentStartTasksFails() {
 func (suite *DeploymentTestSuite) TestCreateDeploymentUpdateDeploymentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
@@ -283,21 +296,11 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentUpdateDeploymentFails() {
 	assert.Error(suite.T(), err, "Expected an error when update deployment fails")
 }
 
-func (suite *DeploymentTestSuite) TestCreateDeploymentWithoutToken() {
-	createDeployment(suite, "")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentWithToken() {
-	createDeployment(suite, suite.deploymentEnvironment.Token)
-}
-
-func createDeployment(suite *DeploymentTestSuite, token string) {
+func (suite *DeploymentTestSuite) TestCreateDeployment() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
 
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
-
-	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
 
 	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
 		func(_ interface{}, _ interface{}, d types.Deployment) {
@@ -322,7 +325,7 @@ func createDeployment(suite *DeploymentTestSuite, token string) {
 			verifyDeployment(suite.T(), &updatedDeployment, &d)
 		}).Return(&updatedEnvironment, nil)
 
-	d, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, token)
+	d, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	verifyDeployment(suite.T(), &updatedDeployment, d)
 }
@@ -335,6 +338,7 @@ func verifyDeployment(t *testing.T, expected *types.Deployment, actual *types.De
 	assert.Exactly(t, expected.DesiredTaskCount, actual.DesiredTaskCount, "Deployment desired task count should match")
 	assert.NotEmpty(t, actual.StartTime, "Deployment start time should not be empty")
 	assert.Exactly(t, expected.EndTime, actual.EndTime, "Deployment end time should match")
+	assert.Exactly(t, expected.Token, actual.Token, "Deployment tokens should match")
 }
 
 func (suite *DeploymentTestSuite) TestGetDeploymentEmptyEnvironmentName() {
@@ -373,7 +377,7 @@ func (suite *DeploymentTestSuite) TestGetDeploymentEnvironmentDoesNotHaveDeploym
 }
 
 func (suite *DeploymentTestSuite) TestGetDeploymentEnvironmentDoesNotHaveAMatchingDeployment() {
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Could not create a new deployment")
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
 
@@ -386,11 +390,11 @@ func (suite *DeploymentTestSuite) TestGetDeploymentEnvironmentDoesNotHaveAMatchi
 }
 
 func (suite *DeploymentTestSuite) TestGetDeployment() {
-	deployment1, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment1, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Could not create a new deployment")
 	suite.deploymentEnvironment.Deployments[deployment1.ID] = *deployment1
 
-	deployment2, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment2, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Could not create a new deployment")
 	suite.deploymentEnvironment.Deployments[deployment2.ID] = *deployment2
 
@@ -433,11 +437,11 @@ func (suite *DeploymentTestSuite) TestListDeploymentsEnvironmentDoesNotHaveDeplo
 }
 
 func (suite *DeploymentTestSuite) TestListDeployments() {
-	deployment1, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment1, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Could not create a new deployment")
 	suite.deploymentEnvironment.Deployments[deployment1.ID] = *deployment1
 
-	deployment2, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition)
+	deployment2, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Could not create a new deployment")
 	suite.deploymentEnvironment.Deployments[deployment2.ID] = *deployment2
 

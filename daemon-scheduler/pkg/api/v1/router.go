@@ -57,10 +57,6 @@ func NewRouter(api API) *mux.Router {
 	// deployment
 
 	s.Path("/environments/{name}/deployments").
-		Methods("POST").
-		HandlerFunc(api.CreateDeployment)
-
-	s.Path("/environments/{name}/deployments").
 		Queries(deploymentToken, "{deploymentToken:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}").
 		Methods("POST").
 		HandlerFunc(api.CreateDeployment)

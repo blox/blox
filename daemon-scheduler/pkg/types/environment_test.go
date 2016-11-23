@@ -16,6 +16,7 @@ package types
 import (
 	"testing"
 
+	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -74,11 +75,11 @@ func (suite *EnvironmentTestSuite) TestGetDeploymentsEmpty() {
 }
 
 func (suite *EnvironmentTestSuite) TestGetDeployments() {
-	deployment1, err := NewDeployment(taskDefinition)
+	deployment1, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	suite.environment.Deployments[deployment1.ID] = *deployment1
 
-	deployment2, err := NewDeployment(taskDefinition)
+	deployment2, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	deployment2.StartTime = deployment1.StartTime.AddDate(0, 0, 1)
 	suite.environment.Deployments[deployment2.ID] = *deployment2
@@ -90,11 +91,11 @@ func (suite *EnvironmentTestSuite) TestGetDeployments() {
 }
 
 func (suite *EnvironmentTestSuite) TestGetInProgressWithPending() {
-	deployment1, err := NewDeployment(taskDefinition)
+	deployment1, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	suite.environment.Deployments[deployment1.ID] = *deployment1
 
-	deployment2, err := NewDeployment(taskDefinition)
+	deployment2, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	deployment2.Status = DeploymentInProgress
 	suite.environment.Deployments[deployment2.ID] = *deployment2
@@ -105,11 +106,11 @@ func (suite *EnvironmentTestSuite) TestGetInProgressWithPending() {
 }
 
 func (suite *EnvironmentTestSuite) TestGetInProgressStopAtCompleted() {
-	deployment1, err := NewDeployment(taskDefinition)
+	deployment1, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	suite.environment.Deployments[deployment1.ID] = *deployment1
 
-	deployment2, err := NewDeployment(taskDefinition)
+	deployment2, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	deployment2.Status = DeploymentCompleted
 	suite.environment.Deployments[deployment2.ID] = *deployment2
@@ -120,15 +121,19 @@ func (suite *EnvironmentTestSuite) TestGetInProgressStopAtCompleted() {
 }
 
 func (suite *EnvironmentTestSuite) TestGetInProgressTraverseTheEntireList() {
-	deployment1, err := NewDeployment(taskDefinition)
+	deployment1, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	suite.environment.Deployments[deployment1.ID] = *deployment1
 
-	deployment2, err := NewDeployment(taskDefinition)
+	deployment2, err := NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	suite.environment.Deployments[deployment2.ID] = *deployment2
 
 	d, err := suite.environment.GetInProgressDeployment()
 	assert.Nil(suite.T(), err, "Unexpected error when getting deployments")
 	assert.Nil(suite.T(), d, "There should be no in progress deployments")
+}
+
+func generateToken() string {
+	return uuid.NewRandom().String()
 }

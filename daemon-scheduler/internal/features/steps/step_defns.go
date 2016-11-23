@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -29,8 +30,9 @@ import (
 )
 
 const (
-	deploymentCompleted = "completed"
-	taskRunning         = "RUNNING"
+	deploymentCompleted           = "completed"
+	taskRunning                   = "RUNNING"
+	deploymentCompleteWaitSeconds = 50
 )
 
 func init() {
@@ -287,11 +289,21 @@ func init() {
 		})
 
 	Then(`^I call CreateDeployment API$`, func() {
-		createDeployment("", ctx, edsWrapper)
+		createDeployment(deploymentToken, ctx, edsWrapper)
 	})
 
-	Then(`^I call CreateDeployment API with the token returned from create environment$`, func() {
-		createDeployment(deploymentToken, ctx, edsWrapper)
+	Then(`^creating another deployment with the same token should fail$`, func() {
+		_, err := edsWrapper.CreateDeployment(context.TODO(), &environment, &deploymentToken)
+		if err != nil {
+			_, ok := err.(*operations.CreateDeploymentBadRequest)
+			if !ok {
+				T.Errorf(err.Error())
+				return
+			}
+		} else {
+			T.Errorf("Expecting CreateDeploymentBadRequest error")
+			return
+		}
 	})
 
 	Then(`^Deployment should be returned in ListDeployments call$`,
@@ -403,32 +415,31 @@ func init() {
 			}
 		})
 
-	And(`^I call CreateDeployment API (.+?) times$`,
-		func(count int) {
-			for i := 0; i < count; i++ {
-				deployment := createDeployment("", ctx, edsWrapper)
-				deploymentIDs[*deployment.ID] = deployment
-			}
-		})
+	And(`^I call CreateDeployment API (.+?) times$`, func(count int) {
+		for i := 0; i < count; i++ {
+			deployment := createDeployment("", ctx, edsWrapper)
+			waitForDeploymentToComplete(deploymentCompleteWaitSeconds, edsWrapper)
+			deploymentIDs[*deployment.ID] = deployment
+		}
+	})
 
-	And(`^ListDeployments should return all the (.+?) deployments$`,
-		func(count int) {
-			deployments, err := edsWrapper.ListDeployments(aws.String(environment))
-			if err != nil {
-				T.Errorf(err.Error())
-				return
+	And(`^ListDeployments should return (.+?) deployment$`, func(count int) {
+		deployments, err := edsWrapper.ListDeployments(aws.String(environment))
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+		assert.True(T, count <= len(deployments), "Wrong number of deployments returned")
+		deploymentsFromResponse := make(map[string]bool)
+		for _, d := range deployments {
+			deploymentsFromResponse[*d.ID] = true
+		}
+		for key, _ := range deploymentIDs {
+			if !deploymentsFromResponse[key] {
+				T.Errorf("Did not find deployment with id:%s under environment:%s", key, environment)
 			}
-			assert.True(T, count <= len(deployments), "Wrong number of deployments returned")
-			deploymentsFromResponse := make(map[string]bool)
-			for _, d := range deployments {
-				deploymentsFromResponse[*d.ID] = true
-			}
-			for key, _ := range deploymentIDs {
-				if !deploymentsFromResponse[key] {
-					T.Errorf("Did not find deployment with id:%s under environment:%s", key, environment)
-				}
-			}
-		})
+		}
+	})
 
 	When(`^I delete the environment$`, func() {
 		deleteEnvironment(environment, edsWrapper)
@@ -471,6 +482,27 @@ func createDeployment(deploymentToken string, ctx context.Context, edsWrapper wr
 	}
 	deploymentID = *deployment.ID
 	return deployment
+}
+
+func waitForDeploymentToComplete(seconds int, edsWrapper wrappers.EDSWrapper) {
+	ok, err := doSomething(time.Duration(seconds)*time.Second, 1*time.Second, func() (bool, error) {
+		deployment, err := edsWrapper.GetDeployment(aws.String(environment), aws.String(deploymentID))
+		if err != nil {
+			return false, errors.Wrapf(err, "Error calling GetDeployment for environment %s and deployment %s", environment, deploymentID)
+		}
+
+		return strings.ToLower(taskRunning) == strings.ToLower(aws.StringValue(deployment.Status)), nil
+	})
+
+	if err != nil {
+		T.Errorf(err.Error())
+		return
+	}
+
+	if !ok {
+		T.Errorf("Expecting the deployment status to be %v", taskRunning)
+		return
+	}
 }
 
 func doSomething(ttl time.Duration, tickTime time.Duration, fn func() (bool, error)) (bool, error) {

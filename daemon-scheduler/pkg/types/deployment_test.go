@@ -18,6 +18,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,11 +33,14 @@ type DeploymentTestSuite struct {
 	suite.Suite
 	deployment *Deployment
 	failures   []*ecs.Failure
+	token      string
 }
 
 func (suite *DeploymentTestSuite) SetupTest() {
+	suite.token = uuid.NewRandom().String()
+
 	var err error
-	suite.deployment, err = NewDeployment(taskDefinition)
+	suite.deployment, err = NewDeployment(taskDefinition, suite.token)
 	assert.Nil(suite.T(), err, "Cannot initialize DeploymentTestSuite")
 
 	failedInstance := ecs.Failure{
@@ -50,12 +54,12 @@ func TestDeploymentTestSuite(t *testing.T) {
 }
 
 func (suite *DeploymentTestSuite) TestNewDeploymentEmptyTaskDefinition() {
-	_, err := NewDeployment("")
+	_, err := NewDeployment("", suite.token)
 	assert.Error(suite.T(), err, "Expected an error when task definition is empty")
 }
 
 func (suite *DeploymentTestSuite) TestNewDeployment() {
-	d, err := NewDeployment(taskDefinition)
+	d, err := NewDeployment(taskDefinition, suite.token)
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
 	assert.NotNil(suite.T(), d, "Deployment should not be nil")
 	assert.NotEmpty(suite.T(), d.ID, "Deployment ID should not be empty")

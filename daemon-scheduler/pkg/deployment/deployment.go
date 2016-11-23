@@ -56,7 +56,11 @@ func (d deployment) CreateDeployment(ctx context.Context,
 	environmentName string, token string) (*types.Deployment, error) {
 
 	if len(environmentName) == 0 {
-		return nil, errors.New("Environment name is missing when creating a deployment")
+		return nil, types.NewBadRequestError(errors.New("Environment name is missing when creating a deployment"))
+	}
+
+	if len(token) == 0 {
+		return nil, types.NewBadRequestError(errors.New("Token is missing when creating a deployment"))
 	}
 
 	env, err := d.getEnvironment(ctx, environmentName)
@@ -64,13 +68,18 @@ func (d deployment) CreateDeployment(ctx context.Context,
 		return nil, errors.Wrapf(err, "Error retrieving environment with name %s", environmentName)
 	}
 
-	if len(token) > 0 && env.Token != token {
-		return nil, errors.Errorf("Token %v is outdated. Token on the environment is %v",
-			token, env.Token)
+	err = d.verifyToken(*env, token)
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.verifyInProgress(*env)
+	if err != nil {
+		return nil, err
 	}
 
 	// create and add a pending deployment to the environment
-	deployment, err := types.NewDeployment(env.DesiredTaskDefinition)
+	deployment, err := types.NewDeployment(env.DesiredTaskDefinition, env.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -78,16 +87,6 @@ func (d deployment) CreateDeployment(ctx context.Context,
 	env, err = d.environment.AddDeployment(ctx, *env, *deployment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error adding deployment %v to environment %s", deployment, environmentName)
-	}
-
-	inprogress, err := env.GetInProgressDeployment()
-	if err != nil {
-		return nil, err
-	}
-
-	if inprogress != nil {
-		//TODO: add deployment to the pending deployment queue
-		return deployment, nil
 	}
 
 	instanceARNs, err := d.getInstanceARNs(*env)
@@ -100,6 +99,33 @@ func (d deployment) CreateDeployment(ctx context.Context,
 	}
 
 	return d.startDeployment(ctx, env, deployment, instanceARNs)
+}
+
+func (d deployment) verifyToken(env types.Environment, token string) error {
+	if len(token) > 0 && env.Token != token {
+		return types.NewBadRequestError(errors.Errorf("Token %v is outdated. Token on the environment is %v", token, env.Token))
+	}
+
+	for _, deployment := range env.Deployments {
+		if deployment.Token == token {
+			return types.NewBadRequestError(errors.Errorf("Deployment with token %s already exists", token))
+		}
+	}
+
+	return nil
+}
+
+func (d deployment) verifyInProgress(env types.Environment) error {
+	inprogress, err := env.GetInProgressDeployment()
+	if err != nil {
+		return err
+	}
+
+	if inprogress != nil {
+		return types.NewBadRequestError(errors.Errorf("There is already a deployment %s in progress", inprogress.ID))
+	}
+
+	return nil
 }
 
 func (d deployment) CreateSubDeployment(ctx context.Context, environmentName string, instanceARNs []*string) (*types.Deployment, error) {
