@@ -21,3 +21,6 @@ var SchedulerBindAddr string
 
 // ClusterStateServiceEndpoint represents the css endpoint to connect to.
 var ClusterStateServiceEndpoint string
+
+// PrintVersion represents the flag to set when printing version information.
+var PrintVersion bool

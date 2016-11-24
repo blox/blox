@@ -20,6 +20,7 @@ import (
 	"github.com/blox/blox/daemon-scheduler/pkg/cmd"
 	"github.com/blox/blox/daemon-scheduler/pkg/config"
 	"github.com/blox/blox/daemon-scheduler/pkg/scheduler"
+	"github.com/blox/blox/daemon-scheduler/versioning"
 	log "github.com/cihub/seelog"
 
 	"os"
@@ -35,6 +36,11 @@ func main() {
 	if err := cmd.RootCmd.Execute(); err != nil {
 		log.Criticalf("Error getting command line arguments: %v", err)
 		os.Exit(1)
+	}
+
+	if config.PrintVersion {
+		versioning.PrintVersion()
+		os.Exit(0)
 	}
 
 	if err := scheduler.Run(config.SchedulerBindAddr, config.ClusterStateServiceEndpoint); err != nil {
