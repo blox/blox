@@ -23,10 +23,12 @@ import (
 )
 
 type Deployment interface {
-	// CreateDeployment kicks off a deployment in the provided environment. If token is provided
-	// the environment token must match the provided token, otherwise the deployment will fail.
+	// CreateDeployment creates a new deployment in the provided environment and updates the
+	// environment's pending deployment ID to the ID of the deployment created. If token is provided
+	// the environment token must match the provided token, otherwise the deployment creation will fail.
 	CreateDeployment(ctx context.Context, environmentName string, token string) (*types.Deployment, error)
-	// CreateSubDeployment kicks off latest deployment to start tasks on given instances
+	// CreateSubDeployment kicks off a deployment corresponding to the in progress deployment ID
+	// in the environment to start tasks on given instances
 	CreateSubDeployment(ctx context.Context, environmentName string, instanceARNs []*string) (*types.Deployment, error)
 	// GetDeployment returns the deployment with the provided id in the provided environment
 	GetDeployment(ctx context.Context, environmentName string, id string) (*types.Deployment, error)
@@ -89,16 +91,7 @@ func (d deployment) CreateDeployment(ctx context.Context,
 		return nil, errors.Wrapf(err, "Error adding deployment %v to environment %s", deployment, environmentName)
 	}
 
-	instanceARNs, err := d.getInstanceARNs(*env)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error getting instances in cluster for environment %s", environmentName)
-	}
-
-	if len(instanceARNs) == 0 {
-		return nil, errors.Errorf("There are no instances found that match the cluster: %s", env.Cluster)
-	}
-
-	return d.startDeployment(ctx, env, deployment, instanceARNs)
+	return deployment, nil
 }
 
 func (d deployment) verifyToken(env types.Environment, token string) error {
@@ -129,7 +122,7 @@ func (d deployment) verifyInProgress(env types.Environment) error {
 }
 
 func (d deployment) CreateSubDeployment(ctx context.Context, environmentName string, instanceARNs []*string) (*types.Deployment, error) {
-	if len(environmentName) == 0 {
+	if environmentName == "" {
 		return nil, errors.New("Environment name is missing when creating a deployment")
 	}
 
@@ -138,26 +131,27 @@ func (d deployment) CreateSubDeployment(ctx context.Context, environmentName str
 		return nil, errors.Wrapf(err, "Error retrieving environment with name %s", environmentName)
 	}
 
-	deployment, err := d.environment.GetCurrentDeployment(ctx, environmentName)
-
+	deployment, err := env.GetInProgressDeployment()
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to create sub-deployment")
+		return nil, errors.Wrapf(err,
+			"Unable to retrieve in progress deployment for environment with name '%s' to create a sub-deployment",
+			environmentName)
 	}
 
 	if deployment == nil {
-		return nil, fmt.Errorf("No deployment found for environment %s", environmentName)
+		return nil, fmt.Errorf(
+			"There is no in progress deployment for environment with name '%s' to create a sub-deployment",
+			environmentName)
 	}
 
-	return d.startDeployment(ctx, env, deployment, instanceARNs)
+	return d.startSubDeployment(ctx, env, deployment, instanceARNs)
 }
 
-func (d deployment) startDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
-	//TODO: Deprecate this in favor of sub-deployments/activities. It is safer to leave activities immutable after they are marked completed
-	//Also move this to async
-
+func (d deployment) startSubDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
 	resp, err := d.ecs.StartTask(env.Cluster, instanceARNs, deployment.ID, deployment.TaskDefinition)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error starting tasks")
+		return nil, errors.Wrapf(
+			err, "Error starting tasks for deployment with ID '%s' in environment with name '%s'", deployment.ID)
 	}
 
 	failures := resp.Failures
@@ -167,12 +161,12 @@ func (d deployment) startDeployment(ctx context.Context, env *types.Environment,
 	updatedDeployment, err := deployment.UpdateDeploymentInProgress(len(instanceARNs), failures)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Error updating deployment")
+		return nil, errors.Wrapf(err, "Error updating deployment with ID '%s'", deployment.ID)
 	}
 
 	env, err = d.environment.UpdateDeployment(ctx, *env, *updatedDeployment)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error updating deployment in environment")
+		return nil, errors.Wrapf(err, "Error updating deployment with ID '%s'", deployment.ID)
 	}
 
 	return updatedDeployment, nil

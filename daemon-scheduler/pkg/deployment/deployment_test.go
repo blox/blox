@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	token = uuid.NewRandom().String()
+	environmentVersion = uuid.NewRandom().String()
 )
 
 type DeploymentTestSuite struct {
@@ -93,12 +93,7 @@ func (suite *DeploymentTestSuite) TestNewDeployment() {
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeploymentEmptyEnvironmentName() {
-	_, err := suite.deployment.CreateDeployment(suite.ctx, "", token)
-	assert.Error(suite.T(), err, "Expected an error when environment name is empty")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentEmptyToken() {
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, "")
+	_, err := suite.deployment.CreateDeployment(suite.ctx, "", environmentVersion)
 	assert.Error(suite.T(), err, "Expected an error when environment name is empty")
 }
 
@@ -106,7 +101,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(nil, errors.New("Get environment failed"))
 
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, token)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, environmentVersion)
 	assert.Error(suite.T(), err, "Expected an error when get environment fails")
 }
 
@@ -114,7 +109,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentIsNil() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(nil, nil)
 
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, token)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, environmentVersion)
 	assert.Error(suite.T(), err, "Expected an error when get environment is nil")
 }
 
@@ -124,18 +119,6 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentOutdatedToken() {
 
 	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, "invalid")
 	assert.Error(suite.T(), err, "Expected an error when token is outdated")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentExistingToken() {
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-
-	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
-
-	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
-	assert.Error(suite.T(), err, "Expected an error when a deployment with token exists")
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeploymentAddDeploymentFails() {
@@ -168,132 +151,10 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentThereIsAnInProgressDeploym
 	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
 	suite.deploymentEnvironment.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
-	suite.environment.EXPECT().AddDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
-
-	suite.clusterState.EXPECT().ListInstances(gomock.Any()).Times(0)
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Times(0)
 
 	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
 	assert.Error(suite.T(), err, "Expected an error when there is an in-progress deployment")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
-
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-
-	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
-
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), deployment, &d)
-		}).Return(suite.deploymentEnvironment, nil)
-
-	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, errors.New("List instances fails"))
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
-
-	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
-	assert.Error(suite.T(), err, "Expected an error when listing instances fails")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsNil() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
-
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-
-	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
-
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), deployment, &d)
-		}).Return(suite.deploymentEnvironment, nil)
-
-	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(nil, nil)
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
-
-	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
-	assert.Error(suite.T(), err, "Expected an error when listing instances returns nil")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentListInstancesIsEmpty() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
-
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-
-	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
-
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), deployment, &d)
-		}).Return(suite.deploymentEnvironment, nil)
-
-	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return([]*models.ContainerInstance{}, nil)
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
-
-	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
-	assert.Error(suite.T(), err, "Expected an error when listing instances returns empty")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentStartTasksFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
-
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-
-	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
-
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), deployment, &d)
-		}).Return(suite.deploymentEnvironment, nil)
-
-	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(createContainerInstances(suite.instanceARNs), nil)
-	suite.ecs.EXPECT().StartTask(suite.deploymentEnvironment.Cluster, suite.instanceARNs,
-		gomock.Any(), suite.deploymentEnvironment.DesiredTaskDefinition).Return(nil, errors.New("Start tasks failed"))
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
-
-	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
-	assert.Error(suite.T(), err, "Expected an error when start tasks fails")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentUpdateDeploymentFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil)
-
-	deployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-
-	suite.deploymentEnvironment.Deployments[deployment.ID] = *deployment
-
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), deployment, &d)
-		}).Return(suite.deploymentEnvironment, nil)
-
-	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(createContainerInstances(suite.instanceARNs), nil)
-
-	suite.ecs.EXPECT().StartTask(suite.deploymentEnvironment.Cluster, suite.instanceARNs,
-		gomock.Any(), suite.deploymentEnvironment.DesiredTaskDefinition).Return(suite.startTaskOutput, nil)
-
-	updatedDeployment := *deployment
-	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
-	updatedDeployment.Health = types.DeploymentUnhealthy
-	updatedDeployment.Status = types.DeploymentInProgress
-	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
-
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), &updatedDeployment, &d)
-		}).Return(nil, errors.New("Update deployment failed"))
-
-	_, err = suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
-	assert.Error(suite.T(), err, "Expected an error when update deployment fails")
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeployment() {
@@ -307,27 +168,16 @@ func (suite *DeploymentTestSuite) TestCreateDeployment() {
 			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(suite.deploymentEnvironment, nil)
 
-	suite.clusterState.EXPECT().ListInstances(suite.deploymentEnvironment.Cluster).Return(createContainerInstances(suite.instanceARNs), nil)
-
-	suite.ecs.EXPECT().StartTask(suite.deploymentEnvironment.Cluster, suite.instanceARNs,
-		gomock.Any(), suite.deploymentEnvironment.DesiredTaskDefinition).Return(suite.startTaskOutput, nil)
-
-	updatedDeployment := *deployment
-	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
-	updatedDeployment.Health = types.DeploymentUnhealthy
-	updatedDeployment.Status = types.DeploymentInProgress
-	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
-
 	updatedEnvironment := *suite.deploymentEnvironment
 
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *suite.deploymentEnvironment, gomock.Any()).Do(
 		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), &updatedDeployment, &d)
+			verifyDeployment(suite.T(), deployment, &d)
 		}).Return(&updatedEnvironment, nil)
 
 	d, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.deploymentEnvironment.Token)
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
-	verifyDeployment(suite.T(), &updatedDeployment, d)
+	verifyDeployment(suite.T(), deployment, d)
 }
 
 func verifyDeployment(t *testing.T, expected *types.Deployment, actual *types.Deployment) {
@@ -338,7 +188,6 @@ func verifyDeployment(t *testing.T, expected *types.Deployment, actual *types.De
 	assert.Exactly(t, expected.DesiredTaskCount, actual.DesiredTaskCount, "Deployment desired task count should match")
 	assert.NotEmpty(t, actual.StartTime, "Deployment start time should not be empty")
 	assert.Exactly(t, expected.EndTime, actual.EndTime, "Deployment end time should match")
-	assert.Exactly(t, expected.Token, actual.Token, "Deployment tokens should match")
 }
 
 func (suite *DeploymentTestSuite) TestGetDeploymentEmptyEnvironmentName() {
@@ -467,6 +316,132 @@ func (suite *DeploymentTestSuite) TestListDeployments() {
 			}
 		}
 	}
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentEmptyEnvironmentName() {
+	_, err := suite.deployment.CreateSubDeployment(suite.ctx, "", suite.instanceARNs)
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, gomock.Any()).Times(0)
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+
+	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment without an environment name")
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentFails() {
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, errors.New("Get environment failed"))
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+
+	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get environment fails")
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentReturnsNil() {
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+
+	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get environment returns nil")
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetInProgressDeploymentReturnsError() {
+	env := suite.deploymentEnvironment
+	env.InProgressDeploymentID = uuid.NewRandom().String()
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+
+	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get in progress deployment returns an error")
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetInProgressDeploymentReturnsNoDeployment() {
+	env := suite.deploymentEnvironment
+	env.InProgressDeploymentID = ""
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+
+	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get in progress deployment returns an error")
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentStartTasksFails() {
+	inprogressDeployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
+	assert.Nil(suite.T(), err, "Deployment creation failed")
+	inprogressDeployment.Status = types.DeploymentInProgress
+
+	env := suite.deploymentEnvironment
+	env.InProgressDeploymentID = inprogressDeployment.ID
+	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).
+		Return(nil, errors.New("Error starting tasks"))
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+
+	_, err = suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when start tasks fails")
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentUpdateDeploymentFails() {
+	inprogressDeployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
+	assert.Nil(suite.T(), err, "Deployment creation failed")
+	inprogressDeployment.Status = types.DeploymentInProgress
+
+	env := suite.deploymentEnvironment
+	env.Name = environmentName
+	env.InProgressDeploymentID = inprogressDeployment.ID
+	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
+
+	updatedDeployment := *inprogressDeployment
+	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
+	updatedDeployment.Health = types.DeploymentUnhealthy
+	updatedDeployment.Status = types.DeploymentInProgress
+	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
+
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *env, gomock.Any()).Do(
+		func(_ interface{}, _ interface{}, d types.Deployment) {
+			verifyDeployment(suite.T(), &updatedDeployment, &d)
+		}).Return(nil, errors.New("Error updating deployment"))
+
+	_, err = suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when update deployment fails")
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
+	inprogressDeployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
+	assert.Nil(suite.T(), err, "Deployment creation failed")
+	inprogressDeployment.Status = types.DeploymentInProgress
+
+	env := suite.deploymentEnvironment
+	env.InProgressDeploymentID = inprogressDeployment.ID
+	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
+
+	updatedDeployment := *inprogressDeployment
+	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
+	updatedDeployment.Health = types.DeploymentUnhealthy
+	updatedDeployment.Status = types.DeploymentInProgress
+	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
+
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *env, gomock.Any()).Do(
+		func(_ interface{}, _ interface{}, d types.Deployment) {
+			verifyDeployment(suite.T(), &updatedDeployment, &d)
+		}).Return(env, nil)
+
+	d, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.Nil(suite.T(), err, "Unexpected error creating a sub-deployment")
+	verifyDeployment(suite.T(), &updatedDeployment, d)
 }
 
 func createContainerInstances(instanceARNs []*string) []*models.ContainerInstance {

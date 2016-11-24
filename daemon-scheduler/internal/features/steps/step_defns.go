@@ -70,6 +70,14 @@ func init() {
 		asg = a
 	})
 
+	Given(`^A cluster named "env.(.+?)"$`, func(cEnv string) {
+		c := os.Getenv(cEnv)
+		if len(c) == 0 {
+			T.Errorf("ECS_CLUSTER env-var is not defined")
+		}
+		cluster = c
+	})
+
 	Given(`^a cluster "(.+?)"$`, func(c string) {
 		_, err := ecsWrapper.CreateCluster(c)
 		if err != nil {
@@ -329,18 +337,9 @@ func init() {
 			if err != nil {
 				return false, errors.Wrapf(err, "Error calling ListTasks for cluster %s and deployment %s", cluster, deploymentID)
 			}
-			runningTasks := []*string{}
 
-			for _, task := range tasks {
-				ecsTask, err := ecsWrapper.DescribeTask(cluster, aws.StringValue(task))
-				if err != nil {
-					return false, err
-				}
-				if aws.StringValue(ecsTask.LastStatus) == taskRunning {
-					runningTasks = append(runningTasks, ecsTask.TaskArn)
-				}
-			}
-			return count == len(tasks), nil
+			runningTasks := filterTasksByStatusRunning(aws.String(cluster), tasks, ecsWrapper)
+			return count == len(runningTasks), nil
 		})
 
 		if err != nil {
@@ -532,4 +531,21 @@ func doSomething(ttl time.Duration, tickTime time.Duration, fn func() (bool, err
 			}
 		}
 	}
+}
+
+func filterTasksByStatusRunning(cluster *string, taskARNs []*string, ecsWrapper wrappers.ECSWrapper) []*string {
+	runningTasks := make([]*string, len(taskARNs))
+	if len(taskARNs) == 0 {
+		return runningTasks
+	}
+	tasks, err := ecsWrapper.DescribeTasks(cluster, taskARNs)
+	if err != nil {
+		T.Errorf(err.Error())
+	}
+	for _, t := range tasks {
+		if aws.StringValue(t.LastStatus) == taskRunning {
+			runningTasks = append(runningTasks, t.TaskArn)
+		}
+	}
+	return runningTasks
 }

@@ -227,7 +227,9 @@ func (suite *EnvironmentTestSuite) TestAddDeploymentPutEnvironmentFails() {
 }
 
 func (suite *EnvironmentTestSuite) TestAddDeployment() {
-	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Eq(*suite.environment1)).Return(nil)
+	updatedEnv := suite.environment1
+	updatedEnv.PendingDeploymentID = suite.deployment.ID
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Eq(*updatedEnv)).Return(nil)
 
 	env, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, *suite.deployment)
 	assert.Nil(suite.T(), err, "Unexpected error when adding a deployment")

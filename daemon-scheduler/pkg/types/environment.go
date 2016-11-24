@@ -34,6 +34,13 @@ type Environment struct {
 	DesiredTaskCount      int
 	Cluster               string
 	Health                EnvironmentHealth
+	// ID of the deployment created by the latest create-deployment call.
+	// This need not necessarily correspond to the deployment picked up by the
+	// background jobs launching tasks
+	PendingDeploymentID string
+	// The ID of the deployment that is being used by the background workers to
+	// to launch tasks
+	InProgressDeploymentID string
 
 	// deploymentID -> deployment
 	Deployments map[string]Deployment
@@ -78,30 +85,31 @@ func NewEnvironment(name string, taskDefinition string, cluster string) (*Enviro
 }
 
 // GetInProgressDeployment returns the in-progress deployment for the environment.
-// There should only be one in-progress deployment.
+// There should one or no in progress deployments in an environment
 func (e Environment) GetInProgressDeployment() (*Deployment, error) {
-	deployments, err := e.sortDeploymentsByStartTime()
-	if err != nil {
-		return nil, err
-	}
-
-	// there should only be one in-progress deployment and it
-	// should be close to the top. There might be some pending
-	// deployments started after it so it's not always the latest one.
-	for _, d := range deployments {
-		if d.Status == DeploymentInProgress {
-			return &d, nil
-		}
-
-		// once we reach completed deployments, we know there are no in-progress
-		// deployments in the list after that since they're sorted by time and there
-		// can only be one in-progress deployment
-		if d.Status == DeploymentCompleted {
+	if e.InProgressDeploymentID == "" {
+		// TODO : We may want to change where the in progress deployment id is set
+		// using the pending deployment id later
+		if e.PendingDeploymentID == "" {
 			return nil, nil
 		}
+		e.InProgressDeploymentID = e.PendingDeploymentID
 	}
-
-	return nil, nil
+	d, ok := e.Deployments[e.InProgressDeploymentID]
+	if !ok {
+		return nil, errors.Errorf("Deployment with ID '%s' does not exist in the deployments for environment with name '%s'",
+			e.InProgressDeploymentID, e.Name)
+	}
+	// If the status of the deployment is pending (this happens if we just set the
+	// in progress deployment id from the pending deployment id), update the status
+	// of the deployment to in progress
+	if d.Status == DeploymentPending {
+		d.Status = DeploymentInProgress
+	} else if d.Status != DeploymentInProgress {
+		return nil, errors.Errorf("Deployment with ID '%s' of environment with name '%s' was expected to be in progress but is not",
+			e.InProgressDeploymentID, e.Name)
+	}
+	return &d, nil
 }
 
 // GetDeployments returns a list of deployments reverse-ordered by start time,

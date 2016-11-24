@@ -183,19 +183,19 @@ func (ecsWrapper ECSWrapper) RegisterTaskDefinition(taskDefinition string) (stri
 	return *resp.TaskDefinition.TaskDefinitionArn, nil
 }
 
-func (ecsWrapper ECSWrapper) DescribeTask(cluster string, taskArn string) (*ecs.Task, error) {
+func (ecsWrapper ECSWrapper) DescribeTasks(cluster *string, taskArns []*string) ([]*ecs.Task, error) {
 	in := &ecs.DescribeTasksInput{
-		Tasks:   []*string{aws.String(taskArn)},
-		Cluster: aws.String(cluster),
+		Tasks:   taskArns,
+		Cluster: cluster,
 	}
 	resp, err := ecsWrapper.client.DescribeTasks(in)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Could not DescribeTasks with arn %s in cluster %s", taskArn, cluster)
+		return nil, errors.Wrapf(err, "Could not DescribeTasks with arns %s in cluster %s", taskArns, cluster)
 	}
 
 	if len(resp.Tasks) == 0 {
-		return nil, fmt.Errorf("No tasks returned with arn %s in cluster %s", taskArn, cluster)
+		return nil, fmt.Errorf("No tasks returned with arn %s in cluster %s", taskArns, cluster)
 	}
 
-	return resp.Tasks[0], nil
+	return resp.Tasks, nil
 }

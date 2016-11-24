@@ -148,6 +148,7 @@ func (e environment) AddDeployment(ctx context.Context, environment types.Enviro
 	}
 
 	environment.Deployments[deployment.ID] = deployment
+	environment.PendingDeploymentID = deployment.ID
 
 	err := e.environmentStore.PutEnvironment(ctx, environment)
 	if err != nil {
