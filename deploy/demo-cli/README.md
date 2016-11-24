@@ -85,7 +85,50 @@ optional arguments:
                         Blox environment name
 ```
 
-## List Task Definitions
+## List Cluster State Service Instances
+
+```
+$ ./css-list-instances.py --help
+== Blox Demo CLI - List Blox Instances ==
+
+usage: css-list-instances.py [-h] [--region REGION] [--host HOST]
+                             [--cluster CLUSTER] [--status STATUS]
+                             [--instance-arn INSTANCE]
+
+List Blox Instances
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --region REGION       AWS region
+  --host HOST           Blox CSS <Host>:<Port>
+  --cluster CLUSTER     ECS cluster name
+  --status STATUS       EC2 instance status
+  --instance-arn INSTANCE
+                        EC2 instance Arn
+```
+
+## List Cluster State Service Tasks
+
+```
+$ ./css-list-tasks.py --help
+== Blox Demo CLI - List Blox Tasks ==
+
+usage: css-list-tasks.py [-h] [--region REGION] [--host HOST]
+                         [--cluster CLUSTER] [--status STATUS]
+                         [--task-arn TASK]
+
+List Blox Tasks
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --region REGION    AWS region
+  --host HOST        Blox CSS <Host>:<Port>
+  --cluster CLUSTER  ECS cluster name
+  --status STATUS    ECS task status
+  --task-arn TASK    ECS task Arn
+```
+
+## List ECS Task Definitions
 
 ```
 $ ./list-task-definitions.py --help
@@ -100,7 +143,7 @@ optional arguments:
   --region REGION  AWS region
 ```
 
-## Register Task Definition
+## Register ECS Task Definition
 
 ```
 $ ./register-task-definition.py --help
@@ -116,7 +159,7 @@ optional arguments:
   --file FILE      path to task definition file
 ```
 
-## Increment Cluster Instances
+## Increment ECS Cluster Instances
 
 ```
 $ ./increment-cluster-instances.py --help

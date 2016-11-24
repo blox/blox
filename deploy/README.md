@@ -2,12 +2,12 @@
 
 #### Introduction
 
-Blox is an open source cluster manager and orchestration framework that enables developers to easily build, test, and run containerized applications locally and in production on Amazon ECS using a common toolset. This document describes how to install the Blox framework locally and on top of Amazon AWS.
+Blox is an open source cluster manager and orchestration framework that enables developers to easily build, test, and run containerized applications on Amazon ECS using a common toolset. This document describes how to install the Blox framework locally and on top of AWS.
 
 #### Installation Instructions
 
 - [Install Blox on Local Docker](#local-installation)
-- [Install Blox on Amazon AWS](#amazon-aws-installation)
+- [Install Blox on AWS](#amazon-aws-installation)
 
 #### Framework Components
 
@@ -15,7 +15,7 @@ Blox is an open source cluster manager and orchestration framework that enables 
 - Cluster State Service
 - Etcd
 
-#### Required Amazon AWS Components
+#### Required AWS Components
 
 - Amazon CloudWatch
 - Amazon ECS
@@ -31,27 +31,27 @@ Blox is an open source cluster manager and orchestration framework that enables 
 
 ## Prerequisites
 
-#### Amazon AWS CLI
+#### AWS CLI
 
-You will need to have the Amazon AWS CLI installed locally to create the required Amazon AWS components. Follow the instructions at [Installing the AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/installing.html) to install the CLI before proceeding. 
+You will need to have the AWS CLI installed locally to create the required AWS components. Follow the instructions at [Installing the AWS Command Line Interface](http://docs.aws.amazon.com/cli/latest/userguide/installing.html) to install the CLI before proceeding. 
 
 #### IAM Permissions
 
-The AWS profile you use with the AWS CLI will need appropriate permissions to create the required Amazon AWS components. To make this easier, we have created IAM Policy Documents for both the Local and Amazon AWS installations. Follow the steps on the [Creating a New IAM Policy](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create.html) guide to create this policy. In the `Create Policy` wizard, select `Create Your Own Policy` and paste the contents of the appropriate policy file in the `Policy Document` text area. Once you have created the IAM Policy, you will need to attach the policy to the AWS user that you will use to deploy Blox via the installation instructions below. If your AWS user already has full administrator permissions to your AWS account, you can ignore this step.
+The AWS profile you use with the AWS CLI will need appropriate permissions to create the required AWS components. To make this easier, we have created IAM Policy Documents for both the Local and AWS installations. Follow the steps on the [Creating a New IAM Policy](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create.html) guide to create this policy. In the `Create Policy` wizard, select `Create Your Own Policy` and paste the contents of the appropriate policy file in the `Policy Document` text area. Once you have created the IAM Policy, you will need to attach the policy to the AWS user that you will use to deploy Blox via the installation instructions below. If your AWS user already has full administrator permissions to your AWS account, you can ignore this step.
 
-[Local Installation IAM Policy Document](deploy/docker/conf/cloudformation_policy.json)
-[Amazon AWS Installation IAM Policy Document](deploy/aws/conf/cloudformation_policy.json)
+- [Local Installation IAM Policy Document](deploy/docker/conf/cloudformation_policy.json)
+- [AWS Installation IAM Policy Document](deploy/aws/conf/cloudformation_policy.json)
 
-**Warning**: Attaching the `Amazon AWS Installation IAM Policy Document` to a user grants the user IAM administrator privileges, which the CloudFormation template uses to create new IAM roles and policies required by the Blox framework. You should only attach this policy to users that you would trust with full administrator access to your AWS account.
+**Warning**: Attaching the `AWS Installation IAM Policy Document` to a user grants the user IAM administrator privileges, which the CloudFormation template uses to create new IAM roles and policies required by the Blox framework. You should only attach this policy to users that you would trust with full administrator access to your AWS account.
 
 
 ## Local Installation
 
-Our recommended way for getting started with Blox is to deploy the framework on your local Docker installation. We provide a pre-built AWS CloudFormation template that will deploy the required Amazon AWS components, and a Docker Compose file to launch the Blox framework in your local Docker environment. Please ensure that you have installed [Docker](https://docs.docker.com/engine/installation/) and [Docker Compose](https://docs.docker.com/compose/install/) locally before proceeding.
+Our recommended way for getting started with Blox is to deploy the framework on your local Docker installation. We provide a pre-built AWS CloudFormation template that will deploy the required AWS components, and a Docker Compose file to launch the Blox framework in your local Docker environment. Please ensure that you have installed [Docker](https://docs.docker.com/engine/installation/) and [Docker Compose](https://docs.docker.com/compose/install/) locally before proceeding.
 
 #### Create AWS Components
 
-Run the following AWS CLI command to create the required Amazon AWS components needed to run the Blox framework locally.
+Run the following AWS CLI command to create the required AWS components needed to run the Blox framework locally.
 
 ```
 $ cd <GitRepoBase>
@@ -65,7 +65,7 @@ $ Sample Output:
 
 #### Monitor Progress
 
-The CloudFormation command above can take several minutes to create the required Amazon AWS components. You can monitor the progress with the following command. When the StackStatus shows `CREATE_COMPLETE`, proceed to the next step.
+The CloudFormation command above can take several minutes to create the required AWS components. You can monitor the progress with the following command. When the StackStatus shows `CREATE_COMPLETE`, proceed to the next step.
 
 ```
 $ aws --region <region> cloudformation describe-stacks --stack-name BloxLocal
@@ -108,9 +108,9 @@ css_1         --bind 0.0.0.0:3000 --etcd ...   Up      3000/tcp
 You have now completed the local installation of Blox. You can begin consuming the Scheduler API at http://localhost:2000/.
 
 
-## Amazon AWS Installation
+## AWS Installation
 
-If you would prefer to run the Blox framework securely on Amazon AWS instead of locally, we provide a pre-built AWS CloudFormation template that will deploy Blox and the required Amazon AWS components with a single command. Deploying Blox on AWS adds TLS via Amazon API Gateway, and authentication through IAM security policies. This installation option is only recommended for advanced users who have already tested the Blox framework locally, and now wish to run it securely on AWS with a public HTTPS endpoint.
+If you would prefer to run the Blox framework securely on AWS instead of locally, we provide a pre-built AWS CloudFormation template that will deploy Blox and the required AWS components with a single command. Deploying Blox on AWS adds TLS via Amazon API Gateway, and authentication through IAM security policies. This installation option is only recommended for advanced users who have already tested the Blox framework locally, and now wish to run it securely on AWS with a public HTTPS endpoint.
 
 #### Create Custom Parameters File
 
@@ -129,7 +129,7 @@ Create a custom CloudFormation parameters file at `/tmp/blox_parameters.json` wi
 
 #### Deploy Blox via AWS CloudFormation
 
-Run the following AWS CLI command to deploy Blox and the required Amazon AWS components.
+Run the following AWS CLI command to deploy Blox and the required AWS components.
 
 ```
 $ cd <GitRepoBase>
@@ -152,7 +152,7 @@ https://<api-gateway-id>.execute-api.us-east-1.amazonaws.com/blox
 
 #### Authentication
 
-When deploying Blox on Amazon AWS, we use AWS IAM Authentication with [Signature Version 4](http://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html) signing. The AWS user that you are using to authenticate with the Amazon API Gateway REST URL will need to have the following IAM Policy applied. Choose the appropriate Resource pattern based upon the permissions you want the user to have.
+When deploying Blox on AWS, we use AWS IAM Authentication with [Signature Version 4](http://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html) signing. The AWS user that you are using to authenticate with the Amazon API Gateway REST URL will need to have the following IAM Policy applied. Choose the appropriate Resource pattern based upon the permissions you want the user to have.
  
 ```
 {
@@ -184,7 +184,7 @@ abcdef1234
 
 ## Upgrade Process
 
-You can use the AWS CLI and CloudFormation to upgrade the required Amazon AWS components to the latest versions required by the Blox framework. Before starting the upgrade, you will need to export the CloudFormation parameters that are assigned to your existing CloudFormation Stack via the following commands. For all commands below, you should use the --stack-name of `BloxLocal` for local installations, and `BloxAws` for AWS installations.
+You can use the AWS CLI and CloudFormation to upgrade the required AWS components to the latest versions required by the Blox framework. Before starting the upgrade, you will need to export the CloudFormation parameters that are assigned to your existing CloudFormation Stack via the following commands. For all commands below, you should use the --stack-name of `BloxLocal` for local installations, and `BloxAws` for AWS installations.
 
 ```
 $ aws --region <region> cloudformation describe-stacks --stack-name <BloxLocal|BloxAws> --query 'Stacks[0].Parameters' > /tmp/blox_parameters.json
@@ -212,7 +212,7 @@ $ Sample Output:
 }
 ```
 
-You can monitor the upgrade progress via the same [Monitor Progress](#monitor-progress) steps above. When the StackStatus shows `UPDATE_COMPLETE`, you are running the latest versions of the required Amazon AWS components. If you are running the local installation, you will then need to launch the Docker Compose via the same [Deploy Blox Locally to Docker](#deploy-blox-locally-to-docker) steps above.
+You can monitor the upgrade progress via the same [Monitor Progress](#monitor-progress) steps above. When the StackStatus shows `UPDATE_COMPLETE`, you are running the latest versions of the required AWS components. If you are running the local installation, you will then need to launch the Docker Compose via the same [Deploy Blox Locally to Docker](#deploy-blox-locally-to-docker) steps above.
 
 ## Delete Process
 
@@ -223,7 +223,7 @@ $ cd <GitRepoBase>/deploy/docker/conf/
 $ docker-compose stop
 ```
 
-You should now delete the attached Amazon AWS components via the following command. You should use the --stack-name of `BloxLocal` if you installed locally, and `BloxAws` if you installed on AWS.
+You should now delete the attached AWS components via the following command. You should use the --stack-name of `BloxLocal` if you installed locally, and `BloxAws` if you installed on AWS.
 
 ```
 $ aws --region <region> cloudformation delete-stack --stack-name <BloxLocal|BloxAws>

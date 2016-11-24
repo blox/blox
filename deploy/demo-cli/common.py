@@ -30,14 +30,15 @@ def parse_cli_args(desc, args):
 	# Loop through and process each arg.
 	for arg in args:
 		value = getattr(arguments, arg['dest'])
+		required = False if 'required' in arg and arg['required'] == False else True
 
 		# If value is None, prompt user for a value.
-		if value == None:
+		if required and value == None:
 			value = raw_input('- Enter %s: ' % arg['help'])
 			value = value.strip()
 
 		# Exit if argument value is not supplied.
-		if value == None or (isinstance(value, basestring) and len(value) == 0):
+		if required and (value == None or (isinstance(value, basestring) and len(value) == 0)):
 			print 'Error: %s is required.' % arg['help']
 			sys.exit(1)
 		else:
