@@ -7,7 +7,7 @@ Blox is an open source cluster manager and orchestration framework that enables 
 #### Installation Instructions
 
 - [Install Blox on Local Docker](#local-installation)
-- [Install Blox on AWS](#amazon-aws-installation)
+- [Install Blox on AWS](#aws-installation)
 
 #### Framework Components
 
@@ -39,8 +39,8 @@ You will need to have the AWS CLI installed locally to create the required AWS c
 
 The AWS profile you use with the AWS CLI will need appropriate permissions to create the required AWS components. To make this easier, we have created IAM Policy Documents for both the Local and AWS installations. Follow the steps on the [Creating a New IAM Policy](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create.html) guide to create this policy. In the `Create Policy` wizard, select `Create Your Own Policy` and paste the contents of the appropriate policy file in the `Policy Document` text area. Once you have created the IAM Policy, you will need to attach the policy to the AWS user that you will use to deploy Blox via the installation instructions below. If your AWS user already has full administrator permissions to your AWS account, you can ignore this step.
 
-- [Local Installation IAM Policy Document](deploy/docker/conf/cloudformation_policy.json)
-- [AWS Installation IAM Policy Document](deploy/aws/conf/cloudformation_policy.json)
+- [Local Installation IAM Policy Document](docker/conf/cloudformation_policy.json)
+- [AWS Installation IAM Policy Document](aws/conf/cloudformation_policy.json)
 
 **Warning**: Attaching the `AWS Installation IAM Policy Document` to a user grants the user IAM administrator privileges, which the CloudFormation template uses to create new IAM roles and policies required by the Blox framework. You should only attach this policy to users that you would trust with full administrator access to your AWS account.
 
