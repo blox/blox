@@ -442,7 +442,7 @@
           {
             "Name": "scheduler",
             "Hostname": "scheduler",
-            "Image": "bloxoss/daemon-scheduler:0.1",
+            "Image": "bloxoss/daemon-scheduler:0.1.0",
             "Memory": "128",
             "PortMappings": [
               {
@@ -469,7 +469,7 @@
           {
             "Name": "css",
             "Hostname": "css",
-            "Image": "bloxoss/cluster-state-service:0.1",
+            "Image": "bloxoss/cluster-state-service:0.1.0",
             "Memory": "128",
             "Environment": [
               {
