@@ -13,4 +13,4 @@
 
 package licenses
 
-//go:generate license.sh license.go
+//go:generate license.sh ../../licenses/license.go
