@@ -43,7 +43,7 @@ func main() {
 		versioning.PrintVersion()
 		os.Exit(0)
 	}
-	if err := run.StartEventStreamHandler(config.SQSQueueName, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
+	if err := run.StartClusterStateService(config.SQSQueueName, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
 		log.Criticalf("Error starting event stream handler: %v", err)
 		os.Exit(errorCode)
 	}
