@@ -31,7 +31,7 @@ const (
 	schedulerTickerDuration = 10 * time.Second
 	inactiveInstanceStatus  = "INACTIVE"
 	runningTaskStatus       = "RUNNING"
-	maxClusterStateLag      = 1 * time.Minute
+	trackingInfoTTL         = 1 * time.Minute
 )
 
 // Scheduler loops through all the environments and makes sure they reach their eventual state.
@@ -40,6 +40,7 @@ type Scheduler struct {
 	environmentSvc deployment.Environment
 	deploymentSvc  deployment.Deployment
 	css            facade.ClusterState
+	ecs            facade.ECS
 	events         chan<- Event
 	executionState map[string]environmentExecutionState
 	inProgress     bool
@@ -67,12 +68,13 @@ type deployedTask struct {
 }
 
 func StartScheduler(ctx context.Context, events chan<- Event, environmentSvc deployment.Environment,
-	deploymentSvc deployment.Deployment, css facade.ClusterState) {
+	deploymentSvc deployment.Deployment, css facade.ClusterState, ecs facade.ECS) {
 	scheduler := Scheduler{
 		ctx:            ctx,
 		environmentSvc: environmentSvc,
 		deploymentSvc:  deploymentSvc,
 		css:            css,
+		ecs:            ecs,
 		events:         events,
 		executionState: make(map[string]environmentExecutionState),
 		inProgress:     false,
@@ -242,9 +244,16 @@ func (scheduler Scheduler) updateDeployedInstances(state *environmentExecutionSt
 			} else {
 				deployedAt, ok := state.trackingInfo[instanceARN]
 				if ok {
-					//if deployment happened 30secs ago and we haven't heard from cluster-state we assume something is wrong and we should deploy
-					if time.Now().UTC().Sub(deployedAt) < maxClusterStateLag {
-						//we assume that we already deployed and skip
+					//if deployment happened a while ago and
+					//we haven't heard from cluster-state we
+					//ask ECS if the deployment succeeded
+					if time.Now().UTC().Sub(deployedAt) > trackingInfoTTL {
+						deployed, err := scheduler.isDeployedToInstance(state, currentDeployment, instanceARN)
+						if err != nil {
+							return err
+						}
+						shouldDeploy = !deployed
+					} else {
 						shouldDeploy = false
 					}
 				}
@@ -272,6 +281,15 @@ func (scheduler Scheduler) updateDeployedInstances(state *environmentExecutionSt
 	}
 
 	return nil
+}
+
+func (scheduler Scheduler) isDeployedToInstance(state *environmentExecutionState, currentDeployment *types.Deployment, instanceARN string) (bool, error) {
+	tasksOnInstance, err := scheduler.ecs.ListTasks(state.environment.Cluster, currentDeployment.ID, instanceARN)
+	if err != nil {
+		return false, errors.Wrapf(err, "Error listing tasks for instance %s in cluster %s with deployment %s",
+			instanceARN, state.environment.Cluster, currentDeployment.ID)
+	}
+	return len(tasksOnInstance) > 0, nil
 }
 
 // deployToNewInstances performs deployment on instances which never got any deployment for the given environment

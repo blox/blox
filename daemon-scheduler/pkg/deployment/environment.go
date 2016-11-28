@@ -194,6 +194,5 @@ func (e environment) GetCurrentDeployment(ctx context.Context, name string) (*ty
 		return nil, err
 	}
 
-	//TODO: Update this logic based on our understanding, e.g. handling completed deployments
-	return env.GetInProgressDeployment()
+	return env.GetCurrentDeployment()
 }

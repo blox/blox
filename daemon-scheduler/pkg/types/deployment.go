@@ -89,7 +89,7 @@ func (d Deployment) UpdateDeploymentInProgress(
 	return &d, nil
 }
 
-func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) *Deployment {
+func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) (*Deployment, error) {
 	d.Status = DeploymentCompleted
 
 	if len(failedInstances) == 0 {
@@ -101,5 +101,5 @@ func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) *D
 	d.FailedInstances = failedInstances
 	d.EndTime = time.Now()
 
-	return &d
+	return &d, nil
 }

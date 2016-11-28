@@ -109,7 +109,7 @@ func (suite *DeploymentTestSuite) TestUpdateDeploymentCompletedUnhealthy() {
 	unhealthyDeployment, err := suite.deployment.UpdateDeploymentInProgress(
 		desiredTaskCount, suite.failures)
 
-	d := unhealthyDeployment.UpdateDeploymentCompleted(suite.failures)
+	d, err := unhealthyDeployment.UpdateDeploymentCompleted(suite.failures)
 	assert.Nil(suite.T(), err, "Unexpected error when setting deployment to completed")
 	assert.NotNil(suite.T(), d, "Deployment should not be nil")
 	assert.NotEmpty(suite.T(), d.ID, "Deployment ID should not be empty")
@@ -126,7 +126,7 @@ func (suite *DeploymentTestSuite) TestUpdateDeploymentCompletedHealthy() {
 	unhealthyDeployment, err := suite.deployment.UpdateDeploymentInProgress(
 		desiredTaskCount, suite.failures)
 
-	d := unhealthyDeployment.UpdateDeploymentCompleted(nil)
+	d, err := unhealthyDeployment.UpdateDeploymentCompleted(nil)
 	assert.Nil(suite.T(), err, "Unexpected error when setting deployment to completed")
 	assert.NotNil(suite.T(), d, "Deployment should not be nil")
 	assert.NotEmpty(suite.T(), d.ID, "Deployment ID should not be empty")

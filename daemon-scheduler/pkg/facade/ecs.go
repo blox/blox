@@ -35,7 +35,7 @@ type ECS interface {
 	ListClusters() ([]*string, error)
 	DescribeCluster(cluster *string) (*ecs.Cluster, error)
 	DescribeTaskDefinition(taskDefinition *string) (*ecs.TaskDefinition, error)
-	ListTasks(cluster string, startedBy string) ([]*string, error)
+	ListTasks(cluster string, startedBy string, instanceARN string) ([]*string, error)
 	DescribeTasks(cluster string, tasks []*string) (*ecs.DescribeTasksOutput, error)
 	StopTask(clusterArn string, taskArn string) error
 }
@@ -170,10 +170,14 @@ func (c ecsClient) ListClusters() ([]*string, error) {
 	return clusters, nil
 }
 
-func (c ecsClient) ListTasks(cluster string, startedBy string) ([]*string, error) {
+func (c ecsClient) ListTasks(cluster string, startedBy string, instanceARN string) ([]*string, error) {
 	input := &ecs.ListTasksInput{
 		Cluster:   aws.String(cluster),
 		StartedBy: aws.String(startedBy),
+	}
+
+	if instanceARN != "" {
+		input.ContainerInstance = aws.String(instanceARN)
 	}
 
 	resp, err := c.ecs.ListTasks(input)

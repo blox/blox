@@ -111,7 +111,7 @@ func (suite *DeploymentWorkerTestSuite) TestUpdateInProgressDeploymentNoInProgre
 func (suite *DeploymentWorkerTestSuite) TestUpdateInProgressDeploymentListTasksFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(suite.deploymentEnvironment, nil)
-	suite.ecs.EXPECT().ListTasks(suite.deploymentEnvironment.Cluster, suite.deployment.ID).
+	suite.ecs.EXPECT().ListTasks(suite.deploymentEnvironment.Cluster, suite.deployment.ID, "").
 		Return(nil, errors.New("ListTasks failed"))
 
 	_, err := suite.deploymentWorker.UpdateInProgressDeployment(suite.ctx, environmentName)
@@ -121,7 +121,7 @@ func (suite *DeploymentWorkerTestSuite) TestUpdateInProgressDeploymentListTasksF
 func (suite *DeploymentWorkerTestSuite) TestUpdateInProgressDeploymentDescribeTasksFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(suite.deploymentEnvironment, nil)
-	suite.ecs.EXPECT().ListTasks(suite.deploymentEnvironment.Cluster, suite.deployment.ID).
+	suite.ecs.EXPECT().ListTasks(suite.deploymentEnvironment.Cluster, suite.deployment.ID, "").
 		Return(suite.clusterTaskARNs, nil)
 	suite.ecs.EXPECT().DescribeTasks(suite.deploymentEnvironment.Cluster, suite.clusterTaskARNs).
 		Return(nil, errors.New("DescribeTasks failed"))

@@ -130,16 +130,16 @@ func (d deployment) CreateSubDeployment(ctx context.Context, environmentName str
 		return nil, errors.Wrapf(err, "Error retrieving environment with name %s", environmentName)
 	}
 
-	deployment, err := env.GetInProgressDeployment()
+	deployment, err := d.environment.GetCurrentDeployment(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err,
-			"Unable to retrieve in progress deployment for environment with name '%s' to create a sub-deployment",
+			"Unable to retrieve deployment for environment with name '%s' to create a sub-deployment",
 			environmentName)
 	}
 
 	if deployment == nil {
 		return nil, errors.Errorf(
-			"There is no in progress deployment for environment with name '%s' to create a sub-deployment",
+			"There is no deployment for environment with name '%s' to create a sub-deployment",
 			environmentName)
 	}
 
@@ -157,6 +157,13 @@ func (d deployment) startSubDeployment(ctx context.Context, env *types.Environme
 	if deployment.FailedInstances != nil {
 		failures = append(failures, deployment.FailedInstances...)
 	}
+
+	// if deployment is already completed then we do not update
+	// TODO: Figure out how we want to track failures in sub-deployments
+	if deployment.Status == types.DeploymentCompleted {
+		return deployment, nil
+	}
+
 	updatedDeployment, err := deployment.UpdateDeploymentInProgress(len(instanceARNs), failures)
 
 	if err != nil {

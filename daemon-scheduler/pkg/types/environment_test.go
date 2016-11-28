@@ -122,10 +122,11 @@ func (suite *EnvironmentTestSuite) TestGetInProgressDeploymentUnexpectedDeployme
 
 	suite.environment.InProgressDeploymentID = deployment.ID
 
-	_, err = suite.environment.GetInProgressDeployment()
+	d, err := suite.environment.GetInProgressDeployment()
 
-	assert.NotNil(suite.T(), err,
-		"Expected an error getting an in progress deployment when deployment status is not in progress")
+	assert.Nil(suite.T(), err, "Unexpected error when getting deployments")
+	var expectedDeployment *Deployment
+	assert.Exactly(suite.T(), expectedDeployment, d, "There should be no in progress deployment")
 }
 
 func (suite *EnvironmentTestSuite) TestGetInProgressDeploymentInProgressExists() {
@@ -182,6 +183,52 @@ func (suite *EnvironmentTestSuite) TestGetInProgressDeploymentInProgressDoesNotE
 	expectedDeployment := deployment2
 	expectedDeployment.Status = DeploymentInProgress
 	assert.Exactly(suite.T(), expectedDeployment, d, "In progress deployment does not match the expected deployment")
+}
+
+func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentInProgressReturnsError() {
+	deployment1, err := NewDeployment(taskDefinition, generateToken())
+	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
+	deployment1.Status = DeploymentCompleted
+	suite.environment.Deployments[deployment1.ID] = *deployment1
+
+	suite.environment.InProgressDeploymentID = "missing"
+
+	_, err = suite.environment.GetCurrentDeployment()
+	assert.Error(suite.T(), err, "Expecting error from GetCurrentDeployment")
+}
+
+func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentInProgressReturnsNil() {
+	deployment1, err := NewDeployment(taskDefinition, generateToken())
+	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
+	deployment1.Status = DeploymentCompleted
+	suite.environment.Deployments[deployment1.ID] = *deployment1
+
+	suite.environment.InProgressDeploymentID = deployment1.ID
+
+	d, err := suite.environment.GetInProgressDeployment()
+	assert.Nil(suite.T(), err, "Unexpected error from GetInProgressDeployment")
+	assert.Nil(suite.T(), d, "Expecting GetInProgressDeployment to return nil")
+	cd, err := suite.environment.GetCurrentDeployment()
+	assert.Nil(suite.T(), err, "Unexpected error from GetCurrentDeployment")
+	assert.Exactly(suite.T(), deployment1, cd)
+}
+
+func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentInProgressExists() {
+	deployment1, err := NewDeployment(taskDefinition, generateToken())
+	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
+	deployment1.Status = DeploymentInProgress
+	suite.environment.Deployments[deployment1.ID] = *deployment1
+
+	suite.environment.InProgressDeploymentID = deployment1.ID
+
+	cd, err := suite.environment.GetCurrentDeployment()
+	assert.Nil(suite.T(), err, "Unexpected error from GetCurrentDeployment")
+	assert.Exactly(suite.T(), deployment1, cd)
+}
+
+func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentNoDeployments() {
+	_, err := suite.environment.GetCurrentDeployment()
+	assert.Error(suite.T(), err, "Expected error from GetCurrentDeployment")
 }
 
 func generateToken() string {

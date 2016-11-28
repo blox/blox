@@ -106,8 +106,7 @@ func (e Environment) GetInProgressDeployment() (*Deployment, error) {
 	if d.Status == DeploymentPending {
 		d.Status = DeploymentInProgress
 	} else if d.Status != DeploymentInProgress {
-		return nil, errors.Errorf("Deployment with ID '%s' of environment with name '%s' was expected to be in progress but is not",
-			e.InProgressDeploymentID, e.Name)
+		return nil, nil
 	}
 	return &d, nil
 }
@@ -116,6 +115,31 @@ func (e Environment) GetInProgressDeployment() (*Deployment, error) {
 // i.e. lastest deployment first
 func (e Environment) GetDeployments() ([]Deployment, error) {
 	return e.sortDeploymentsByStartTime()
+}
+
+func (e Environment) GetCurrentDeployment() (*Deployment, error) {
+	deployment, err := e.GetInProgressDeployment()
+	if err != nil {
+		return nil, err
+	}
+
+	if deployment != nil {
+		return deployment, nil
+	}
+
+	// if there is no in-progress deployment then we take the latest completed deployment
+	deployments, err := e.GetDeployments()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range deployments {
+		if d.Status == DeploymentCompleted {
+			return &d, nil
+		}
+	}
+
+	return nil, errors.Errorf("No deployment available for environment %s", e.Name)
 }
 
 func (e Environment) sortDeploymentsByStartTime() ([]Deployment, error) {

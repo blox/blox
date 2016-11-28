@@ -330,6 +330,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentEmptyEnvironmentName() 
 
 func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, errors.New("Get environment failed"))
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Times(0)
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -339,6 +340,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentFails() {
 
 func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentReturnsNil() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Times(0)
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -351,6 +353,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetInProgressDeployment
 	env.InProgressDeploymentID = uuid.NewRandom().String()
 
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(nil, errors.New("Some error"))
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -363,6 +366,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetInProgressDeployment
 	env.InProgressDeploymentID = ""
 
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(nil, nil)
 	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
@@ -380,6 +384,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentStartTasksFails() {
 	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(inprogressDeployment, nil)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).
 		Return(nil, errors.New("Error starting tasks"))
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
@@ -399,6 +404,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentUpdateDeploymentFails()
 	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(inprogressDeployment, nil)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
 
 	updatedDeployment := *inprogressDeployment
@@ -426,6 +432,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
 	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(inprogressDeployment, nil)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
 
 	updatedDeployment := *inprogressDeployment
@@ -442,6 +449,23 @@ func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
 	d, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.Nil(suite.T(), err, "Unexpected error creating a sub-deployment")
 	verifyDeployment(suite.T(), &updatedDeployment, d)
+}
+
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentWithCompletedDeployment() {
+	currentDeployment, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
+	assert.Nil(suite.T(), err, "Deployment creation failed")
+	currentDeployment.Status = types.DeploymentCompleted
+
+	env := suite.deploymentEnvironment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
+	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(currentDeployment, nil)
+	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, currentDeployment.ID, currentDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
+	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *env, gomock.Any()).Times(0)
+
+	d, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.Nil(suite.T(), err, "Unexpected error creating a sub-deployment")
+	verifyDeployment(suite.T(), currentDeployment, d)
 }
 
 func createContainerInstances(instanceARNs []*string) []*models.ContainerInstance {
