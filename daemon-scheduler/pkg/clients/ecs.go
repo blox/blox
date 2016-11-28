@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/daemon-scheduler/pkg/httpclient"
 	"github.com/pkg/errors"
 )
 
@@ -39,17 +40,23 @@ func newAWSSession() (*session.Session, error) {
 	var sess *session.Session
 	var err error
 	if endpoint, err := getECSEndpoint(); err != nil {
-		sess, err = session.NewSession()
+		sess, err = session.NewSessionWithOptions(session.Options{
+			Config: aws.Config{
+				HTTPClient: httpclient.New(),
+			},
+		})
 	} else {
 		sess, err = session.NewSessionWithOptions(session.Options{
 			Config: aws.Config{
-				Endpoint: aws.String(endpoint),
+				Endpoint:   aws.String(endpoint),
+				HTTPClient: httpclient.New(),
 			},
 		})
 	}
 	return sess, err
 }
 
+// NewECSClient returns an ECS client.
 func NewECSClient() (*ecs.ECS, error) {
 	sess, err := newAWSSession()
 	if err != nil {
