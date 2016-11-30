@@ -1,6 +1,6 @@
 # Blox Demo CLI Tools
 
-The following CLI tools are included in the `<GitRepoBase>/deploy/demo-cli/` directory for interacting with the Blox Daemon Scheduler API.
+The following CLI tools are included in the `<GitRepoBase>/deploy/demo-cli/` directory for interacting with the Blox daemon-scheduler API.
 
 ## List Blox Environments
 
@@ -85,7 +85,7 @@ optional arguments:
                         Blox environment name
 ```
 
-## List Cluster State Service Instances
+## List cluster-state-service Instances
 
 ```
 $ ./css-list-instances.py --help
@@ -107,7 +107,7 @@ optional arguments:
                         EC2 instance Arn
 ```
 
-## List Cluster State Service Tasks
+## List cluster-state-service Tasks
 
 ```
 $ ./css-list-tasks.py --help

@@ -11,8 +11,8 @@ Blox is an open source cluster manager and orchestration framework that enables 
 
 #### Framework Components
 
-- Daemon Scheduler
-- Cluster State Service
+- daemon-scheduler
+- cluster-state-service
 - Etcd
 
 #### Required AWS Components
@@ -105,7 +105,7 @@ scheduler_1   --bind 0.0.0.0:2000 --css- ...   Up      0.0.0.0:2000->2000/tcp
 css_1         --bind 0.0.0.0:3000 --etcd ...   Up      3000/tcp
 ```
 
-You have now completed the local installation of Blox. You can begin consuming the Scheduler API at http://localhost:2000/.
+You have now completed the local installation of Blox. You can begin consuming the scheduler API at http://localhost:2000/.
 
 
 ## AWS Installation
@@ -141,7 +141,7 @@ $ Sample Output:
 }
 ```
 
-You can monitor the progress via the same [Monitor Progress](#monitor-progress) steps above. Make sure to replace the --stack-name with 'BloxAws'. After the CloudFormation setup completes, you can retrieve the URL for your secure Daemon Scheduler REST API endpoint via the following command.
+You can monitor the progress via the same [Monitor Progress](#monitor-progress) steps above. Make sure to replace the --stack-name with 'BloxAws'. After the CloudFormation setup completes, you can retrieve the URL for your secure daemon-scheduler REST API endpoint via the following command.
 
 ```
 $ aws --region <region> cloudformation describe-stacks --stack-name BloxAws --query 'Stacks[0].Outputs[0].OutputValue' --output text

@@ -2,4 +2,4 @@
 
 ## 0.1.0
 
-* Initial release of Cluster State Service and Daemon Scheduler.
+* Initial release of cluster-state-service and daemon-scheduler.
