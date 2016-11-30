@@ -13,7 +13,7 @@
 
 # Not from scratch because we also want a little directory structure,
 # specifically /tmp
-FROM amazon/blox-cluster-state-service-scratch:make
+FROM bloxoss/cluster-state-service-scratch:make
 MAINTAINER Amazon Web Services, Inc.
 
 COPY out/cluster-state-service /cluster-state-service

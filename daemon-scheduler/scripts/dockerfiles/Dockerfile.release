@@ -13,7 +13,7 @@
 
 # Not from scratch because we also want a little directory structure,
 # specifically /tmp
-FROM amazon/blox-daemon-scheduler-scratch:make
+FROM bloxoss/daemon-scheduler-scratch:make
 MAINTAINER Amazon Web Services, Inc.
 
 COPY out/daemon-scheduler /daemon-scheduler
