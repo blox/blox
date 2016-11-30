@@ -23,6 +23,9 @@ const (
 	UpdateInProgressDeploymentEventType EventType = "UpdateInProgressDeploymentEvent"
 	SchedulerErrorEventType             EventType = "SchedulerErrorEvent"
 	SchedulerEnvironmentEventType       EventType = "SchedulerEnvironmentEvent"
+	ErrorEventType                      EventType = "ErrorEventType"
+	StopTasksResultType                 EventType = "StopTasksResultType"
+	StartDeploymentResultType           EventType = "StartDeploymentResultType"
 )
 
 type Event interface {
@@ -77,4 +80,31 @@ type SchedulerEnvironmentEvent struct {
 
 func (e SchedulerEnvironmentEvent) GetType() EventType {
 	return SchedulerEnvironmentEventType
+}
+
+// ErrorEvent is generic event to notify of errors across actors
+type ErrorEvent struct {
+	Error error
+}
+
+func (e ErrorEvent) GetType() EventType {
+	return ErrorEventType
+}
+
+// StopTasksResult is result of stop tasks action
+type StopTasksResult struct {
+	StoppedTasks []string
+}
+
+func (e StopTasksResult) GetType() EventType {
+	return StopTasksResultType
+}
+
+// StartDeploymentResult is result of StartDeploymentEvent action
+type StartDeploymentResult struct {
+	Deployment types.Deployment
+}
+
+func (e StartDeploymentResult) GetType() EventType {
+	return StartDeploymentResultType
 }
