@@ -4,8 +4,8 @@
 Blox is a collection of open source projects for container management and orchestration. Blox gives you more control over how your containerized applications run on Amazon ECS. It enables you to build custom schedulers and integrate third-party schedulers on top of ECS, all the while leveraging ECS to fully manage and scale your clusters
 
 Blox currently consists of two components:  
-* Cluster state service
-* Daemon scheduler
+* Cluster State Service
+* Daemon Scheduler
 
 The Cluster State Service provides a local materialized view of the ECS cluster state by consuming the ECS event stream. The ECS event stream provides the ability to listen to cluster state changes in near real-time and is delivered via CloudWatch events. Customers who want to build scheduling workflows often need to consume the events generated in the ECS cluster, persist this state locally, and operate on the local cluster state. Cluster State Service implements this functionality and provides APIs (e.g., search, filter, list, etc.) that enable you to query the state of your cluster so you can respond to changes in real-time. The Cluster State Service utilizes etcd as the data store to track your Amazon ECS cluster state locally, and it also manages any drift in state by periodically reconciling state with Amazon ECS.
 

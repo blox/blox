@@ -1,4 +1,4 @@
-# Daemon scheduler
+# Daemon Scheduler
 
 ### Description
 
@@ -35,7 +35,7 @@ LICENSE                 daemon-scheduler
 
 ### Usage
 
-The Daemon Scheduler depends on the Cluster State Service. We provide an AWS CloudFormation template to set up the necessary prerequisites for the Cluster state service. After the prerequisites are ready, you can launch the Daemon Scheduler via the Docker compose file. For more information, see the Blox [Deployment Guide](../deploy).
+The Daemon Scheduler depends on the Cluster State Service. We provide an AWS CloudFormation template to set up the necessary prerequisites for the Cluster State Service. After the prerequisites are ready, you can launch the Daemon Scheduler via the Docker compose file. For more information, see the Blox [Deployment Guide](../deploy).
 
 To launch the Daemon Scheduler manually, use the following steps.
 
