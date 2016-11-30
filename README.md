@@ -1,42 +1,44 @@
 # Blox
 
 ### Description
-Blox is a collection of open source projects for container management and orchestration. Blox gives you more control over how your containerized applications run on Amazon ECS. It enables you to build custom schedulers and integrate third-party schedulers on top of ECS, all the while leveraging ECS to fully manage and scale your clusters
+Blox is a collection of open source projects for container management and orchestration. Blox gives you more control over how your containerized applications run on Amazon ECS. It enables you to build schedulers and integrate third-party schedulers on top of ECS, while leveraging Amazon ECS to fully manage and scale your clusters.
 
-Blox currently consists of two components:  
-* Cluster state service
-* Daemon scheduler
+The *blox* project provides a scheduling framework to help you easily build custom tooling, such as schedulers, on top of Amazon ECS. The framework makes it easy to consume events from Amazon ECS, store the cluster state locally, and query the local data store though APIs. The *blox* project currently consists of two components:  
 
-The Cluster State Service provides a local materialized view of the ECS cluster state by consuming the ECS event stream. The ECS event stream provides the ability to listen to cluster state changes in near real-time and is delivered via CloudWatch events. Customers who want to build scheduling workflows often need to consume the events generated in the ECS cluster, persist this state locally, and operate on the local cluster state. Cluster State Service implements this functionality and provides APIs (e.g., search, filter, list, etc.) that enable you to query the state of your cluster so you can respond to changes in real-time. The Cluster State Service utilizes etcd as the data store to track your Amazon ECS cluster state locally, and it also manages any drift in state by periodically reconciling state with Amazon ECS.
+* *cluster-state-service*
+* *daemon-scheduler*
 
-The Daemon Scheduler allows you to run exactly one task per host across all nodes in a cluster. The Daemon Scheduler monitors the cluster state and launches tasks as new nodes join the cluster. It is ideal for running monitoring agents, log collectors, etc. The Daemon Scheduler can be used a reference for how to use the Cluster State Service to build custom scheduling logic, and we plan to add more scheduling logic for additional use cases.
+The *cluster-state-service* consumes events from a stream of all changes to containers and instances across your Amazon ECS clusters, persists the events in a local data store, and provides APIs (e.g., search, filter, list, etc.) that enable you to query the state of your cluster so you can respond to changes in real-time. The *cluster-state-service* tracks your Amazon ECS cluster state locally, and manages any drift in state by periodically reconciling state with Amazon ECS.
+
+The *daemon-scheduler* is a scheduler that allows you to run exactly one task per host across all nodes in a cluster. The scheduler monitors the cluster state and launches tasks as new nodes join the cluster, and it is ideal for running monitoring agents, log collectors, etc. The scheduler can be used as a reference for how to use the *cluster-state-service* to build custom scheduling logic, and we plan to add additional scheduling capabilities for different use cases.
+
 
 ### Interested in learning more?
 
-If you are interested in learning more, see the [cluster-state-service](cluster-state-service) and [daemon-scheduler](daemon-scheduler).
+If you are interested in learning more about the components, please read the [cluster-state-service](cluster-state-service) and [daemon-scheduler](daemon-scheduler) README files.
 
 ### Deploying Blox
 
-We provide two methods for deploying Blox:  
+We provide two methods for deploying *blox*:  
 * Local deployment
 * AWS deployment
 
 #### Local Deployment
 
-You can deploy locally using our Docker compose file in order to try out Blox quickly, or using the cluster-state-service during development of custom local schedulers. Local deployment launches the Blox components — the Cluster State Service and Daemon Scheduler, along with a backing state store, etcd. Please see [Blox Deployment Guide](deploy) to launch Blox using the docker compose file.
+You can deploy locally and quickly try out Blox using our Docker Compose file. This allows you to get started with building custom schedulers using the cluster-state-service. The Docker Compose file launches the *blox* components, *cluster-state-service* and *daemon-scheduler*, along with a backing state store, etcd. Please see [Blox Deployment Guide](deploy) to launch *blox* using the Docker Compose file.
 
 #### AWS Deployment
 
-We also provide an AWS CloudFormation template to launch the Blox stack easily on AWS. The AWS-deployed Blox stack makes use of AWS services designed to provide a secure public facing Daemon Scheduler endpoint.
+We also provide an AWS CloudFormation template to launch the *blox* stack easily on AWS. The AWS deployed *blox* stack makes use of AWS services designed to provide a secure public facing scheduler endpoint.
 
-##### Creating a Blox stack in AWS
+##### Creating a Blox stack on AWS
 
 Deploying Blox using the AWS CloudFormation template in AWS sets up a stack consisting of the following components:
-* An SQS queue is created and CloudWatch is configured to deliver ECS events to the queue.
-* Blox components are set up as a service running on an Amazon ECS cluster. The Cluster State Service, Daemon Scheduler, and etcd containers making up a single task are run on a container instance. The Daemon Scheduler endpoint is then made reachable for customers to interact with securely.
-* An Application Load Balancer (ALB) instance is created in front of the scheduler endpoint.
-* An Amazon API Gateway endpoint is set up as the public facing front end to Blox and provides the authentication mechanism. This API Gateway can be used to reach the scheduler and manage tasks on the ECS cluster.
-* An AWS Lambda function that acts as a simple proxy to enable the public-facing API gateway endpoint to forward requests onto the ELB listener in the VPC.
+* An Amazon SQS queue is created for you, and Amazon CloudWatch is configured to deliver ECS events to your queue.
+* *blox* components are set up as a service running on an Amazon ECS cluster. The *cluster-state-service*, *daemon-scheduler* , and etcd containers run as a single task on a container instance. The scheduler endpoint is made reachable, which allows you to securely interact with the endpoint.
+* An Application Load Balancer (ALB) is created in front of your scheduler endpoint.
+* An Amazon API Gateway endpoint is set up as the public facing frontend and provides an authentication mechanism for the *blox* stack. The API Gateway endpoint can be used to reach the scheduler and manage tasks on the ECS cluster.
+* An AWS Lambda function acts as a simple proxy which enables the public facing API Gateway endpoint to forward requests onto the ALB listener in the VPC.
 
 For more information about deployment instructions, see [Blox Deployment Guide](deploy).
 
