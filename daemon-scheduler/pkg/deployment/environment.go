@@ -194,5 +194,9 @@ func (e environment) GetCurrentDeployment(ctx context.Context, name string) (*ty
 		return nil, err
 	}
 
+	if env == nil {
+		return nil, types.NewNotFoundError(errors.Errorf("Environment %s is not available", name))
+	}
+
 	return env.GetCurrentDeployment()
 }
