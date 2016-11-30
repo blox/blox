@@ -82,8 +82,13 @@ func (w *worker) handleEvent(ctx context.Context, event Event) error {
 	case UpdateInProgressDeploymentEventType:
 		return w.handleUpdateInProgressDeploymentEvent(ctx, event)
 	default:
-		return errors.Errorf("Unexpected event of type %s received", event.GetType())
+		return w.handleDefaultEvent(ctx, event)
 	}
+}
+
+func (w *worker) handleDefaultEvent(ctx context.Context, event Event) error {
+	log.Debugf("Received event : %s", event.GetType())
+	return nil
 }
 
 func (w *worker) handleUpdateInProgressDeploymentEvent(ctx context.Context, event Event) error {

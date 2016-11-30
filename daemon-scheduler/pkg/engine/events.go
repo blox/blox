@@ -19,8 +19,10 @@ type EventType string
 
 const (
 	StartDeploymentEventType            EventType = "StartDeploymentEvent"
-	StopTasksEventType                            = "StopTasksEvent"
-	UpdateInProgressDeploymentEventType           = "UpdateInProgressDeploymentEvent"
+	StopTasksEventType                  EventType = "StopTasksEvent"
+	UpdateInProgressDeploymentEventType EventType = "UpdateInProgressDeploymentEvent"
+	SchedulerErrorEventType             EventType = "SchedulerErrorEvent"
+	SchedulerEnvironmentEventType       EventType = "SchedulerEnvironmentEvent"
 )
 
 type Event interface {
@@ -55,4 +57,24 @@ type UpdateInProgressDeploymentEvent struct {
 
 func (e UpdateInProgressDeploymentEvent) GetType() EventType {
 	return UpdateInProgressDeploymentEventType
+}
+
+// SchedulerErrorEvent is message used to notify of any execution errors from Scheduler
+type SchedulerErrorEvent struct {
+	Error       error
+	Environment types.Environment
+}
+
+func (e SchedulerErrorEvent) GetType() EventType {
+	return SchedulerErrorEventType
+}
+
+// SchedulerEnvironmentEvent is message used to notify of any execution errors from Scheduler
+type SchedulerEnvironmentEvent struct {
+	Environment types.Environment
+	Message     string
+}
+
+func (e SchedulerEnvironmentEvent) GetType() EventType {
+	return SchedulerEnvironmentEventType
 }

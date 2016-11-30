@@ -94,7 +94,8 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 
 	ctx := context.Background()
 	events := engine.StartDispatcher(ctx, environment, deployment, ecs, css, deploymentWorker)
-	engine.StartScheduler(ctx, events, environment, deployment, css, ecs)
+	scheduler := engine.NewScheduler(ctx, events, environment, deployment, css, ecs)
+	scheduler.Start()
 
 	monitor := engine.NewMonitor(ctx, environment, events)
 	monitor.InProgressMonitorLoop()

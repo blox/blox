@@ -86,15 +86,26 @@ func (_mr *_MockECSRecorder) DescribeTaskDefinition(arg0 interface{}) *gomock.Ca
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DescribeTaskDefinition", arg0)
 }
 
-func (_m *MockECS) ListTasks(cluster string, startedBy string, instanceARN string) ([]*string, error) {
-	ret := _m.ctrl.Call(_m, "ListTasks", cluster, startedBy, instanceARN)
+func (_m *MockECS) ListTasks(cluster string, startedBy string) ([]*string, error) {
+	ret := _m.ctrl.Call(_m, "ListTasks", cluster, startedBy)
 	ret0, _ := ret[0].([]*string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockECSRecorder) ListTasks(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListTasks", arg0, arg1, arg2)
+func (_mr *_MockECSRecorder) ListTasks(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListTasks", arg0, arg1)
+}
+
+func (_m *MockECS) ListTasksByInstance(cluster string, instanceARN string) ([]*string, error) {
+	ret := _m.ctrl.Call(_m, "ListTasksByInstance", cluster, instanceARN)
+	ret0, _ := ret[0].([]*string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockECSRecorder) ListTasksByInstance(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListTasksByInstance", arg0, arg1)
 }
 
 func (_m *MockECS) DescribeTasks(cluster string, tasks []*string) (*ecs.DescribeTasksOutput, error) {

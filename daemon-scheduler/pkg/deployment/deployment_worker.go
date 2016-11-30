@@ -104,7 +104,7 @@ func (d deploymentWorker) updateDeployment(environment *types.Environment,
 		return nil, errors.New("Environment cluster should not be empty")
 	}
 
-	tasks, err := d.ecs.ListTasks(environment.Cluster, deployment.ID, "")
+	tasks, err := d.ecs.ListTasks(environment.Cluster, deployment.ID)
 	if err != nil {
 		return nil, err
 	}
