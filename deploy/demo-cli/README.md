@@ -73,6 +73,7 @@ $ ./blox-create-deployment.py --help
 
 usage: blox-create-deployment.py [-h] [--region REGION] [--apigateway]
                                  [--host HOST] [--environment ENVIRONMENT]
+                                 [--deployment-token TOKEN]
 
 Create Blox Deployment
 
@@ -83,6 +84,8 @@ optional arguments:
   --host HOST           Blox Scheduler <Host>:<Port>
   --environment ENVIRONMENT
                         Blox environment name
+  --deployment-token TOKEN
+                        Blox deployment token
 ```
 
 ## List cluster-state-service Instances
