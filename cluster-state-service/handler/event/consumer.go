@@ -14,6 +14,9 @@
 package event
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
@@ -85,14 +88,40 @@ func getQueueURL(client sqsiface.SQSAPI, queueName string) (string, error) {
 
 func (sqsConsumer sqsEventConsumer) PollForEvents(ctx context.Context) {
 	log.Infof("Starting to poll for events from SQS")
+	statsTicker := time.NewTicker(time.Second * 30)
 	for {
 		select {
 		case <-ctx.Done():
 			return
+		case <-statsTicker.C:
+			go func() {
+				sqsConsumer.logQueueStats(ctx)
+			}()
 		default:
 			sqsConsumer.pollForMessages()
 		}
 	}
+}
+
+func (sqsConsumer sqsEventConsumer) logQueueStats(ctx context.Context) error {
+	params := &sqs.GetQueueAttributesInput{
+		QueueUrl: aws.String(sqsConsumer.queueURL),
+		AttributeNames: []*string{
+			aws.String("ApproximateNumberOfMessages"),
+			aws.String("ApproximateNumberOfMessagesDelayed"),
+			aws.String("ApproximateNumberOfMessagesNotVisible"),
+		},
+	}
+	resp, err := sqsConsumer.sqs.GetQueueAttributes(params)
+	if err != nil {
+		return errors.Wrapf(err, "Error getting queue attributes for queue %s", sqsConsumer.queueURL)
+	}
+	for attrib, _ := range resp.Attributes {
+		prop := resp.Attributes[attrib]
+		i, _ := strconv.Atoi(*prop)
+		log.Infof("SQS attribute[%s] = %d", attrib, i)
+	}
+	return nil
 }
 
 func (sqsConsumer sqsEventConsumer) pollForMessages() {
@@ -111,7 +140,6 @@ func (sqsConsumer sqsEventConsumer) pollForMessages() {
 	}
 
 	if output == nil || output.Messages == nil {
-		log.Debug("Received a blank message from the queue")
 		return
 	}
 

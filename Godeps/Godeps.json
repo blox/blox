@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/aws/amazon-ecs-event-stream-handler",
+	"ImportPath": "github.com/blox/blox",
 	"GoVersion": "go1.7",
 	"GodepVersion": "v75",
 	"Packages": [
@@ -137,6 +137,11 @@
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/private/waiter",
+			"Comment": "v1.4.20-4-g9e5bedb",
+			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/autoscaling",
 			"Comment": "v1.4.20-4-g9e5bedb",
 			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
 		},
@@ -413,6 +418,11 @@
 			"Rev": "ca63d7c062ee3c9f34db231e352b60012b4fd0c1"
 		},
 		{
+			"ImportPath": "github.com/pborman/uuid",
+			"Comment": "v1.0-17-g3d4f2ba",
+			"Rev": "3d4f2ba23642d3cfd06bd4b54cf03d99d95c0f1b"
+		},
+		{
 			"ImportPath": "github.com/pelletier/go-buffruneio",
 			"Rev": "df1e16fde7fc330a0ca68167c23bf7ed6ac31d6d"
 		},
@@ -460,6 +470,11 @@
 		{
 			"ImportPath": "github.com/prometheus/procfs",
 			"Rev": "abf152e5f3e97f2fafac028d2cc06c1feb87ffa5"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Comment": "v1.1.0-6-gb061729",
+			"Rev": "b061729afc07e77a8aa4fad0a2fd840958f1942a"
 		},
 		{
 			"ImportPath": "github.com/shiena/ansicolor",

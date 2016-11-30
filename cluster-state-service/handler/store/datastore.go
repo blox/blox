@@ -24,7 +24,10 @@ import (
 )
 
 const (
-	requestTimeout    = 5 * time.Second
+	// requestTimeout is timeout set when calling etcd APIs.
+	// This timeout is set to 1 minute to support list APIs
+	// with prefix match
+	requestTimeout    = 1 * time.Minute
 	streamIdleTimeout = 1 * time.Hour
 )
 

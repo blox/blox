@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/handler/httpclient"
 	log "github.com/cihub/seelog"
 )
 
@@ -30,9 +31,11 @@ func NewECSClient(sess *session.Session) *ecs.ECS {
 	if endpoint == "" {
 		return ecs.New(sess)
 	}
+
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
-			Endpoint: aws.String(endpoint),
+			Endpoint:   aws.String(endpoint),
+			HTTPClient: httpclient.New(),
 		},
 	})
 	if err != nil {

@@ -1,0 +1,54 @@
+version: '2'
+services:
+  scheduler:
+    image: "bloxoss/daemon-scheduler:0.1.0"
+    ports:
+      - "2000:2000"
+    environment:
+      AWS_REGION: "<region>"
+      AWS_PROFILE: "default"
+    command: [
+      "--bind", "0.0.0.0:2000",
+      "--css-endpoint", "css:3000",
+      "--etcd-endpoint", "etcd:2379"
+    ]
+    links:
+      - "css:css"
+      - "etcd:etcd"
+    volumes:
+      - "~/.aws:/.aws:ro"
+    depends_on:
+      - "css"
+      - "etcd"
+  css:
+    image: "bloxoss/cluster-state-service:0.1.0"
+    ports:
+      - "3000:3000"
+    environment:
+      AWS_REGION: "<region>"
+      AWS_PROFILE: "default"
+    command: [
+      "--bind", "0.0.0.0:3000",
+      "--etcd-endpoint", "etcd:2379",
+      "--queue", "blox_queue"
+    ]
+    links:
+      - "etcd:etcd"
+    volumes:
+      - "~/.aws:/.aws:ro"
+    depends_on:
+      - "etcd"
+  etcd:
+    image: "quay.io/coreos/etcd:v3.0.13"
+    ports:
+      - "2379:2379"
+    command: [
+      "/usr/local/bin/etcd",
+      "--data-dir", "/var/lib/etcd/data",
+      "--wal-dir", "/var/lib/etcd/wal",
+      "--listen-client-urls", "http://0.0.0.0:2379",
+      "--advertise-client-urls", "http://0.0.0.0:2379",
+      "--listen-peer-urls", "http://0.0.0.0:2380"
+    ]
+    volumes:
+      - "~/blox-state:/var/lib/etcd"

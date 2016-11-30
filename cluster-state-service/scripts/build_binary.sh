@@ -23,5 +23,16 @@ cd "${ROOT}"
 BINARY_DESTINATION_DIR=$1
 mkdir -p ${BINARY_DESTINATION_DIR}
 
+# Versioning: run the generator to setup the version and then always
+# restore ourselves to a clean state
+cp versioning/version.go versioning/_version.go
+trap "mv versioning/_version.go versioning/version.go" EXIT SIGHUP SIGINT SIGTERM
+
+cd versioning
+go run gen/version-gen.go
+
+cd "${ROOT}"
+
 # Builds the handler binary from source in the specified destination paths
 GOOS=$TARGET_GOOS CGO_ENABLED=0 go build -installsuffix cgo -a -ldflags '-s' -o ${BINARY_DESTINATION_DIR}/cluster-state-service ./
+cp "${ROOT}/../LICENSE"  ${BINARY_DESTINATION_DIR}/

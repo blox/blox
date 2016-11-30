@@ -51,7 +51,7 @@ func (applier STMApplier) applyVersionedRecord(stm concurrency.STM) error {
 				"Error retrieving the version of the new record in the STM applier")
 		}
 		if existingRecordVersion >= newRecordVersion {
-			log.Infof("Not adding record for key %s with version %d as version %d already exists",
+			log.Debugf("Not adding record for key %s with version %d as version %d already exists",
 				applier.recordKey, newRecordVersion, existingRecordVersion)
 
 			// Higher or equivalent version of the event has already been stored.

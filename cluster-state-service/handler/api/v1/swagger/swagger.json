@@ -2,12 +2,13 @@
   "swagger": "2.0",
   "info": {
     "version": "1.0.0",
-    "title": "Amazon Cluster State Service",
-    "description": "APIs supported by the Amazon Cluster State Service",
+    "title": "Blox cluster-state-service",
+    "description": "APIs supported by the Blox cluster-state-service",
     "license": {
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-    }
+    },
+    "x-copyright": "Copyright 2016, Amazon.com Inc. or Affiliates."
   },
   "host": "localhost:3000",
   "basePath": "/v1",

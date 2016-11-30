@@ -14,12 +14,19 @@
 package clients
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/blox/blox/cluster-state-service/handler/httpclient"
 	"github.com/pkg/errors"
 )
 
+// NewAWSSession creates an AWS session.
 func NewAWSSession() (*session.Session, error) {
-	sess, err := session.NewSession()
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			HTTPClient: httpclient.New(),
+		},
+	})
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not load aws session")
