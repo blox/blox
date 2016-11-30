@@ -7,7 +7,8 @@
     "license": {
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-    }
+    },
+    "x-copyright": "Copyright 2016, Amazon.com Inc. or Affiliates."
   },
   "host": "localhost:3000",
   "basePath": "/v1",

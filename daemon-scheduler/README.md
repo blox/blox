@@ -1,25 +1,25 @@
-# Daemon Scheduler
+# daemon-scheduler
 
 ### Description
 
-The Daemon Scheduler ensures that one copy of a task is run on every specified instance in an Amazon ECS cluster. It also monitors the cluster state and launches the tasks on any new nodes joining the cluster. The Daemon Scheduler also restarts any of the stopped or failed tasks.
+The daemon-scheduler allows you to run exactly one task per host across all nodes in a cluster. It monitors the cluster state and launches tasks as new nodes join the cluster, and it is ideal for running monitoring agents, log collectors, etc. The daemon-scheduler can be used a reference for how to use the cluster-state-service to build custom scheduling logic.
 
 ### Concepts
 
-The Daemon Scheduler defines and depends on the following concepts:  
+The daemon-scheduler defines and depends on the following concepts:  
 
-* An `Environment` represents the configuration for desired state of the tasks to be maintained. For the Daemon Scheduler, the environment indicates the task definition to launch in a specific cluster.
+* An `Environment` represents the configuration for desired state of the tasks to be maintained. For the daemon-scheduler, the environment indicates the task definition to launch in a specific cluster.
 * `Deployment` is the operation that brings the environment into existence. Deployment indicates to the scheduler that the desired configuration state in `Environment` should be established in the cluster.
 
 ### REST API
 
-The Daemon Scheduler API:  
+The daemon-scheduler API:  
 * Creates and lists environments
 * Creates and lists deployments
 
-### Building the Daemon Scheduler
+### Building the daemon-scheduler
 
-The Daemon Scheduler depends on golang and go-swagger. Install and configure [golang](https://golang.org/doc/). For more information about installing go-swagger, see the [go-swagger documentation](https://github.com/go-swagger/go-swagger).
+The daemon-scheduler depends on golang and go-swagger. Install and configure [golang](https://golang.org/doc/). For more information about installing go-swagger, see the [go-swagger documentation](https://github.com/go-swagger/go-swagger).
 
 ```
 $ git clone https://github.com/blox/blox.git blox/blox
@@ -35,13 +35,13 @@ LICENSE                 daemon-scheduler
 
 ### Usage
 
-The Daemon Scheduler depends on the Cluster State Service. We provide an AWS CloudFormation template to set up the necessary prerequisites for the Cluster State Service. After the prerequisites are ready, you can launch the Daemon Scheduler via the Docker compose file. For more information, see the Blox [Deployment Guide](../deploy).
+The daemon-scheduler depends on the cluster-state-service. We provide an AWS CloudFormation template to set up the necessary prerequisites for the cluster-state-service. After the prerequisites are ready, you can launch the daemon-scheduler via the Docker compose file. For more information, see the Blox [Deployment Guide](../deploy).
 
-To launch the Daemon Scheduler manually, use the following steps.
+To launch the daemon-scheduler manually, use the following steps.
 
-#### Quick Start - Launching Daemon Scheduler
+#### Quick Start - Launching daemon-scheduler
 
-The Daemon Scheduler is provided as a Docker image for your convenience. You can launch it using the following command. Use the appropriate values for AWS_REGION, AWS_PROFILE, etcd IP address and port, and the Cluster State Service IP address and port.
+The daemon-scheduler is provided as a Docker image for your convenience. You can launch it using the following command. Use the appropriate values for AWS_REGION, AWS_PROFILE, etcd IP address and port, and the cluster-state-service IP address and port.
 
 ```
 docker run -e AWS_REGION=us-west-2 \
@@ -55,4 +55,4 @@ docker run -e AWS_REGION=us-west-2 \
 
 #### API endpoint
 
-After you launch the Daemon Scheduler, you can interact with and use the REST API by using the endpoint at port 2000. Identify the Daemon Scheduler container IP address and connect to port 2000. For more information about the API definitions, see the [swagger specification](generated/v1/swagger.json).
+After you launch the daemon-scheduler, you can interact with and use the REST API by using the endpoint at port 2000. Identify the daemon-scheduler container IP address and connect to port 2000. For more information about the API definitions, see the [swagger specification](generated/v1/swagger.json).

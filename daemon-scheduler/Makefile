@@ -53,39 +53,39 @@ generate: $(SWAGGER_GEN) $(SOURCES)
 
 .PHONY: generate build-in-docker
 build-in-docker:
-	@docker build -f scripts/dockerfiles/Dockerfile.build -t "amazon/blox-daemon-scheduler:make" .
+	@docker build -f scripts/dockerfiles/Dockerfile.build -t "bloxoss/daemon-scheduler:make" .
 	@docker run --net=none \
 	    -v "$(shell pwd)/out:/out" \
 	    -v "$(shell pwd):/go/src/github.com/blox/blox/daemon-scheduler" \
 	    -v "$(shell dirname ${ROOT}):/go/src/github.com/blox/blox" \
-	    "amazon/blox-daemon-scheduler:make"
+	    "bloxoss/daemon-scheduler:make"
 
 .PHONY: certs
 certs: misc/certs/ca-certificates.crt
 misc/certs/ca-certificates.crt:
-	docker build -t "amazon/blox-daemon-scheduler-cert-source:make" misc/certs/
-	docker run "amazon/blox-daemon-scheduler-cert-source:make" cat /etc/ssl/certs/ca-certificates.crt > misc/certs/ca-certificates.crt
+	docker build -t "bloxoss/daemon-scheduler-cert-source:make" misc/certs/
+	docker run "bloxoss/daemon-scheduler-cert-source:make" cat /etc/ssl/certs/ca-certificates.crt > misc/certs/ca-certificates.crt
 
 .PHONY: docker
 docker: certs generate build-in-docker
 	@cd scripts && ./create-daemon-scheduler-scratch
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/blox-daemon-scheduler:make" .
-	@echo "Built Docker image \"amazon/blox-daemon-scheduler:make\""
+	@docker build -f scripts/dockerfiles/Dockerfile.release -t "bloxoss/daemon-scheduler:make" .
+	@echo "Built Docker image \"bloxoss/daemon-scheduler:make\""
 
 .PHONY: docker-release
 docker-release:
-	@docker build -f scripts/dockerfiles/Dockerfile.cleanbuild -t "amazon/blox-daemon-scheduler-cleanbuild:make" .
-	@echo "Built Docker image \"amazon/blox-daemon-scheduler-cleanbuild:make\""
+	@docker build -f scripts/dockerfiles/Dockerfile.cleanbuild -t "bloxoss/daemon-scheduler-cleanbuild:make" .
+	@echo "Built Docker image \"bloxoss/daemon-scheduler-cleanbuild:make\""
 	@docker run --net=none \
 	    -v "$(shell pwd)/out:/out" \
 	    -v "$(shell dirname ${ROOT}):/src/blox" \
-	    "amazon/blox-daemon-scheduler-cleanbuild:make"
+	    "bloxoss/daemon-scheduler-cleanbuild:make"
 
 .PHONY: release
 release: certs generate docker-release
 	@cd scripts && ./create-daemon-scheduler-scratch
-	@docker build -f scripts/dockerfiles/Dockerfile.release -t "amazon/blox-daemon-scheduler:latest" .
-	@echo "Built Docker image \"amazon/blox-daemon-scheduler:latest\""
+	@docker build -f scripts/dockerfiles/Dockerfile.release -t "bloxoss/daemon-scheduler:latest" .
+	@echo "Built Docker image \"bloxoss/daemon-scheduler:latest\""
 
 .PHONY: get-deps
 get-deps:
