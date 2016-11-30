@@ -2,8 +2,8 @@
   "swagger": "2.0",
   "info": {
     "version": "1.0.0",
-    "title": "Blox Cluster State Service",
-    "description": "APIs supported by the Blox Cluster State Service",
+    "title": "Blox cluster-state-service",
+    "description": "APIs supported by the Blox cluster-state-service",
     "license": {
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
