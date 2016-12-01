@@ -31,6 +31,7 @@ func toEnvironmentModel(envType types.Environment) models.Environment {
 		},
 		Health:          health,
 		DeploymentToken: envType.Token,
+		TaskDefinition:  envType.DesiredTaskDefinition,
 	}
 }
 

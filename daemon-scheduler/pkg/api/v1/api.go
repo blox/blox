@@ -19,11 +19,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
-	"github.com/aws/aws-sdk-go/service/ecs"
 	log "github.com/cihub/seelog"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -137,12 +136,7 @@ func (api API) DeleteEnvironment(w http.ResponseWriter, r *http.Request) {
 
 	err := api.environment.DeleteEnvironment(r.Context(), name)
 	if err != nil {
-		_, ok := errors.Cause(err).(types.BadRequestError)
-		if ok {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		writeInternalServerError(w, err)
+		handleBackendError(w, err)
 		return
 	}
 

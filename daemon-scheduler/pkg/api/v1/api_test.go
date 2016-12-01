@@ -14,11 +14,17 @@
 package v1
 
 import (
+	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
+	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -64,13 +70,126 @@ func (suite *APITestSuite) TestPing() {
 	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code, "Http response status in ping response is invalid")
 }
 
+func (suite *APITestSuite) TestGetEnvironmentReturnsError() {
+	name := "testEnv"
+	err := errors.New("Error from GetEnvironment")
+	suite.environment.EXPECT().GetEnvironment(gomock.Any(), name).Return(nil, err)
+	request := suite.generateGetEnvironmentRequest(name)
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusInternalServerError, responseRecorder.Code)
+}
+
+func (suite *APITestSuite) TestGetEnvironmentMissingReturnsError() {
+	name := "testEnv"
+	suite.environment.EXPECT().GetEnvironment(gomock.Any(), name).Return(nil, nil)
+	request := suite.generateGetEnvironmentRequest(name)
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusNotFound, responseRecorder.Code)
+}
+
+func (suite *APITestSuite) TestGetEnvironment() {
+	name := "testEnv"
+	environment, _ := types.NewEnvironment(name, "td", "cluster")
+	suite.environment.EXPECT().GetEnvironment(gomock.Any(), name).Return(environment, nil)
+	request := suite.generateGetEnvironmentRequest(name)
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code)
+
+	var environmentModel models.Environment
+	b, _ := ioutil.ReadAll(responseRecorder.Body)
+	json.Unmarshal(b, &environmentModel)
+
+	suite.assertSame(environment, &environmentModel)
+}
+
+func (suite *APITestSuite) TestListEnvironments() {
+	e1, err := types.NewEnvironment("e1", "td1", "cluster1")
+	e2, err := types.NewEnvironment("e2", "td2", "cluster2")
+	environments := []types.Environment{*e1, *e2}
+	suite.environment.EXPECT().ListEnvironments(gomock.Any()).Return(environments, nil)
+	request, err := http.NewRequest("GET", "/v1/environments", nil)
+	assert.Nil(suite.T(), err, "Unexpected error")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code)
+
+	var environmentsModel models.Environments
+	b, _ := ioutil.ReadAll(responseRecorder.Body)
+	json.Unmarshal(b, &environmentsModel)
+
+	for i := 0; i < len(environments); i++ {
+		environment := environments[i]
+		environmentModel := environmentsModel.Items[i]
+		suite.assertSame(&environment, environmentModel)
+	}
+}
+
+func (suite *APITestSuite) TestListEnvironmentsServerError() {
+	err := errors.New("Error when calling ListEnvironments")
+	suite.environment.EXPECT().ListEnvironments(gomock.Any()).Return(nil, err)
+	request, err := http.NewRequest("GET", "/v1/environments", nil)
+	assert.Nil(suite.T(), err, "Unexpected error")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusInternalServerError, responseRecorder.Code)
+}
+
+func (suite *APITestSuite) TestDeleteEnvironment() {
+	name := "testEnv"
+	suite.environment.EXPECT().DeleteEnvironment(gomock.Any(), name).Return(nil)
+
+	request := suite.generateDeleteEnvironmentRequest(name)
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code)
+}
+
+func (suite *APITestSuite) TestDeleteEnvironmentMissingEnvironment() {
+	name := "testEnv"
+	notfounderr := types.NewNotFoundError(errors.New("Environment is missing"))
+	suite.environment.EXPECT().DeleteEnvironment(gomock.Any(), name).Return(notfounderr)
+
+	request := suite.generateDeleteEnvironmentRequest(name)
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusNotFound, responseRecorder.Code)
+}
+
+func (suite *APITestSuite) assertSame(environment *types.Environment, environmentModel *models.Environment) {
+	assert.Equal(suite.T(), environment.Name, aws.StringValue(environmentModel.Name))
+	assert.Equal(suite.T(), environment.Cluster, environmentModel.InstanceGroup.Cluster)
+	assert.Equal(suite.T(), environment.DesiredTaskDefinition, environmentModel.TaskDefinition)
+}
+
 func (suite *APITestSuite) getRouter() *mux.Router {
-	r := mux.NewRouter().StrictSlash(true)
-	s := r.Path("/v1").Subrouter()
+	return NewRouter(suite.api)
+}
 
-	s.Path("/ping").
-		Methods("GET").
-		HandlerFunc(suite.api.Ping)
+func (suite *APITestSuite) generateGetEnvironmentRequest(name string) *http.Request {
+	request, err := http.NewRequest("GET", "/v1/environments/"+name, nil)
+	assert.Nil(suite.T(), err, "Unexpected error")
+	return request
+}
 
-	return s
+func (suite *APITestSuite) generateDeleteEnvironmentRequest(name string) *http.Request {
+	request, err := http.NewRequest("DELETE", "/v1/environments/"+name, nil)
+	assert.Nil(suite.T(), err, "Unexpected error")
+	return request
 }
