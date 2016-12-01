@@ -7,9 +7,8 @@
 
 #### Testing
 <!-- How was this tested? -->
-
-[ ] Binary built locally and unit-tests pass (`make`)  
-[ ] Build in docker succeeds (`make release`)
+- [ ] Binary built locally and unit-tests pass (`make`)  
+- [ ] Build in docker succeeds (`make release`)
 
 New tests cover the changes: <!-- yes|no -->
 
