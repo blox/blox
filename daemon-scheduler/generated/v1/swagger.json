@@ -47,7 +47,7 @@
             "type": "string",
             "description": "Deployment token",
             "required": true
-        },
+        }
     },
     "paths": {
         "/ping": {
@@ -155,7 +155,7 @@
                 "operationId": "deleteEnvironment",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "OK"
                     },
                     "400": {
                         "description": "Bad Request",

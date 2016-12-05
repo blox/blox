@@ -229,7 +229,7 @@
         "registeredResources",
         "remainingResources",
         "status",
-        "versionInfo",
+        "versionInfo"
       ],
       "properties": {
         "agentConnected": {
@@ -286,7 +286,7 @@
             "$ref": "#/definitions/ContainerInstance"
           }
         }
-      },
+      }
     },
     "ContainerInstanceAttribute": {
       "type": "object",
@@ -347,7 +347,7 @@
         "lastStatus",
         "overrides",
         "taskARN",
-        "taskDefinitionARN",
+        "taskDefinitionARN"
       ],
       "properties": {
         "clusterARN": {
@@ -407,7 +407,7 @@
             "$ref": "#/definitions/Task"
           }
         }
-      },
+      }
     },
     "TaskContainer": {
       "type": "object",
@@ -519,6 +519,6 @@
           "type": "string"
         }
       }
-    },
+    }
   }
 }

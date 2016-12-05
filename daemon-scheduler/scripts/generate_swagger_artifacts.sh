@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu
 
 # Normalize to working directory being build root (up one level from ./scripts)
