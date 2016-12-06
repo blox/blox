@@ -492,6 +492,12 @@
             "Hostname": "etcd",
             "Image": "quay.io/coreos/etcd:v3.0.13",
             "Memory": "256",
+            "Environment": [
+              {
+                "Name": "ETCDCTL_API",
+                "Value": "3"
+              }
+            ],
             "Command": [
               "/usr/local/bin/etcd",
               "--data-dir", "/var/lib/etcd/data",
