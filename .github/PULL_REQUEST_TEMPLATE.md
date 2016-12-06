@@ -7,8 +7,10 @@
 
 #### Testing
 <!-- How was this tested? -->
-- [ ] Binary built locally and unit-tests pass (`make`)  
-- [ ] Build in docker succeeds (`make release`)
+- [ ] cluster-state-service binary built locally and unit-tests pass (`cd cluster-state-service; make; cd ../`)
+- [ ] cluster-state-service build in Docker succeeds (`cd cluster-state-service; make release; cd ../`)
+- [ ] daemon-scheduler binary built locally and unit-tests pass (`cd daemon-scheduler; make; cd ../`)
+- [ ] daemon-scheduler build in Docker succeeds (`cd daemon-scheduler; make release; cd ../`)
 
 New tests cover the changes: <!-- yes|no -->
 
