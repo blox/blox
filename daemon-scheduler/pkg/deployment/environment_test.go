@@ -187,7 +187,7 @@ func (suite *EnvironmentTestSuite) TestGetEnvironment() {
 }
 
 func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentInProgress() {
-	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster)
+	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
 	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
@@ -204,7 +204,7 @@ func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentInProgress() {
 }
 
 func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentPending() {
-	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster)
+	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
 	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
@@ -221,7 +221,7 @@ func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentPending() {
 }
 
 func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentCompleted() {
-	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster)
+	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
 	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
@@ -258,7 +258,7 @@ func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturns
 }
 
 func (suite *EnvironmentTestSuite) TestDeleteEnvironment() {
-	environment, err := types.NewEnvironment("TestDeleteEnvironment", taskDefinition, cluster)
+	environment, err := types.NewEnvironment("TestDeleteEnvironment", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
 		Return(environment, nil)
@@ -270,7 +270,7 @@ func (suite *EnvironmentTestSuite) TestDeleteEnvironment() {
 }
 
 func (suite *EnvironmentTestSuite) TestDeleteEnvironmentReturnsError() {
-	environment, err := types.NewEnvironment("TestDeleteEnvironmentReturnsError", taskDefinition, cluster)
+	environment, err := types.NewEnvironment("TestDeleteEnvironmentReturnsError", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
 		Return(environment, nil)
@@ -293,7 +293,7 @@ func (suite *EnvironmentTestSuite) TestDeleteEnvironmentEmptyName() {
 }
 
 func (suite *EnvironmentTestSuite) TestDeleteEnvironmentGetEnvironmentReturnsError() {
-	environment, err := types.NewEnvironment("TestDeleteEnvironmentReturnsError", taskDefinition, cluster)
+	environment, err := types.NewEnvironment("TestDeleteEnvironmentReturnsError", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 
 	err = errors.New("Error calling GetEnvironment")
@@ -307,7 +307,7 @@ func (suite *EnvironmentTestSuite) TestDeleteEnvironmentGetEnvironmentReturnsErr
 }
 
 func (suite *EnvironmentTestSuite) TestDeleteEnvironmentGetEnvironmentReturnsEmpty() {
-	environment, err := types.NewEnvironment("TestDeleteEnvironmentGetEnvironmentReturnsEmpty", taskDefinition, cluster)
+	environment, err := types.NewEnvironment("TestDeleteEnvironmentGetEnvironmentReturnsEmpty", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 
 	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
