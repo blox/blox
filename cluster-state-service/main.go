@@ -36,7 +36,7 @@ func main() {
 		fmt.Printf("Could not initialize logger: %+v", err)
 	}
 	if err := cmd.RootCmd.Execute(); err != nil {
-		log.Criticalf("Error executing: %v", err)
+		log.Criticalf("Error executing: %+v", err)
 		os.Exit(errorCode)
 	}
 	if config.PrintVersion {
@@ -44,7 +44,7 @@ func main() {
 		os.Exit(0)
 	}
 	if err := run.StartClusterStateService(config.SQSQueueName, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
-		log.Criticalf("Error starting event stream handler: %v", err)
+		log.Criticalf("Error starting the cluster state service: %+v", err)
 		os.Exit(errorCode)
 	}
 }
