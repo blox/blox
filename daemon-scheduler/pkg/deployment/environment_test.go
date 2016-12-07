@@ -71,10 +71,10 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 		Arn: aws.String(instanceARN),
 	}
 
-	suite.environment1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)
+	suite.environment1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.environment2, err = types.NewEnvironment(environmentName2, taskDefinition, cluster)
+	suite.environment2, err = types.NewEnvironment(environmentName2, taskDefinition, cluster2)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.deployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
@@ -87,7 +87,7 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 		desiredTaskCount, []*ecs.Failure{&failedTask})
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.updatedEnvironment, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)
+	suite.updatedEnvironment, err = types.NewEnvironment(environmentName1, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
@@ -110,12 +110,12 @@ func (suite *EnvironmentTestSuite) TestNewEnvironmentStore() {
 }
 
 func (suite *EnvironmentTestSuite) TestCreateEnvironmentEmptyName() {
-	_, err := suite.environment.CreateEnvironment(suite.ctx, "", taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, "", taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when name is empty")
 }
 
 func (suite *EnvironmentTestSuite) TestCreateEnvironmentEmptyTaskDefinition() {
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, "", cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, "", cluster1)
 	assert.Error(suite.T(), err, "Expected an error when taskDefinition is empty")
 }
 
@@ -128,7 +128,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironmentGetEnvironmentFails() {
 	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName1).
 		Return(nil, errors.New("Get environment failed"))
 
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when get environment fails")
 }
 
@@ -136,7 +136,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironmentEnvironmentExists() {
 	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName1).
 		Return(suite.environment1, nil)
 
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when environment exists")
 }
 
@@ -148,7 +148,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironmentPutEnvironmentFails() {
 		verifyEnvironment(suite.T(), suite.environment1, &e)
 	}).Return(errors.New("Put environment failed"))
 
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when put environment fails")
 }
 
@@ -159,7 +159,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironment() {
 		verifyEnvironment(suite.T(), suite.environment1, &e)
 	}).Return(nil)
 
-	env, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	env, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating an environment")
 	verifyEnvironment(suite.T(), suite.environment1, env)
 }
@@ -335,6 +335,51 @@ func (suite *EnvironmentTestSuite) TestListEnvironments() {
 	envs, err := suite.environment.ListEnvironments(suite.ctx)
 	assert.Nil(suite.T(), err, "Unexpected error when listing environments")
 	assert.Exactly(suite.T(), expectedEnvs, envs, "Expected listed environments to match what's returned from the store")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsEmptyFilterKey() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, "", "filterVal")
+	assert.Error(suite.T(), err, "Expected an error when filter key is empty")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsEmptyFilterVal() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, "")
+	assert.Error(suite.T(), err, "Expected an error when filter val is empty")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsUnsupportedFilterKey() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, "unsupportedFilter", "filterVal")
+	assert.Error(suite.T(), err, "Expected an error when filter key is unsupported")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsListEnvironmentsReturnsError() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).
+		Return(nil, errors.New("Error listing environments"))
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, "filterVal")
+	assert.Error(suite.T(), err, "Expected an error filtering environments when store list environments returns an error")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterARN() {
+	cluster1Env1 := suite.environment1
+	cluster2Env1 := suite.environment2
+	cluster1Env2, err := types.NewEnvironment(environmentName3, taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error creating new environment")
+
+	allEnvs := []types.Environment{*cluster1Env1, *cluster2Env1, *cluster1Env2}
+	suite.environmentStore.EXPECT().ListEnvironments(suite.ctx).
+		Return(allEnvs, nil)
+
+	envs, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when filtering environments")
+	expectedEnvs := []types.Environment{*cluster1Env1, *cluster1Env2}
+	assert.Exactly(suite.T(), expectedEnvs, envs, "Returned filtered environments does not match expected environments")
 }
 
 func (suite *EnvironmentTestSuite) TestAddDeploymentEmptyDeploymentID() {

@@ -86,6 +86,17 @@ func (_mr *_MockEnvironmentRecorder) ListEnvironments(arg0 interface{}) *gomock.
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListEnvironments", arg0)
 }
 
+func (_m *MockEnvironment) FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error) {
+	ret := _m.ctrl.Call(_m, "FilterEnvironments", ctx, filterKey, filterVal)
+	ret0, _ := ret[0].([]types.Environment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockEnvironmentRecorder) FilterEnvironments(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "FilterEnvironments", arg0, arg1, arg2)
+}
+
 func (_m *MockEnvironment) AddDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
 	ret := _m.ctrl.Call(_m, "AddDeployment", ctx, environment, deployment)
 	ret0, _ := ret[0].(*types.Environment)

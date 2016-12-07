@@ -22,6 +22,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	clusterFilter = "cluster"
+)
+
+var (
+	supportedFilterKeys = []string{clusterFilter}
+)
+
 type Environment interface {
 	// CreateEnvironment stores a new environment in the database
 	CreateEnvironment(ctx context.Context, name string, taskDefinition string, cluster string) (*types.Environment, error)
@@ -31,6 +39,8 @@ type Environment interface {
 	DeleteEnvironment(ctx context.Context, name string) error
 	// ListEnvironments returns a list with all the existing environments
 	ListEnvironments(ctx context.Context) ([]types.Environment, error)
+	// FilterEnvironments returns a list of all environments that match the filters
+	FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error)
 
 	// AddDeployment adds a deployment to the environment if a deployment with
 	// the provided ID does not exist
@@ -133,6 +143,36 @@ func (e environment) DeleteEnvironment(ctx context.Context, name string) error {
 func (e environment) ListEnvironments(ctx context.Context) ([]types.Environment, error) {
 	//TODO: should we sort the deployments by time before returning?
 	return e.environmentStore.ListEnvironments(ctx)
+}
+
+func (e environment) FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error) {
+	if filterKey == "" {
+		return nil, errors.New("Filter key is missing")
+	}
+	if filterVal == "" {
+		return nil, errors.New("Filter value is missing")
+	}
+	switch filterKey {
+	case clusterFilter:
+		return e.filterEnvironmentsByCluster(ctx, filterVal)
+	default:
+		return nil, errors.Errorf("Unsupported filter key '%s'. Supported filters are '%v'", filterKey, supportedFilterKeys)
+	}
+}
+
+func (e environment) filterEnvironmentsByCluster(ctx context.Context, cluster string) ([]types.Environment, error) {
+	envs, err := e.environmentStore.ListEnvironments(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredEnvs := make([]types.Environment, 0, len(envs))
+	for _, env := range envs {
+		if cluster == env.Cluster {
+			filteredEnvs = append(filteredEnvs, env)
+		}
+	}
+	return filteredEnvs, nil
 }
 
 func (e environment) AddDeployment(ctx context.Context, environment types.Environment,

@@ -61,7 +61,7 @@ func (suite *DeploymentTestSuite) SetupTest() {
 	suite.deployment = NewDeployment(suite.environment, suite.clusterState, suite.ecs)
 
 	var err error
-	suite.deploymentEnvironment, err = types.NewEnvironment(environmentName, taskDefinition, cluster)
+	suite.deploymentEnvironment, err = types.NewEnvironment(environmentName, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Cannot initialize DeploymentTestSuite")
 
 	suite.instanceARNs = []*string{aws.String(instanceARN1), aws.String(instanceARN2)}

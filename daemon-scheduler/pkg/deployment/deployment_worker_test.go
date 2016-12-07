@@ -49,7 +49,7 @@ func (suite *DeploymentWorkerTestSuite) SetupTest() {
 	suite.clusterTaskARNs = []*string{aws.String(taskARN1), aws.String(taskARN2)}
 
 	var err error
-	suite.deploymentEnvironment, err = types.NewEnvironment(environmentName, taskDefinition, cluster)
+	suite.deploymentEnvironment, err = types.NewEnvironment(environmentName, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Cannot initialize DeploymentWorkerTestSuite")
 
 	suite.deployment, err = types.NewDeployment(taskDefinition, suite.deploymentEnvironment.Token)
