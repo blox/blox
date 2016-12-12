@@ -28,12 +28,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	envNameKey      = "name"
+	deploymentIDKey = "id"
+	clusterFilter   = "cluster"
+)
+
 type API struct {
 	environment deployment.Environment
 	deployment  deployment.Deployment
 	ecs         facade.ECS
 }
 
+// NewAPI initializes the API struct
 func NewAPI(e deployment.Environment, d deployment.Deployment, ecs facade.ECS) API {
 	return API{
 		environment: e,
@@ -42,11 +49,13 @@ func NewAPI(e deployment.Environment, d deployment.Deployment, ecs facade.ECS) A
 	}
 }
 
+// Ping is used to perform server health checks
 func (api API) Ping(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 }
 
+// CreateEnvironment creates a new environment using details set in the request
 func (api API) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 	var createEnvReq models.CreateEnvironmentRequest
 	b, _ := ioutil.ReadAll(r.Body)
@@ -84,9 +93,10 @@ func (api API) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetEnvironment gets an enironent by name
 func (api API) GetEnvironment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars[envNameKey]
 
 	env, err := api.environment.GetEnvironment(r.Context(), name)
 	if err != nil {
@@ -107,6 +117,7 @@ func (api API) GetEnvironment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListEnvironments lists all environments across all clusters
 func (api API) ListEnvironments(w http.ResponseWriter, r *http.Request) {
 	envs, err := api.environment.ListEnvironments(r.Context())
 	if err != nil {
@@ -130,9 +141,37 @@ func (api API) ListEnvironments(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// FilterEnvironments filters environments across all clusters using the given filter
+func (api API) FilterEnvironments(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cluster := vars[clusterFilter]
+
+	envs, err := api.environment.FilterEnvironments(r.Context(), clusterFilter, cluster)
+	if err != nil {
+		writeInternalServerError(w, err)
+		return
+	}
+
+	setJSONContentType(w)
+	w.WriteHeader(http.StatusOK)
+	envModels := []*models.Environment{}
+	for _, envType := range envs {
+		envModel := toEnvironmentModel(envType)
+		envModels = append(envModels, &envModel)
+	}
+	environments := models.Environments{
+		Items: envModels,
+	}
+	err = json.NewEncoder(w).Encode(environments)
+	if err != nil {
+		log.Errorf("Error sending response for FilterEnvironments: %+v", err)
+	}
+}
+
+// DeleteEnvironment deletes an environment by name
 func (api API) DeleteEnvironment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars[envNameKey]
 
 	err := api.environment.DeleteEnvironment(r.Context(), name)
 	if err != nil {
@@ -143,9 +182,10 @@ func (api API) DeleteEnvironment(w http.ResponseWriter, r *http.Request) {
 	//TODO: return something when successful?
 }
 
+// CreateDeployment creates a deployment in an environment using details in the request
 func (api API) CreateDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars[envNameKey]
 	token := vars[deploymentToken]
 
 	d, err := api.deployment.CreateDeployment(r.Context(), name, token)
@@ -164,10 +204,11 @@ func (api API) CreateDeployment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetDeployment gets the deployment in an environment using the environment name and deployment ID
 func (api API) GetDeployment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	name := vars["name"]
-	id := vars["id"]
+	name := vars[envNameKey]
+	id := vars[deploymentIDKey]
 
 	d, err := api.deployment.GetDeployment(r.Context(), name, id)
 	if err != nil {
@@ -190,9 +231,10 @@ func (api API) GetDeployment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListDeployments lists all deployments in an environment
 func (api API) ListDeployments(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars[envNameKey]
 
 	ds, err := api.deployment.ListDeployments(r.Context(), name)
 	if err != nil {

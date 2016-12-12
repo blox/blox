@@ -204,7 +204,7 @@ func (a *Client) ListDeployments(params *ListDeploymentsParams) (*ListDeployment
 }
 
 /*
-ListEnvironments Gets all the environments
+ListEnvironments Gets all the environments after applying filters, if any
 */
 func (a *Client) ListEnvironments(params *ListEnvironmentsParams) (*ListEnvironmentsOK, error) {
 	// TODO: Validate the params before sending

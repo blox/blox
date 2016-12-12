@@ -64,6 +64,11 @@ for the list environments operation typically these are written to a http.Reques
 */
 type ListEnvironmentsParams struct {
 
+	/*Cluster
+	  Cluster ARN
+
+	*/
+	Cluster *string
 	/*NextToken
 	  Pagination token
 
@@ -97,6 +102,17 @@ func (o *ListEnvironmentsParams) SetContext(ctx context.Context) {
 	o.Context = ctx
 }
 
+// WithCluster adds the cluster to the list environments params
+func (o *ListEnvironmentsParams) WithCluster(cluster *string) *ListEnvironmentsParams {
+	o.SetCluster(cluster)
+	return o
+}
+
+// SetCluster adds the cluster to the list environments params
+func (o *ListEnvironmentsParams) SetCluster(cluster *string) {
+	o.Cluster = cluster
+}
+
 // WithNextToken adds the nextToken to the list environments params
 func (o *ListEnvironmentsParams) WithNextToken(nextToken *string) *ListEnvironmentsParams {
 	o.SetNextToken(nextToken)
@@ -113,6 +129,22 @@ func (o *ListEnvironmentsParams) WriteToRequest(r runtime.ClientRequest, reg str
 
 	r.SetTimeout(o.timeout)
 	var res []error
+
+	if o.Cluster != nil {
+
+		// query param cluster
+		var qrCluster string
+		if o.Cluster != nil {
+			qrCluster = *o.Cluster
+		}
+		qCluster := qrCluster
+		if qCluster != "" {
+			if err := r.SetQueryParam("cluster", qCluster); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if o.NextToken != nil {
 

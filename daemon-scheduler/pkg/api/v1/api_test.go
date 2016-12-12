@@ -31,6 +31,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	clusterARN1       = "arn:aws:ecs:us-east-1:123456789123:cluster/test1"
+	clusterARN2       = "arn:aws:ecs:us-east-1:123456789123:cluster/test2"
+	taskDefinitionARN = "arn:aws:ecs:us-east-1:12345678912:task-definition/test"
+)
+
 type APITestSuite struct {
 	suite.Suite
 	environment *mocks.MockEnvironment
@@ -95,7 +101,7 @@ func (suite *APITestSuite) TestGetEnvironmentMissingReturnsError() {
 
 func (suite *APITestSuite) TestGetEnvironment() {
 	name := "testEnv"
-	environment, _ := types.NewEnvironment(name, "td", "cluster")
+	environment := suite.createEnvironmentObject(name, taskDefinitionARN, clusterARN1)
 	suite.environment.EXPECT().GetEnvironment(gomock.Any(), name).Return(environment, nil)
 	request := suite.generateGetEnvironmentRequest(name)
 
@@ -112,8 +118,8 @@ func (suite *APITestSuite) TestGetEnvironment() {
 }
 
 func (suite *APITestSuite) TestListEnvironments() {
-	e1, err := types.NewEnvironment("e1", "td1", "cluster1")
-	e2, err := types.NewEnvironment("e2", "td2", "cluster2")
+	e1 := suite.createEnvironmentObject("e1", taskDefinitionARN, clusterARN1)
+	e2 := suite.createEnvironmentObject("e2", taskDefinitionARN, clusterARN2)
 	environments := []types.Environment{*e1, *e2}
 	suite.environment.EXPECT().ListEnvironments(gomock.Any()).Return(environments, nil)
 	request, err := http.NewRequest("GET", "/v1/environments", nil)
@@ -140,6 +146,41 @@ func (suite *APITestSuite) TestListEnvironmentsServerError() {
 	suite.environment.EXPECT().ListEnvironments(gomock.Any()).Return(nil, err)
 	request, err := http.NewRequest("GET", "/v1/environments", nil)
 	assert.Nil(suite.T(), err, "Unexpected error")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusInternalServerError, responseRecorder.Code)
+}
+
+func (suite *APITestSuite) TestFilterEnvironments() {
+	e1 := suite.createEnvironmentObject("e1", taskDefinitionARN, clusterARN1)
+	e2 := suite.createEnvironmentObject("e2", taskDefinitionARN, clusterARN1)
+	environments := []types.Environment{*e1, *e2}
+	suite.environment.EXPECT().FilterEnvironments(gomock.Any(), gomock.Any(), gomock.Any()).Return(environments, nil)
+
+	request := suite.generateFilterEnvironmentRequest(clusterARN1)
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code)
+
+	var environmentsModel models.Environments
+	b, _ := ioutil.ReadAll(responseRecorder.Body)
+	json.Unmarshal(b, &environmentsModel)
+
+	for i := 0; i < len(environments); i++ {
+		environment := environments[i]
+		environmentModel := environmentsModel.Items[i]
+		suite.assertSame(&environment, environmentModel)
+	}
+}
+
+func (suite *APITestSuite) TestFilterEnvironmentsServerError() {
+	err := errors.New("Error when calling FilterEnvironments")
+	suite.environment.EXPECT().FilterEnvironments(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, err)
+	request := suite.generateFilterEnvironmentRequest(clusterARN1)
 
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
@@ -192,4 +233,17 @@ func (suite *APITestSuite) generateDeleteEnvironmentRequest(name string) *http.R
 	request, err := http.NewRequest("DELETE", "/v1/environments/"+name, nil)
 	assert.Nil(suite.T(), err, "Unexpected error")
 	return request
+}
+
+func (suite *APITestSuite) generateFilterEnvironmentRequest(cluster string) *http.Request {
+	url := "/v1/environments?cluster=" + cluster
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error generating a filter environments request")
+	return request
+}
+
+func (suite *APITestSuite) createEnvironmentObject(name string, td string, cluster string) *types.Environment {
+	environment, err := types.NewEnvironment(name, td, cluster)
+	assert.Nil(suite.T(), err, "Unexpected error generating an environment object")
+	return environment
 }

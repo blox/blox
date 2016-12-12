@@ -18,10 +18,12 @@ import "github.com/blox/blox/daemon-scheduler/generated/v1/models"
 var (
 	taskDefinition  string
 	cluster         string
+	clusterARN      string
 	environment     string
 	asg             string
 	deploymentID    string
 	deploymentToken string
+	environmentList []*models.Environment
 	err             error
 )
 

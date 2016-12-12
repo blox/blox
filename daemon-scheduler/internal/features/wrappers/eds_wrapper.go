@@ -103,6 +103,17 @@ func (eds EDSWrapper) ListEnvironments() ([]*models.Environment, error) {
 	return resp.Payload.Items, nil
 }
 
+func (eds EDSWrapper) FilterEnvironments(cluster string) ([]*models.Environment, error) {
+	//TODO: Handle pagination when available
+	params := operations.NewListEnvironmentsParams()
+	params.SetCluster(&cluster)
+	resp, err := eds.client.Operations.ListEnvironments(params)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload.Items, nil
+}
+
 func (eds EDSWrapper) ListDeployments(name *string) ([]*models.Deployment, error) {
 	//TODO: Handle pagination when available
 	params := operations.NewListDeploymentsParams()

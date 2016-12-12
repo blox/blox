@@ -78,13 +78,14 @@ func init() {
 		cluster = c
 	})
 
-	Given(`^a cluster "(.+?)"$`, func(c string) {
-		_, err := ecsWrapper.CreateCluster(c)
+	Given(`^(?:a|another) cluster "(.+?)"$`, func(c string) {
+		cARN, err := ecsWrapper.CreateCluster(c)
 		if err != nil {
 			T.Errorf(err.Error())
 			return
 		}
 		cluster = c
+		clusterARN = *cARN
 	})
 
 	When(`^I update the desired-capacity of cluster to (\d+) instances and wait for a max of (\d+) seconds$`, func(count int, seconds int) {
@@ -294,6 +295,39 @@ func init() {
 				}
 			}
 			assert.Equal(T, true, found, "Did not find environment with name "+environment)
+		})
+
+	Then(`^there should be at least (\d+) environment returned when I call ListEnvironments with cluster filter set to the second cluster$`, func(numEnvs int) {
+		environments, err := edsWrapper.FilterEnvironments(clusterARN)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+		assert.True(T, len(environments) >= numEnvs,
+			"Number of environments in the response should be at least "+string(numEnvs))
+		environmentList = environments
+	})
+
+	And(`^all the environments in the response should correspond to the second cluster$`,
+		func() {
+			for _, env := range environmentList {
+				if env.InstanceGroup.Cluster != clusterARN {
+					T.Errorf("Environment in list environments response with cluster filter set to '" +
+						clusterARN + "' belongs to cluster + '" + env.InstanceGroup.Cluster + "'")
+				}
+			}
+		})
+
+	And(`^second environment should be one of the environments in the response$`,
+		func() {
+			found := false
+			for _, env := range environmentList {
+				if *env.Name == environment {
+					found = true
+					break
+				}
+			}
+			assert.True(T, found, "Did not find environment with name "+environment)
 		})
 
 	Then(`^I call CreateDeployment API$`, func() {

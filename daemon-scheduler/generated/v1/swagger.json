@@ -47,6 +47,12 @@
             "type": "string",
             "description": "Deployment token",
             "required": true
+        },
+        "cluster": {
+            "in": "query",
+            "name": "cluster",
+            "type": "string",
+            "description": "Cluster ARN",
         }
     },
     "paths": {
@@ -97,11 +103,14 @@
                 }
             },
             "get": {
-                "description": "Gets all the environments",
+                "description": "Gets all the environments after applying filters, if any",
                 "operationId": "listEnvironments",
                 "parameters": [
                     {
                         "$ref": "#/parameters/nextToken"
+                    },
+                    {
+                        "$ref": "#/parameters/cluster"
                     }
                 ],
                 "responses": {

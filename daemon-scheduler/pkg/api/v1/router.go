@@ -13,13 +13,18 @@
 
 package v1
 
-import (
-	"github.com/gorilla/mux"
-)
+import "github.com/gorilla/mux"
 
 const (
 	nextToken       = "nextToken"
 	deploymentToken = "deploymentToken"
+	cluster         = "cluster"
+)
+
+var (
+	// TODO - Use cluster ARN regex from common regex package
+	clusterARNRegex = "(arn:aws:ecs:)([\\-\\w]+):[0-9]{12}:(cluster)/[a-zA-Z][a-zA-Z0-9_-]{1,254}"
+	clusterARNVal   = "{" + cluster + ":" + clusterARNRegex + "}"
 )
 
 func NewRouter(api API) *mux.Router {
@@ -27,6 +32,7 @@ func NewRouter(api API) *mux.Router {
 	s := r.Path("/v1").Subrouter()
 
 	// health
+
 	s.Path("/ping").
 		Methods("GET").
 		HandlerFunc(api.Ping)
@@ -40,6 +46,11 @@ func NewRouter(api API) *mux.Router {
 	s.Path("/environments/{name}").
 		Methods("GET").
 		HandlerFunc(api.GetEnvironment)
+
+	s.Path("/environments").
+		Queries(cluster, clusterARNVal).
+		Methods("GET").
+		HandlerFunc(api.FilterEnvironments)
 
 	s.Path("/environments").
 		Methods("GET").
