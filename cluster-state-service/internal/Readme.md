@@ -1,10 +1,10 @@
 # Testing
 
 ## End to end tests
-These tests call the Event Stream Handler (ESH) APIs using the swagger generated client. They use ECS APIs to start tasks etc. and exercise the ESH consumer to consume events from the ECS event-stream and update the local state in etcd. The ESH client is then used to exercise the APIs supported by the ESH.
+These tests call the cluster-state-service (CSS) APIs using the swagger generated client. They use ECS APIs to start tasks etc. and exercise the CSS consumer to consume events from the ECS event-stream and update the local state in etcd. The CSS client is then used to exercise the APIs supported by the CSS.
 
 ### What are the assumptions made?
-* ESH server is running locally.
+* CSS server is running locally.
 * An ECS cluster has already been created with at least one Container Instance registered to it. You can specify the cluster name by using the `ECS_CLUSTER` envrionment variable (This step can be automated in the future versions of the test suite by creating a test cluster and launching an EC2 instance with user data enabling to register itself to the created cluster).
 
 ### How to run the test suite?
@@ -56,7 +56,7 @@ AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@
 AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@filter-tasks,@e2e
 ```
 
-***Note:*** The the ESH client used by the tests are checked in. However, if there is any change in 'swagger.json' file in the handler, re-generate the models using the following command from inside the ./internal directory.
+***Note:*** The the CSS client used by the tests are checked in. However, if there is any change in 'swagger.json' file in the handler, re-generate the models using the following command from inside the ./internal directory.
 ```
 swagger generate client -f ../handler/api/v1/swagger/swagger.json -A amazon_css
 ```
