@@ -52,7 +52,7 @@
             "in": "query",
             "name": "cluster",
             "type": "string",
-            "description": "Cluster ARN",
+            "description": "Cluster ARN"
         }
     },
     "paths": {
