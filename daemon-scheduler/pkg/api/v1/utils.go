@@ -30,6 +30,10 @@ func writeInternalServerError(w http.ResponseWriter, err error) {
 	http.Error(w, "Server Error", http.StatusInternalServerError)
 }
 
+func writeBadRequestError(w http.ResponseWriter, errMsg string) {
+	http.Error(w, errMsg, http.StatusBadRequest)
+}
+
 func handleBackendError(w http.ResponseWriter, err error) {
 	_, ok := errors.Cause(err).(types.BadRequestError)
 	if ok {

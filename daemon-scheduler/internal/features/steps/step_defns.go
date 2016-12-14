@@ -33,6 +33,7 @@ const (
 	deploymentCompleted           = "completed"
 	taskRunning                   = "RUNNING"
 	deploymentCompleteWaitSeconds = 50
+	invalidCluster                = "cluster/cluster"
 )
 
 func init() {
@@ -297,8 +298,19 @@ func init() {
 			assert.Equal(T, true, found, "Did not find environment with name "+environment)
 		})
 
-	Then(`^there should be at least (\d+) environment returned when I call ListEnvironments with cluster filter set to the second cluster$`, func(numEnvs int) {
-		environments, err := edsWrapper.FilterEnvironments(clusterARN)
+	Then(`^there should be at least (\d+) environment returned when I call ListEnvironments with cluster filter set to the second cluster ARN$`, func(numEnvs int) {
+		environments, err := edsWrapper.ListEnvironmentsWithClusterFilter(clusterARN)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+		assert.True(T, len(environments) >= numEnvs,
+			"Number of environments in the response should be at least "+string(numEnvs))
+		environmentList = environments
+	})
+
+	Then(`^there should be at least (\d+) environment returned when I call ListEnvironments with cluster filter set to the second cluster name$`, func(numEnvs int) {
+		environments, err := edsWrapper.ListEnvironmentsWithClusterFilter(cluster)
 		if err != nil {
 			T.Errorf(err.Error())
 			return
@@ -329,6 +341,33 @@ func init() {
 			}
 			assert.True(T, found, "Did not find environment with name "+environment)
 		})
+
+	When(`^I try to call ListEnvironments with an invalid cluster filter$`, func() {
+		exception = Exception{}
+		exceptionMsg, exceptionType, err := edsWrapper.TryListEnvironmentsWithInvalidCluster(invalidCluster)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exception = Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg}
+	})
+
+	Then(`^I get a (.+?) exception$`, func(exceptionType string) {
+		if exception.exceptionType == "" {
+			T.Errorf("Error memorizing exception type")
+		}
+		if exceptionType != exception.exceptionType {
+			T.Errorf("Expected exception type '%s' but got '%s'. ", exceptionType, exception.exceptionType)
+		}
+	})
+
+	And(`^the exception message contains "(.+?)"$`, func(exceptionMsg string) {
+		if exception.exceptionMsg == "" {
+			T.Errorf("Error memorizing exception message")
+		}
+		if !strings.Contains(exception.exceptionMsg, exceptionMsg) {
+			T.Errorf("Expected exception message returned '%s' to contain '%s'. ", exception.exceptionMsg, exceptionMsg)
+		}
+	})
 
 	Then(`^I call CreateDeployment API$`, func() {
 		createDeployment(deploymentToken, ctx, edsWrapper)

@@ -23,6 +23,8 @@ import (
 	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
+	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	"github.com/blox/blox/daemon-scheduler/pkg/validate"
 	log "github.com/cihub/seelog"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -32,6 +34,15 @@ const (
 	envNameKey      = "name"
 	deploymentIDKey = "id"
 	clusterFilter   = "cluster"
+
+	// Client error messages
+	unsupportedFilterError = "At least one of the filters provided is not supported"
+	invalidClusterError    = "Invalid cluster ARN or name"
+)
+
+var (
+	// Using maps because arrays don't support easy lookup
+	supportedEnvironmentFilters = map[string]string{clusterFilter: ""}
 )
 
 type API struct {
@@ -117,9 +128,29 @@ func (api API) GetEnvironment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ListEnvironments lists all environments across all clusters
+// ListEnvironments lists all environments across all clusters after applying filters, if any
 func (api API) ListEnvironments(w http.ResponseWriter, r *http.Request) {
-	envs, err := api.environment.ListEnvironments(r.Context())
+	query := r.URL.Query()
+
+	if api.hasUnsupportedFilters(query) {
+		writeBadRequestError(w, unsupportedFilterError)
+		return
+	}
+
+	var envs []types.Environment
+	var err error
+
+	cluster := query.Get(clusterFilter)
+	if cluster != "" {
+		if !validate.IsClusterARN(cluster) && !validate.IsClusterName(cluster) {
+			writeBadRequestError(w, invalidClusterError)
+			return
+		}
+		envs, err = api.environment.FilterEnvironments(r.Context(), clusterFilter, cluster)
+	} else {
+		envs, err = api.environment.ListEnvironments(r.Context())
+	}
+
 	if err != nil {
 		writeInternalServerError(w, err)
 		return
@@ -138,33 +169,6 @@ func (api API) ListEnvironments(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(environments)
 	if err != nil {
 		log.Errorf("Error sending response for ListEnvironments: %+v", err)
-	}
-}
-
-// FilterEnvironments filters environments across all clusters using the given filter
-func (api API) FilterEnvironments(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	cluster := vars[clusterFilter]
-
-	envs, err := api.environment.FilterEnvironments(r.Context(), clusterFilter, cluster)
-	if err != nil {
-		writeInternalServerError(w, err)
-		return
-	}
-
-	setJSONContentType(w)
-	w.WriteHeader(http.StatusOK)
-	envModels := []*models.Environment{}
-	for _, envType := range envs {
-		envModel := toEnvironmentModel(envType)
-		envModels = append(envModels, &envModel)
-	}
-	environments := models.Environments{
-		Items: envModels,
-	}
-	err = json.NewEncoder(w).Encode(environments)
-	if err != nil {
-		log.Errorf("Error sending response for FilterEnvironments: %+v", err)
 	}
 }
 
@@ -276,4 +280,18 @@ func (api API) validateTaskDefinition(td *string) (*ecs.TaskDefinition, error) {
 	}
 
 	return taskDefinition, nil
+}
+
+func (api API) hasUnsupportedFilters(filters map[string][]string) bool {
+	if len(filters) > len(supportedEnvironmentFilters) {
+		return true
+	}
+
+	for f := range filters {
+		_, ok := supportedEnvironmentFilters[f]
+		if !ok {
+			return true
+		}
+	}
+	return false
 }

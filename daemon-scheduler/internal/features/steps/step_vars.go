@@ -15,6 +15,11 @@ package steps
 
 import "github.com/blox/blox/daemon-scheduler/generated/v1/models"
 
+type Exception struct {
+	exceptionType string
+	exceptionMsg  string
+}
+
 var (
 	taskDefinition  string
 	cluster         string
@@ -25,6 +30,7 @@ var (
 	deploymentToken string
 	environmentList []*models.Environment
 	err             error
+	exception       Exception
 )
 
 var deploymentIDs = make(map[string]*models.Deployment)

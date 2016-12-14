@@ -15,6 +15,7 @@ package wrappers
 
 import (
 	"context"
+	"errors"
 	"os"
 
 	"github.com/blox/blox/daemon-scheduler/generated/v1/client"
@@ -25,6 +26,8 @@ import (
 
 const (
 	defaultSchedulerEndpoint = "localhost:2000"
+
+	listEnvironmentsBadRequestException = "ListEnvironmentsBadRequest"
 )
 
 type EDSWrapper struct {
@@ -103,7 +106,20 @@ func (eds EDSWrapper) ListEnvironments() ([]*models.Environment, error) {
 	return resp.Payload.Items, nil
 }
 
-func (eds EDSWrapper) FilterEnvironments(cluster string) ([]*models.Environment, error) {
+func (eds EDSWrapper) TryListEnvironmentsWithInvalidCluster(cluster string) (string, string, error) {
+	in := operations.NewListEnvironmentsParams()
+	in.SetCluster(&cluster)
+	_, err := eds.client.Operations.ListEnvironments(in)
+	if err != nil {
+		if _, ok := err.(*operations.ListEnvironmentsBadRequest); ok {
+			return err.(*operations.ListEnvironmentsBadRequest).Payload, listEnvironmentsBadRequestException, nil
+		}
+		return "", "", errors.New("Unknown exception when calling ListEnvironments with invalid cluster")
+	}
+	return "", "", errors.New("Expected an exception when calling ListEnvironments with invalid cluster, but none received")
+}
+
+func (eds EDSWrapper) ListEnvironmentsWithClusterFilter(cluster string) ([]*models.Environment, error) {
 	//TODO: Handle pagination when available
 	params := operations.NewListEnvironmentsParams()
 	params.SetCluster(&cluster)
