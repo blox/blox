@@ -16,14 +16,13 @@ package main
 import (
 	"fmt"
 
+	"github.com/blox/blox/cluster-state-service/logger"
+	log "github.com/cihub/seelog"
+
 	"github.com/blox/blox/cluster-state-service/cmd"
 	"github.com/blox/blox/cluster-state-service/config"
 	"github.com/blox/blox/cluster-state-service/handler/run"
-	"github.com/blox/blox/cluster-state-service/logger"
 	"github.com/blox/blox/cluster-state-service/versioning"
-
-	log "github.com/cihub/seelog"
-
 	"os"
 )
 
@@ -43,8 +42,8 @@ func main() {
 		versioning.PrintVersion()
 		os.Exit(0)
 	}
-	if err := run.StartClusterStateService(config.SQSQueueName, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
-		log.Criticalf("Error starting the cluster state service: %+v", err)
+	if err := run.StartClusterStateService(config.QueueNameURI, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
+		log.Criticalf("Error starting event stream handler: %+v", err)
 		os.Exit(errorCode)
 	}
 }

@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

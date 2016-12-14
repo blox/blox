@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/handler/types"
 )
 
 const (

@@ -16,8 +16,9 @@ package config
 // EtcdEndpoints represents the etcd servers to connect to.
 var EtcdEndpoints []string
 
-// SQSQueueName represents the SQS queue name to listen to for ECS events.
-var SQSQueueName string
+// QueueName represents the queue name to listen to for ECS events. Formatted as
+// a URI with the scheme determining the type.  For example sqs://name or kinesis://name
+var QueueNameURI string
 
 // CSSBindAddr represents the address CSS listens on.
 var CSSBindAddr string

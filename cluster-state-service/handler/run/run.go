@@ -28,18 +28,21 @@ import (
 	"github.com/blox/blox/cluster-state-service/handler/reconcile"
 	"github.com/blox/blox/cluster-state-service/handler/store"
 	"github.com/urfave/negroni"
+	"strings"
 )
 
 const (
 	serverReadTimeout = 10 * time.Second
+	kinesisPrefix     = "kinesis://"
+	sqsPrefix         = "sqs://"
 )
 
 // StartClusterStateService starts the Cluster State Service. It creates an ETCD
 // client, a data store using this client and an event processor to process
-// events from the SQS queue. It also starts the RESTful server and blocks on
+// events from the provided queue. It also starts the RESTful server and blocks on
 // the listen method of the same to listen to requests that query for task and
 // instance state from the store.
-func StartClusterStateService(queueName string, bindAddr string, etcdEndpoints []string) error {
+func StartClusterStateService(queueNameURI string, bindAddr string, etcdEndpoints []string) error {
 	if bindAddr == "" {
 		return fmt.Errorf("The cluster state service listen address is not set")
 	}
@@ -92,15 +95,27 @@ func StartClusterStateService(queueName string, bindAddr string, etcdEndpoints [
 	// start event processor
 	processor := event.NewProcessor(stores)
 
-	sqsClient := clients.NewSQSClient(awsSession)
+	if strings.HasPrefix(queueNameURI, kinesisPrefix) {
+		kinesisClient := clients.NewKinesisClient(awsSession)
 
-	// start event consumer
-	consumer, err := event.NewConsumer(sqsClient, processor, queueName)
-	if err != nil {
-		return errors.Wrapf(err, "Could not start the consumer")
+		// start event consumer
+		consumer, err := event.NewKinesisConsumer(kinesisClient, processor, strings.TrimPrefix(queueNameURI, kinesisPrefix))
+		if err != nil {
+			return errors.Wrapf(err, "Could not start the consumer")
+		}
+
+		go consumer.PollForEvents(ctx)
+	} else {
+		sqsClient := clients.NewSQSClient(awsSession)
+
+		// start event consumer
+		consumer, err := event.NewSQSConsumer(sqsClient, processor, strings.TrimPrefix(queueNameURI, sqsPrefix))
+		if err != nil {
+			return errors.Wrapf(err, "Could not start the consumer")
+		}
+
+		go consumer.PollForEvents(ctx)
 	}
-
-	go consumer.PollForEvents(ctx)
 
 	// start server
 	router := v1.NewRouter(apis)

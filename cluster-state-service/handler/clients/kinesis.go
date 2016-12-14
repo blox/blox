@@ -11,13 +11,13 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package event
+package clients
 
 import (
-	"golang.org/x/net/context"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/kinesis"
 )
 
-// Consumer defines methods to consume events from a queue
-type Consumer interface {
-	PollForEvents(ctx context.Context)
+func NewKinesisClient(session *session.Session) *kinesis.Kinesis {
+	return kinesis.New(session)
 }

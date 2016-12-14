@@ -31,7 +31,7 @@ func TestRootCommandWithSQSName(t *testing.T) {
 	rootCmd := createRootCommand()
 	rootCmd.SetArgs(strings.Split("--queue q", " "))
 	assert.NoError(t, rootCmd.Execute(), "Error processing the --queue flag")
-	assert.Equal(t, config.SQSQueueName, "q", "Unexpected queue name set")
+	assert.Equal(t, config.QueueName, "q", "Unexpected queue name set")
 }
 
 func TestRootCommandWithOneEtcdEndpoint(t *testing.T) {

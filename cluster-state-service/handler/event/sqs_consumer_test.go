@@ -17,9 +17,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blox/blox/cluster-state-service/handler/mocks"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/blox/blox/cluster-state-service/handler/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 )
@@ -73,8 +73,8 @@ func NewConsumerMockContext(t *testing.T) *consumerMockContext {
 
 	context.receiveMessageInput = &sqs.ReceiveMessageInput{
 		QueueUrl:          aws.String(queueUrl),
-		VisibilityTimeout: aws.Int64(visibilityTimeout),
-		WaitTimeSeconds:   aws.Int64(waitTimeSeconds),
+		VisibilityTimeout: aws.Int64(sqsVisibilityTimeout),
+		WaitTimeSeconds:   aws.Int64(sqsWaitTimeSeconds),
 	}
 
 	context.receiveMessageOutput = &sqs.ReceiveMessageOutput{
@@ -98,7 +98,7 @@ func TestNewConsumerNilSQS(t *testing.T) {
 	context := NewConsumerMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	_, err := NewConsumer(nil, context.processor, queueName)
+	_, err := NewSQSConsumer(nil, context.processor, queueName)
 	if err == nil {
 		t.Error("Expected an error when sqs is nil")
 	}
@@ -108,7 +108,7 @@ func TestNewConsumerNilProcessor(t *testing.T) {
 	context := NewConsumerMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	_, err := NewConsumer(context.sqsClient, nil, queueName)
+	_, err := NewSQSConsumer(context.sqsClient, nil, queueName)
 	if err == nil {
 		t.Error("Expected an error when processor is nil")
 	}
@@ -118,7 +118,7 @@ func TestNewConsumerEmptyQueueName(t *testing.T) {
 	context := NewConsumerMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	_, err := NewConsumer(context.sqsClient, context.processor, "")
+	_, err := NewSQSConsumer(context.sqsClient, context.processor, "")
 	if err == nil {
 		t.Error("Expected an error when queueue name is empty")
 	}
@@ -130,7 +130,7 @@ func TestNewConsumerGetQueueUrlFails(t *testing.T) {
 
 	context.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(context.getQueueUrlInput)).Return(nil, errors.New(""))
 
-	_, err := NewConsumer(context.sqsClient, context.processor, queueName)
+	_, err := NewSQSConsumer(context.sqsClient, context.processor, queueName)
 
 	if err == nil {
 		t.Error("Expected an error when getQueueUrl fails")
@@ -143,7 +143,7 @@ func TestNewConsumerGetQueueUrlIsEmpty(t *testing.T) {
 
 	context.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(context.getQueueUrlInput)).Return(&sqs.GetQueueUrlOutput{}, nil)
 
-	_, err := NewConsumer(context.sqsClient, context.processor, queueName)
+	_, err := NewSQSConsumer(context.sqsClient, context.processor, queueName)
 
 	if err == nil {
 		t.Error("Expected an error when getQueueUrl output is empty")
@@ -156,7 +156,7 @@ func TestNewConsumer(t *testing.T) {
 
 	context.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(context.getQueueUrlInput)).Return(context.getQueueUrlOutput, nil)
 
-	c, err := NewConsumer(context.sqsClient, context.processor, queueName)
+	c, err := NewSQSConsumer(context.sqsClient, context.processor, queueName)
 
 	if err != nil {
 		t.Errorf("Unexpected error when calling NewConsumer: %+v", err)
@@ -173,7 +173,7 @@ func TestPollForEventsReceiveMessageFails(t *testing.T) {
 
 	mockContext.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(mockContext.getQueueUrlInput)).Return(mockContext.getQueueUrlOutput, nil)
 
-	c, err := NewConsumer(mockContext.sqsClient, mockContext.processor, queueName)
+	c, err := NewSQSConsumer(mockContext.sqsClient, mockContext.processor, queueName)
 
 	if err != nil {
 		t.Errorf("Unexpected error when calling NewConsumer: %+v", err)
@@ -199,7 +199,7 @@ func TestPollForEventsReceiveMessageOutputNil(t *testing.T) {
 
 	mockContext.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(mockContext.getQueueUrlInput)).Return(mockContext.getQueueUrlOutput, nil)
 
-	c, err := NewConsumer(mockContext.sqsClient, mockContext.processor, queueName)
+	c, err := NewSQSConsumer(mockContext.sqsClient, mockContext.processor, queueName)
 
 	if err != nil {
 		t.Errorf("Unexpected error when calling NewConsumer: %+v", err)
@@ -224,7 +224,7 @@ func TestPollForEventsReceiveMessageOutputMessagesNil(t *testing.T) {
 
 	mockContext.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(mockContext.getQueueUrlInput)).Return(mockContext.getQueueUrlOutput, nil)
 
-	c, err := NewConsumer(mockContext.sqsClient, mockContext.processor, queueName)
+	c, err := NewSQSConsumer(mockContext.sqsClient, mockContext.processor, queueName)
 
 	if err != nil {
 		t.Errorf("Unexpected error when calling NewConsumer: %+v", err)
@@ -251,7 +251,7 @@ func TestPollForEventsFirstProcessEventFails(t *testing.T) {
 
 	mockContext.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(mockContext.getQueueUrlInput)).Return(mockContext.getQueueUrlOutput, nil)
 
-	c, err := NewConsumer(mockContext.sqsClient, mockContext.processor, queueName)
+	c, err := NewSQSConsumer(mockContext.sqsClient, mockContext.processor, queueName)
 
 	if err != nil {
 		t.Errorf("Unexpected error when calling NewConsumer: %+v", err)
@@ -279,7 +279,7 @@ func TestPollForEventsFirstDeleteEventFails(t *testing.T) {
 
 	mockContext.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(mockContext.getQueueUrlInput)).Return(mockContext.getQueueUrlOutput, nil)
 
-	c, err := NewConsumer(mockContext.sqsClient, mockContext.processor, queueName)
+	c, err := NewSQSConsumer(mockContext.sqsClient, mockContext.processor, queueName)
 
 	if err != nil {
 		t.Errorf("Unexpected error when calling NewConsumer: %+v", err)
@@ -308,7 +308,7 @@ func TestPollForEventsReceiveTwoMessages(t *testing.T) {
 
 	mockContext.sqsClient.EXPECT().GetQueueUrl(gomock.Eq(mockContext.getQueueUrlInput)).Return(mockContext.getQueueUrlOutput, nil)
 
-	c, err := NewConsumer(mockContext.sqsClient, mockContext.processor, queueName)
+	c, err := NewSQSConsumer(mockContext.sqsClient, mockContext.processor, queueName)
 
 	if err != nil {
 		t.Errorf("Unexpected error when calling NewConsumer: %+v", err)

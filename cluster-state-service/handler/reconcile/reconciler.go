@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/handler/reconcile/loader"
 	"github.com/blox/blox/cluster-state-service/handler/store"
-	"github.com/aws/aws-sdk-go/service/ecs"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )

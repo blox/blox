@@ -156,6 +156,16 @@
 			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
 		},
 		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/kinesis",
+			"Comment": "v1.4.20-4-g9e5bedb",
+			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/kinesis/kinesisiface",
+			"Comment": "v1.4.20-4-g9e5bedb",
+			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
+		},
+		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/sqs",
 			"Comment": "v1.4.20-4-g9e5bedb",
 			"Rev": "9e5bedb97b1cd85e53fd99209f93fd1a8a9f1df7"
@@ -201,38 +211,38 @@
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/auth/authpb",
-			"Comment": "v3.1.0-rc.0-275-g377f19b",
-			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+			"Comment": "v3.1.0-rc.1-62-g40f0193",
+			"Rev": "40f0193c4cee6f3e053143772056ef9b3124dba8"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/clientv3",
-			"Comment": "v3.1.0-rc.0-275-g377f19b",
-			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+			"Comment": "v3.1.0-rc.1-62-g40f0193",
+			"Rev": "40f0193c4cee6f3e053143772056ef9b3124dba8"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/clientv3/concurrency",
-			"Comment": "v3.1.0-rc.0-275-g377f19b",
-			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+			"Comment": "v3.1.0-rc.1-62-g40f0193",
+			"Rev": "40f0193c4cee6f3e053143772056ef9b3124dba8"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes",
-			"Comment": "v3.1.0-rc.0-275-g377f19b",
-			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+			"Comment": "v3.1.0-rc.1-62-g40f0193",
+			"Rev": "40f0193c4cee6f3e053143772056ef9b3124dba8"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/etcdserver/etcdserverpb",
-			"Comment": "v3.1.0-rc.0-275-g377f19b",
-			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+			"Comment": "v3.1.0-rc.1-62-g40f0193",
+			"Rev": "40f0193c4cee6f3e053143772056ef9b3124dba8"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/mvcc/mvccpb",
-			"Comment": "v3.1.0-rc.0-275-g377f19b",
-			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+			"Comment": "v3.1.0-rc.1-62-g40f0193",
+			"Rev": "40f0193c4cee6f3e053143772056ef9b3124dba8"
 		},
 		{
 			"ImportPath": "github.com/coreos/etcd/pkg/tlsutil",
-			"Comment": "v3.1.0-rc.0-275-g377f19b",
-			"Rev": "377f19b0031f9c0aafe2aec28b6f9019311f52f9"
+			"Comment": "v3.1.0-rc.1-62-g40f0193",
+			"Rev": "40f0193c4cee6f3e053143772056ef9b3124dba8"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
