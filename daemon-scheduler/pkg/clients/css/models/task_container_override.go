@@ -29,10 +29,10 @@ import (
 type TaskContainerOverride struct {
 
 	// command
-	Command []string `json:"command,omitempty"`
+	Command []string `json:"command"`
 
 	// environment
-	Environment []*TaskEnvironment `json:"environment,omitempty"`
+	Environment []*TaskEnvironment `json:"environment"`
 
 	// name
 	// Required: true

@@ -32,7 +32,7 @@ import (
 // NewListTasksParams creates a new ListTasksParams object
 // with the default values initialized.
 func NewListTasksParams() *ListTasksParams {
-
+	var ()
 	return &ListTasksParams{
 
 		timeout: cr.DefaultTimeout,
@@ -42,7 +42,7 @@ func NewListTasksParams() *ListTasksParams {
 // NewListTasksParamsWithTimeout creates a new ListTasksParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListTasksParamsWithTimeout(timeout time.Duration) *ListTasksParams {
-
+	var ()
 	return &ListTasksParams{
 
 		timeout: timeout,
@@ -52,7 +52,7 @@ func NewListTasksParamsWithTimeout(timeout time.Duration) *ListTasksParams {
 // NewListTasksParamsWithContext creates a new ListTasksParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListTasksParamsWithContext(ctx context.Context) *ListTasksParams {
-
+	var ()
 	return &ListTasksParams{
 
 		Context: ctx,
@@ -63,6 +63,18 @@ func NewListTasksParamsWithContext(ctx context.Context) *ListTasksParams {
 for the list tasks operation typically these are written to a http.Request
 */
 type ListTasksParams struct {
+
+	/*Cluster
+	  Cluster name or ARN to filter tasks by
+
+	*/
+	Cluster *string
+	/*Status
+	  Status to filter tasks by
+
+	*/
+	Status *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -90,11 +102,65 @@ func (o *ListTasksParams) SetContext(ctx context.Context) {
 	o.Context = ctx
 }
 
+// WithCluster adds the cluster to the list tasks params
+func (o *ListTasksParams) WithCluster(cluster *string) *ListTasksParams {
+	o.SetCluster(cluster)
+	return o
+}
+
+// SetCluster adds the cluster to the list tasks params
+func (o *ListTasksParams) SetCluster(cluster *string) {
+	o.Cluster = cluster
+}
+
+// WithStatus adds the status to the list tasks params
+func (o *ListTasksParams) WithStatus(status *string) *ListTasksParams {
+	o.SetStatus(status)
+	return o
+}
+
+// SetStatus adds the status to the list tasks params
+func (o *ListTasksParams) SetStatus(status *string) {
+	o.Status = status
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListTasksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
 	r.SetTimeout(o.timeout)
 	var res []error
+
+	if o.Cluster != nil {
+
+		// query param cluster
+		var qrCluster string
+		if o.Cluster != nil {
+			qrCluster = *o.Cluster
+		}
+		qCluster := qrCluster
+		if qCluster != "" {
+			if err := r.SetQueryParam("cluster", qCluster); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.Status != nil {
+
+		// query param status
+		var qrStatus string
+		if o.Status != nil {
+			qrStatus = *o.Status
+		}
+		qStatus := qrStatus
+		if qStatus != "" {
+			if err := r.SetQueryParam("status", qStatus); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

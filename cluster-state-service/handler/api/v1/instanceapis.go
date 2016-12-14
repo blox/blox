@@ -33,6 +33,12 @@ const (
 	instanceClusterFilter = "cluster"
 )
 
+var (
+	// Using maps because arrays don't support easy lookup
+	supportedInstanceFilters  = map[string]string{instanceStatusFilter: "", instanceClusterFilter: ""}
+	supportedInstanceStatuses = map[string]string{"active": "", "inactive": ""}
+)
+
 // ContainerInstanceAPIs encapsulates the backend datastore with which the container instance APIs interact
 type ContainerInstanceAPIs struct {
 	instanceStore store.ContainerInstanceStore
@@ -89,55 +95,40 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 	}
 }
 
-// ListInstances lists all container instances across all clusters
+// ListInstances lists all container instances across all clusters after applying filters, if any
 func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r *http.Request) {
-	instances, err := instanceAPIs.instanceStore.ListContainerInstances()
+	query := r.URL.Query()
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+	if instanceAPIs.hasUnsupportedFilters(query) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(unsupportedFilterClientErrMsg)
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
-	w.WriteHeader(http.StatusOK)
+	status := query.Get(instanceStatusFilter)
+	cluster := query.Get(instanceClusterFilter)
 
-	extInstanceItems := make([]*models.ContainerInstance, len(instances))
-	for i := range instances {
-		ins, err := ToContainerInstance(instances[i])
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+	// TODO: Support filtering by both status and cluster
+	if status != "" && cluster != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(unsupportedFilterCombinationClientErrMsg)
+		return
+	}
+
+	if status != "" {
+		if !instanceAPIs.isValidStatus(status) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(invalidStatusClientErrMsg)
 			return
 		}
-		extInstanceItems[i] = &ins
 	}
 
-	extInstances := models.ContainerInstances{
-		Items: extInstanceItems,
-	}
-
-	err = json.NewEncoder(w).Encode(extInstances)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
-		return
-	}
-}
-
-// FilterInstances filters container instances across all clusters by one of the following filter keys -
-// * status
-// * cluster name
-// * cluster ARN
-func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	status := vars[instanceStatusFilter]
-	cluster := vars[instanceClusterFilter]
-
-	if len(status) != 0 && len(cluster) != 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
-		return
+	if cluster != "" {
+		if !regex.IsClusterARN(cluster) && !regex.IsClusterName(cluster) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(invalidClusterClientErrMsg)
+			return
+		}
 	}
 
 	var instances []types.ContainerInstance
@@ -149,9 +140,7 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 	case len(cluster) != 0:
 		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceClusterFilter, cluster)
 	default:
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
-		return
+		instances, err = instanceAPIs.instanceStore.ListContainerInstances()
 	}
 
 	if err != nil {
@@ -230,4 +219,26 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 	}
 
 	// TODO: Handle client-side termination (Ctrl+C) using w.(http.CloseNotifier).closeNotify()
+}
+
+func (instanceAPIs ContainerInstanceAPIs) isValidStatus(status string) bool {
+	_, ok := supportedInstanceStatuses[status]
+	if ok {
+		return true
+	}
+	return false
+}
+
+func (instanceAPIs ContainerInstanceAPIs) hasUnsupportedFilters(filters map[string][]string) bool {
+	if len(filters) > len(supportedInstanceFilters) {
+		return true
+	}
+
+	for f := range filters {
+		_, ok := supportedInstanceFilters[f]
+		if !ok {
+			return true
+		}
+	}
+	return false
 }

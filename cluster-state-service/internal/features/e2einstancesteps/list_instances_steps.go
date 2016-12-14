@@ -18,6 +18,11 @@ import (
 	. "github.com/gucumber/gucumber"
 )
 
+const (
+	invalidStatus  = "invalidStatus"
+	invalidCluster = "cluster/cluster"
+)
+
 func init() {
 
 	cssWrapper := wrappers.NewCSSWrapper()
@@ -34,7 +39,7 @@ func init() {
 
 	Then(`^the list instances response contains all the registered instances$`, func() {
 		// cssContainerInstanceList can have instances from other clusters too
-		if len(ecsContainerInstanceList) < len(cssContainerInstanceList) {
+		if len(cssContainerInstanceList) < len(ecsContainerInstanceList) {
 			T.Errorf("Unexpected number of instances in the list instances response. ")
 		}
 		for _, ecsInstance := range ecsContainerInstanceList {
@@ -43,5 +48,23 @@ func init() {
 				T.Errorf(err.Error())
 			}
 		}
+	})
+
+	When(`^I try to list instances with an invalid status filter$`, func() {
+		exceptionList = nil
+		exceptionMsg, exceptionType, err := cssWrapper.TryListInstancesWithInvalidStatus(invalidStatus)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
+	})
+
+	When(`^I try to list instances with an invalid cluster filter$`, func() {
+		exceptionList = nil
+		exceptionMsg, exceptionType, err := cssWrapper.TryListInstancesWithInvalidCluster(invalidCluster)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
 }

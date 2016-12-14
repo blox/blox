@@ -22,8 +22,10 @@ import (
 )
 
 const (
-	getTaskNotFoundException     = "GetTaskNotFound"
-	getInstanceNotFoundException = "GetInstanceNotFound"
+	getTaskNotFoundException         = "GetTaskNotFound"
+	getInstanceNotFoundException     = "GetInstanceNotFound"
+	listTasksBadRequestException     = "ListTasksBadRequest"
+	listInstancesBadRequestException = "ListInstancesBadRequest"
 )
 
 type CSSWrapper struct {
@@ -48,17 +50,17 @@ func (wrapper CSSWrapper) GetTask(clusterName string, taskARN string) (*models.T
 	return task, nil
 }
 
-func (wrapper CSSWrapper) TryGetTask(taskARN string) (string, error) {
+func (wrapper CSSWrapper) TryGetTask(taskARN string) (string, string, error) {
 	in := operations.NewGetTaskParams()
 	in.SetArn(taskARN)
 	_, err := wrapper.client.Operations.GetTask(in)
 	if err != nil {
 		if _, ok := err.(*operations.GetTaskNotFound); ok {
-			return getTaskNotFoundException, nil
+			return err.(*operations.GetTaskNotFound).Payload, getTaskNotFoundException, nil
 		}
-		return "", errors.New("Unknown exception when calling Get Task")
+		return "", "", errors.New("Unknown exception when calling GetTask")
 	}
-	return "", errors.New("Expected an exception when calling Get Task, but none received")
+	return "", "", errors.New("Expected an exception when calling GetTask, but none received")
 }
 
 func (wrapper CSSWrapper) ListTasks() ([]*models.Task, error) {
@@ -71,10 +73,36 @@ func (wrapper CSSWrapper) ListTasks() ([]*models.Task, error) {
 	return tasks.Items, nil
 }
 
+func (wrapper CSSWrapper) TryListTasksWithInvalidStatus(status string) (string, string, error) {
+	in := operations.NewListTasksParams()
+	in.SetStatus(&status)
+	_, err := wrapper.client.Operations.ListTasks(in)
+	if err != nil {
+		if _, ok := err.(*operations.ListTasksBadRequest); ok {
+			return err.(*operations.ListTasksBadRequest).Payload, listTasksBadRequestException, nil
+		}
+		return "", "", errors.New("Unknown exception when calling ListTasks with invalid status")
+	}
+	return "", "", errors.New("Expected an exception when calling ListTasks with invalid status, but none received")
+}
+
+func (wrapper CSSWrapper) TryListTasksWithInvalidCluster(cluster string) (string, string, error) {
+	in := operations.NewListTasksParams()
+	in.SetCluster(&cluster)
+	_, err := wrapper.client.Operations.ListTasks(in)
+	if err != nil {
+		if _, ok := err.(*operations.ListTasksBadRequest); ok {
+			return err.(*operations.ListTasksBadRequest).Payload, listTasksBadRequestException, nil
+		}
+		return "", "", errors.New("Unknown exception when calling ListTasks with invalid cluster")
+	}
+	return "", "", errors.New("Expected an exception when calling ListTasks with invalid cluster, but none received")
+}
+
 func (wrapper CSSWrapper) FilterTasksByStatus(status string) ([]*models.Task, error) {
-	in := operations.NewFilterTasksParams()
-	in.SetStatus(status)
-	resp, err := wrapper.client.Operations.FilterTasks(in)
+	in := operations.NewListTasksParams()
+	in.SetStatus(&status)
+	resp, err := wrapper.client.Operations.ListTasks(in)
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +111,9 @@ func (wrapper CSSWrapper) FilterTasksByStatus(status string) ([]*models.Task, er
 }
 
 func (wrapper CSSWrapper) FilterTasksByCluster(cluster string) ([]*models.Task, error) {
-	in := operations.NewFilterTasksParams()
-	in.SetCluster(cluster)
-	resp, err := wrapper.client.Operations.FilterTasks(in)
+	in := operations.NewListTasksParams()
+	in.SetCluster(&cluster)
+	resp, err := wrapper.client.Operations.ListTasks(in)
 	if err != nil {
 		return nil, err
 	}
@@ -105,17 +133,17 @@ func (wrapper CSSWrapper) GetInstance(clusterName string, instanceARN string) (*
 	return instance, nil
 }
 
-func (wrapper CSSWrapper) TryGetInstance(instanceARN string) (string, error) {
+func (wrapper CSSWrapper) TryGetInstance(instanceARN string) (string, string, error) {
 	in := operations.NewGetInstanceParams()
 	in.SetArn(instanceARN)
 	_, err := wrapper.client.Operations.GetInstance(in)
 	if err != nil {
 		if _, ok := err.(*operations.GetInstanceNotFound); ok {
-			return getInstanceNotFoundException, nil
+			return err.(*operations.GetInstanceNotFound).Payload, getInstanceNotFoundException, nil
 		}
-		return "", errors.New("Unknown exception when calling Get Instance")
+		return "", "", errors.New("Unknown exception when calling Get Instance")
 	}
-	return "", errors.New("Expected an exception when calling Get Instance, but none received")
+	return "", "", errors.New("Expected an exception when calling Get Instance, but none received")
 }
 
 func (wrapper CSSWrapper) ListInstances() ([]*models.ContainerInstance, error) {
@@ -128,10 +156,36 @@ func (wrapper CSSWrapper) ListInstances() ([]*models.ContainerInstance, error) {
 	return instances.Items, nil
 }
 
+func (wrapper CSSWrapper) TryListInstancesWithInvalidStatus(status string) (string, string, error) {
+	in := operations.NewListInstancesParams()
+	in.SetStatus(&status)
+	_, err := wrapper.client.Operations.ListInstances(in)
+	if err != nil {
+		if _, ok := err.(*operations.ListInstancesBadRequest); ok {
+			return err.(*operations.ListInstancesBadRequest).Payload, listInstancesBadRequestException, nil
+		}
+		return "", "", errors.New("Unknown exception when calling ListInstances with invalid status")
+	}
+	return "", "", errors.New("Expected an exception when calling ListInstances with invalid status, but none received")
+}
+
+func (wrapper CSSWrapper) TryListInstancesWithInvalidCluster(cluster string) (string, string, error) {
+	in := operations.NewListInstancesParams()
+	in.SetCluster(&cluster)
+	_, err := wrapper.client.Operations.ListInstances(in)
+	if err != nil {
+		if _, ok := err.(*operations.ListInstancesBadRequest); ok {
+			return err.(*operations.ListInstancesBadRequest).Payload, listInstancesBadRequestException, nil
+		}
+		return "", "", errors.New("Unknown exception when calling ListInstances with invalid cluster")
+	}
+	return "", "", errors.New("Expected an exception when calling ListInstances with invalid cluster, but none received")
+}
+
 func (wrapper CSSWrapper) FilterInstancesByClusterName(clusterName string) ([]*models.ContainerInstance, error) {
-	in := operations.NewFilterInstancesParams()
-	in.SetCluster(clusterName)
-	resp, err := wrapper.client.Operations.FilterInstances(in)
+	in := operations.NewListInstancesParams()
+	in.SetCluster(&clusterName)
+	resp, err := wrapper.client.Operations.ListInstances(in)
 	if err != nil {
 		return nil, err
 	}

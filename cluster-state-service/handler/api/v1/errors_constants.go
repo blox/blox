@@ -15,8 +15,12 @@ package v1
 
 const (
 	// 4xx error messages
-	instanceNotFoundClientErrMsg = "Instance not found"
-	taskNotFoundClientErrMsg     = "Task not found"
+	instanceNotFoundClientErrMsg             = "Instance not found"
+	taskNotFoundClientErrMsg                 = "Task not found"
+	invalidStatusClientErrMsg                = "Invalid status"
+	unsupportedFilterClientErrMsg            = "At least one of the filters provided is unsupported"
+	invalidClusterClientErrMsg               = "Invalid cluster ARN or name"
+	unsupportedFilterCombinationClientErrMsg = "The combination of filters provided are not supported"
 
 	// 5xx error messages
 	internalServerErrMsg = "Unexpected internal server error"

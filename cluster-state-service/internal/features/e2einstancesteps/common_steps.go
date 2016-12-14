@@ -14,17 +14,24 @@
 package e2einstancesteps
 
 import (
+	"strings"
+
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
 	"github.com/blox/blox/cluster-state-service/internal/models"
 	. "github.com/gucumber/gucumber"
 )
 
+type Exception struct {
+	exceptionType string
+	exceptionMsg  string
+}
+
 var (
 	// Lists to memorize results required for the subsequent steps
 	ecsContainerInstanceList = []ecs.ContainerInstance{}
 	cssContainerInstanceList = []models.ContainerInstance{}
-	exceptionList            = []string{}
+	exceptionList            = []Exception{}
 )
 
 func init() {
@@ -56,12 +63,21 @@ func init() {
 		}
 	})
 
-	Then(`^I get a (.+?) instance exception$`, func(exception string) {
+	Then(`^I get a (.+?) instance exception$`, func(exceptionType string) {
 		if len(exceptionList) != 1 {
 			T.Errorf("Error memorizing exception")
 		}
-		if exception != exceptionList[0] {
-			T.Errorf("Expected exception '%s' but got '%s'. ", exception, exceptionList[0])
+		if exceptionType != exceptionList[0].exceptionType {
+			T.Errorf("Expected exception type '%s' but got '%s'. ", exceptionType, exceptionList[0].exceptionType)
+		}
+	})
+
+	And(`^the instance exception message contains "(.+?)"$`, func(exceptionMsg string) {
+		if len(exceptionList) != 1 {
+			T.Errorf("Error memorizing exception. ")
+		}
+		if !strings.Contains(exceptionList[0].exceptionMsg, exceptionMsg) {
+			T.Errorf("Expected exception message returned '%s' to contain '%s'. ", exceptionList[0].exceptionMsg, exceptionMsg)
 		}
 	})
 }

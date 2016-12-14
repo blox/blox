@@ -14,7 +14,6 @@
 package facade
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/client"
 	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/client/operations"
 	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
@@ -41,12 +40,12 @@ func NewClusterState(css *client.BloxCSS) (ClusterState, error) {
 }
 
 func (c clusterState) ListInstances(cluster string) ([]*models.ContainerInstance, error) {
-	req := operations.NewFilterInstancesParams()
-	req.SetCluster(cluster)
+	req := operations.NewListInstancesParams()
+	req.SetCluster(&cluster)
 
-	resp, err := c.client.Operations.FilterInstances(req)
+	resp, err := c.client.Operations.ListInstances(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "List instances failed")
+		return nil, errors.Wrapf(err, "Error calling ListInstances with req %v", req)
 	}
 
 	return resp.Payload.Items, nil
@@ -54,15 +53,11 @@ func (c clusterState) ListInstances(cluster string) ([]*models.ContainerInstance
 
 func (c clusterState) ListTasks(cluster string) ([]*models.Task, error) {
 	req := operations.NewListTasksParams()
+	req.SetCluster(&cluster)
+
 	resp, err := c.client.Operations.ListTasks(req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error calling ListTasks with req %v", req)
 	}
-	tasks := []*models.Task{}
-	for _, task := range resp.Payload.Items {
-		if aws.StringValue(task.ClusterARN) == cluster {
-			tasks = append(tasks, task)
-		}
-	}
-	return tasks, nil
+	return resp.Payload.Items, nil
 }

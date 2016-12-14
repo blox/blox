@@ -33,6 +33,12 @@ const (
 	taskClusterFilter = "cluster"
 )
 
+var (
+	// Using maps because arrays don't support easy lookup
+	supportedTaskFilters  = map[string]string{taskStatusFilter: "", taskClusterFilter: ""}
+	supportedTaskStatuses = map[string]string{"pending": "", "running": "", "stopped": ""}
+)
+
 // TaskAPIs encapsulates the backend datastore with which the task APIs interact
 type TaskAPIs struct {
 	taskStore store.TaskStore
@@ -89,66 +95,51 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ListTasks lists all tasks across all clusters
+// ListTasks lists all tasks across all clusters after applying filters, if any
 func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := taskAPIs.taskStore.ListTasks()
+	query := r.URL.Query()
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+	if taskAPIs.hasUnsupportedFilters(query) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(unsupportedFilterClientErrMsg)
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
-	w.WriteHeader(http.StatusOK)
+	status := query.Get(taskStatusFilter)
+	cluster := query.Get(taskClusterFilter)
 
-	extTaskItems := make([]*models.Task, len(tasks))
-	for i := range tasks {
-		t, err := ToTask(tasks[i])
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+	// TODO: Support filtering by both status and cluster
+	if status != "" && cluster != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(unsupportedFilterCombinationClientErrMsg)
+		return
+	}
+
+	if status != "" {
+		if !taskAPIs.isValidStatus(status) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(invalidStatusClientErrMsg)
 			return
 		}
-		extTaskItems[i] = &t
 	}
 
-	extTasks := models.Tasks{
-		Items: extTaskItems,
-	}
-
-	err = json.NewEncoder(w).Encode(extTasks)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
-		return
-	}
-}
-
-// FilterTasks filters tasks across all clusters by status
-func (taskAPIs TaskAPIs) FilterTasks(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	status := vars[taskStatusFilter]
-	cluster := vars[taskClusterFilter]
-
-	if len(status) != 0 && len(cluster) != 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
-		return
+	if cluster != "" {
+		if !regex.IsClusterARN(cluster) && !regex.IsClusterName(cluster) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(invalidClusterClientErrMsg)
+			return
+		}
 	}
 
 	var tasks []types.Task
 	var err error
-
 	switch {
-	case len(status) != 0:
+	case status != "":
 		tasks, err = taskAPIs.taskStore.FilterTasks(taskStatusFilter, status)
-	case len(cluster) != 0:
+	case cluster != "":
 		tasks, err = taskAPIs.taskStore.FilterTasks(taskClusterFilter, cluster)
 	default:
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
-		return
+		tasks, err = taskAPIs.taskStore.ListTasks()
 	}
 
 	if err != nil {
@@ -227,4 +218,26 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Handle client-side termination (Ctrl+C) using w.(http.CloseNotifier).closeNotify()
+}
+
+func (taskAPIs TaskAPIs) isValidStatus(status string) bool {
+	_, ok := supportedTaskStatuses[status]
+	if ok {
+		return true
+	}
+	return false
+}
+
+func (taskAPIs TaskAPIs) hasUnsupportedFilters(filters map[string][]string) bool {
+	if len(filters) > len(supportedTaskFilters) {
+		return true
+	}
+
+	for f := range filters {
+		_, ok := supportedTaskFilters[f]
+		if !ok {
+			return true
+		}
+	}
+	return false
 }

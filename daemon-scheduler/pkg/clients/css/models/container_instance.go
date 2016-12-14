@@ -39,7 +39,7 @@ type ContainerInstance struct {
 	AgentUpdateStatus string `json:"agentUpdateStatus,omitempty"`
 
 	// attributes
-	Attributes []*ContainerInstanceAttribute `json:"attributes,omitempty"`
+	Attributes []*ContainerInstanceAttribute `json:"attributes"`
 
 	// cluster a r n
 	// Required: true

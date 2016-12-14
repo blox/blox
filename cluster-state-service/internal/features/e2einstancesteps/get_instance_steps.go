@@ -80,10 +80,10 @@ func init() {
 
 	When(`^I try to get instance with a non-existent ARN$`, func() {
 		exceptionList = nil
-		exception, err := cssWrapper.TryGetInstance(nonExistentInstanceARN)
+		exceptionMsg, exceptionType, err := cssWrapper.TryGetInstance(nonExistentInstanceARN)
 		if err != nil {
 			T.Errorf(err.Error())
 		}
-		exceptionList = append(exceptionList, exception)
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
 }

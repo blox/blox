@@ -44,7 +44,7 @@ type TaskContainer struct {
 	Name *string `json:"name"`
 
 	// network bindings
-	NetworkBindings []*TaskNetworkBinding `json:"networkBindings,omitempty"`
+	NetworkBindings []*TaskNetworkBinding `json:"networkBindings"`
 
 	// reason
 	Reason string `json:"reason,omitempty"`

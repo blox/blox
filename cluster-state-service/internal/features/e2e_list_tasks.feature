@@ -11,3 +11,13 @@ Feature: List Tasks
       | count |
       |   1   |
       |   3   |
+
+  Scenario: List tasks with invalid status filter
+    When I try to list tasks with an invalid status filter
+    Then I get a ListTasksBadRequest task exception
+    And the task exception message contains "Invalid status"
+
+  Scenario: List tasks with invalid cluster filter
+    When I try to list tasks with an invalid cluster filter
+    Then I get a ListTasksBadRequest task exception
+    And the task exception message contains "Invalid cluster ARN or name"

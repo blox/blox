@@ -28,27 +28,11 @@ var (
 
 	getTaskPath     = "/tasks/{cluster:" + clusterNameRegex + "}/{arn:" + taskARNRegex + "}"
 	listTasksPath   = "/tasks"
-	filterTasksPath = "/tasks/filter"
 	streamTasksPath = "/tasks/stream"
 
 	getInstancePath     = "/instances/{cluster:" + clusterNameRegex + "}/{arn:" + instanceARNRegex + "}"
 	listInstancesPath   = "/instances"
-	filterInstancesPath = "/instances/filter"
 	streamInstancesPath = "/instances/stream"
-
-	clusterKey     = "cluster"
-	clusterNameVal = "{" + clusterKey + ":" + clusterNameRegex + "}"
-	clusterARNVal  = "{" + clusterKey + ":" + clusterARNRegex + "}"
-
-	taskKey    = "task"
-	taskARNVal = "{" + taskKey + ":" + taskARNRegex + "}"
-
-	instanceKey    = "instance"
-	instanceARNVal = "{" + instanceKey + ":" + instanceARNRegex + "}"
-
-	statusKey         = "status"
-	taskStatusVal     = "{" + statusKey + ":pending|running|stopped}"
-	instanceStatusVal = "{" + statusKey + ":active|inactive}"
 )
 
 // NewRouter initializes a new router with registered routes redirected to appropriate handler functions
@@ -68,24 +52,6 @@ func NewRouter(apis APIs) *mux.Router {
 		Methods("GET").
 		HandlerFunc(apis.TaskApis.ListTasks)
 
-	// Filter tasks by status
-	s.Path(filterTasksPath).
-		Queries(statusKey, taskStatusVal).
-		Methods("GET").
-		HandlerFunc(apis.TaskApis.FilterTasks)
-
-	// Filter tasks by cluser name
-	s.Path(filterTasksPath).
-		Queries(clusterKey, clusterNameVal).
-		Methods("GET").
-		HandlerFunc(apis.TaskApis.FilterTasks)
-
-	// Filter tasks by cluster ARN
-	s.Path(filterTasksPath).
-		Queries(clusterKey, clusterARNVal).
-		Methods("GET").
-		HandlerFunc(apis.TaskApis.FilterTasks)
-
 	// Stream tasks
 	s.Path(streamTasksPath).
 		Methods("GET").
@@ -102,24 +68,6 @@ func NewRouter(apis APIs) *mux.Router {
 	s.Path(listInstancesPath).
 		Methods("GET").
 		HandlerFunc(apis.ContainerInstanceApis.ListInstances)
-
-	// Filter instances by status
-	s.Path(filterInstancesPath).
-		Queries(statusKey, instanceStatusVal).
-		Methods("GET").
-		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
-
-	// Filter instances by cluser name
-	s.Path(filterInstancesPath).
-		Queries(clusterKey, clusterNameVal).
-		Methods("GET").
-		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
-
-	// Filter instances by cluster ARN
-	s.Path(filterInstancesPath).
-		Queries(clusterKey, clusterARNVal).
-		Methods("GET").
-		HandlerFunc(apis.ContainerInstanceApis.FilterInstances)
 
 	// Stream instances
 	s.Path(streamInstancesPath).

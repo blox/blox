@@ -36,60 +36,6 @@ type Client struct {
 }
 
 /*
-FilterInstances Filter instances
-*/
-func (a *Client) FilterInstances(params *FilterInstancesParams) (*FilterInstancesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewFilterInstancesParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "FilterInstances",
-		Method:             "GET",
-		PathPattern:        "/instances/filter",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &FilterInstancesReader{formats: a.formats},
-		Context:            params.Context,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*FilterInstancesOK), nil
-
-}
-
-/*
-FilterTasks Filter tasks
-*/
-func (a *Client) FilterTasks(params *FilterTasksParams) (*FilterTasksOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewFilterTasksParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "FilterTasks",
-		Method:             "GET",
-		PathPattern:        "/tasks/filter",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &FilterTasksReader{formats: a.formats},
-		Context:            params.Context,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*FilterTasksOK), nil
-
-}
-
-/*
 GetInstance Get instance using cluster name and instance ARN
 */
 func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) {
@@ -108,6 +54,7 @@ func (a *Client) GetInstance(params *GetInstanceParams) (*GetInstanceOK, error) 
 		Params:             params,
 		Reader:             &GetInstanceReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -135,6 +82,7 @@ func (a *Client) GetTask(params *GetTaskParams) (*GetTaskOK, error) {
 		Params:             params,
 		Reader:             &GetTaskReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -144,7 +92,7 @@ func (a *Client) GetTask(params *GetTaskParams) (*GetTaskOK, error) {
 }
 
 /*
-ListInstances Lists all instances
+ListInstances Lists all instances, after applying filters if any
 */
 func (a *Client) ListInstances(params *ListInstancesParams) (*ListInstancesOK, error) {
 	// TODO: Validate the params before sending
@@ -162,6 +110,7 @@ func (a *Client) ListInstances(params *ListInstancesParams) (*ListInstancesOK, e
 		Params:             params,
 		Reader:             &ListInstancesReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
@@ -171,7 +120,7 @@ func (a *Client) ListInstances(params *ListInstancesParams) (*ListInstancesOK, e
 }
 
 /*
-ListTasks Lists all tasks
+ListTasks Lists all tasks, after applying filters if any
 */
 func (a *Client) ListTasks(params *ListTasksParams) (*ListTasksOK, error) {
 	// TODO: Validate the params before sending
@@ -189,6 +138,7 @@ func (a *Client) ListTasks(params *ListTasksParams) (*ListTasksOK, error) {
 		Params:             params,
 		Reader:             &ListTasksReader{formats: a.formats},
 		Context:            params.Context,
+		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err

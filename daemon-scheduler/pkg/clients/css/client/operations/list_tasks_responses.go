@@ -43,6 +43,13 @@ func (o *ListTasksReader) ReadResponse(response runtime.ClientResponse, consumer
 		}
 		return result, nil
 
+	case 400:
+		result := NewListTasksBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	case 500:
 		result := NewListTasksInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -78,6 +85,33 @@ func (o *ListTasksOK) readResponse(response runtime.ClientResponse, consumer run
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewListTasksBadRequest creates a ListTasksBadRequest with default headers values
+func NewListTasksBadRequest() *ListTasksBadRequest {
+	return &ListTasksBadRequest{}
+}
+
+/*ListTasksBadRequest handles this case with default header values.
+
+List tasks - bad input
+*/
+type ListTasksBadRequest struct {
+	Payload string
+}
+
+func (o *ListTasksBadRequest) Error() string {
+	return fmt.Sprintf("[GET /tasks][%d] listTasksBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *ListTasksBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	// response payload
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

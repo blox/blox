@@ -2,12 +2,13 @@
   "swagger": "2.0",
   "info": {
     "version": "1.0.0",
-    "title": "Amazon Cluster State Service",
-    "description": "APIs supported by the Amazon Cluster State Service",
+    "title": "Blox cluster-state-service",
+    "description": "APIs supported by the Blox cluster-state-service",
     "license": {
       "name": "Apache 2.0",
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-    }
+    },
+    "x-copyright": "Copyright 2016, Amazon.com Inc. or Affiliates."
   },
   "host": "localhost:3000",
   "basePath": "/v1",
@@ -65,8 +66,22 @@
     },
     "/instances": {
       "get": {
-        "description": "Lists all instances",
+        "description": "Lists all instances, after applying filters if any",
         "operationId": "ListInstances",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Status to filter instances by",
+            "type": "string"
+          },
+          {
+            "name": "cluster",
+            "in": "query",
+            "description": "Cluster name or ARN to filter instances by",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "List instances - success",
@@ -74,44 +89,14 @@
               "$ref": "#/definitions/ContainerInstances"
             }
           },
-          "500": {
-            "description": "List instances - unexpected error",
+          "400": {
+            "description": "List instances - bad input",
             "schema": {
               "type": "string"
             }
-          }
-        }
-      }
-    },
-    "/instances/filter": {
-      "get": {
-        "description": "Filter instances",
-        "operationId": "FilterInstances",
-        "parameters": [
-          {
-            "name": "status",
-            "in": "query",
-            "description": "Status to filter instances by",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "cluster",
-            "in": "query",
-            "description": "Cluster name or ARN to filter instances by",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Filter instances - success",
-            "schema": {
-              "$ref": "#/definitions/ContainerInstances"
-            }
           },
           "500": {
-            "description": "Filter instances - unexpected error",
+            "description": "List instances - unexpected error",
             "schema": {
               "type": "string"
             }
@@ -163,8 +148,22 @@
     },
     "/tasks": {
       "get": {
-        "description": "Lists all tasks",
+        "description": "Lists all tasks, after applying filters if any",
         "operationId": "ListTasks",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Status to filter tasks by",
+            "type": "string"
+          },
+          {
+            "name": "cluster",
+            "in": "query",
+            "description": "Cluster name or ARN to filter tasks by",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "List tasks - success",
@@ -172,44 +171,14 @@
               "$ref": "#/definitions/Tasks"
             }
           },
-          "500": {
-            "description": "List tasks - unexpected error",
+          "400": {
+            "description": "List tasks - bad input",
             "schema": {
               "type": "string"
             }
-          }
-        }
-      }
-    },
-    "/tasks/filter": {
-      "get": {
-        "description": "Filter tasks",
-        "operationId": "FilterTasks",
-        "parameters": [
-          {
-            "name": "status",
-            "in": "query",
-            "description": "Status to filter tasks by",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "cluster",
-            "in": "query",
-            "description": "Cluster name or ARN to filter tasks by",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Filter tasks - success",
-            "schema": {
-              "$ref": "#/definitions/Tasks"
-            }
           },
           "500": {
-            "description": "Filter tasks - unexpected error",
+            "description": "List tasks - unexpected error",
             "schema": {
               "type": "string"
             }
@@ -228,7 +197,7 @@
         "registeredResources",
         "remainingResources",
         "status",
-        "versionInfo",
+        "versionInfo"
       ],
       "properties": {
         "agentConnected": {
@@ -285,7 +254,7 @@
             "$ref": "#/definitions/ContainerInstance"
           }
         }
-      },
+      }
     },
     "ContainerInstanceAttribute": {
       "type": "object",
@@ -346,7 +315,7 @@
         "lastStatus",
         "overrides",
         "taskARN",
-        "taskDefinitionARN",
+        "taskDefinitionARN"
       ],
       "properties": {
         "clusterARN": {
@@ -406,7 +375,7 @@
             "$ref": "#/definitions/Task"
           }
         }
-      },
+      }
     },
     "TaskContainer": {
       "type": "object",
@@ -518,6 +487,6 @@
           "type": "string"
         }
       }
-    },
+    }
   }
 }

@@ -60,11 +60,11 @@ func init() {
 
 	When(`^I try to get task with a non-existent ARN$`, func() {
 		exceptionList = nil
-		exception, err := cssWrapper.TryGetTask(nonExistentTaskARN)
+		exceptionMsg, exceptionType, err := cssWrapper.TryGetTask(nonExistentTaskARN)
 		if err != nil {
 			T.Errorf(err.Error())
 		}
-		exceptionList = append(exceptionList, exception)
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
 
 }

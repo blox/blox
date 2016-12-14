@@ -20,6 +20,11 @@ import (
 	. "github.com/gucumber/gucumber"
 )
 
+const (
+	invalidStatus  = "invalidStatus"
+	invalidCluster = "cluster/cluster"
+)
+
 func init() {
 
 	cssWrapper := wrappers.NewCSSWrapper()
@@ -51,5 +56,23 @@ func init() {
 				T.Errorf(err.Error())
 			}
 		}
+	})
+
+	When(`^I try to list tasks with an invalid status filter$`, func() {
+		exceptionList = nil
+		exceptionMsg, exceptionType, err := cssWrapper.TryListTasksWithInvalidStatus(invalidStatus)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
+	})
+
+	When(`^I try to list tasks with an invalid cluster filter$`, func() {
+		exceptionList = nil
+		exceptionMsg, exceptionType, err := cssWrapper.TryListTasksWithInvalidCluster(invalidCluster)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
 }
