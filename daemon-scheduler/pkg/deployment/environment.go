@@ -15,9 +15,11 @@ package deployment
 
 import (
 	"context"
+	"strings"
 
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	"github.com/blox/blox/daemon-scheduler/pkg/validate"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -161,6 +163,16 @@ func (e environment) FilterEnvironments(ctx context.Context, filterKey string, f
 }
 
 func (e environment) filterEnvironmentsByCluster(ctx context.Context, cluster string) ([]types.Environment, error) {
+	if validate.IsClusterARN(cluster) {
+		return e.filterEnvironmentsByClusterARN(ctx, cluster)
+	}
+	if validate.IsClusterName(cluster) {
+		return e.filterEnvironmentsByClusterName(ctx, cluster)
+	}
+	return nil, errors.Errorf("'%s' is neither a cluster name nor a cluster ARN", cluster)
+}
+
+func (e environment) filterEnvironmentsByClusterARN(ctx context.Context, clusterARN string) ([]types.Environment, error) {
 	envs, err := e.environmentStore.ListEnvironments(ctx)
 	if err != nil {
 		return nil, err
@@ -168,7 +180,23 @@ func (e environment) filterEnvironmentsByCluster(ctx context.Context, cluster st
 
 	filteredEnvs := make([]types.Environment, 0, len(envs))
 	for _, env := range envs {
-		if cluster == env.Cluster {
+		if clusterARN == env.Cluster {
+			filteredEnvs = append(filteredEnvs, env)
+		}
+	}
+	return filteredEnvs, nil
+}
+
+func (e environment) filterEnvironmentsByClusterName(ctx context.Context, clusterName string) ([]types.Environment, error) {
+	envs, err := e.environmentStore.ListEnvironments(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredEnvs := make([]types.Environment, 0, len(envs))
+	for _, env := range envs {
+		clusterARNSuffix := "/" + clusterName
+		if strings.HasSuffix(env.Cluster, clusterARNSuffix) {
 			filteredEnvs = append(filteredEnvs, env)
 		}
 	}

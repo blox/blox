@@ -367,6 +367,14 @@ func (suite *EnvironmentTestSuite) TestFilterEnvironmentsListEnvironmentsReturns
 }
 
 func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterARN() {
+	suite.filterEnvironmentsByCluster(cluster1)
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterName() {
+	suite.filterEnvironmentsByCluster(clusterName1)
+}
+
+func (suite *EnvironmentTestSuite) filterEnvironmentsByCluster(cluster string) {
 	cluster1Env1 := suite.environment1
 	cluster2Env1 := suite.environment2
 	cluster1Env2, err := types.NewEnvironment(environmentName3, taskDefinition, cluster1)
@@ -376,10 +384,18 @@ func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterARN() {
 	suite.environmentStore.EXPECT().ListEnvironments(suite.ctx).
 		Return(allEnvs, nil)
 
-	envs, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, cluster1)
+	envs, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, cluster)
 	assert.Nil(suite.T(), err, "Unexpected error when filtering environments")
 	expectedEnvs := []types.Environment{*cluster1Env1, *cluster1Env2}
 	assert.Exactly(suite.T(), expectedEnvs, envs, "Returned filtered environments does not match expected environments")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterInvalidCluster() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	invalidCluster := "cluster/cluster"
+	_, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, invalidCluster)
+	assert.Error(suite.T(), err, "Expected an error when filtering using invalid cluster")
 }
 
 func (suite *EnvironmentTestSuite) TestAddDeploymentEmptyDeploymentID() {
