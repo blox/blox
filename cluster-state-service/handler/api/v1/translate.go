@@ -15,7 +15,10 @@ package v1
 
 import (
 	"errors"
+	"strconv"
+	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
 	"github.com/blox/blox/cluster-state-service/handler/types"
 )
@@ -50,6 +53,31 @@ func validateContainerInstance(instance types.ContainerInstance) error {
 	return nil
 }
 
+func toContainerInstanceResource(r *types.Resource) *models.ContainerInstanceResource {
+	resource := &models.ContainerInstanceResource{
+		Name: r.Name,
+		Type: r.Type,
+	}
+
+	val := ""
+	if r.DoubleValue != nil && aws.Float64Value(r.DoubleValue) != 0.0 {
+		val = strconv.FormatFloat(aws.Float64Value(r.DoubleValue), 'f', 2, 64)
+	} else if r.IntegerValue != nil && aws.Int64Value(r.IntegerValue) != 0 {
+		val = strconv.FormatInt(aws.Int64Value(r.IntegerValue), 10)
+	} else if r.LongValue != nil && aws.Int64Value(r.LongValue) != 0 {
+		val = strconv.FormatInt(aws.Int64Value(r.LongValue), 10)
+	} else if r.StringSetValue != nil {
+		strVal := make([]string, len(r.StringSetValue))
+		for i := range r.StringSetValue {
+			strVal[i] = aws.StringValue(r.StringSetValue[i])
+		}
+		val = strings.Join(strVal, ",")
+	}
+	resource.Value = &val
+
+	return resource
+}
+
 // ToContainerInstance tranlates a container instance represented by the internal structure (types.ContainerInstance) to it's external representation (models.ContainerInstance)
 func ToContainerInstance(instance types.ContainerInstance) (models.ContainerInstance, error) {
 	err := validateContainerInstance(instance)
@@ -58,22 +86,12 @@ func ToContainerInstance(instance types.ContainerInstance) (models.ContainerInst
 	}
 	regRes := make([]*models.ContainerInstanceResource, len(instance.Detail.RegisteredResources))
 	for i := range instance.Detail.RegisteredResources {
-		r := instance.Detail.RegisteredResources[i]
-		regRes[i] = &models.ContainerInstanceResource{
-			Name:  r.Name,
-			Type:  r.Type,
-			Value: r.Value,
-		}
+		regRes[i] = toContainerInstanceResource(instance.Detail.RegisteredResources[i])
 	}
 
 	remRes := make([]*models.ContainerInstanceResource, len(instance.Detail.RemainingResources))
 	for i := range instance.Detail.RegisteredResources {
-		r := instance.Detail.RemainingResources[i]
-		remRes[i] = &models.ContainerInstanceResource{
-			Name:  r.Name,
-			Type:  r.Type,
-			Value: r.Value,
-		}
+		remRes[i] = toContainerInstanceResource(instance.Detail.RemainingResources[i])
 	}
 
 	versionInfo := models.ContainerInstanceVersionInfo{

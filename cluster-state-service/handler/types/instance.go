@@ -65,9 +65,12 @@ type Attribute struct {
 }
 
 type Resource struct {
-	Name  *string `json:"name"`
-	Type  *string `json:"type"`
-	Value *string `json:"value"`
+	Name           *string   `json:"name"`
+	Type           *string   `json:"type"`
+	DoubleValue    *float64  `json:"doubleValue"`
+	IntegerValue   *int64    `json:"integerValue"`
+	LongValue      *int64    `json:"longValue"`
+	StringSetValue []*string `json:"stringSetValue"`
 }
 
 type VersionInfo struct {

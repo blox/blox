@@ -28,11 +28,15 @@ const (
 )
 
 var (
-	attributeName = "Name"
-	attributeVal  = "com.amazonaws.ecs.capability.privileged-container"
-	resourceName  = "CPU"
-	resourceType  = "INTEGER"
-	resourceVal   = ""
+	attributeName         = "Name"
+	attributeVal          = "com.amazonaws.ecs.capability.privileged-container"
+	resourceName          = "CPU"
+	intResourceType       = "INTEGER"
+	longResourceType      = "LONG"
+	doubleResourceType    = "DOUBLE"
+	stringSetResourceType = "STRINGSET"
+	intResourceVal        = int64(1024)
+	intResourceValStr     = "1024"
 )
 
 type TranslateTestSuite struct {
@@ -50,9 +54,9 @@ func (suite *TranslateTestSuite) SetupTest() {
 		Value: &attributeVal,
 	}
 	resource := types.Resource{
-		Name:  &resourceName,
-		Type:  &resourceType,
-		Value: &resourceVal,
+		Name:         &resourceName,
+		Type:         &intResourceType,
+		IntegerValue: &intResourceVal,
 	}
 	instanceDetail := types.InstanceDetail{
 		AgentConnected:       &agentConnected1,
@@ -82,8 +86,8 @@ func (suite *TranslateTestSuite) SetupTest() {
 	}
 	extResource := models.ContainerInstanceResource{
 		Name:  &resourceName,
-		Type:  &resourceType,
-		Value: &resourceVal,
+		Type:  &intResourceType,
+		Value: &intResourceValStr,
 	}
 	suite.extInstance = models.ContainerInstance{
 		AgentConnected:       &agentConnected1,
@@ -157,10 +161,78 @@ func TestTranslateTestSuite(t *testing.T) {
 	suite.Run(t, new(TranslateTestSuite))
 }
 
-func (suite *TranslateTestSuite) TestToContainerInstance() {
+func (suite *TranslateTestSuite) TestToContainerInstanceIntResourceType() {
 	translatedModel, err := ToContainerInstance(suite.instance)
 	assert.Nil(suite.T(), err, "Unexpected error when translating container instance")
 	assert.Equal(suite.T(), suite.extInstance, translatedModel, "Translated model does not match expected model")
+}
+
+func (suite *TranslateTestSuite) TestToContainerInstanceLongResourceType() {
+	longResourceVal := int64(1024)
+	longResourceValStr := "1024"
+	instance := suite.instance
+	resource := types.Resource{
+		Name:      &resourceName,
+		Type:      &longResourceType,
+		LongValue: &longResourceVal,
+	}
+	instance.Detail.RegisteredResources = []*types.Resource{&resource}
+	extInstance := suite.extInstance
+	extResource := models.ContainerInstanceResource{
+		Name:  &resourceName,
+		Type:  &longResourceType,
+		Value: &longResourceValStr,
+	}
+	extInstance.RegisteredResources = []*models.ContainerInstanceResource{&extResource}
+	translatedModel, err := ToContainerInstance(instance)
+	assert.Nil(suite.T(), err, "Unexpected error when translating container instance")
+	assert.Equal(suite.T(), extInstance, translatedModel, "Translated model does not match expected model")
+}
+
+func (suite *TranslateTestSuite) TestToContainerInstanceDoubleResourceType() {
+	doubleResourceVal := 10.30
+	doubleResourceValStr := "10.30"
+	instance := suite.instance
+	resource := types.Resource{
+		Name:        &resourceName,
+		Type:        &doubleResourceType,
+		DoubleValue: &doubleResourceVal,
+	}
+	instance.Detail.RegisteredResources = []*types.Resource{&resource}
+	extInstance := suite.extInstance
+	extResource := models.ContainerInstanceResource{
+		Name:  &resourceName,
+		Type:  &doubleResourceType,
+		Value: &doubleResourceValStr,
+	}
+	extInstance.RegisteredResources = []*models.ContainerInstanceResource{&extResource}
+	translatedModel, err := ToContainerInstance(instance)
+	assert.Nil(suite.T(), err, "Unexpected error when translating container instance")
+	assert.Equal(suite.T(), extInstance, translatedModel, "Translated model does not match expected model")
+}
+
+func (suite *TranslateTestSuite) TestToContainerInstanceStringSetResourceType() {
+	str1 := "2376"
+	str2 := "22"
+	stringSetResourceVal := []*string{&str1, &str2}
+	stringSetResourceValStr := str1 + "," + str2
+	instance := suite.instance
+	resource := types.Resource{
+		Name:           &resourceName,
+		Type:           &stringSetResourceType,
+		StringSetValue: stringSetResourceVal,
+	}
+	instance.Detail.RegisteredResources = []*types.Resource{&resource}
+	extInstance := suite.extInstance
+	extResource := models.ContainerInstanceResource{
+		Name:  &resourceName,
+		Type:  &stringSetResourceType,
+		Value: &stringSetResourceValStr,
+	}
+	extInstance.RegisteredResources = []*models.ContainerInstanceResource{&extResource}
+	translatedModel, err := ToContainerInstance(instance)
+	assert.Nil(suite.T(), err, "Unexpected error when translating container instance")
+	assert.Equal(suite.T(), extInstance, translatedModel, "Translated model does not match expected model")
 }
 
 func (suite *TranslateTestSuite) TestToContainerInstanceEmptyDetail() {

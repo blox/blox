@@ -14,7 +14,6 @@
 package loader
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -95,7 +94,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 		},
 	}
 
-	resourceVal := strconv.FormatInt(resourceIntVal, 10)
 	instanceVersion := version
 	suite.instance = types.ContainerInstance{
 		Detail: &types.InstanceDetail{
@@ -112,16 +110,16 @@ func (suite *TranslateTestSuite) SetupTest() {
 			EC2InstanceID:        ec2InstanceID,
 			RegisteredResources: []*types.Resource{
 				&types.Resource{
-					Name:  &resourceName,
-					Type:  &resourceType,
-					Value: &resourceVal,
+					Name:         &resourceName,
+					Type:         &resourceType,
+					IntegerValue: &resourceIntVal,
 				},
 			},
 			RemainingResources: []*types.Resource{
 				&types.Resource{
-					Name:  &resourceName,
-					Type:  &resourceType,
-					Value: &resourceVal,
+					Name:         &resourceName,
+					Type:         &resourceType,
+					IntegerValue: &resourceIntVal,
 				},
 			},
 			Status:  &containerStatus,
