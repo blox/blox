@@ -159,7 +159,7 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceWithoutARN() {
 func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsInstances() {
 	instanceList := []types.ContainerInstance{suite.instance1}
 	suite.instanceStore.EXPECT().ListContainerInstances().Return(instanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any(), gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any()).Times(0)
 
 	request := suite.listInstancesRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -175,7 +175,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsInstances() {
 func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsNoInstances() {
 	emptyInstanceList := make([]types.ContainerInstance, 0)
 	suite.instanceStore.EXPECT().ListContainerInstances().Return(emptyInstanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any(), gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any()).Times(0)
 
 	request := suite.listInstancesRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -190,7 +190,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsNoInstances() {
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesStoreReturnsError() {
 	suite.instanceStore.EXPECT().ListContainerInstances().Return(nil, errors.New("Error when listing instances"))
-	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any(), gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any()).Times(0)
 
 	request := suite.listInstancesRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -202,7 +202,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesStoreReturnsError() {
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesInvalidFilter() {
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
-	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any(), gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any()).Times(0)
 
 	url := listInstancesPrefix + "?unsupportedFilter=val"
 	request, err := http.NewRequest("GET", url, nil)
@@ -215,25 +215,48 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesInvalidFilter() {
 	suite.decodeErrorResponseAndValidate(responseRecorder, unsupportedFilterClientErrMsg)
 }
 
-func (suite *InstanceAPIsTestSuite) TestListInstancesBothStatusAndClusterFilter() {
+func (suite *InstanceAPIsTestSuite) TestListInstancesStatusAndClusterARNFilter() {
+	instanceList := []types.ContainerInstance{suite.instance1}
+	filters := map[string]string{instanceStatusFilter: instanceStatus1, instanceClusterFilter: clusterARN1}
+	suite.instanceStore.EXPECT().FilterContainerInstances(filters).
+		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
-	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any(), gomock.Any()).Times(0)
 
-	url := listInstancesPrefix + "?status=running&cluster=test"
-	request, err := http.NewRequest("GET", url, nil)
-	assert.Nil(suite.T(), err, "Unexpected error creating list instances request with both status and cluster filter")
+	request := suite.filterInstancesByStatusAndClusterRequest(instanceStatus1, clusterARN1)
 
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
-	suite.decodeErrorResponseAndValidate(responseRecorder, unsupportedFilterCombinationClientErrMsg)
+	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	extInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{&suite.extInstance1},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, extInstances)
+}
+
+func (suite *InstanceAPIsTestSuite) TestListInstancesStatusAndClusterNameFilter() {
+	instanceList := []types.ContainerInstance{suite.instance1}
+	filters := map[string]string{instanceStatusFilter: instanceStatus1, instanceClusterFilter: clusterName1}
+	suite.instanceStore.EXPECT().FilterContainerInstances(filters).
+		Return(instanceList, nil)
+	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
+
+	request := suite.filterInstancesByStatusAndClusterRequest(instanceStatus1, clusterName1)
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	extInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{&suite.extInstance1},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, extInstances)
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsInstances() {
 	instanceList := []types.ContainerInstance{suite.instance1}
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, instanceStatus1).Return(instanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceStatusFilter: instanceStatus1}).
+		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByStatusRequest()
@@ -249,8 +272,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsInst
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsNoInstances() {
 	emptyInstanceList := []types.ContainerInstance{}
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, instanceStatus1).Return(emptyInstanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceStatusFilter: instanceStatus1}).
+		Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByStatusRequest()
@@ -265,8 +288,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsNoIn
 }
 
 func (suite *InstanceAPIsTestSuite) TestFilterInstancesWithStatusFilterStoreReturnsError() {
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, instanceStatus1).Return(nil, errors.New("Error when filtering instances"))
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceStatusFilter: instanceStatus1}).
+		Return(nil, errors.New("Error when filtering instances"))
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByStatusRequest()
@@ -278,7 +301,7 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesWithStatusFilterStoreRetu
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithInvalidStatusFilter() {
-	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any(), gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any()).Times(0)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	url := filterInstancesByStatusPrefix + "invalidStatus"
@@ -294,8 +317,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithInvalidStatusFilter() {
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameReturnsInstances() {
 	instanceList := []types.ContainerInstance{suite.instance1}
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, clusterName1).Return(instanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterName1}).
+		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByClusterRequest(clusterName1)
@@ -311,8 +334,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameReturnsInsta
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameReturnsNoInstances() {
 	emptyInstanceList := []types.ContainerInstance{}
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, clusterName1).Return(emptyInstanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterName1}).
+		Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByClusterRequest(clusterName1)
@@ -327,8 +350,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameReturnsNoIns
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameFilterStoreReturnsError() {
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, clusterName1).Return(nil, errors.New("Error when filtering instances"))
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterName1}).
+		Return(nil, errors.New("Error when filtering instances"))
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByClusterRequest(clusterName1)
@@ -341,8 +364,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameFilterStoreR
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNReturnsInstances() {
 	instanceList := []types.ContainerInstance{suite.instance1}
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, clusterARN1).Return(instanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterARN1}).
+		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByClusterRequest(clusterARN1)
@@ -358,8 +381,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNReturnsInstan
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNReturnsNoInstances() {
 	emptyInstanceList := []types.ContainerInstance{}
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, clusterARN1).Return(emptyInstanceList, nil)
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterARN1}).
+		Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByClusterRequest(clusterARN1)
@@ -374,8 +397,8 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNReturnsNoInst
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNFilterStoreReturnsError() {
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceClusterFilter, clusterARN1).Return(nil, errors.New("Error when filtering instances"))
-	suite.instanceStore.EXPECT().FilterContainerInstances(instanceStatusFilter, gomock.Any()).Times(0)
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterARN1}).
+		Return(nil, errors.New("Error when filtering instances"))
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
 	request := suite.filterInstancesByClusterRequest(clusterARN1)
@@ -443,6 +466,13 @@ func (suite *InstanceAPIsTestSuite) filterInstancesByClusterRequest(cluster stri
 	url := filterInstancesByClusterPrefix + cluster
 	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating filter instances by cluster request")
+	return request
+}
+
+func (suite *InstanceAPIsTestSuite) filterInstancesByStatusAndClusterRequest(status string, cluster string) *http.Request {
+	url := "/v1/instances?status=" + status + "&cluster=" + cluster
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating filter instances by status and cluster request")
 	return request
 }
 

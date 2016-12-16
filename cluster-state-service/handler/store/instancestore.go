@@ -34,13 +34,17 @@ const (
 	unversionedInstance = -1
 )
 
+var (
+	supportedInstanceFilters = map[string]string{instanceStatusFilter: "", instanceClusterFilter: ""}
+)
+
 // ContainerInstanceStore defines methods to access container instances from the datastore
 type ContainerInstanceStore interface {
 	AddContainerInstance(instance string) error
 	AddUnversionedContainerInstance(instance string) error
 	GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error)
 	ListContainerInstances() ([]types.ContainerInstance, error)
-	FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error)
+	FilterContainerInstances(filterMap map[string]string) ([]types.ContainerInstance, error)
 	StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error)
 	DeleteContainerInstance(cluster, instanceARN string) error
 }
@@ -130,18 +134,37 @@ func (instanceStore eventInstanceStore) ListContainerInstances() ([]types.Contai
 }
 
 // FilterContainerInstances returns all container instances from the datastore that match the provided filters
-func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error) {
-	if len(filterKey) == 0 || len(filterValue) == 0 {
-		return nil, errors.New("Filter key and value cannot be empty")
+func (instanceStore eventInstanceStore) FilterContainerInstances(filterMap map[string]string) ([]types.ContainerInstance, error) {
+	if len(filterMap) == 0 {
+		return nil, errors.New("There has to be at least one filter")
 	}
 
+	filters := make([]string, 0, len(filterMap))
+	for k := range filterMap {
+		filters = append(filters, k)
+	}
+
+	if !instanceStore.areFiltersValid(filters) {
+		return nil, errors.Errorf("At least one of the provided filters '%v' is not supported.", filters)
+	}
+
+	for key, val := range filterMap {
+		if val == "" {
+			return nil, errors.Errorf("Filter value for filter '%s' is empty", key)
+		}
+	}
+
+	status, statusFilterExists := filterMap[instanceStatusFilter]
+	cluster, clusterFilterExists := filterMap[instanceClusterFilter]
 	switch {
-	case filterKey == instanceStatusFilter:
-		return instanceStore.filterContainerInstancesByStatus(filterValue)
-	case filterKey == instanceClusterFilter:
-		return instanceStore.filterContainerInstancesByCluster(filterValue)
+	case statusFilterExists && clusterFilterExists:
+		return instanceStore.filterContainerInstancesByStatusAndCluster(status, cluster)
+	case statusFilterExists:
+		return instanceStore.filterContainerInstancesByStatus(status)
+	case clusterFilterExists:
+		return instanceStore.filterContainerInstancesByCluster(cluster)
 	default:
-		return nil, errors.Errorf("Unsupported filter key: %s", filterKey)
+		return nil, errors.Errorf("Unsupported filter combination '%v'", filters)
 	}
 }
 
@@ -208,18 +231,35 @@ func (instanceStore eventInstanceStore) unmarshalInstanceAndGenerateKey(instance
 	return &instance, key, nil
 }
 
+func (instanceStore eventInstanceStore) areFiltersValid(filters []string) bool {
+	if len(filters) > len(supportedInstanceFilters) {
+		return false
+	}
+	for _, f := range filters {
+		_, ok := supportedInstanceFilters[f]
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
 func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string) ([]types.ContainerInstance, error) {
 	instances, err := instanceStore.ListContainerInstances()
 	if err != nil {
 		return nil, err
 	}
+	return instanceStore.filterContainerInstancesByStatusFromList(status, instances), nil
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByStatusFromList(status string, instances []types.ContainerInstance) []types.ContainerInstance {
 	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
 	for _, instance := range instances {
 		if strings.ToLower(status) == strings.ToLower(aws.StringValue(instance.Detail.Status)) {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}
-	return filteredInstances, nil
+	return filteredInstances
 }
 
 func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluster string) ([]types.ContainerInstance, error) {
@@ -234,6 +274,14 @@ func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluste
 
 	instancesForClusterPrefix := instanceKeyPrefix + clusterName + "/"
 	return instanceStore.getInstancesByKeyPrefix(instancesForClusterPrefix)
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByStatusAndCluster(status string, cluster string) ([]types.ContainerInstance, error) {
+	instancesFilteredByCluster, err := instanceStore.filterContainerInstancesByCluster(cluster)
+	if err != nil {
+		return nil, err
+	}
+	return instanceStore.filterContainerInstancesByStatusFromList(status, instancesFilteredByCluster), nil
 }
 
 func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*types.ContainerInstance, error) {

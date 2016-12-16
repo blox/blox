@@ -101,13 +101,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 
 	status := query.Get(instanceStatusFilter)
 	cluster := query.Get(instanceClusterFilter)
-
-	// TODO: Support filtering by both status and cluster
-	if status != "" && cluster != "" {
-		http.Error(w, unsupportedFilterCombinationClientErrMsg, http.StatusBadRequest)
-		return
-	}
-
+  
 	if status != "" {
 		if !instanceAPIs.isValidStatus(status) {
 			http.Error(w, invalidStatusClientErrMsg, http.StatusBadRequest)
@@ -124,12 +118,16 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 
 	var instances []types.ContainerInstance
 	var err error
-
 	switch {
-	case len(status) != 0:
-		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceStatusFilter, status)
-	case len(cluster) != 0:
-		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceClusterFilter, cluster)
+	case status != "" && cluster != "":
+		filters := map[string]string{instanceStatusFilter: status, instanceClusterFilter: cluster}
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(filters)
+	case status != "":
+		filters := map[string]string{instanceStatusFilter: status}
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(filters)
+	case cluster != "":
+		filters := map[string]string{instanceClusterFilter: cluster}
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(filters)
 	default:
 		instances, err = instanceAPIs.instanceStore.ListContainerInstances()
 	}
