@@ -23,6 +23,13 @@ import (
 	"github.com/blox/blox/cluster-state-service/handler/types"
 )
 
+const (
+	resourceIntegerType   = "INTEGER"
+	resourceDoubleType    = "DOUBLE"
+	resourceLongType      = "LONG"
+	resourceStringSetType = "STRINGSET"
+)
+
 func validateContainerInstance(instance types.ContainerInstance) error {
 	// TODO: Validate inner structs in instance.Detail
 	detail := instance.Detail
@@ -59,14 +66,16 @@ func toContainerInstanceResource(r *types.Resource) *models.ContainerInstanceRes
 		Type: r.Type,
 	}
 
+	resourceType := aws.StringValue(r.Type)
+
 	val := ""
-	if r.DoubleValue != nil && aws.Float64Value(r.DoubleValue) != 0.0 {
+	if resourceType == resourceDoubleType && r.DoubleValue != nil {
 		val = strconv.FormatFloat(aws.Float64Value(r.DoubleValue), 'f', 2, 64)
-	} else if r.IntegerValue != nil && aws.Int64Value(r.IntegerValue) != 0 {
+	} else if resourceType == resourceIntegerType && r.IntegerValue != nil {
 		val = strconv.FormatInt(aws.Int64Value(r.IntegerValue), 10)
-	} else if r.LongValue != nil && aws.Int64Value(r.LongValue) != 0 {
+	} else if resourceType == resourceLongType && r.LongValue != nil {
 		val = strconv.FormatInt(aws.Int64Value(r.LongValue), 10)
-	} else if r.StringSetValue != nil {
+	} else if resourceType == resourceStringSetType && r.StringSetValue != nil {
 		strVal := make([]string, len(r.StringSetValue))
 		for i := range r.StringSetValue {
 			strVal[i] = aws.StringValue(r.StringSetValue[i])
