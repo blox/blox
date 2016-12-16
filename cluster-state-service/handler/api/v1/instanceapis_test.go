@@ -460,11 +460,8 @@ func (suite *InstanceAPIsTestSuite) validateErrorResponseHeaderAndStatus(respons
 }
 
 func (suite *InstanceAPIsTestSuite) decodeErrorResponseAndValidate(responseRecorder *httptest.ResponseRecorder, expectedErrMsg string) {
-	reader := bytes.NewReader(responseRecorder.Body.Bytes())
-	var str string
-	err := json.NewDecoder(reader).Decode(&str)
-	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
-	assert.Equal(suite.T(), expectedErrMsg, str)
+	actualMsg := responseRecorder.Body.String()
+	assert.Equal(suite.T(), expectedErrMsg+"\n", actualMsg, "Error message is invalid")
 }
 
 func (suite *InstanceAPIsTestSuite) validateInstancesInListOrFilterInstancesResponse(responseRecorder *httptest.ResponseRecorder, expectedInstances models.ContainerInstances) {

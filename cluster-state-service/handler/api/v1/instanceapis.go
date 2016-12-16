@@ -58,29 +58,25 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 	cluster := vars[instanceClusterKey]
 
 	if len(instanceARN) == 0 || len(cluster) == 0 || !regex.IsInstanceARN(instanceARN) || !regex.IsClusterName(cluster) {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
+		http.Error(w, routingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	instance, err := instanceAPIs.instanceStore.GetContainerInstance(cluster, instanceARN)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	if instance == nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(instanceNotFoundClientErrMsg)
+		http.Error(w, instanceNotFoundClientErrMsg, http.StatusNotFound)
 		return
 	}
 
 	extInstance, err := ToContainerInstance(*instance)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -89,8 +85,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 
 	err = json.NewEncoder(w).Encode(extInstance)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
+		http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
@@ -100,8 +95,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 	query := r.URL.Query()
 
 	if instanceAPIs.hasUnsupportedFilters(query) {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(unsupportedFilterClientErrMsg)
+		http.Error(w, unsupportedFilterClientErrMsg, http.StatusBadRequest)
 		return
 	}
 
@@ -110,23 +104,20 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 
 	// TODO: Support filtering by both status and cluster
 	if status != "" && cluster != "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(unsupportedFilterCombinationClientErrMsg)
+		http.Error(w, unsupportedFilterCombinationClientErrMsg, http.StatusBadRequest)
 		return
 	}
 
 	if status != "" {
 		if !instanceAPIs.isValidStatus(status) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(invalidStatusClientErrMsg)
+			http.Error(w, invalidStatusClientErrMsg, http.StatusBadRequest)
 			return
 		}
 	}
 
 	if cluster != "" {
 		if !regex.IsClusterARN(cluster) && !regex.IsClusterName(cluster) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(invalidClusterClientErrMsg)
+			http.Error(w, invalidClusterClientErrMsg, http.StatusBadRequest)
 			return
 		}
 	}
@@ -144,8 +135,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 	}
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -156,8 +146,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 	for i := range instances {
 		ins, err := ToContainerInstance(instances[i])
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		extInstanceItems[i] = &ins
@@ -169,8 +158,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 
 	err = json.NewEncoder(w).Encode(extInstances)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
+		http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
@@ -182,15 +170,13 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 
 	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -199,20 +185,17 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 
 	for instanceResp := range instanceRespChan {
 		if instanceResp.Err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		extInstance, err := ToContainerInstance(instanceResp.ContainerInstance)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		err = json.NewEncoder(w).Encode(extInstance)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(encodingServerErrMsg)
+			http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		flusher.Flush()
@@ -223,10 +206,7 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 
 func (instanceAPIs ContainerInstanceAPIs) isValidStatus(status string) bool {
 	_, ok := supportedInstanceStatuses[status]
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 func (instanceAPIs ContainerInstanceAPIs) hasUnsupportedFilters(filters map[string][]string) bool {

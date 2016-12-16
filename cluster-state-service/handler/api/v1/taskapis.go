@@ -58,22 +58,19 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 	cluster := vars[taskClusterKey]
 
 	if len(taskARN) == 0 || len(cluster) == 0 || !regex.IsTaskARN(taskARN) || !regex.IsClusterName(cluster) {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
+		http.Error(w, routingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	task, err := taskAPIs.taskStore.GetTask(cluster, taskARN)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	if task == nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(taskNotFoundClientErrMsg)
+		http.Error(w, taskNotFoundClientErrMsg, http.StatusNotFound)
 		return
 	}
 
@@ -82,15 +79,13 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	extTask, err := ToTask(*task)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(extTask)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
+		http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
@@ -100,8 +95,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	if taskAPIs.hasUnsupportedFilters(query) {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(unsupportedFilterClientErrMsg)
+		http.Error(w, unsupportedFilterClientErrMsg, http.StatusBadRequest)
 		return
 	}
 
@@ -110,23 +104,20 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Support filtering by both status and cluster
 	if status != "" && cluster != "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(unsupportedFilterCombinationClientErrMsg)
+		http.Error(w, unsupportedFilterCombinationClientErrMsg, http.StatusBadRequest)
 		return
 	}
 
 	if status != "" {
 		if !taskAPIs.isValidStatus(status) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(invalidStatusClientErrMsg)
+			http.Error(w, invalidStatusClientErrMsg, http.StatusBadRequest)
 			return
 		}
 	}
 
 	if cluster != "" {
 		if !regex.IsClusterARN(cluster) && !regex.IsClusterName(cluster) {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(invalidClusterClientErrMsg)
+			http.Error(w, invalidClusterClientErrMsg, http.StatusBadRequest)
 			return
 		}
 	}
@@ -143,8 +134,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -155,8 +145,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	for i := range tasks {
 		t, err := ToTask(tasks[i])
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		extTaskItems[i] = &t
@@ -168,8 +157,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(extTasks)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
+		http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
@@ -181,15 +169,13 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 
 	taskRespChan, err := taskAPIs.taskStore.StreamTasks(ctx)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -198,20 +184,17 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 
 	for taskResp := range taskRespChan {
 		if taskResp.Err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		extTask, err := ToTask(taskResp.Task)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		err = json.NewEncoder(w).Encode(extTask)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(encodingServerErrMsg)
+			http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		flusher.Flush()
@@ -222,10 +205,7 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 
 func (taskAPIs TaskAPIs) isValidStatus(status string) bool {
 	_, ok := supportedTaskStatuses[status]
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 func (taskAPIs TaskAPIs) hasUnsupportedFilters(filters map[string][]string) bool {
