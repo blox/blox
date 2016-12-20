@@ -14,6 +14,9 @@
 #
 # This script generates a file in go with the license contents as a constant
 
+# Set language to C to make sorting consistent among different environments.
+export LANG=C
+
 set -e
 outputfile=${1?Must provide an output file}
 inputfile="$(<../../LICENSE)"
@@ -52,6 +55,7 @@ for repo in ./../../vendor/gopkg.in/* ./../../vendor/google.golang.org/*; do
 done;
 
 inputfile+="
+***
 ./../../vendor/github.com/pelletier/go-buffruneio
 
 Copyright (c) 2016 Thomas Pelletier
@@ -75,7 +79,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 "
 
-cat << EOF > "${outputfile}"
+cat << EOF | tr -d '\r' > "${outputfile}"
 // Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
