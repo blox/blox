@@ -20,7 +20,7 @@ GOINSTALL_BINARY=$(GOPATH)/bin/daemon-scheduler
 ROOT := $(shell pwd)
 
 .PHONY: all
-all: clean build unit-tests
+all: clean generate build unit-tests
 
 .PHONY: build-incr
 build-incr: generate
@@ -34,6 +34,10 @@ $(LOCAL_BINARY): $(SOURCES)
 	./scripts/build_binary.sh ./out
 	@echo "Built Blox Daemon Scheduler"
 
+$(SWAGGER_GEN): $(SWAGGER_SPEC)
+	./scripts/generate_swagger_artifacts.sh
+	@echo "Generated Swagger artifacts"
+
 .PHONY: unit-tests
 unit-tests:
 	go test -v ./pkg/...
@@ -43,13 +47,10 @@ clean:
 	rm -rf ./out $(GOINSTALL_BINARY) ||:
 	touch $(SWAGGER_SPEC)
 
-$(SWAGGER_GEN): $(SWAGGER_SPEC)
-	./scripts/generate_swagger_artifacts.sh
-	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
-
 .PHONY: generate
 generate: $(SWAGGER_GEN) $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
+	@echo "Generated licenses and copyrights"
 
 .PHONY: generate build-in-docker
 build-in-docker:

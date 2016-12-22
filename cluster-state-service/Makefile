@@ -17,7 +17,7 @@ LOCAL_BINARY=out/cluster-state-service
 ROOT := $(shell pwd)
 
 .PHONY: all
-all: clean build unit-tests
+all: clean generate build unit-tests
 
 .PHONY: generate-models
 generate-models:
@@ -29,11 +29,12 @@ build:	$(LOCAL_BINARY)
 
 $(LOCAL_BINARY): $(SOURCES)
 	./scripts/build_binary.sh ./out
-	@echo "Built cluster state service"
+	@echo "Built Cluster State Service"
 
 .PHONY: generate
 generate: generate-models $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
+	@echo "Generated licenses and copyrights"
 
 .PHONY: generate build-in-docker
 build-in-docker:
