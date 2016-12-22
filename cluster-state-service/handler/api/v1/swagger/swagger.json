@@ -104,6 +104,33 @@
         }
       }
     },
+    "/stream/instances": {
+      "get": {
+        "description": "Streams all instances",
+        "operationId": "StreamInstances",
+        "consumes": [
+          "application/octet-stream"
+        ],
+        "produces": [
+          "application/octet-stream"
+        ],
+        "responses": {
+          "200": {
+            "description": "Stream instances - success",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "500": {
+            "description": "Stream instances - unexpected error",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "/tasks/{cluster}/{arn}": {
       "get": {
         "description": "Get task using cluster name and task ARN",
@@ -179,6 +206,33 @@
           },
           "500": {
             "description": "List tasks - unexpected error",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/stream/tasks": {
+      "get": {
+        "description": "Streams all tasks",
+        "operationId": "StreamTasks",
+        "consumes": [
+          "application/octet-stream"
+        ],
+        "produces": [
+          "application/octet-stream"
+        ],
+        "responses": {
+          "200": {
+            "description": "Stream tasks - success",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "500": {
+            "description": "Stream tasks - unexpected error",
             "schema": {
               "type": "string"
             }

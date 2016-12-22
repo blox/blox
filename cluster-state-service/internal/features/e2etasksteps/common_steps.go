@@ -48,7 +48,7 @@ func init() {
 		}
 	})
 
-	Before("@task", func() {
+	Before("@task|@stream-instances", func() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())

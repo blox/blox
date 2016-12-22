@@ -80,7 +80,7 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(extInstance)
@@ -137,7 +137,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 	extInstanceItems := make([]*models.ContainerInstance, len(instances))
@@ -178,7 +178,8 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 		return
 	}
 
-	w.Header().Set(connectionKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeStream)
+	w.Header().Set(connectionKey, connectionVal)
 	w.Header().Set(transferEncodingKey, transferEncodingVal)
 
 	for instanceResp := range instanceRespChan {

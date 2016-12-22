@@ -42,3 +42,18 @@ func ValidateListContainsTask(ecsTask ecs.Task, cssTaskList []models.Task) error
 	}
 	return ValidateTasksMatch(ecsTask, cssTask)
 }
+
+func ValidateListContainsTaskWithStatus(ecsTask ecs.Task, cssTaskList []models.Task, lastStatus string, desiredStatus string) error {
+	taskARN := *ecsTask.TaskArn
+	var cssTask models.Task
+	for _, t := range cssTaskList {
+		if *t.TaskARN == taskARN && *t.LastStatus == lastStatus && *t.DesiredStatus == desiredStatus {
+			cssTask = t
+			break
+		}
+	}
+	if cssTask.TaskARN == nil {
+		return errors.Errorf("Task with ARN '%s', last status '%s', and desired status '%s' not found in response. ", taskARN, lastStatus, desiredStatus)
+	}
+	return ValidateTasksMatch(ecsTask, cssTask)
+}

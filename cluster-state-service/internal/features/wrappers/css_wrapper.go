@@ -19,6 +19,8 @@ import (
 	"github.com/blox/blox/cluster-state-service/internal/client"
 	"github.com/blox/blox/cluster-state-service/internal/client/operations"
 	"github.com/blox/blox/cluster-state-service/internal/models"
+	"io"
+	"time"
 )
 
 const (
@@ -121,6 +123,17 @@ func (wrapper CSSWrapper) FilterTasksByCluster(cluster string) ([]*models.Task, 
 	return tasks.Items, nil
 }
 
+func (wrapper CSSWrapper) StreamTasks() (*io.PipeReader, error) {
+	r,w := io.Pipe()
+	in := operations.NewStreamTasksParams()
+	in.SetTimeout(10 * time.Second)
+	go func() {
+		defer w.Close()
+		wrapper.client.Operations.StreamTasks(in, w)
+	}()
+	return r, nil
+}
+
 func (wrapper CSSWrapper) GetInstance(clusterName string, instanceARN string) (*models.ContainerInstance, error) {
 	in := operations.NewGetInstanceParams()
 	in.SetCluster(clusterName)
@@ -191,4 +204,15 @@ func (wrapper CSSWrapper) FilterInstancesByClusterName(clusterName string) ([]*m
 	}
 	instances := resp.Payload
 	return instances.Items, nil
+}
+
+func (wrapper CSSWrapper) StreamInstances() (*io.PipeReader, error) {
+	r,w := io.Pipe()
+	in := operations.NewStreamInstancesParams()
+	in.SetTimeout(10 * time.Second)
+	go func() {
+		defer w.Close()
+		wrapper.client.Operations.StreamInstances(in, w)
+	}()
+	return r, nil
 }

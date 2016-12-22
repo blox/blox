@@ -15,7 +15,8 @@ package v1
 
 const (
 	contentTypeKey      = "Content-Type"
-	contentTypeVal      = "application/json; charset=UTF-8"
+	contentTypeJSON     = "application/json; charset=UTF-8"
+	contentTypeStream   = "application/octet-stream"
 	connectionKey       = "Connection"
 	connectionVal       = "Keep-Alive"
 	transferEncodingKey = "Transfer-Encoding"

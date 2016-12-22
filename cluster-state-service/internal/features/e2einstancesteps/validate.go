@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/internal/models"
 	"github.com/pkg/errors"
+	"strings"
 )
 
 func ValidateInstancesMatch(ecsInstance ecs.ContainerInstance, cssInstance models.ContainerInstance) error {
@@ -40,4 +41,13 @@ func ValidateListContainsInstance(ecsInstance ecs.ContainerInstance, cssInstance
 		return errors.Errorf("Instance with ARN '%s' not found in response. ", instanceARN)
 	}
 	return ValidateInstancesMatch(ecsInstance, cssInstance)
+}
+
+func ValidateListContainsCluster(ecsCluster string, cssInstanceList []models.ContainerInstance) error {
+	for _, i := range cssInstanceList {
+		if strings.HasSuffix(*i.ClusterARN, "/" + ecsCluster) {
+			return nil
+		}
+	}
+	return errors.Errorf("Instance with cluster '%s' not found in response. ", ecsCluster)
 }

@@ -17,6 +17,8 @@ package operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"io"
+
 	"github.com/go-openapi/runtime"
 
 	strfmt "github.com/go-openapi/strfmt"
@@ -144,6 +146,62 @@ func (a *Client) ListTasks(params *ListTasksParams) (*ListTasksOK, error) {
 		return nil, err
 	}
 	return result.(*ListTasksOK), nil
+
+}
+
+/*
+StreamInstances Streams all ECS instances
+*/
+func (a *Client) StreamInstances(params *StreamInstancesParams, writer io.Writer) (*StreamInstancesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewStreamInstancesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "StreamInstances",
+		Method:             "GET",
+		PathPattern:        "/stream/instances",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/octet-stream"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &StreamInstancesReader{formats: a.formats, writer: writer},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*StreamInstancesOK), nil
+
+}
+
+/*
+StreamTasks Streams all ECS instance tasks
+*/
+func (a *Client) StreamTasks(params *StreamTasksParams, writer io.Writer) (*StreamTasksOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewStreamTasksParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "StreamTasks",
+		Method:             "GET",
+		PathPattern:        "/stream/tasks",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/octet-stream"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &StreamTasksReader{formats: a.formats, writer: writer},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*StreamTasksOK), nil
 
 }
 

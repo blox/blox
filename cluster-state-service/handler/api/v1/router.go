@@ -28,11 +28,11 @@ var (
 
 	getTaskPath     = "/tasks/{cluster:" + clusterNameRegex + "}/{arn:" + taskARNRegex + "}"
 	listTasksPath   = "/tasks"
-	streamTasksPath = "/tasks/stream"
+	streamTasksPath = "/stream/tasks"
 
 	getInstancePath     = "/instances/{cluster:" + clusterNameRegex + "}/{arn:" + instanceARNRegex + "}"
 	listInstancesPath   = "/instances"
-	streamInstancesPath = "/instances/stream"
+	streamInstancesPath = "/stream/instances"
 )
 
 // NewRouter initializes a new router with registered routes redirected to appropriate handler functions

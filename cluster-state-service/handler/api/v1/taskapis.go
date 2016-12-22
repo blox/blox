@@ -74,7 +74,7 @@ func (taskAPIs TaskAPIs) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 	extTask, err := ToTask(*task)
@@ -138,7 +138,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 	extTaskItems := make([]*models.Task, len(tasks))
@@ -179,6 +179,7 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set(contentTypeKey, contentTypeStream)
 	w.Header().Set(connectionKey, connectionVal)
 	w.Header().Set(transferEncodingKey, transferEncodingVal)
 
