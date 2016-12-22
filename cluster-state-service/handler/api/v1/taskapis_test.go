@@ -19,6 +19,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
@@ -253,7 +254,20 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterReturnsTasks() {
 	extTasks := models.Tasks{
 		Items: []*models.Task{&suite.extTask1},
 	}
-	suite.filterTasksByStatusTester(extTasks)
+	suite.filterTasksByStatusTester(extTasks, taskStatus1)
+}
+
+func (suite *TaskAPIsTestSuite) TestListTasksWithCapitalizedStatusFilterReturnsTasks() {
+	taskList := []types.Task{suite.task1}
+
+	suite.taskStore.EXPECT().FilterTasks(taskStatusFilter, taskStatus1).Return(taskList, nil)
+	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, gomock.Any()).Times(0)
+	suite.taskStore.EXPECT().ListTasks().Times(0)
+
+	extTasks := models.Tasks{
+		Items: []*models.Task{&suite.extTask1},
+	}
+	suite.filterTasksByStatusTester(extTasks, strings.ToUpper(taskStatus1))
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterNoTasks() {
@@ -266,7 +280,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterNoTasks() {
 	emptyExtTasks := models.Tasks{
 		Items: []*models.Task{},
 	}
-	suite.filterTasksByStatusTester(emptyExtTasks)
+	suite.filterTasksByStatusTester(emptyExtTasks, taskStatus1)
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterStoreReturnsError() {
@@ -274,7 +288,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterStoreReturnsError()
 	suite.taskStore.EXPECT().FilterTasks(taskClusterFilter, gomock.Any()).Times(0)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
-	request := suite.filterTasksByStatusRequest()
+	request := suite.filterTasksByStatusRequest(taskStatus1)
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
@@ -402,8 +416,8 @@ func (suite *TaskAPIsTestSuite) listTasksRequest() *http.Request {
 	return request
 }
 
-func (suite *TaskAPIsTestSuite) filterTasksByStatusRequest() *http.Request {
-	url := filterTasksByStatusPrefix + taskStatus1
+func (suite *TaskAPIsTestSuite) filterTasksByStatusRequest(status string) *http.Request {
+	url := filterTasksByStatusPrefix + status
 	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating filter tasks by status request")
 	return request
@@ -426,8 +440,8 @@ func (suite *TaskAPIsTestSuite) listTasksTester(tasks models.Tasks) {
 	suite.validateTasksInListTasksResponse(responseRecorder, tasks)
 }
 
-func (suite *TaskAPIsTestSuite) filterTasksByStatusTester(tasks models.Tasks) {
-	request := suite.filterTasksByStatusRequest()
+func (suite *TaskAPIsTestSuite) filterTasksByStatusTester(tasks models.Tasks, status string) {
+	request := suite.filterTasksByStatusRequest(status)
 	responseRecorder := httptest.NewRecorder()
 
 	suite.router.ServeHTTP(responseRecorder, request)

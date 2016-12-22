@@ -19,6 +19,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
@@ -259,7 +260,24 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsInst
 		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
-	request := suite.filterInstancesByStatusRequest()
+	request := suite.filterInstancesByStatusRequest(instanceStatus1)
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	extInstances := models.ContainerInstances{
+		Items: []*models.ContainerInstance{&suite.extInstance1},
+	}
+	suite.validateInstancesInListOrFilterInstancesResponse(responseRecorder, extInstances)
+}
+
+func (suite *InstanceAPIsTestSuite) TestListInstancesWithCapitalizedStatusFilterReturnsInstances() {
+	instanceList := []types.ContainerInstance{suite.instance1}
+	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceStatusFilter: instanceStatus1}).
+		Return(instanceList, nil)
+	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
+
+	request := suite.filterInstancesByStatusRequest(strings.ToUpper(instanceStatus1))
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
@@ -276,7 +294,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsNoIn
 		Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
-	request := suite.filterInstancesByStatusRequest()
+	request := suite.filterInstancesByStatusRequest(instanceStatus1)
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
@@ -292,7 +310,7 @@ func (suite *InstanceAPIsTestSuite) TestFilterInstancesWithStatusFilterStoreRetu
 		Return(nil, errors.New("Error when filtering instances"))
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
 
-	request := suite.filterInstancesByStatusRequest()
+	request := suite.filterInstancesByStatusRequest(instanceStatus1)
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
@@ -455,8 +473,8 @@ func (suite *InstanceAPIsTestSuite) listInstancesRequest() *http.Request {
 	return request
 }
 
-func (suite *InstanceAPIsTestSuite) filterInstancesByStatusRequest() *http.Request {
-	url := filterInstancesByStatusPrefix + instanceStatus1
+func (suite *InstanceAPIsTestSuite) filterInstancesByStatusRequest(status string) *http.Request {
+	url := filterInstancesByStatusPrefix + status
 	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating filter instances by status request")
 	return request

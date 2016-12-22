@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
 	"github.com/blox/blox/cluster-state-service/handler/regex"
@@ -99,9 +100,9 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 		return
 	}
 
-	status := query.Get(instanceStatusFilter)
+	status := strings.ToLower(query.Get(instanceStatusFilter))
 	cluster := query.Get(instanceClusterFilter)
-  
+
 	if status != "" {
 		if !instanceAPIs.isValidStatus(status) {
 			http.Error(w, invalidStatusClientErrMsg, http.StatusBadRequest)

@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
 	"github.com/blox/blox/cluster-state-service/handler/regex"
@@ -99,7 +100,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := query.Get(taskStatusFilter)
+	status := strings.ToLower(query.Get(taskStatusFilter))
 	cluster := query.Get(taskClusterFilter)
 
 	// TODO: Support filtering by both status and cluster
