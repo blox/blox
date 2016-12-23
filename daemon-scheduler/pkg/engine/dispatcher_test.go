@@ -29,11 +29,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	clusterArn      = "cluster-arn"
-	environmentName = "env-name"
-)
-
 type DispatcherTestSuite struct {
 	suite.Suite
 	environmentSvc   *mocks.MockEnvironment
@@ -103,7 +98,7 @@ func (suite *DispatcherTestSuite) TestUpdateInProgressDeploymentEventReturnsErro
 
 	environment := types.Environment{
 		Name:    environmentName,
-		Cluster: clusterArn,
+		Cluster: clusterARN,
 	}
 
 	event := UpdateInProgressDeploymentEvent{
@@ -139,7 +134,7 @@ func (suite *DispatcherTestSuite) TestUpdateInProgressDeploymentEvent() {
 
 	environment := types.Environment{
 		Name:    environmentName,
-		Cluster: clusterArn,
+		Cluster: clusterARN,
 	}
 
 	event := UpdateInProgressDeploymentEvent{
@@ -170,7 +165,7 @@ func (suite *DispatcherTestSuite) TestStartDeploymentEventReturnsError() {
 
 	environment := types.Environment{
 		Name:    environmentName,
-		Cluster: clusterArn,
+		Cluster: clusterARN,
 	}
 	instances := []*string{
 		aws.String("instance-arn-1"),
@@ -209,7 +204,7 @@ func (suite *DispatcherTestSuite) TestStartDeploymentEvent() {
 
 	environment := types.Environment{
 		Name:    environmentName,
-		Cluster: clusterArn,
+		Cluster: clusterARN,
 	}
 	instances := []*string{
 		aws.String("instance-arn-1"),

@@ -101,7 +101,7 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 	scheduler.Start()
 
 	monitor := engine.NewMonitor(ctx, environment, input)
-	monitor.InProgressMonitorLoop()
+	monitor.InProgressMonitorLoop(engine.InProgressMonitorTickerDuration)
 
 	api := v1.NewAPI(environment, deployment, ecs)
 

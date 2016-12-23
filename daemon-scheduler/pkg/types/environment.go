@@ -85,7 +85,7 @@ func NewEnvironment(name string, taskDefinition string, cluster string) (*Enviro
 }
 
 // GetInProgressDeployment returns the in-progress deployment for the environment.
-// There should one or no in progress deployments in an environment
+// There should be no more than one in progress deployments in an environment
 func (e Environment) GetInProgressDeployment() (*Deployment, error) {
 	if e.InProgressDeploymentID == "" {
 		// TODO : We may want to change where the in progress deployment id is set

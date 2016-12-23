@@ -18,14 +18,17 @@ import "github.com/blox/blox/daemon-scheduler/pkg/types"
 type EventType string
 
 const (
-	StartDeploymentEventType            EventType = "StartDeploymentEvent"
-	StopTasksEventType                  EventType = "StopTasksEvent"
+	StartDeploymentEventType      EventType = "StartDeploymentEvent"
+	StopTasksEventType            EventType = "StopTasksEvent"
+	SchedulerErrorEventType       EventType = "SchedulerErrorEvent"
+	SchedulerEnvironmentEventType EventType = "SchedulerEnvironmentEvent"
+	ErrorEventType                EventType = "ErrorEventType"
+	StopTasksResultType           EventType = "StopTasksResultType"
+	StartDeploymentResultType     EventType = "StartDeploymentResultType"
+
+	MonitorErrorEventType               EventType = "MonitorErrorEventType"
 	UpdateInProgressDeploymentEventType EventType = "UpdateInProgressDeploymentEvent"
-	SchedulerErrorEventType             EventType = "SchedulerErrorEvent"
-	SchedulerEnvironmentEventType       EventType = "SchedulerEnvironmentEvent"
-	ErrorEventType                      EventType = "ErrorEventType"
-	StopTasksResultType                 EventType = "StopTasksResultType"
-	StartDeploymentResultType           EventType = "StartDeploymentResultType"
+	UpdatePendingDeploymentEventType    EventType = "UpdatePendingDeploymentEvent"
 )
 
 type Event interface {
@@ -52,14 +55,6 @@ type StopTasksEvent struct {
 
 func (e StopTasksEvent) GetType() EventType {
 	return StopTasksEventType
-}
-
-type UpdateInProgressDeploymentEvent struct {
-	Environment types.Environment
-}
-
-func (e UpdateInProgressDeploymentEvent) GetType() EventType {
-	return UpdateInProgressDeploymentEventType
 }
 
 // SchedulerErrorEvent is message used to notify of any execution errors from Scheduler
@@ -107,4 +102,29 @@ type StartDeploymentResult struct {
 
 func (e StartDeploymentResult) GetType() EventType {
 	return StartDeploymentResultType
+}
+
+// MonitorErrorEvent is message used to notify of any execution errors from Monitor
+type MonitorErrorEvent struct {
+	Error error
+}
+
+func (e MonitorErrorEvent) GetType() EventType {
+	return MonitorErrorEventType
+}
+
+type UpdateInProgressDeploymentEvent struct {
+	Environment types.Environment
+}
+
+func (e UpdateInProgressDeploymentEvent) GetType() EventType {
+	return UpdateInProgressDeploymentEventType
+}
+
+type UpdatePendingDeploymentEvent struct {
+	Environment types.Environment
+}
+
+func (e UpdatePendingDeploymentEvent) GetType() EventType {
+	return UpdatePendingDeploymentEventType
 }
