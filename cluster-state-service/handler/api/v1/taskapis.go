@@ -103,12 +103,6 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	status := strings.ToLower(query.Get(taskStatusFilter))
 	cluster := query.Get(taskClusterFilter)
 
-	// TODO: Support filtering by both status and cluster
-	if status != "" && cluster != "" {
-		http.Error(w, unsupportedFilterCombinationClientErrMsg, http.StatusBadRequest)
-		return
-	}
-
 	if status != "" {
 		if !taskAPIs.isValidStatus(status) {
 			http.Error(w, invalidStatusClientErrMsg, http.StatusBadRequest)
@@ -126,10 +120,15 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 	var tasks []types.Task
 	var err error
 	switch {
+	case status != "" && cluster != "":
+		filters := map[string]string{taskStatusFilter: status, taskClusterFilter: cluster}
+		tasks, err = taskAPIs.taskStore.FilterTasks(filters)
 	case status != "":
-		tasks, err = taskAPIs.taskStore.FilterTasks(taskStatusFilter, status)
+		filters := map[string]string{taskStatusFilter: status}
+		tasks, err = taskAPIs.taskStore.FilterTasks(filters)
 	case cluster != "":
-		tasks, err = taskAPIs.taskStore.FilterTasks(taskClusterFilter, cluster)
+		filters := map[string]string{taskClusterFilter: cluster}
+		tasks, err = taskAPIs.taskStore.FilterTasks(filters)
 	default:
 		tasks, err = taskAPIs.taskStore.ListTasks()
 	}

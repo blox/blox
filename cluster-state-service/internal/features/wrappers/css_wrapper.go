@@ -123,6 +123,19 @@ func (wrapper CSSWrapper) FilterTasksByCluster(cluster string) ([]*models.Task, 
 	return tasks.Items, nil
 }
 
+
+func (wrapper CSSWrapper) FilterTasksByStatusAndCluster(status string, cluster string) ([]*models.Task, error) {
+	in := operations.NewListTasksParams()
+	in.SetStatus(&status)
+	in.SetCluster(&cluster)
+	resp, err := wrapper.client.Operations.ListTasks(in)
+	if err != nil {
+		return nil, err
+	}
+	tasks := resp.Payload
+	return tasks.Items, nil
+}
+
 func (wrapper CSSWrapper) StreamTasks() (*io.PipeReader, error) {
 	r,w := io.Pipe()
 	in := operations.NewStreamTasksParams()

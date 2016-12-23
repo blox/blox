@@ -12,6 +12,17 @@ Feature: List Tasks
       |   1   |
       |   3   |
 
+  Scenario: List tasks with status and cluster filter returns tasks
+    Given I start 1 task in the ECS cluster
+    When I list tasks with filters set to running status and cluster name
+    Then the list tasks response contains at least 1 task
+    And all tasks in the list tasks response belong to the cluster and have status set to running
+
+  Scenario: List tasks with status and cluster filter returns no tasks
+    Given I start 1 task in the ECS cluster
+    When I list tasks with filters set to running status and a different cluster name
+    Then the list tasks response contains 0 tasks
+
   Scenario: List tasks with invalid status filter
     When I try to list tasks with an invalid status filter
     Then I get a ListTasksBadRequest task exception

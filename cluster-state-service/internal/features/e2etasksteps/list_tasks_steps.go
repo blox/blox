@@ -14,6 +14,7 @@
 package e2etasksteps
 
 import (
+	"strings"
 	"time"
 
 	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
@@ -40,7 +41,7 @@ func init() {
 		}
 	})
 
-	Then(`^the list tasks response contains at least (\d+) tasks$`, func(numTasks int) {
+	Then(`^the list tasks response contains at least (\d+) task(?:|s)$`, func(numTasks int) {
 		if len(cssTaskList) < numTasks {
 			T.Errorf("Number of tasks in list tasks response is less than expected. ")
 		}
@@ -55,6 +56,54 @@ func init() {
 			if err != nil {
 				T.Errorf(err.Error())
 			}
+		}
+	})
+
+	When(`^I list tasks with filters set to (.+?) status and cluster name$`, func(status string) {
+		time.Sleep(15 * time.Second)
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		cssTasks, err := cssWrapper.FilterTasksByStatusAndCluster(status, clusterName)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTasks {
+			cssTaskList = append(cssTaskList, *t)
+		}
+	})
+
+	And(`^all tasks in the list tasks response belong to the cluster and have status set to (.+?)$`, func(status string) {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTaskList {
+			if strings.ToLower(*t.LastStatus) != strings.ToLower(status) {
+				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.TaskARN, status, *t.LastStatus)
+			}
+			if !strings.HasSuffix(*t.ClusterARN, "/"+clusterName) {
+				T.Errorf("Task with ARN '%s' was expected to belong to cluster with name '%s' but belongs to cluster with ARN'%s'",
+					*t.TaskARN, clusterName, *t.ClusterARN)
+			}
+		}
+	})
+
+	When(`^I list tasks with filters set to (.+?) status and a different cluster name$`, func(status string) {
+		clusterName := "someCluster"
+		cssTasks, err := cssWrapper.FilterTasksByStatusAndCluster(status, clusterName)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTasks {
+			cssTaskList = append(cssTaskList, *t)
+		}
+	})
+
+	Then(`^the list tasks response contains (\d+) tasks$`, func(numTasks int) {
+		if len(cssTaskList) != numTasks {
+			T.Errorf("Expected '%d' tasks in the list tasks response but got '%d'", numTasks, len(cssTaskList))
 		}
 	})
 
