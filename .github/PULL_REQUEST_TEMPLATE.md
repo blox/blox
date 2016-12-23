@@ -23,3 +23,9 @@ for inclusion in changelog.
 #### Licensing
 
 This contribution is under the terms of the Apache 2.0 License: Yes
+
+#### Before merging
+<!-- Run integration and end-to-end tests before merging -->
+- [ ] cluster-state-service end-to-end tests pass. Required setup details in cluster-state-service/internal/Readme.md
+- [ ] daemon-scheduler integration tests pass. Required setup details in daemon-scheduler/internal/README.md
+- [ ] daemon-scheduler end-to-end tests pass. Required setup details in daemon-scheduler/internal/README.md
