@@ -14,15 +14,16 @@
 package e2etasksteps
 
 import (
-	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
-	"github.com/blox/blox/cluster-state-service/internal/models"
-	. "github.com/gucumber/gucumber"
 	"bufio"
 	"encoding/json"
+
+	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	. "github.com/gucumber/gucumber"
 )
 
 var (
-	streamTaskList   = []models.Task{}
+	streamTaskList = []models.Task{}
 )
 
 func init() {
@@ -31,7 +32,7 @@ func init() {
 	stream := make(chan string)
 
 	When(`^I start streaming all task events$`, func() {
-		r,err := cssWrapper.StreamTasks()
+		r, err := cssWrapper.StreamTasks()
 		if err != nil {
 			T.Errorf(err.Error())
 		}
@@ -43,7 +44,7 @@ func init() {
 				json.Unmarshal([]byte(scanner.Text()), task)
 				streamTaskList = append(streamTaskList, *task)
 			}
-			stream<- "done"
+			stream <- "done"
 		}()
 	})
 

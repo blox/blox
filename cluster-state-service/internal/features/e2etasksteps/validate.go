@@ -15,7 +15,7 @@ package e2etasksteps
 
 import (
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/blox/blox/cluster-state-service/internal/models"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/pkg/errors"
 )
 

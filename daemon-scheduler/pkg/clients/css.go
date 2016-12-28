@@ -14,7 +14,7 @@
 package clients
 
 import (
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/client"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/client"
 )
 
 func NewCSSClient() *client.BloxCSS {

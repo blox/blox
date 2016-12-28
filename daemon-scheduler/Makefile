@@ -13,8 +13,8 @@
 
 SOURCEDIR=.
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
-SWAGGER_SPEC := generated/v1/swagger.json
-SWAGGER_GEN := $(shell find ./generated/v1 -name '*.go')
+SWAGGER_SPEC := swagger/v1/swagger.json
+SWAGGER_GEN := $(shell find ./swagger/v1/generated -name '*.go')
 LOCAL_BINARY=out/daemon-scheduler
 GOINSTALL_BINARY=$(GOPATH)/bin/daemon-scheduler
 ROOT := $(shell pwd)
@@ -35,7 +35,7 @@ $(LOCAL_BINARY): $(SOURCES)
 	@echo "Built Blox Daemon Scheduler"
 
 $(SWAGGER_GEN): $(SWAGGER_SPEC)
-	./scripts/generate_swagger_artifacts.sh
+	./scripts/v1/generate_swagger_artifacts.sh
 	@echo "Generated Swagger artifacts"
 
 .PHONY: unit-tests

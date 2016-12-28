@@ -70,4 +70,4 @@ AWS_PROFILE=default \
 
 #### API endpoint
 
-After you launch the cluster-state-service, you can interact with and use the REST API by using the endpoint at port 3000. Identify the cluster-state-service container IP address and connect to port 3000. For more information about the API definitions, see the [swagger specification](handler/api/v1/swagger/swagger.json).
+After you launch the cluster-state-service, you can interact with and use the REST API by using the endpoint at port 3000. Identify the cluster-state-service container IP address and connect to port 3000. For more information about the API definitions, see the [swagger specification](swagger/v1/swagger.json).

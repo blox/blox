@@ -16,7 +16,7 @@ package wrappers
 import (
 	"os"
 
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/client"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/client"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	httptransport "github.com/go-openapi/runtime/client"
 )

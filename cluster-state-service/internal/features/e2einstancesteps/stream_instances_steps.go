@@ -14,15 +14,16 @@
 package e2einstancesteps
 
 import (
-	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
-	"github.com/blox/blox/cluster-state-service/internal/models"
-	. "github.com/gucumber/gucumber"
 	"bufio"
 	"encoding/json"
+
+	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	. "github.com/gucumber/gucumber"
 )
 
 var (
-	streamInstanceList   = []models.ContainerInstance{}
+	streamInstanceList = []models.ContainerInstance{}
 )
 
 func init() {
@@ -30,7 +31,7 @@ func init() {
 	stream := make(chan string)
 
 	When(`^I start streaming all instance events$`, func() {
-		r,err := cssWrapper.StreamInstances()
+		r, err := cssWrapper.StreamInstances()
 		if err != nil {
 			T.Errorf(err.Error())
 		}
@@ -42,7 +43,7 @@ func init() {
 				json.Unmarshal([]byte(scanner.Text()), instance)
 				streamInstanceList = append(streamInstanceList, *instance)
 			}
-			stream<- "done"
+			stream <- "done"
 		}()
 	})
 

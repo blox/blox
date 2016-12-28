@@ -16,8 +16,8 @@ package v1
 import (
 	"testing"
 
-	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
 	"github.com/blox/blox/cluster-state-service/handler/types"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

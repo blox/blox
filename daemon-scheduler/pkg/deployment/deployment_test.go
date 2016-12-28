@@ -20,7 +20,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"

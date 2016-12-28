@@ -16,11 +16,12 @@ package wrappers
 import (
 	"errors"
 
-	"github.com/blox/blox/cluster-state-service/internal/client"
-	"github.com/blox/blox/cluster-state-service/internal/client/operations"
-	"github.com/blox/blox/cluster-state-service/internal/models"
 	"io"
 	"time"
+
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/client"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/client/operations"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 )
 
 type CSSWrapper struct {
-	client *client.AmazonCSS
+	client *client.BloxCSS
 }
 
 func NewCSSWrapper() CSSWrapper {
@@ -137,7 +138,7 @@ func (wrapper CSSWrapper) FilterTasksByStatusAndCluster(status string, cluster s
 }
 
 func (wrapper CSSWrapper) StreamTasks() (*io.PipeReader, error) {
-	r,w := io.Pipe()
+	r, w := io.Pipe()
 	in := operations.NewStreamTasksParams()
 	in.SetTimeout(10 * time.Second)
 	go func() {
@@ -220,7 +221,7 @@ func (wrapper CSSWrapper) FilterInstancesByClusterName(clusterName string) ([]*m
 }
 
 func (wrapper CSSWrapper) StreamInstances() (*io.PipeReader, error) {
-	r,w := io.Pipe()
+	r, w := io.Pipe()
 	in := operations.NewStreamInstancesParams()
 	in.SetTimeout(10 * time.Second)
 	go func() {

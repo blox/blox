@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
 	"github.com/blox/blox/cluster-state-service/handler/types"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 )
 
 const (

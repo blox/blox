@@ -13,4 +13,4 @@
 
 package copyright_gen
 
-//go:generate slap_copyright.sh ../cmd ../handler ../internal ../licenses ../logger ../main.go
+//go:generate slap_copyright.sh ../cmd ../handler ../internal ../licenses ../logger ../main.go ../swagger

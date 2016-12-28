@@ -18,7 +18,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
-	"github.com/blox/blox/cluster-state-service/internal/models"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	. "github.com/gucumber/gucumber"
 )
 

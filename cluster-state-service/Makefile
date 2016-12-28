@@ -14,15 +14,12 @@
 SOURCEDIR=.
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 LOCAL_BINARY=out/cluster-state-service
+SWAGGER_SPEC := swagger/v1/swagger.json
+SWAGGER_GEN := $(shell find ./swagger/v1/generated -name '*.go')
 ROOT := $(shell pwd)
 
 .PHONY: all
 all: clean generate build unit-tests
-
-.PHONY: generate-models
-generate-models:
-	./scripts/v1/generate_swagger_models.sh
-	@echo "Generated swagger models"
 
 .PHONY: build
 build:	$(LOCAL_BINARY)
@@ -31,8 +28,12 @@ $(LOCAL_BINARY): $(SOURCES)
 	./scripts/build_binary.sh ./out
 	@echo "Built Cluster State Service"
 
+$(SWAGGER_GEN): $(SWAGGER_SPEC)
+	./scripts/v1/generate_swagger_artifacts.sh
+	@echo "Generated Swagger artifacts"
+
 .PHONY: generate
-generate: generate-models $(SOURCES)
+generate: $(SWAGGER_GEN) $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
 	@echo "Generated licenses and copyrights"
 
@@ -92,3 +93,4 @@ e2e-tests:
 .PHONY: clean
 clean:
 	rm -rf ./out ||:
+	touch $(SWAGGER_SPEC)

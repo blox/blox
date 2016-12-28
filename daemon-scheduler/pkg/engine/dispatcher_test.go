@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	mocks "github.com/blox/blox/daemon-scheduler/pkg/mocks"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"

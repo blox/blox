@@ -20,11 +20,11 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/validate"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
 	log "github.com/cihub/seelog"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"

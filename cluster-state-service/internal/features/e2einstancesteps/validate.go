@@ -14,10 +14,11 @@
 package e2einstancesteps
 
 import (
-	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/blox/blox/cluster-state-service/internal/models"
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	"github.com/pkg/errors"
 )
 
 func ValidateInstancesMatch(ecsInstance ecs.ContainerInstance, cssInstance models.ContainerInstance) error {
@@ -45,7 +46,7 @@ func ValidateListContainsInstance(ecsInstance ecs.ContainerInstance, cssInstance
 
 func ValidateListContainsCluster(ecsCluster string, cssInstanceList []models.ContainerInstance) error {
 	for _, i := range cssInstanceList {
-		if strings.HasSuffix(*i.ClusterARN, "/" + ecsCluster) {
+		if strings.HasSuffix(*i.ClusterARN, "/"+ecsCluster) {
 			return nil
 		}
 	}

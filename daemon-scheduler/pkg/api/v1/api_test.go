@@ -22,9 +22,9 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"

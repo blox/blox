@@ -17,7 +17,7 @@
 package mocks
 
 import (
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
+	models "github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	gomock "github.com/golang/mock/gomock"
 )
 

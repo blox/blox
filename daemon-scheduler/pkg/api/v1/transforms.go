@@ -15,8 +15,8 @@ package v1
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
 )
 
 func toEnvironmentModel(envType types.Environment) models.Environment {

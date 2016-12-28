@@ -14,9 +14,9 @@
 package facade
 
 import (
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/client"
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/client/operations"
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/client"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/client/operations"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/pkg/errors"
 )
 
