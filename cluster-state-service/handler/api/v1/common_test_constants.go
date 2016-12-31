@@ -38,6 +38,11 @@ var (
 )
 
 const (
-	responseContentTypeKey = "Content-Type"
-	responseContentTypeVal = "application/json; charset=UTF-8"
+	responseContentTypeKey      = "Content-Type"
+	responseContentTypeJSON     = "application/json; charset=UTF-8"
+	responseContentTypeStream   = "application/octet-stream"
+	responseConnectionKey       = "Connection"
+	responseConnectionVal       = "Keep-Alive"
+	responseTransferEncodingKey = "Transfer-Encoding"
+	responseTransferEncodingVal = "chunked"
 )

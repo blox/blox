@@ -23,12 +23,14 @@ import (
 	"testing"
 
 	"github.com/blox/blox/cluster-state-service/handler/mocks"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"bufio"
 )
 
 const (
@@ -36,6 +38,7 @@ const (
 	listTasksPrefix            = "/v1/tasks"
 	filterTasksByStatusPrefix  = "/v1/tasks?status="
 	filterTasksByClusterPrefix = "/v1/tasks?cluster="
+	streamTasksPrefix          = "/v1/stream/tasks"
 
 	filterTasksByStatusQueryValue = "{status:pending|running|stopped}"
 
@@ -46,13 +49,14 @@ const (
 
 type TaskAPIsTestSuite struct {
 	suite.Suite
-	taskStore      *mocks.MockTaskStore
-	taskAPIs       TaskAPIs
-	task1          types.Task
-	task2          types.Task
-	extTask1       models.Task
-	extTask2       models.Task
-	responseHeader http.Header
+	taskStore            *mocks.MockTaskStore
+	taskAPIs             TaskAPIs
+	task1                types.Task
+	task2                types.Task
+	extTask1             models.Task
+	extTask2             models.Task
+	responseHeaderJSON   http.Header
+	responseHeaderStream http.Header
 
 	// We need a router because some of the apis use mux.Vars() which uses the URL
 	// parameters parsed and stored in a global map in the global context by the router.
@@ -116,7 +120,12 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 	}
 	suite.extTask2 = extTask
 
-	suite.responseHeader = http.Header{responseContentTypeKey: []string{responseContentTypeVal}}
+	suite.responseHeaderJSON = http.Header{responseContentTypeKey: []string{responseContentTypeJSON}}
+	suite.responseHeaderStream = http.Header{
+		responseContentTypeKey: []string{responseContentTypeStream},
+		responseConnectionKey: []string{responseConnectionVal},
+		responseTransferEncodingKey: []string{responseTransferEncodingVal},
+	}
 
 	suite.router = suite.getRouter()
 }
@@ -137,7 +146,7 @@ func (suite *TaskAPIsTestSuite) TestGetReturnsTask() {
 
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	suite.validateSuccessfulJSONResponseHeaderAndStatus(responseRecorder)
 
 	reader := bytes.NewReader(responseRecorder.Body.Bytes())
 	taskInResponse := models.Task{}
@@ -242,7 +251,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksBothStatusAndClusterFilter() {
 	responseRecorder := httptest.NewRecorder()
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	suite.validateSuccessfulJSONResponseHeaderAndStatus(responseRecorder)
 	extTasks := models.Tasks{
 		Items: []*models.Task{&suite.extTask1},
 	}
@@ -396,6 +405,87 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithInvalidClusterFilter() {
 	suite.decodeErrorResponseAndValidate(responseRecorder, invalidClusterClientErrMsg)
 }
 
+func (suite *TaskAPIsTestSuite) TestStreamTasksReturnsTasks() {
+	taskRespChan := make(chan storetypes.TaskErrorWrapper)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+	expectedTasks := []models.Task{suite.extTask1, suite.extTask2}
+
+	go func() {
+		defer close(taskRespChan)
+		taskRespChan <- storetypes.TaskErrorWrapper{Task: suite.task1, Err: nil}
+		taskRespChan <- storetypes.TaskErrorWrapper{Task: suite.task2, Err: nil}
+	}()
+
+	request := suite.streamTasksRequest()
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateSuccessfulStreamResponseHeaderAndStatus(responseRecorder)
+	suite.validateTasksInStreamTasksResponse(responseRecorder, expectedTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestStreamTasksNoTasks() {
+	taskRespChan := make(chan storetypes.TaskErrorWrapper)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+	emptyTasks := []models.Task{}
+
+	go func() {
+		defer close(taskRespChan)
+	}()
+
+	request := suite.streamTasksRequest()
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateSuccessfulStreamResponseHeaderAndStatus(responseRecorder)
+	suite.validateTasksInStreamTasksResponse(responseRecorder, emptyTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestStreamTasksCreateChannelReturnsError() {
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(nil, errors.New("StreamTasks failed"))
+
+	request := suite.streamTasksRequest()
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
+}
+
+func (suite *TaskAPIsTestSuite) TestStreamTasksTaskResponseChannelReturnsError() {
+	taskRespChan := make(chan storetypes.TaskErrorWrapper)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+
+	go func() {
+		defer close(taskRespChan)
+		taskRespChan <- storetypes.TaskErrorWrapper{Task: types.Task{}, Err: errors.New("TaskErrorWrapper failure")}
+	}()
+
+	request := suite.streamTasksRequest()
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
+}
+
+func (suite *TaskAPIsTestSuite) TestStreamTasksTranslateTaskReturnsError() {
+	taskRespChan := make(chan storetypes.TaskErrorWrapper)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+
+	go func() {
+		defer close(taskRespChan)
+		taskRespChan <- storetypes.TaskErrorWrapper{Task: types.Task{}, Err: nil}
+	}()
+
+	request := suite.streamTasksRequest()
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusInternalServerError)
+	suite.decodeErrorResponseAndValidate(responseRecorder, internalServerErrMsg)
+}
+
 // Helper functions
 
 func (suite *TaskAPIsTestSuite) getTaskRequest() *http.Request {
@@ -408,6 +498,12 @@ func (suite *TaskAPIsTestSuite) getTaskRequest() *http.Request {
 func (suite *TaskAPIsTestSuite) listTasksRequest() *http.Request {
 	request, err := http.NewRequest("GET", listTasksPrefix, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating list tasks request")
+	return request
+}
+
+func (suite *TaskAPIsTestSuite) streamTasksRequest() *http.Request {
+	request, err := http.NewRequest("GET", streamTasksPrefix, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating stream tasks request")
 	return request
 }
 
@@ -431,7 +527,7 @@ func (suite *TaskAPIsTestSuite) listTasksTester(tasks models.Tasks) {
 
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	suite.validateSuccessfulJSONResponseHeaderAndStatus(responseRecorder)
 	suite.validateTasksInListTasksResponse(responseRecorder, tasks)
 }
 
@@ -441,7 +537,7 @@ func (suite *TaskAPIsTestSuite) filterTasksByStatusTester(tasks models.Tasks, st
 
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	suite.validateSuccessfulJSONResponseHeaderAndStatus(responseRecorder)
 	suite.validateTasksInListTasksResponse(responseRecorder, tasks)
 }
 
@@ -451,7 +547,7 @@ func (suite *TaskAPIsTestSuite) filterTasksByClusterTester(cluster string, tasks
 
 	suite.router.ServeHTTP(responseRecorder, request)
 
-	suite.validateSuccessfulResponseHeaderAndStatus(responseRecorder)
+	suite.validateSuccessfulJSONResponseHeaderAndStatus(responseRecorder)
 	suite.validateTasksInListTasksResponse(responseRecorder, tasks)
 }
 
@@ -467,6 +563,10 @@ func (suite *TaskAPIsTestSuite) getRouter() *mux.Router {
 		Methods("GET").
 		HandlerFunc(suite.taskAPIs.ListTasks)
 
+	s.Path(streamTasksPath).
+		Methods("GET").
+		HandlerFunc(suite.taskAPIs.StreamTasks)
+
 	// Invalid router paths to make sure handler functions handle them
 	s.Path(invalidGetTaskPath).
 		Methods("GET").
@@ -475,10 +575,17 @@ func (suite *TaskAPIsTestSuite) getRouter() *mux.Router {
 	return s
 }
 
-func (suite *TaskAPIsTestSuite) validateSuccessfulResponseHeaderAndStatus(responseRecorder *httptest.ResponseRecorder) {
+func (suite *TaskAPIsTestSuite) validateSuccessfulJSONResponseHeaderAndStatus(responseRecorder *httptest.ResponseRecorder) {
 	h := responseRecorder.Header()
 	assert.NotNil(suite.T(), h, "Unexpected empty header")
-	assert.Equal(suite.T(), suite.responseHeader, h, "Http header is invalid")
+	assert.Equal(suite.T(), suite.responseHeaderJSON, h, "Http header is invalid")
+	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code, "Http response status is invalid")
+}
+
+func (suite *TaskAPIsTestSuite) validateSuccessfulStreamResponseHeaderAndStatus(responseRecorder *httptest.ResponseRecorder) {
+	h := responseRecorder.Header()
+	assert.NotNil(suite.T(), h, "Unexpected empty header")
+	assert.Equal(suite.T(), suite.responseHeaderStream, h, "Http header is invalid")
 	assert.Equal(suite.T(), http.StatusOK, responseRecorder.Code, "Http response status is invalid")
 }
 
@@ -494,6 +601,18 @@ func (suite *TaskAPIsTestSuite) validateTasksInListTasksResponse(responseRecorde
 	err := json.NewDecoder(reader).Decode(tasksInResponse)
 	assert.Nil(suite.T(), err, "Unexpected error decoding response body")
 	assert.Exactly(suite.T(), expectedTasks, *tasksInResponse, "Tasks in response is invalid")
+}
+
+func (suite *TaskAPIsTestSuite) validateTasksInStreamTasksResponse(responseRecorder *httptest.ResponseRecorder, expectedTasks []models.Task) {
+	scanner := bufio.NewScanner(responseRecorder.Body)
+	tasksInResponse := make([]models.Task, 0)
+	for scanner.Scan() {
+		task := new(models.Task)
+		err := json.Unmarshal([]byte(scanner.Text()), task)
+		assert.Nil(suite.T(), err, "Unexpected error decoding response body")
+		tasksInResponse = append(tasksInResponse, *task)
+	}
+	assert.Exactly(suite.T(), expectedTasks, tasksInResponse, "Tasks in response is invalid")
 }
 
 func (suite *TaskAPIsTestSuite) decodeErrorResponseAndValidate(responseRecorder *httptest.ResponseRecorder, expectedErrMsg string) {
