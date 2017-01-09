@@ -28,6 +28,7 @@ const (
 
 func init() {
 
+	ecsWrapper := wrappers.NewECSWrapper()
 	cssWrapper := wrappers.NewCSSWrapper()
 
 	When(`^I list tasks$`, func() {
@@ -53,6 +54,48 @@ func init() {
 		}
 		for _, t := range ecsTaskList {
 			err := ValidateListContainsTask(t, cssTaskList)
+			if err != nil {
+				T.Errorf(err.Error())
+			}
+		}
+	})
+
+	When(`^I list tasks with cluster filter set to the ECS cluster name$`, func() {
+		time.Sleep(15 * time.Second)
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		cssTasks, err := cssWrapper.FilterTasksByCluster(clusterName)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTasks {
+			cssTaskList = append(cssTaskList, *t)
+		}
+	})
+
+	When(`^I list tasks with status filter set to (.+?)$`, func(status string) {
+		time.Sleep(15 * time.Second)
+		cssTasks, err := cssWrapper.FilterTasksByStatus(status)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTasks {
+			cssTaskList = append(cssTaskList, *t)
+		}
+	})
+
+	And(`^I stop the (\d+) tasks in the ECS cluster$`, func(numTasks int) {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		if len(ecsTaskList) != numTasks {
+			T.Errorf("Error memorizing tasks started using ECS client. ")
+		}
+		for _, t := range ecsTaskList {
+			err := ecsWrapper.StopTask(clusterName, *t.TaskArn)
 			if err != nil {
 				T.Errorf(err.Error())
 			}

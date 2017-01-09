@@ -50,6 +50,33 @@ func init() {
 		}
 	})
 
+	When(`^I list instances with cluster filter set to the ECS cluster name$`, func() {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
+		cssInstances, err := cssWrapper.FilterInstancesByClusterName(clusterName)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, i := range cssInstances {
+			cssContainerInstanceList = append(cssContainerInstanceList, *i)
+		}
+	})
+
+	Then(`^the list instances response contains all the instances registered with the cluster$`, func() {
+		if len(ecsContainerInstanceList) != len(cssContainerInstanceList) {
+			T.Errorf("Unexpected number of instances in the filter instances response. ")
+		}
+		for _, ecsInstance := range ecsContainerInstanceList {
+			err := ValidateListContainsInstance(ecsInstance, cssContainerInstanceList)
+			if err != nil {
+				T.Errorf(err.Error())
+			}
+		}
+	})
+
 	When(`^I try to list instances with an invalid status filter$`, func() {
 		exceptionList = nil
 		exceptionMsg, exceptionType, err := cssWrapper.TryListInstancesWithInvalidStatus(invalidStatus)

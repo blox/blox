@@ -12,6 +12,38 @@ Feature: List Tasks
       |   1   |
       |   3   |
 
+  Scenario Outline: List tasks with cluster filter
+    Given I start <count> tasks in the ECS cluster
+    When I list tasks with cluster filter set to the ECS cluster name
+    Then the list tasks response contains at least <count> tasks
+    And all <count> tasks are present in the list tasks response
+
+    Examples:
+      | count |
+      |   1   |
+
+  Scenario Outline: List tasks with status filter stopped
+    Given I start <count> tasks in the ECS cluster
+    And I stop the <count> tasks in the ECS cluster
+    When I list tasks with status filter set to <stopped>
+    Then the list tasks response contains at least <count> tasks
+    And all <count> tasks are present in the list tasks response
+
+    Examples:
+      | count | stopped |
+      |   1   | stopped |
+      |   1   | STOPPED |
+
+  Scenario Outline: List tasks with status filter running
+    Given I start <count> tasks in the ECS cluster
+    When I list tasks with status filter set to running
+    Then the list tasks response contains at least <count> tasks
+    And all <count> tasks are present in the list tasks response
+
+    Examples:
+      | count |
+      |   1   |
+
   Scenario: List tasks with status and cluster filter returns tasks
     Given I start 1 task in the ECS cluster
     When I list tasks with filters set to running status and cluster name
