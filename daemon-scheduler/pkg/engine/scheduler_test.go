@@ -88,7 +88,7 @@ func (suite *SchedulerTestSuite) TestRunGetCurrentDeploymentReturnsError() {
 	}
 	environments := []types.Environment{environment}
 	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, err)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, err)
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
 	scheduler.Start()
@@ -104,7 +104,7 @@ func (suite *SchedulerTestSuite) TestRunGetCurrentDeploymentReturnsNil() {
 	}
 	environments := []types.Environment{environment}
 	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, nil)
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
 	scheduler.Start()
@@ -126,7 +126,7 @@ func (suite *SchedulerTestSuite) TestRunListInstancesReturnsError() {
 		Health: types.DeploymentHealthy,
 	}
 	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	err := errors.New("Error getting instances from css")
 	suite.css.EXPECT().ListInstances(environment.Cluster).Return(nil, err)
@@ -154,7 +154,7 @@ func (suite *SchedulerTestSuite) TestRunListTasksReturnsError() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -190,7 +190,7 @@ func (suite *SchedulerTestSuite) TestRunListDeploymentsReturnsError() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -209,7 +209,7 @@ func (suite *SchedulerTestSuite) TestRunListDeploymentsReturnsError() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	err := errors.New("Error getting deployments for environment")
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(nil, err)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(nil, err)
 
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
@@ -234,7 +234,7 @@ func (suite *SchedulerTestSuite) TestRunAllInstancesDeployed() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance1 := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -267,7 +267,7 @@ func (suite *SchedulerTestSuite) TestRunAllInstancesDeployed() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
@@ -321,7 +321,7 @@ func (suite *SchedulerTestSuite) TestRunNewInstance() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance1 := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -368,7 +368,7 @@ func (suite *SchedulerTestSuite) TestRunNewInstance() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
@@ -398,7 +398,7 @@ func (suite *SchedulerTestSuite) TestRunInstancesWithOldDeployments() {
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance1 := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -436,7 +436,7 @@ func (suite *SchedulerTestSuite) TestRunInstancesWithOldDeployments() {
 	tasks := []*models.Task{task1, task2}
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
@@ -471,7 +471,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstance() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -486,7 +486,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstance() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.ContainerInstanceARN)).Times(0)
 
@@ -523,7 +523,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceTTLExpired() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -538,7 +538,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceTTLExpired() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	taskARNFromECS := []*string{aws.String("task-arn")}
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.ContainerInstanceARN)).Return(taskARNFromECS, nil)
@@ -588,7 +588,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceDescribeTasksReturnsError
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -603,7 +603,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceDescribeTasksReturnsError
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	taskARNFromECS := []*string{aws.String("task-arn")}
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.ContainerInstanceARN)).Return(taskARNFromECS, nil)
@@ -643,7 +643,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsError() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -658,7 +658,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsError() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	err := errors.Errorf("Error from ecs.ListTasks")
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.ContainerInstanceARN)).Return(nil, err)
@@ -695,7 +695,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsEmpty() {
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		ClusterARN:           aws.String(environment.Cluster),
@@ -710,7 +710,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsEmpty() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeployments(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	taskARNFromECS := []*string{}
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.ContainerInstanceARN)).Return(taskARNFromECS, nil)

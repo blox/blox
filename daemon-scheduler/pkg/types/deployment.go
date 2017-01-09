@@ -76,7 +76,7 @@ func (d Deployment) UpdateDeploymentInProgress(
 		return nil, errors.New("Deployment cannot move from completed to in-progress")
 	}
 
-	if len(failedInstances) == 0 {
+	if failedInstances == nil || len(failedInstances) == 0 {
 		d.Health = DeploymentHealthy
 	} else {
 		d.Health = DeploymentUnhealthy
@@ -92,7 +92,7 @@ func (d Deployment) UpdateDeploymentInProgress(
 func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) (*Deployment, error) {
 	d.Status = DeploymentCompleted
 
-	if len(failedInstances) == 0 {
+	if failedInstances == nil || len(failedInstances) == 0 {
 		d.Health = DeploymentHealthy
 	} else {
 		d.Health = DeploymentUnhealthy

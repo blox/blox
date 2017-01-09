@@ -18,8 +18,7 @@ package mocks
 
 import (
 	context "context"
-
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	types "github.com/blox/blox/daemon-scheduler/pkg/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -77,13 +76,35 @@ func (_mr *_MockDeploymentRecorder) GetDeployment(arg0, arg1, arg2 interface{}) 
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDeployment", arg0, arg1, arg2)
 }
 
-func (_m *MockDeployment) ListDeployments(ctx context.Context, environmentName string) ([]types.Deployment, error) {
-	ret := _m.ctrl.Call(_m, "ListDeployments", ctx, environmentName)
+func (_m *MockDeployment) GetCurrentDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "GetCurrentDeployment", ctx, environmentName)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) GetCurrentDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetCurrentDeployment", arg0, arg1)
+}
+
+func (_m *MockDeployment) GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "GetInProgressDeployment", ctx, environmentName)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) GetInProgressDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetInProgressDeployment", arg0, arg1)
+}
+
+func (_m *MockDeployment) ListDeploymentsSortedReverseChronologically(ctx context.Context, environmentName string) ([]types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "ListDeploymentsSortedReverseChronologically", ctx, environmentName)
 	ret0, _ := ret[0].([]types.Deployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockDeploymentRecorder) ListDeployments(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListDeployments", arg0, arg1)
+func (_mr *_MockDeploymentRecorder) ListDeploymentsSortedReverseChronologically(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListDeploymentsSortedReverseChronologically", arg0, arg1)
 }

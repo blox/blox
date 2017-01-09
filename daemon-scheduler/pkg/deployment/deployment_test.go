@@ -15,8 +15,8 @@ package deployment
 
 import (
 	"context"
-	"reflect"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	environmentVersion = uuid.NewRandom().String()
+	token = uuid.NewRandom().String()
 )
 
 type DeploymentTestSuite struct {
@@ -93,15 +93,20 @@ func (suite *DeploymentTestSuite) TestNewDeployment() {
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeploymentEmptyEnvironmentName() {
-	_, err := suite.deployment.CreateDeployment(suite.ctx, "", environmentVersion)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, "", token)
 	assert.Error(suite.T(), err, "Expected an error when environment name is empty")
+}
+
+func (suite *DeploymentTestSuite) TestCreateDeploymentEmptyToken() {
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, "")
+	assert.Error(suite.T(), err, "Expected an error when token is empty")
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(nil, errors.New("Get environment failed"))
 
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, environmentVersion)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, token)
 	assert.Error(suite.T(), err, "Expected an error when get environment fails")
 }
 
@@ -109,7 +114,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentIsNil() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(nil, nil)
 
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, environmentVersion)
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, token)
 	assert.Error(suite.T(), err, "Expected an error when get environment is nil")
 }
 
@@ -255,84 +260,13 @@ func (suite *DeploymentTestSuite) TestGetDeployment() {
 	assert.Exactly(suite.T(), deployment2, d, "Deployment does not match the one in the environment")
 }
 
-func (suite *DeploymentTestSuite) TestListDeploymentsEmptyEnvironmentName() {
-	_, err := suite.deployment.ListDeployments(suite.ctx, "")
-	assert.Error(suite.T(), err, "Expected an error when environment name is empty")
-}
-
-func (suite *DeploymentTestSuite) TestListDeploymentsGetEnvironmentFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(nil, errors.New("Get environment failed"))
-
-	_, err := suite.deployment.ListDeployments(suite.ctx, environmentName)
-	assert.Error(suite.T(), err, "Expected an error when get environment fails")
-}
-
-func (suite *DeploymentTestSuite) TestListDeploymentsGetEnvironmentIsNil() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(nil, nil)
-
-	_, err := suite.deployment.ListDeployments(suite.ctx, environmentName)
-	assert.Error(suite.T(), err, "Expected an error when get environment is nil")
-}
-
-func (suite *DeploymentTestSuite) TestListDeploymentsEnvironmentDoesNotHaveDeployments() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(suite.deploymentEnvironment, nil)
-
-	d, err := suite.deployment.ListDeployments(suite.ctx, environmentName)
-	assert.Nil(suite.T(), err, "Unexpected error when the environment does not have deployments")
-	assert.Empty(suite.T(), d, "Expected an empty result when the environment does not have deployments")
-}
-
-func (suite *DeploymentTestSuite) TestListDeployments() {
-	deployment1, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Could not create a new deployment")
-	suite.deploymentEnvironment.Deployments[deployment1.ID] = *deployment1
-
-	deployment2, err := types.NewDeployment(suite.deploymentEnvironment.DesiredTaskDefinition, suite.deploymentEnvironment.Token)
-	assert.Nil(suite.T(), err, "Could not create a new deployment")
-	suite.deploymentEnvironment.Deployments[deployment2.ID] = *deployment2
-
-	deployments := map[string]*types.Deployment{
-		deployment1.ID: deployment1,
-		deployment2.ID: deployment2,
-	}
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(suite.deploymentEnvironment, nil)
-
-	actualDeployments, err := suite.deployment.ListDeployments(suite.ctx, environmentName)
-	assert.Nil(suite.T(), err, "Unexpected error when the environment listing deployments")
-	assert.Exactly(suite.T(), len(deployments), len(actualDeployments), "Deployment length does not match what's expected")
-
-	for _, d := range actualDeployments {
-		value, ok := deployments[d.ID]
-		if !ok {
-			suite.T().Errorf("Actual deployments contains an unexpected item: %v", d)
-		} else {
-			if !reflect.DeepEqual(*value, d) {
-				suite.T().Errorf("Actual deployments item %v does not match expected item %v", d, value)
-			}
-		}
-	}
-}
-
 func (suite *DeploymentTestSuite) TestCreateSubDeploymentEmptyEnvironmentName() {
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, "", suite.instanceARNs)
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, gomock.Any()).Times(0)
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
-
 	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment without an environment name")
 }
 
 func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, errors.New("Get environment failed"))
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Times(0)
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get environment fails")
@@ -340,35 +274,27 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentFails() {
 
 func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentReturnsNil() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Times(0)
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get environment returns nil")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetInProgressDeploymentReturnsError() {
-	env := suite.deploymentEnvironment
-	env.InProgressDeploymentID = uuid.NewRandom().String()
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetCurrentDeploymentReturnsError() {
+	// deployment does not exist in the deployments map -> GetCurrentDeployment fails
+	suite.deploymentEnvironment.InProgressDeploymentID = uuid.NewUUID().String()
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(nil, errors.New("Some error"))
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil).Times(2)
 
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get in progress deployment returns an error")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetInProgressDeploymentReturnsNoDeployment() {
-	env := suite.deploymentEnvironment
-	env.InProgressDeploymentID = ""
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetCurrentDeploymentReturnsNoDeployment() {
+	suite.deploymentEnvironment.InProgressDeploymentID = ""
+	suite.deploymentEnvironment.PendingDeploymentID = ""
+	suite.deploymentEnvironment.Deployments = nil
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(nil, nil)
-	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.deploymentEnvironment, nil).Times(3)
 
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get in progress deployment returns an error")
@@ -383,11 +309,9 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentStartTasksFails() {
 	env.InProgressDeploymentID = inprogressDeployment.ID
 	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(inprogressDeployment, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(2)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).
 		Return(nil, errors.New("Error starting tasks"))
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Times(0)
 
 	_, err = suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when start tasks fails")
@@ -403,8 +327,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentUpdateDeploymentFails()
 	env.InProgressDeploymentID = inprogressDeployment.ID
 	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(inprogressDeployment, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(2)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
 
 	updatedDeployment := *inprogressDeployment
@@ -431,8 +354,7 @@ func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
 	env.InProgressDeploymentID = inprogressDeployment.ID
 	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(inprogressDeployment, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(2)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
 
 	updatedDeployment := *inprogressDeployment
@@ -457,11 +379,10 @@ func (suite *DeploymentTestSuite) TestCreateSubDeploymentWithCompletedDeployment
 	currentDeployment.Status = types.DeploymentCompleted
 
 	env := suite.deploymentEnvironment
+	env.Deployments[currentDeployment.ID] = *currentDeployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil)
-	suite.environment.EXPECT().GetCurrentDeployment(suite.ctx, environmentName).Return(currentDeployment, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(3)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, currentDeployment.ID, currentDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *env, gomock.Any()).Times(0)
 
 	d, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.Nil(suite.T(), err, "Unexpected error creating a sub-deployment")
@@ -478,4 +399,211 @@ func createContainerInstances(instanceARNs []*string) []*models.ContainerInstanc
 	}
 
 	return containerInstances
+}
+
+func (suite *DeploymentTestSuite) TestGetCurrentDeploymentInProgress() {
+	environment, err := types.NewEnvironment("TestGetInProgressDeployment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	deployment, err = deployment.UpdateDeploymentInProgress(0, nil)
+	assert.Nil(suite.T(), err, "Unexpected error when moving deployment to in-progress")
+	environment.InProgressDeploymentID = deployment.ID
+	environment.Deployments[deployment.ID] = *deployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil)
+
+	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
+	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
+	assert.Exactly(suite.T(), deployment.ID, d.ID, "Expected the deployment to match the in-progress deployment")
+	assert.Exactly(suite.T(), types.DeploymentInProgress, d.Status, "Expected the deployment status to be in-progress")
+}
+
+func (suite *DeploymentTestSuite) TestGetCurrentDeploymentPending() {
+	environment, err := types.NewEnvironment("TestGetPendingDeployment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	environment.PendingDeploymentID = deployment.ID
+	environment.Deployments[deployment.ID] = *deployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil)
+
+	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
+	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
+	assert.Exactly(suite.T(), deployment.ID, d.ID, "Expected the deployment to match the pending deployment")
+}
+
+func (suite *DeploymentTestSuite) TestGetCurrentDeploymentCompleted() {
+	environment, err := types.NewEnvironment("TestGetCompletedDeployment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	deployment.Status = types.DeploymentCompleted
+	environment.Deployments[deployment.ID] = *deployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil).Times(2)
+
+	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
+	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
+	assert.Exactly(suite.T(), deployment.ID, d.ID, "Expected the deployment to match the completed deployment")
+}
+
+func (suite *DeploymentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturnsErrors() {
+	err := errors.New("Error getting environment")
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
+
+	_, observedErr := suite.deployment.GetCurrentDeployment(suite.ctx, environmentName)
+	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
+}
+
+func (suite *DeploymentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturnsEmpty() {
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+
+	_, observedErr := suite.deployment.GetCurrentDeployment(suite.ctx, environmentName)
+	_, ok := observedErr.(types.NotFoundError)
+	assert.True(suite.T(), ok, "Expected NotFoundError when GetCurrentDeployment is called with name of environment which does not exist")
+}
+
+func (suite *DeploymentTestSuite) TestGetCurrentDeploymentMissingName() {
+	_, observedErr := suite.deployment.GetCurrentDeployment(suite.ctx, "")
+	assert.Error(suite.T(), observedErr, "Expected an error when GetCurrentDeployment is called with a missing environment name")
+	_, ok := observedErr.(types.BadRequestError)
+	assert.True(suite.T(), ok, "Expected BadRequestError when GetEnvironment is called with a missing environment name")
+}
+
+func (suite *DeploymentTestSuite) TestGetInProgressDeploymentMissingName() {
+	_, observedErr := suite.deployment.GetInProgressDeployment(suite.ctx, "")
+	assert.Error(suite.T(), observedErr, "Expected an error when GetInProgressDeployment is called with a missing environment name")
+	_, ok := observedErr.(types.BadRequestError)
+	assert.True(suite.T(), ok, "Expected BadRequestError when GetInProgressDeployment is called with a missing environment name")
+}
+
+func (suite *DeploymentTestSuite) TestGetInProgressDeploymentGetEnvironmentReturnsErrors() {
+	err := errors.New("Error getting environment")
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
+
+	_, observedErr := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
+	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
+}
+
+func (suite *DeploymentTestSuite) TestGetInProgressDeploymentGetEnvironmentReturnsEmpty() {
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+
+	_, observedErr := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
+	_, ok := observedErr.(types.NotFoundError)
+	assert.True(suite.T(), ok, "Expected NotFoundError when GetInProgressDeployment is called with name of environment which does not exist")
+}
+
+func (suite *DeploymentTestSuite) TestGetInProgressDeploymentNoInProgressDeployments() {
+	environment, err := types.NewEnvironment("TestGetInProgressDeployment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+	environment.PendingDeploymentID = ""
+	environment.InProgressDeploymentID = ""
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+
+	d, err := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err, "Did not expect errors when there are no in-progress deployments")
+	assert.Nil(suite.T(), d, "There should be no in-progress deployments")
+}
+
+//TODO: functionality should change when pending deployments are made async
+func (suite *DeploymentTestSuite) TestGetInProgressDeploymentPendingDeployments() {
+	environment, err := types.NewEnvironment("TestGetInProgressDeployment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+	environment.InProgressDeploymentID = ""
+
+	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	environment.PendingDeploymentID = deployment.ID
+	environment.Deployments[deployment.ID] = *deployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+
+	d, err := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err, "Did not expect errors when there are no in-progress deployments")
+	assert.Exactly(suite.T(), deployment.ID, d.ID, "Deployment ids should match")
+	assert.Exactly(suite.T(), types.DeploymentInProgress, d.Status, "Deployment status should be in progress")
+}
+
+func (suite *DeploymentTestSuite) TestGetInProgressDeploymentMissingDeploymentInEnvironment() {
+	environment, err := types.NewEnvironment("TestGetInProgressDeployment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+
+	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	deployment, err = deployment.UpdateDeploymentInProgress(0, nil)
+	assert.Nil(suite.T(), err, "Unexpected error when moving deployment to in progress")
+
+	environment.InProgressDeploymentID = deployment.ID
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+
+	_, err = suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
+	assert.Error(suite.T(), err, "Expected an error when the in-progress deployment is not in the deployment map")
+}
+
+func (suite *DeploymentTestSuite) TestGetInProgressDeployment() {
+	environment, err := types.NewEnvironment("TestGetInProgressDeployment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+
+	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	deployment, err = deployment.UpdateDeploymentInProgress(0, nil)
+	assert.Nil(suite.T(), err, "Unexpected error when moving deployment to in progress")
+
+	environment.InProgressDeploymentID = deployment.ID
+	environment.Deployments[deployment.ID] = *deployment
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+
+	d, err := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err, "Did not expect an error when getting in-progress deployment")
+	assert.Exactly(suite.T(), deployment, d, "Expected deployments to match")
+}
+
+func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologicallyMissingName() {
+	_, observedErr := suite.deployment.ListDeploymentsSortedReverseChronologically(suite.ctx, "")
+	assert.Error(suite.T(), observedErr, "Expected an error when ListDeploymentsSortedReverseChronologically is called with a missing environment name")
+	_, ok := observedErr.(types.BadRequestError)
+	assert.True(suite.T(), ok, "Expected BadRequestError when ListDeploymentsSortedReverseChronologically is called with a missing environment name")
+}
+
+func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologicallyGetEnvironmentReturnsErrors() {
+	err := errors.New("Error getting environment")
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
+
+	_, observedErr := suite.deployment.ListDeploymentsSortedReverseChronologically(suite.ctx, environmentName)
+	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
+}
+
+func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologicallyGetEnvironmentReturnsEmpty() {
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+
+	_, observedErr := suite.deployment.ListDeploymentsSortedReverseChronologically(suite.ctx, environmentName)
+	_, ok := observedErr.(types.NotFoundError)
+	assert.True(suite.T(), ok, "Expected NotFoundError when ListDeploymentsSortedReverseChronologically is called with name of environment which does not exist")
+}
+
+func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologically() {
+	environment, err := types.NewEnvironment("TestGetDeployments", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+
+	deployment1, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+
+	deployment2, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	deployment2.StartTime = deployment1.StartTime.Add(time.Minute)
+
+	environment.Deployments[deployment1.ID] = *deployment1
+	environment.Deployments[deployment2.ID] = *deployment2
+
+	deployments, err := suite.deployment.ListDeploymentsSortedReverseChronologically(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err, "Did not expect errors when getting deployments")
+	assert.Exactly(suite.T(), *deployment2, deployments[0], "Expected deployments to match")
+	assert.Exactly(suite.T(), *deployment1, deployments[1], "Expected deployments to match")
 }

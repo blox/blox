@@ -22,7 +22,6 @@ import (
 	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
-	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -184,77 +183,6 @@ func (suite *EnvironmentTestSuite) TestGetEnvironment() {
 	env, err := suite.environment.GetEnvironment(suite.ctx, environmentName1)
 	assert.Nil(suite.T(), err, "Unexpected error when getting an environment")
 	assert.Exactly(suite.T(), suite.environment1, env, "Expected the environment to match the expected one")
-}
-
-func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentInProgress() {
-	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster1)
-	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
-	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
-	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
-	deployment.Status = types.DeploymentInProgress
-	environment.InProgressDeploymentID = deployment.ID
-	environment.Deployments[deployment.ID] = *deployment
-
-	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
-		Return(environment, nil)
-
-	d, err := suite.environment.GetCurrentDeployment(suite.ctx, environment.Name)
-	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
-	assert.Exactly(suite.T(), deployment.ID, d.ID, "Expected the deployment to match the in-progress deployment")
-}
-
-func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentPending() {
-	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster1)
-	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
-	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
-	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
-	deployment.Status = types.DeploymentPending
-	environment.PendingDeploymentID = deployment.ID
-	environment.Deployments[deployment.ID] = *deployment
-
-	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
-		Return(environment, nil)
-
-	d, err := suite.environment.GetCurrentDeployment(suite.ctx, environment.Name)
-	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
-	assert.Exactly(suite.T(), deployment.ID, d.ID, "Expected the deployment to match the pending deployment")
-}
-
-func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentCompleted() {
-	environment, err := types.NewEnvironment("TestGetCurrentDeployment", taskDefinition, cluster1)
-	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
-	deployment, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
-	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
-	deployment.Status = types.DeploymentCompleted
-	environment.InProgressDeploymentID = deployment.ID
-	environment.Deployments[deployment.ID] = *deployment
-
-	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
-		Return(environment, nil)
-
-	d, err := suite.environment.GetCurrentDeployment(suite.ctx, environment.Name)
-	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
-	assert.Exactly(suite.T(), deployment.ID, d.ID, "Expected the deployment to match the completed deployment")
-}
-
-func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturnsErrors() {
-	err := errors.New("Error getting environment")
-	name := "envName"
-	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, name).
-		Return(nil, err)
-
-	_, observedErr := suite.environment.GetCurrentDeployment(suite.ctx, name)
-	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
-}
-
-func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturnsEmpty() {
-	name := "envName"
-	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, name).
-		Return(nil, nil)
-
-	_, observedErr := suite.environment.GetCurrentDeployment(suite.ctx, name)
-	_, ok := observedErr.(types.NotFoundError)
-	assert.True(suite.T(), ok, "Expected NotFoundError when GetEnvironment is called with name of environment which does not exist")
 }
 
 func (suite *EnvironmentTestSuite) TestDeleteEnvironment() {

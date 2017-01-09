@@ -50,8 +50,6 @@ type Environment interface {
 	// UpdateDeployment replaces an existing deployment in the environment with the
 	// provided one if a deployment with the provided ID already exists
 	UpdateDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
-	//GetCurrentDeployment returns the deployment which needs to be used for starting tasks
-	GetCurrentDeployment(ctx context.Context, name string) (*types.Deployment, error)
 }
 
 type environment struct {
@@ -254,17 +252,4 @@ func (e environment) UpdateDeployment(ctx context.Context, environment types.Env
 	}
 
 	return &environment, nil
-}
-
-func (e environment) GetCurrentDeployment(ctx context.Context, name string) (*types.Deployment, error) {
-	env, err := e.GetEnvironment(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-
-	if env == nil {
-		return nil, types.NewNotFoundError(errors.Errorf("Environment %s is not available", name))
-	}
-
-	return env.GetCurrentDeployment()
 }

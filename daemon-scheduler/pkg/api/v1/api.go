@@ -240,7 +240,7 @@ func (api API) ListDeployments(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars[envNameKey]
 
-	ds, err := api.deployment.ListDeployments(r.Context(), name)
+	ds, err := api.deployment.ListDeploymentsSortedReverseChronologically(r.Context(), name)
 	if err != nil {
 		handleBackendError(w, err)
 		return

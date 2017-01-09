@@ -21,18 +21,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: refactor to remove multiple environment retrievals from the database in methods like CreateSubDeployment
+// (check unit tests for GetEnvironment.Times(2 or 3))
 type Deployment interface {
 	// CreateDeployment creates a new deployment in the provided environment and updates the
-	// environment's pending deployment ID to the ID of the deployment created. If token is provided
-	// the environment token must match the provided token, otherwise the deployment creation will fail.
+	// environment's pending deployment ID to the ID of the deployment created. The environment
+	// token must match the provided token, otherwise the deployment creation will fail.
 	CreateDeployment(ctx context.Context, environmentName string, token string) (*types.Deployment, error)
 	// CreateSubDeployment kicks off a deployment corresponding to the in progress deployment ID
 	// in the environment to start tasks on given instances
 	CreateSubDeployment(ctx context.Context, environmentName string, instanceARNs []*string) (*types.Deployment, error)
+
 	// GetDeployment returns the deployment with the provided id in the provided environment
 	GetDeployment(ctx context.Context, environmentName string, id string) (*types.Deployment, error)
-	// ListDeployments returns a list of all the deployments in the provided environment
-	ListDeployments(ctx context.Context, environmentName string) ([]types.Deployment, error)
+	// GetCurrentDeployment returns the deployment which needs to be used for starting tasks, i.e.
+	// the in-progress deployment for thd deployment if one exists, otherwise the latest completed deployment.
+	GetCurrentDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
+	// GetInProgressDeployment returns the in-progress deployment for thd deployment.
+	// There should be no more than one in progress deployments in an environment.
+	GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
+	// ListDeploymentsSortedReverseChronologically returns a list of deployments reverse-ordered by start time,
+	// i.e. lastest deployment first
+	ListDeploymentsSortedReverseChronologically(ctx context.Context, environmentName string) ([]types.Deployment, error)
 }
 
 type deployment struct {
@@ -64,7 +74,7 @@ func (d deployment) CreateDeployment(ctx context.Context,
 		return nil, types.NewBadRequestError(errors.New("Token is missing when creating a deployment"))
 	}
 
-	env, err := d.getEnvironment(ctx, environmentName)
+	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error retrieving environment with name %s", environmentName)
 	}
@@ -95,7 +105,7 @@ func (d deployment) CreateDeployment(ctx context.Context,
 
 func (d deployment) verifyToken(env types.Environment, token string) error {
 	if len(token) > 0 && env.Token != token {
-		return types.NewBadRequestError(errors.Errorf("Token %v is outdated. Token on the environment is %v", token, env.Token))
+		return types.NewBadRequestError(errors.Errorf("Token %v is outdated and does not match the environment token %v", token, env.Token))
 	}
 
 	for _, deployment := range env.Deployments {
@@ -125,12 +135,12 @@ func (d deployment) CreateSubDeployment(ctx context.Context, environmentName str
 		return nil, errors.New("Environment name is missing when creating a deployment")
 	}
 
-	env, err := d.getEnvironment(ctx, environmentName)
+	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error retrieving environment with name %s", environmentName)
 	}
 
-	deployment, err := d.environment.GetCurrentDeployment(ctx, environmentName)
+	deployment, err := d.GetCurrentDeployment(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err,
 			"Unable to retrieve deployment for environment with name '%s' to create a sub-deployment",
@@ -203,25 +213,10 @@ func (d deployment) GetDeployment(ctx context.Context,
 	return nil, nil
 }
 
-func (d deployment) ListDeployments(ctx context.Context,
-	environmentName string) ([]types.Deployment, error) {
-
-	if len(environmentName) == 0 {
-		return nil, errors.New("Environment name is missing when listing deployments")
-	}
-
-	deployments, err := d.getEnvironmentDeployments(ctx, environmentName)
-	if err != nil {
-		return nil, err
-	}
-
-	return deployments, nil
-}
-
 func (d deployment) getEnvironmentDeployments(ctx context.Context,
 	environmentName string) ([]types.Deployment, error) {
 
-	env, err := d.getEnvironment(ctx, environmentName)
+	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
 	if err != nil {
 		return nil, err
 	}
@@ -234,31 +229,99 @@ func (d deployment) getEnvironmentDeployments(ctx context.Context,
 	return deployments, nil
 }
 
-func (d deployment) getInstanceARNs(env types.Environment) ([]*string, error) {
-	instances, err := d.clusterState.ListInstances(env.Cluster)
+func (d deployment) getEnvironmentOrFailIfDoesNotExist(ctx context.Context, name string) (*types.Environment, error) {
+	env, err := d.environment.GetEnvironment(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
-	instanceARNs := make([]*string, 0, len(instances))
-	for _, v := range instances {
-		instanceARNs = append(instanceARNs, v.ContainerInstanceARN)
+	if env == nil {
+		return nil, types.NewNotFoundError(errors.Errorf("Environment %s does not exist", name))
 	}
 
-	return instanceARNs, nil
+	return env, nil
 }
 
-func (d deployment) getEnvironment(ctx context.Context,
-	environmentName string) (*types.Environment, error) {
+func (d deployment) GetCurrentDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	if len(environmentName) == 0 {
+		return nil, types.NewBadRequestError(errors.New("Environment name is missing"))
+	}
 
-	env, err := d.environment.GetEnvironment(ctx, environmentName)
+	deployment, err := d.GetInProgressDeployment(ctx, environmentName)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error finding environment with name %s", environmentName)
+		return nil, err
 	}
 
-	if env == nil {
-		return nil, types.NewNotFoundError(errors.Errorf("Environment with name %s is missing", environmentName))
+	if deployment != nil {
+		return deployment, nil
 	}
 
-	return env, err
+	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
+	if err != nil {
+		return nil, err
+	}
+
+	// if there is no in-progress deployment then we take the latest completed deployment
+	deployments, err := env.SortDeploymentsReverseChronologically()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range deployments {
+		if d.Status == types.DeploymentCompleted {
+			return &d, nil
+		}
+	}
+
+	return nil, errors.Errorf("There are no in-progress or completed deployments in environment %s", environmentName)
+}
+
+func (d deployment) GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	if len(environmentName) == 0 {
+		return nil, types.NewBadRequestError(errors.New("Environment name is missing"))
+	}
+
+	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
+	if err != nil {
+		return nil, err
+	}
+
+	if env.InProgressDeploymentID == "" {
+		// TODO : We may want to change where the in progress deployment id is set
+		// using the pending deployment id later
+		if env.PendingDeploymentID == "" {
+			return nil, nil
+		}
+		env.InProgressDeploymentID = env.PendingDeploymentID
+	}
+
+	inProgress, ok := env.Deployments[env.InProgressDeploymentID]
+	if !ok {
+		return nil, errors.Errorf("Deployment with ID '%s' does not exist in the deployments for environment with name '%s'",
+			env.InProgressDeploymentID, env.Name)
+	}
+
+	// If the status of the deployment is pending (this happens if we just set the
+	// in progress deployment id from the pending deployment id), update the status
+	// of the deployment to in progress
+	if inProgress.Status == types.DeploymentPending {
+		inProgress.Status = types.DeploymentInProgress
+	} else if inProgress.Status != types.DeploymentInProgress {
+		return nil, nil
+	}
+
+	return &inProgress, nil
+}
+
+func (d deployment) ListDeploymentsSortedReverseChronologically(ctx context.Context, environmentName string) ([]types.Deployment, error) {
+	if len(environmentName) == 0 {
+		return nil, types.NewBadRequestError(errors.New("Environment name is missing"))
+	}
+
+	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
+	if err != nil {
+		return nil, err
+	}
+
+	return env.SortDeploymentsReverseChronologically()
 }

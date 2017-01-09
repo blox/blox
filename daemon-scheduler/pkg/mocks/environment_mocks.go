@@ -118,14 +118,3 @@ func (_m *MockEnvironment) UpdateDeployment(ctx context.Context, environment typ
 func (_mr *_MockEnvironmentRecorder) UpdateDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "UpdateDeployment", arg0, arg1, arg2)
 }
-
-func (_m *MockEnvironment) GetCurrentDeployment(ctx context.Context, name string) (*types.Deployment, error) {
-	ret := _m.ctrl.Call(_m, "GetCurrentDeployment", ctx, name)
-	ret0, _ := ret[0].(*types.Deployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-func (_mr *_MockEnvironmentRecorder) GetCurrentDeployment(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetCurrentDeployment", arg0, arg1)
-}

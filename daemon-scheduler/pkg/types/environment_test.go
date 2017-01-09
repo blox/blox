@@ -15,6 +15,7 @@ package types
 
 import (
 	"testing"
+	"time"
 
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
@@ -229,6 +230,23 @@ func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentInProgressExists() {
 func (suite *EnvironmentTestSuite) TestGetCurrentDeploymentNoDeployments() {
 	_, err := suite.environment.GetCurrentDeployment()
 	assert.Error(suite.T(), err, "Expected error from GetCurrentDeployment")
+}
+
+func (suite *EnvironmentTestSuite) TestSortDeploymentsReverseChronologically() {
+	deployment1, err := NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+
+	deployment2, err := NewDeployment(taskDefinition, uuid.NewRandom().String())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
+	deployment2.StartTime = deployment1.StartTime.Add(time.Minute)
+
+	suite.environment.Deployments[deployment2.ID] = *deployment2
+	suite.environment.Deployments[deployment1.ID] = *deployment1
+
+	deployments, err := suite.environment.SortDeploymentsReverseChronologically()
+	assert.Nil(suite.T(), err, "Unexpected error when sorting deployments")
+	assert.Exactly(suite.T(), *deployment2, deployments[0], "Expected the deployments to match")
+	assert.Exactly(suite.T(), *deployment1, deployments[1], "Expected the deployments to match")
 }
 
 func generateToken() string {

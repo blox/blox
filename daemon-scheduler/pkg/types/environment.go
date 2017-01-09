@@ -52,7 +52,7 @@ func (p timeOrderedDeployments) Len() int {
 	return len(p)
 }
 
-// Less orders by latest startTime first
+// Less orders deployments reverse-chronologically: latest startTime first
 func (p timeOrderedDeployments) Less(i, j int) bool {
 	return p[i].StartTime.After(p[j].StartTime)
 }
@@ -114,7 +114,7 @@ func (e Environment) GetInProgressDeployment() (*Deployment, error) {
 // GetDeployments returns a list of deployments reverse-ordered by start time,
 // i.e. lastest deployment first
 func (e Environment) GetDeployments() ([]Deployment, error) {
-	return e.sortDeploymentsByStartTime()
+	return e.SortDeploymentsReverseChronologically()
 }
 
 func (e Environment) GetCurrentDeployment() (*Deployment, error) {
@@ -128,7 +128,7 @@ func (e Environment) GetCurrentDeployment() (*Deployment, error) {
 	}
 
 	// if there is no in-progress deployment then we take the latest completed deployment
-	deployments, err := e.GetDeployments()
+	deployments, err := e.SortDeploymentsReverseChronologically()
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,8 @@ func (e Environment) GetCurrentDeployment() (*Deployment, error) {
 	return nil, errors.Errorf("No deployment available for environment %s", e.Name)
 }
 
-func (e Environment) sortDeploymentsByStartTime() ([]Deployment, error) {
+// SortDeploymentsReverseChronologically returns deployments ordered reverse-chronologically: latest startTime first
+func (e Environment) SortDeploymentsReverseChronologically() ([]Deployment, error) {
 	deployments := make([]Deployment, 0, len(e.Deployments))
 	for _, d := range e.Deployments {
 		deployments = append(deployments, d)

@@ -235,7 +235,7 @@ func (s *scheduler) runForEnvironment(state *environmentExecutionState) error {
 }
 
 func (s *scheduler) getCurrentDeployment(environment *types.Environment) (*types.Deployment, error) {
-	deployment, err := s.environmentSvc.GetCurrentDeployment(s.ctx, environment.Name)
+	deployment, err := s.deploymentSvc.GetCurrentDeployment(s.ctx, environment.Name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error getting current deployment for cluster %s of environment", environment.Cluster)
 	}
@@ -399,7 +399,7 @@ func (s *scheduler) loadInstancesAlreadyDeployed(state *environmentExecutionStat
 		return result, err
 	}
 
-	deployments, err := s.deploymentSvc.ListDeployments(s.ctx, environment.Name)
+	deployments, err := s.deploymentSvc.ListDeploymentsSortedReverseChronologically(s.ctx, environment.Name)
 	if err != nil {
 		return result, errors.Wrapf(err, "Error calling ListDeployments with environment")
 
