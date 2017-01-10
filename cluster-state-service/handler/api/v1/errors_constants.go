@@ -19,6 +19,7 @@ const (
 	taskNotFoundClientErrMsg                 = "Task not found"
 	invalidStatusClientErrMsg                = "Invalid status"
 	unsupportedFilterClientErrMsg            = "At least one of the filters provided is unsupported"
+	redundantFilterClientErrMsg              = "At least one of the filters provided is specified multiple times"
 	invalidClusterClientErrMsg               = "Invalid cluster ARN or name"
 	unsupportedFilterCombinationClientErrMsg = "The combination of filters provided are not supported"
 

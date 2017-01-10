@@ -22,6 +22,8 @@ import (
 	"strings"
 	"testing"
 
+	"bufio"
+
 	"github.com/blox/blox/cluster-state-service/handler/mocks"
 	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
@@ -30,7 +32,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"bufio"
 )
 
 const (
@@ -102,8 +103,8 @@ func (suite *InstanceAPIsTestSuite) SetupTest() {
 
 	suite.responseHeaderJSON = http.Header{responseContentTypeKey: []string{responseContentTypeJSON}}
 	suite.responseHeaderStream = http.Header{
-		responseContentTypeKey: []string{responseContentTypeStream},
-		responseConnectionKey: []string{responseConnectionVal},
+		responseContentTypeKey:      []string{responseContentTypeStream},
+		responseConnectionKey:       []string{responseConnectionVal},
 		responseTransferEncodingKey: []string{responseTransferEncodingVal},
 	}
 
@@ -446,6 +447,18 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithInvalidClusterFilter() 
 
 	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
 	suite.decodeErrorResponseAndValidate(responseRecorder, invalidClusterClientErrMsg)
+}
+
+func (suite *InstanceAPIsTestSuite) TestListInstancesWithRedundantFilters() {
+	url := "/v1/instances?cluster=cluster1&cluster=cluster2"
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating list instances request with redundant filters")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
+	suite.decodeErrorResponseAndValidate(responseRecorder, redundantFilterClientErrMsg)
 }
 
 func (suite *InstanceAPIsTestSuite) TestStreamInstancesReturnsInstances() {

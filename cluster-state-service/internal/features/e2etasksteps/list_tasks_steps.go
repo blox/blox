@@ -14,6 +14,8 @@
 package e2etasksteps
 
 import (
+	"io/ioutil"
+	"net/http"
 	"strings"
 	"time"
 
@@ -24,6 +26,9 @@ import (
 const (
 	invalidStatus  = "invalidStatus"
 	invalidCluster = "cluster/cluster"
+
+	badRequestHTTPResponse = "400 Bad Request"
+	listTasksBadRequest    = "ListTasksBadRequest"
 )
 
 func init() {
@@ -165,6 +170,30 @@ func init() {
 		if err != nil {
 			T.Errorf(err.Error())
 		}
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
+	})
+
+	When(`^I try to list tasks with redundant filters$`, func() {
+		url := "http://localhost:3000/v1/tasks?cluster=cluster1&cluster=cluster2"
+		resp, err := http.Get(url)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
+		exceptionList = nil
+		var exceptionType string
+		if resp.Status == badRequestHTTPResponse {
+			exceptionType = listTasksBadRequest
+		} else {
+			T.Errorf("Unknown exception type '%s' when trying to list tasks with redundant filters", resp.Status)
+		}
+
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			T.Errorf("Error reading expection message when trying to list tasks with redundant filters")
+		}
+		exceptionMsg := string(body)
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
 }

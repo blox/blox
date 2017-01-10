@@ -100,6 +100,11 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 		return
 	}
 
+	if instanceAPIs.hasRedundantFilters(query) {
+		http.Error(w, redundantFilterClientErrMsg, http.StatusBadRequest)
+		return
+	}
+
 	status := strings.ToLower(query.Get(instanceStatusFilter))
 	cluster := query.Get(instanceClusterFilter)
 
@@ -217,6 +222,16 @@ func (instanceAPIs ContainerInstanceAPIs) hasUnsupportedFilters(filters map[stri
 	for f := range filters {
 		_, ok := supportedInstanceFilters[f]
 		if !ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (instanceAPIs ContainerInstanceAPIs) hasRedundantFilters(filters map[string][]string) bool {
+	for _, val := range filters {
+		// Multiple values for a given filter implies that it has been specified multiple times
+		if len(val) > 1 {
 			return true
 		}
 	}

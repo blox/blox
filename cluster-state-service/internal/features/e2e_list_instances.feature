@@ -20,3 +20,8 @@ Feature: List Instances
     When I try to list instances with an invalid cluster filter
     Then I get a ListInstancesBadRequest instance exception
     And the instance exception message contains "Invalid cluster ARN or name"
+
+  Scenario: List instances with redundant filters
+    When I try to list instances with redundant filters
+    Then I get a ListInstancesBadRequest instance exception
+    And the instance exception message contains "At least one of the filters provided is specified multiple times"

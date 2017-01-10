@@ -100,6 +100,11 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if taskAPIs.hasRedundantFilters(query) {
+		http.Error(w, redundantFilterClientErrMsg, http.StatusBadRequest)
+		return
+	}
+
 	status := strings.ToLower(query.Get(taskStatusFilter))
 	cluster := query.Get(taskClusterFilter)
 
@@ -217,6 +222,16 @@ func (taskAPIs TaskAPIs) hasUnsupportedFilters(filters map[string][]string) bool
 	for f := range filters {
 		_, ok := supportedTaskFilters[f]
 		if !ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (taskAPIs TaskAPIs) hasRedundantFilters(filters map[string][]string) bool {
+	for _, val := range filters {
+		// Multiple values for a given filter implies that it has been specified multiple times
+		if len(val) > 1 {
 			return true
 		}
 	}

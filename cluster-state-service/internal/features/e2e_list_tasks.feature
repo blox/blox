@@ -64,3 +64,8 @@ Feature: List Tasks
     When I try to list tasks with an invalid cluster filter
     Then I get a ListTasksBadRequest task exception
     And the task exception message contains "Invalid cluster ARN or name"
+
+  Scenario: List tasks with redundant filters
+    When I try to list tasks with redundant filters
+    Then I get a ListTasksBadRequest task exception
+    And the task exception message contains "At least one of the filters provided is specified multiple times"
