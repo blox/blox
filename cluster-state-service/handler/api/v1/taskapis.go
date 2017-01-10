@@ -24,19 +24,22 @@ import (
 	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 const (
 	taskARNKey     = "arn"
 	taskClusterKey = "cluster"
 
-	taskStatusFilter  = "status"
-	taskClusterFilter = "cluster"
+	taskStatusFilter    = "status"
+	taskClusterFilter   = "cluster"
+	taskStartedByFilter = "startedBy"
 )
 
 var (
 	// Using maps because arrays don't support easy lookup
-	supportedTaskFilters  = map[string]string{taskStatusFilter: "", taskClusterFilter: ""}
+	supportedTaskFilters = map[string]string{taskStatusFilter: "",
+		taskClusterFilter: "", taskStartedByFilter: ""}
 	supportedTaskStatuses = map[string]string{"pending": "", "running": "", "stopped": ""}
 )
 
@@ -107,6 +110,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	status := strings.ToLower(query.Get(taskStatusFilter))
 	cluster := query.Get(taskClusterFilter)
+	startedBy := query.Get(taskStartedByFilter)
 
 	if status != "" {
 		if !taskAPIs.isValidStatus(status) {
@@ -124,21 +128,25 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	var tasks []types.Task
 	var err error
-	switch {
-	case status != "" && cluster != "":
-		filters := map[string]string{taskStatusFilter: status, taskClusterFilter: cluster}
-		tasks, err = taskAPIs.taskStore.FilterTasks(filters)
-	case status != "":
-		filters := map[string]string{taskStatusFilter: status}
-		tasks, err = taskAPIs.taskStore.FilterTasks(filters)
-	case cluster != "":
-		filters := map[string]string{taskClusterFilter: cluster}
-		tasks, err = taskAPIs.taskStore.FilterTasks(filters)
-	default:
+
+	// No filters are set. List all tasks.
+	if status == "" && cluster == "" && startedBy == "" {
 		tasks, err = taskAPIs.taskStore.ListTasks()
+	} else { // At least one filter is set. Filter tasks.
+		filters := map[string]string{
+			taskStatusFilter:    status,
+			taskClusterFilter:   cluster,
+			taskStartedByFilter: startedBy,
+		}
+		tasks, err = taskAPIs.taskStore.FilterTasks(filters)
 	}
 
 	if err != nil {
+		_, ok := errors.Cause(err).(types.UnsupportedFilterCombination)
+		if ok {
+			http.Error(w, unsupportedFilterCombinationClientErrMsg, http.StatusBadRequest)
+			return
+		}
 		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}

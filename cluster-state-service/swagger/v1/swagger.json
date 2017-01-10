@@ -189,6 +189,12 @@
             "in": "query",
             "description": "Cluster name or ARN to filter tasks by",
             "type": "string"
+          },
+          {
+            "name": "startedBy",
+            "in": "query",
+            "description": "StartedBy to filter tasks by",
+            "type": "string"
           }
         ],
         "responses": {

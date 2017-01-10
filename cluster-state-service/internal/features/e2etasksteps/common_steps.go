@@ -75,21 +75,7 @@ func init() {
 	})
 
 	Given(`^I start (\d+) task(?:|s) in the ECS cluster$`, func(numTasks int) {
-		ecsTaskList = nil
-		cssTaskList = nil
-
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-		}
-
-		for i := 0; i < numTasks; i++ {
-			ecsTask, err := ecsWrapper.StartTask(clusterName, taskDefinitionSleep300)
-			if err != nil {
-				T.Errorf(err.Error())
-			}
-			ecsTaskList = append(ecsTaskList, ecsTask)
-		}
+		startNTasks(numTasks, "someone", ecsWrapper)
 	})
 
 	Then(`^I get a (.+?) task exception$`, func(exceptionType string) {
@@ -123,4 +109,22 @@ func stopAllTasks(ecsWrapper wrappers.ECSWrapper, clusterName string) error {
 		}
 	}
 	return nil
+}
+
+func startNTasks(numTasks int, startedBy string, ecsWrapper wrappers.ECSWrapper) {
+	ecsTaskList = nil
+	cssTaskList = nil
+
+	clusterName, err := wrappers.GetClusterName()
+	if err != nil {
+		T.Errorf(err.Error())
+	}
+
+	for i := 0; i < numTasks; i++ {
+		ecsTask, err := ecsWrapper.StartTask(clusterName, taskDefinitionSleep300, startedBy)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		ecsTaskList = append(ecsTaskList, ecsTask)
+	}
 }

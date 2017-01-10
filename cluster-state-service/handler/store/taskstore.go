@@ -141,43 +141,43 @@ func (taskStore eventTaskStore) FilterTasks(filterMap map[string]string) ([]type
 	}
 
 	filters := make([]string, 0, len(filterMap))
-	for k := range filterMap {
-		filters = append(filters, k)
+	for k, v := range filterMap {
+		if v != "" {
+			filters = append(filters, k)
+		}
+	}
+	if len(filters) == 0 {
+		return nil, errors.New("There has to be at least one filter with a filter value set")
 	}
 
 	if !taskStore.areFiltersValid(filters) {
 		return nil, errors.Errorf("At least one of the provided filters '%v' is not supported.", filters)
 	}
 
-	for key, val := range filterMap {
-		if val == "" {
-			return nil, errors.Errorf("Filter value for filter '%s' is empty", key)
-		}
-	}
-
-	status, statusFilterExists := filterMap[taskStatusFilter]
-	cluster, clusterFilterExists := filterMap[taskClusterFilter]
-	startedBy, startedByFilterExists := filterMap[taskStartedByFilter]
+	status := filterMap[taskStatusFilter]
+	cluster := filterMap[taskClusterFilter]
+	startedBy := filterMap[taskStartedByFilter]
 
 	// Currently the only filter combination that is supported is status & cluster
 	if len(filters) == 2 {
-		if statusFilterExists && clusterFilterExists {
+		if status != "" && cluster != "" {
 			return taskStore.filterTasksByClusterAndStatus(cluster, status)
 		}
 	}
 
 	if len(filters) == 1 {
 		switch {
-		case statusFilterExists:
+		case status != "":
 			return taskStore.filterTasks(isTaskStatus, status)
-		case startedByFilterExists:
+		case startedBy != "":
 			return taskStore.filterTasks(isTaskStartedBy, startedBy)
-		case clusterFilterExists:
+		case cluster != "":
 			return taskStore.filterTasksByCluster(cluster)
 		}
 	}
 
-	return nil, errors.Errorf("Unsupported filter combination '%v'", filters)
+	return nil, types.NewUnsupportedFilterCombination(
+		errors.Errorf("Unsupported filter combination '%v'", filters))
 }
 
 // StreamTasks streams all changes in the task keyspace into a channel

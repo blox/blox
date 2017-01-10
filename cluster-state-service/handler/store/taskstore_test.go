@@ -405,9 +405,19 @@ func (suite *TaskStoreTestSuite) TestFilterTasksNoFilters() {
 	assert.Error(suite.T(), err, "Expected an error when filter map is empty")
 }
 
-func (suite *TaskStoreTestSuite) TestFilterTasksEmptyValue() {
+func (suite *TaskStoreTestSuite) TestFilterTasksNoFilterValues() {
 	_, err := suite.taskStore.FilterTasks(map[string]string{taskStatusFilter: ""})
-	assert.Error(suite.T(), err, "Expected an error when filterValue is empty")
+	assert.Error(suite.T(), err, "Expected an error when all filter values are empty")
+}
+
+func (suite *TaskStoreTestSuite) TestFilterTasksSomeFilterValues() {
+	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(make(map[string]string), nil)
+
+	tasks, err := suite.taskStore.FilterTasks(map[string]string{taskStatusFilter: "randomVal", taskClusterFilter: ""})
+
+	assert.Nil(suite.T(), err, "Unexpected error when GetWithPrefix returns empty")
+	assert.NotNil(suite.T(), tasks, "Result should be empty when GetWithPrefix returns empty")
+	assert.Empty(suite.T(), tasks, "Result should be empty whenGetWithPrefix returns empty")
 }
 
 func (suite *TaskStoreTestSuite) TestFilterTasksUnsupportedFilter() {

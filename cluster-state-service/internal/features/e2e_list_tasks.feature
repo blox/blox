@@ -44,6 +44,16 @@ Feature: List Tasks
       | count |
       |   1   |
 
+  Scenario Outline: List tasks with startedBy filter
+    Given I start <count> tasks in the ECS cluster with startedBy set to e2eTester
+    When I list tasks with startedBy filter set to e2eTester
+    Then the list tasks response contains at least <count> tasks
+    And all <count> tasks are present in the list tasks response
+
+    Examples:
+      | count |
+      |   1   |
+
   Scenario: List tasks with status and cluster filter returns tasks
     Given I start 1 task in the ECS cluster
     When I list tasks with filters set to running status and cluster name
@@ -69,3 +79,8 @@ Feature: List Tasks
     When I try to list tasks with redundant filters
     Then I get a ListTasksBadRequest task exception
     And the task exception message contains "At least one of the filters provided is specified multiple times"
+
+  Scenario: List tasks with invalid filter combination
+    When I try to list tasks with status, cluster and startedBy filters
+    Then I get a ListTasksBadRequest task exception
+    And the task exception message contains "The combination of filters provided are not supported"

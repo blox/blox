@@ -35,11 +35,12 @@ import (
 )
 
 const (
-	getTaskPrefix              = "/v1/tasks"
-	listTasksPrefix            = "/v1/tasks"
-	filterTasksByStatusPrefix  = "/v1/tasks?status="
-	filterTasksByClusterPrefix = "/v1/tasks?cluster="
-	streamTasksPrefix          = "/v1/stream/tasks"
+	getTaskPrefix                = "/v1/tasks"
+	listTasksPrefix              = "/v1/tasks"
+	filterTasksByStatusPrefix    = "/v1/tasks?status="
+	filterTasksByClusterPrefix   = "/v1/tasks?cluster="
+	filterTasksByStartedByPrefix = "/v1/tasks?startedBy="
+	streamTasksPrefix            = "/v1/stream/tasks"
 
 	filterTasksByStatusQueryValue = "{status:pending|running|stopped}"
 
@@ -242,7 +243,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksInvalidFilter() {
 func (suite *TaskAPIsTestSuite) TestListTasksBothStatusAndClusterFilter() {
 	taskList := []types.Task{suite.task1}
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: clusterARN1}).Return(taskList, nil)
+	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: clusterARN1, taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	url := listTasksPrefix + "?status=" + taskStatus1 + "&cluster=" + clusterARN1
@@ -262,7 +264,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksBothStatusAndClusterFilter() {
 func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterReturnsTasks() {
 	taskList := []types.Task{suite.task1}
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskStatusFilter: taskStatus1}).Return(taskList, nil)
+	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: "", taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	extTasks := models.Tasks{
@@ -274,7 +277,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterReturnsTasks() {
 func (suite *TaskAPIsTestSuite) TestListTasksWithCapitalizedStatusFilterReturnsTasks() {
 	taskList := []types.Task{suite.task1}
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskStatusFilter: taskStatus1}).Return(taskList, nil)
+	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: "", taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	extTasks := models.Tasks{
@@ -286,7 +290,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithCapitalizedStatusFilterReturnsT
 func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterNoTasks() {
 	emptyTaskList := make([]types.Task, 0)
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskStatusFilter: taskStatus1}).Return(emptyTaskList, nil)
+	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: "", taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(emptyTaskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	emptyExtTasks := models.Tasks{
@@ -296,7 +301,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterNoTasks() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterStoreReturnsError() {
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskStatusFilter: taskStatus1}).Return(nil, errors.New("Error when filtering tasks"))
+	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: "", taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(nil, errors.New("Error when filtering tasks"))
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	request := suite.filterTasksByStatusRequest(taskStatus1)
@@ -325,7 +331,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithInvalidStatusFilter() {
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterReturnsTasks() {
 	taskList := []types.Task{suite.task1}
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskClusterFilter: clusterName1}).Return(taskList, nil)
+	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterName1, taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	extTasks := models.Tasks{
@@ -337,7 +344,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterReturnsTasks()
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterNoTasks() {
 	emptyTaskList := make([]types.Task, 0)
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskClusterFilter: clusterName1}).Return(emptyTaskList, nil)
+	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterName1, taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(emptyTaskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	emptyExtTasks := models.Tasks{
@@ -347,7 +355,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterNoTasks() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterStoreReturnsError() {
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskClusterFilter: clusterName1}).Return(nil, errors.New("Error when filtering tasks"))
+	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterName1, taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(nil, errors.New("Error when filtering tasks"))
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	request := suite.filterTasksByClusterRequest(clusterName1)
@@ -361,7 +370,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterStoreReturnsEr
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterReturnsTasks() {
 	taskList := []types.Task{suite.task1}
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskClusterFilter: clusterARN1}).Return(taskList, nil)
+	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterARN1, taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	extTasks := models.Tasks{
@@ -373,7 +383,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterReturnsTasks() 
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterNoTasks() {
 	emptyTaskList := make([]types.Task, 0)
 
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskClusterFilter: clusterARN1}).Return(emptyTaskList, nil)
+	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterARN1, taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(emptyTaskList, nil)
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	emptyExtTasks := models.Tasks{
@@ -383,7 +394,8 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterNoTasks() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterStoreReturnsError() {
-	suite.taskStore.EXPECT().FilterTasks(map[string]string{taskClusterFilter: clusterARN1}).Return(nil, errors.New("Error when filtering tasks"))
+	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterARN1, taskStartedByFilter: ""}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(nil, errors.New("Error when filtering tasks"))
 	suite.taskStore.EXPECT().ListTasks().Times(0)
 
 	request := suite.filterTasksByClusterRequest(clusterARN1)
@@ -404,6 +416,42 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithInvalidClusterFilter() {
 
 	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
 	suite.decodeErrorResponseAndValidate(responseRecorder, invalidClusterClientErrMsg)
+}
+
+func (suite *TaskAPIsTestSuite) TestListTasksWithStartedByFilterReturnsTasks() {
+	taskList := []types.Task{suite.task1}
+
+	startedBy := "someone"
+	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: "", taskStartedByFilter: startedBy}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
+	suite.taskStore.EXPECT().ListTasks().Times(0)
+
+	request := suite.filterTasksByStartedByRequest(startedBy)
+	responseRecorder := httptest.NewRecorder()
+
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	extTasks := models.Tasks{
+		Items: []*models.Task{&suite.extTask1},
+	}
+	suite.validateSuccessfulJSONResponseHeaderAndStatus(responseRecorder)
+	suite.validateTasksInListTasksResponse(responseRecorder, extTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestListTasksUnsupportedFilterCombination() {
+	startedBy := "someone"
+	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: clusterARN1, taskStartedByFilter: startedBy}
+	suite.taskStore.EXPECT().FilterTasks(filters).Return(nil, types.NewUnsupportedFilterCombination(errors.New("Unsupported filter combination")))
+
+	url := listTasksPrefix + "?status=" + taskStatus1 + "&cluster=" + clusterARN1 + "&startedBy=" + startedBy
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating list tasks request with status, cluster and startedBy filters")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
+	suite.decodeErrorResponseAndValidate(responseRecorder, unsupportedFilterCombinationClientErrMsg)
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithRedundantFilter() {
@@ -531,6 +579,13 @@ func (suite *TaskAPIsTestSuite) filterTasksByClusterRequest(cluster string) *htt
 	url := filterTasksByClusterPrefix + cluster
 	request, err := http.NewRequest("GET", url, nil)
 	assert.Nil(suite.T(), err, "Unexpected error creating filter tasks by cluster request")
+	return request
+}
+
+func (suite *TaskAPIsTestSuite) filterTasksByStartedByRequest(startedBy string) *http.Request {
+	url := filterTasksByStartedByPrefix + startedBy
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating filter tasks by startedBy request")
 	return request
 }
 

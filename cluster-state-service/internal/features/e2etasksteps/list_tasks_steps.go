@@ -91,6 +91,21 @@ func init() {
 		}
 	})
 
+	Given(`^I start (\d+) tasks in the ECS cluster with startedBy set to (.+?)$`, func(numTasks int, startedBy string) {
+		startNTasks(numTasks, startedBy, ecsWrapper)
+	})
+
+	When(`^I list tasks with startedBy filter set to (.+?)$`, func(startedBy string) {
+		time.Sleep(15 * time.Second)
+		cssTasks, err := cssWrapper.FilterTasksByStartedBy(startedBy)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTasks {
+			cssTaskList = append(cssTaskList, *t)
+		}
+	})
+
 	And(`^I stop the (\d+) tasks in the ECS cluster$`, func(numTasks int) {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
@@ -167,6 +182,15 @@ func init() {
 	When(`^I try to list tasks with an invalid cluster filter$`, func() {
 		exceptionList = nil
 		exceptionMsg, exceptionType, err := cssWrapper.TryListTasksWithInvalidCluster(invalidCluster)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
+	})
+
+	When(`^I try to list tasks with status, cluster and startedBy filters$`, func() {
+		exceptionList = nil
+		exceptionMsg, exceptionType, err := cssWrapper.TryListTasksWithAllFilters("running", "someCluster", "someone")
 		if err != nil {
 			T.Errorf(err.Error())
 		}

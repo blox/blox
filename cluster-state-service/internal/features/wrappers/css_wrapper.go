@@ -102,6 +102,21 @@ func (wrapper CSSWrapper) TryListTasksWithInvalidCluster(cluster string) (string
 	return "", "", errors.New("Expected an exception when calling ListTasks with invalid cluster, but none received")
 }
 
+func (wrapper CSSWrapper) TryListTasksWithAllFilters(status string, cluster string, startedBy string) (string, string, error) {
+	in := operations.NewListTasksParams()
+	in.SetStatus(&status)
+	in.SetCluster(&cluster)
+	in.SetStartedBy(&startedBy)
+	_, err := wrapper.client.Operations.ListTasks(in)
+	if err != nil {
+		if _, ok := err.(*operations.ListTasksBadRequest); ok {
+			return err.(*operations.ListTasksBadRequest).Payload, listTasksBadRequestException, nil
+		}
+		return "", "", errors.New("Unknown exception when calling ListTasks with invalid status")
+	}
+	return "", "", errors.New("Expected an exception when calling ListTasks with invalid status, but none received")
+}
+
 func (wrapper CSSWrapper) FilterTasksByStatus(status string) ([]*models.Task, error) {
 	in := operations.NewListTasksParams()
 	in.SetStatus(&status)
@@ -124,6 +139,16 @@ func (wrapper CSSWrapper) FilterTasksByCluster(cluster string) ([]*models.Task, 
 	return tasks.Items, nil
 }
 
+func (wrapper CSSWrapper) FilterTasksByStartedBy(startedBy string) ([]*models.Task, error) {
+	in := operations.NewListTasksParams()
+	in.SetStartedBy(&startedBy)
+	resp, err := wrapper.client.Operations.ListTasks(in)
+	if err != nil {
+		return nil, err
+	}
+	tasks := resp.Payload
+	return tasks.Items, nil
+}
 
 func (wrapper CSSWrapper) FilterTasksByStatusAndCluster(status string, cluster string) ([]*models.Task, error) {
 	in := operations.NewListTasksParams()

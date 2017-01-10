@@ -69,6 +69,11 @@ type ListTasksParams struct {
 
 	*/
 	Cluster *string
+	/*StartedBy
+	  StartedBy to filter tasks by
+
+	*/
+	StartedBy *string
 	/*Status
 	  Status to filter tasks by
 
@@ -113,6 +118,17 @@ func (o *ListTasksParams) SetCluster(cluster *string) {
 	o.Cluster = cluster
 }
 
+// WithStartedBy adds the startedBy to the list tasks params
+func (o *ListTasksParams) WithStartedBy(startedBy *string) *ListTasksParams {
+	o.SetStartedBy(startedBy)
+	return o
+}
+
+// SetStartedBy adds the startedBy to the list tasks params
+func (o *ListTasksParams) SetStartedBy(startedBy *string) {
+	o.StartedBy = startedBy
+}
+
 // WithStatus adds the status to the list tasks params
 func (o *ListTasksParams) WithStatus(status *string) *ListTasksParams {
 	o.SetStatus(status)
@@ -140,6 +156,22 @@ func (o *ListTasksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		qCluster := qrCluster
 		if qCluster != "" {
 			if err := r.SetQueryParam("cluster", qCluster); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.StartedBy != nil {
+
+		// query param startedBy
+		var qrStartedBy string
+		if o.StartedBy != nil {
+			qrStartedBy = *o.StartedBy
+		}
+		qStartedBy := qrStartedBy
+		if qStartedBy != "" {
+			if err := r.SetQueryParam("startedBy", qStartedBy); err != nil {
 				return err
 			}
 		}

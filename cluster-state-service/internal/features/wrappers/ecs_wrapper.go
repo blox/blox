@@ -110,7 +110,7 @@ func (ecsWrapper ECSWrapper) DeregisterTaskDefinition(taskDefnARN string) error 
 	return nil
 }
 
-func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string) (ecs.Task, error) {
+func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string, startedBy string) (ecs.Task, error) {
 	containerInstances, err := ecsWrapper.ListContainerInstances(clusterName)
 	if err != nil {
 		return ecs.Task{}, err
@@ -122,6 +122,7 @@ func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string) (ecs
 		Cluster:            &clusterName,
 		ContainerInstances: containerInstances[0:1],
 		TaskDefinition:     &taskDefn,
+		StartedBy:          &startedBy,
 	}
 	resp, err := ecsWrapper.client.StartTask(&in)
 	if err != nil {
