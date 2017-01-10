@@ -35,7 +35,7 @@ type Deployment interface {
 	// GetDeployment returns the deployment with the provided id in the provided environment
 	GetDeployment(ctx context.Context, environmentName string, id string) (*types.Deployment, error)
 	// GetCurrentDeployment returns the deployment which needs to be used for starting tasks, i.e.
-	// the in-progress deployment for thd deployment if one exists, otherwise the latest completed deployment.
+	// the in-progress deployment for the environment if one exists, otherwise the latest completed deployment.
 	GetCurrentDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
 	// GetInProgressDeployment returns the in-progress deployment for thd deployment.
 	// There should be no more than one in progress deployments in an environment.
@@ -84,7 +84,7 @@ func (d deployment) CreateDeployment(ctx context.Context,
 		return nil, err
 	}
 
-	err = d.verifyInProgress(*env)
+	err = d.verifyNoInProgressDeploymentExists(ctx, environmentName)
 	if err != nil {
 		return nil, err
 	}
@@ -117,14 +117,14 @@ func (d deployment) verifyToken(env types.Environment, token string) error {
 	return nil
 }
 
-func (d deployment) verifyInProgress(env types.Environment) error {
-	inprogress, err := env.GetInProgressDeployment()
+func (d deployment) verifyNoInProgressDeploymentExists(ctx context.Context, environmentName string) error {
+	inprogress, err := d.GetInProgressDeployment(ctx, environmentName)
 	if err != nil {
 		return err
 	}
 
 	if inprogress != nil {
-		return types.NewBadRequestError(errors.Errorf("There is already a deployment %s in progress", inprogress.ID))
+		return types.NewBadRequestError(errors.Errorf("There is already a deployment in progress: %s", inprogress.ID))
 	}
 
 	return nil
@@ -143,14 +143,12 @@ func (d deployment) CreateSubDeployment(ctx context.Context, environmentName str
 	deployment, err := d.GetCurrentDeployment(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err,
-			"Unable to retrieve deployment for environment with name '%s' to create a sub-deployment",
-			environmentName)
+			"Unable to retrieve deployment for environment with name '%s' to create a sub-deployment", environmentName)
 	}
 
 	if deployment == nil {
 		return nil, errors.Errorf(
-			"There is no deployment for environment with name '%s' to create a sub-deployment",
-			environmentName)
+			"There is no deployment for environment with name '%s' to create a sub-deployment", environmentName)
 	}
 
 	return d.startSubDeployment(ctx, env, deployment, instanceARNs)
@@ -163,15 +161,15 @@ func (d deployment) startSubDeployment(ctx context.Context, env *types.Environme
 			err, "Error starting tasks for deployment with ID '%s' in environment with name '%s'", deployment.ID)
 	}
 
-	failures := resp.Failures
-	if deployment.FailedInstances != nil {
-		failures = append(failures, deployment.FailedInstances...)
-	}
-
 	// if deployment is already completed then we do not update
 	// TODO: Figure out how we want to track failures in sub-deployments
 	if deployment.Status == types.DeploymentCompleted {
 		return deployment, nil
+	}
+
+	failures := resp.Failures
+	if deployment.FailedInstances != nil {
+		failures = append(failures, deployment.FailedInstances...)
 	}
 
 	updatedDeployment, err := deployment.UpdateDeploymentInProgress(len(instanceARNs), failures)
@@ -199,7 +197,7 @@ func (d deployment) GetDeployment(ctx context.Context,
 		return nil, errors.New("ID is missing when getting a deployment")
 	}
 
-	deployments, err := d.getEnvironmentDeployments(ctx, environmentName)
+	deployments, err := d.ListDeploymentsSortedReverseChronologically(ctx, environmentName)
 	if err != nil {
 		return nil, err
 	}
@@ -211,22 +209,6 @@ func (d deployment) GetDeployment(ctx context.Context,
 	}
 
 	return nil, nil
-}
-
-func (d deployment) getEnvironmentDeployments(ctx context.Context,
-	environmentName string) ([]types.Deployment, error) {
-
-	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
-	if err != nil {
-		return nil, err
-	}
-
-	deployments, err := env.GetDeployments()
-	if err != nil {
-		return nil, err
-	}
-
-	return deployments, nil
 }
 
 func (d deployment) getEnvironmentOrFailIfDoesNotExist(ctx context.Context, name string) (*types.Environment, error) {

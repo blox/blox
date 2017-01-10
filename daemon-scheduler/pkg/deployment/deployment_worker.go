@@ -35,13 +35,19 @@ type DeploymentWorker interface {
 
 type deploymentWorker struct {
 	environment Environment
+	deployment  Deployment
 	ecs         facade.ECS
 	css         facade.ClusterState
 }
 
-func NewDeploymentWorker(environment Environment, ecs facade.ECS, css facade.ClusterState) DeploymentWorker {
+func NewDeploymentWorker(
+	environment Environment,
+	deployment Deployment,
+	ecs facade.ECS,
+	css facade.ClusterState) DeploymentWorker {
 	return deploymentWorker{
 		environment: environment,
+		deployment:  deployment,
 		ecs:         ecs,
 		css:         css,
 	}
@@ -54,21 +60,21 @@ func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
 		return nil, errors.New("Environment name is missing")
 	}
 
-	environment, err := d.getEnvironment(ctx, environmentName)
-	if err != nil {
-		return nil, err
-	}
-
-	if environment == nil {
-		return nil, nil
-	}
-
-	deployment, err := environment.GetInProgressDeployment()
+	deployment, err := d.deployment.GetInProgressDeployment(ctx, environmentName)
 	if err != nil {
 		return nil, err
 	}
 
 	if deployment == nil {
+		return nil, nil
+	}
+
+	environment, err := d.environment.GetEnvironment(ctx, environmentName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error finding environment with name %s", environmentName)
+	}
+
+	if environment == nil {
 		return nil, nil
 	}
 
@@ -79,7 +85,7 @@ func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
 
 	// retrieve in-progress again to make sure it has not been updated by another process
 	// TODO: wrap the in-progress check and updateDeployment in a transaction
-	deployment, err = environment.GetInProgressDeployment()
+	deployment, err = d.deployment.GetInProgressDeployment(ctx, environmentName)
 	if err != nil {
 		return nil, err
 	}
@@ -135,19 +141,4 @@ func (d deploymentWorker) deploymentCompleted(tasks []*ecs.Task, failures []*ecs
 	}
 
 	return true
-}
-
-func (d deploymentWorker) getEnvironment(ctx context.Context, environmentName string) (
-	*types.Environment, error) {
-
-	env, err := d.environment.GetEnvironment(ctx, environmentName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error finding environment with name %s", environmentName)
-	}
-
-	if env == nil {
-		return nil, nil
-	}
-
-	return env, err
 }

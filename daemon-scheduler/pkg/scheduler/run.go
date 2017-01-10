@@ -89,21 +89,21 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 		return err
 	}
 
-	deploymentWorker := deployment.NewDeploymentWorker(environment, ecs, css)
-	deployment := deployment.NewDeployment(environment, css, ecs)
+	deploymentSvc := deployment.NewDeployment(environment, css, ecs)
+	deploymentWorker := deployment.NewDeploymentWorker(environment, deploymentSvc, ecs, css)
 
 	ctx := context.Background()
 	input := make(chan engine.Event)
 	output := make(chan engine.Event)
-	dispatcher := engine.NewDispatcher(ctx, environment, deployment, ecs, css, deploymentWorker, input, output)
+	dispatcher := engine.NewDispatcher(ctx, environment, deploymentSvc, ecs, css, deploymentWorker, input, output)
 	dispatcher.Start()
-	scheduler := engine.NewScheduler(ctx, input, environment, deployment, css, ecs)
+	scheduler := engine.NewScheduler(ctx, input, environment, deploymentSvc, css, ecs)
 	scheduler.Start()
 
 	monitor := engine.NewMonitor(ctx, environment, input)
 	monitor.InProgressMonitorLoop(engine.InProgressMonitorTickerDuration)
 
-	api := v1.NewAPI(environment, deployment, ecs)
+	api := v1.NewAPI(environment, deploymentSvc, ecs)
 
 	// start server
 	router := v1.NewRouter(api)
