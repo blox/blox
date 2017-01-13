@@ -439,6 +439,18 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentCompleted() {
 	assert.Exactly(suite.T(), deployment.ID, d.ID, "Expected the deployment to match the completed deployment")
 }
 
+func (suite *DeploymentTestSuite) TestGetCurrentDeploymentEmpty() {
+	suite.environmentObject.PendingDeploymentID = ""
+	suite.environmentObject.InProgressDeploymentID = ""
+	suite.environmentObject.Deployments = nil
+
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, suite.environmentObject.Name).Return(suite.environmentObject, nil).Times(2)
+
+	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, suite.environmentObject.Name)
+	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
+	assert.Nil(suite.T(), d, "Unexpected deployment when there are no in progress or completed deployments")
+}
+
 func (suite *DeploymentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturnsErrors() {
 	err := errors.New("Error getting environment")
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)

@@ -255,7 +255,7 @@ func (d deployment) GetCurrentDeployment(ctx context.Context, environmentName st
 		}
 	}
 
-	return nil, errors.Errorf("There are no in-progress or completed deployments in environment %s", environmentName)
+	return nil, nil
 }
 
 func (d deployment) GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {

@@ -95,7 +95,7 @@ func (s *scheduler) Start() {
 			case <-ticker.C:
 				s.runOnce()
 			case <-s.ctx.Done():
-				log.Infof("[s:%s] Shutting down scheduler", s.id)
+				log.Debugf("[s:%s] Shutting down scheduler", s.id)
 				ticker.Stop()
 				return
 			}
@@ -159,7 +159,7 @@ func (s *scheduler) runOnceInternal() error {
 				return
 			}
 			msg := fmt.Sprintf("[s:%s, e:%s] Done running this iteration of scheduler for environment", s.id, state.environment.Name)
-			log.Info(msg)
+			log.Debug(msg)
 			s.events <- SchedulerEnvironmentEvent{
 				Message:     msg,
 				Environment: state.environment,
@@ -199,13 +199,13 @@ func (state *environmentExecutionState) isInProgress() bool {
 func (s *scheduler) runForEnvironment(state *environmentExecutionState) error {
 	environment := state.environment
 	if state.isInProgress() {
-		log.Infof("[s:%s, e:%s] Execution for environment is already in progress", s.id, environment.Name)
+		log.Debugf("[s:%s, e:%s] Execution for environment is already in progress", s.id, environment.Name)
 		return nil
 	}
 	state.setInProgress(true)
 	defer state.setInProgress(false)
 
-	log.Debugf("[s:%s, e:%s] Instances tracked under environment = %d", s.id, environment.Name, len(state.trackingInfo))
+	log.Debugf("[s:%s, e:%s] Number of instances tracked under environment is %d", s.id, environment.Name, len(state.trackingInfo))
 
 	currentDeployment, err := s.getCurrentDeployment(&environment)
 	if err != nil {
@@ -213,7 +213,8 @@ func (s *scheduler) runForEnvironment(state *environmentExecutionState) error {
 	}
 
 	if currentDeployment == nil {
-		return errors.Errorf("No deployment available for environment")
+		log.Debugf("No deployment available for environment %s", environment.Name)
+		return nil
 	}
 
 	lookupResult, err := s.lookupInstances(state)
@@ -262,7 +263,7 @@ func (s *scheduler) updateDeployedInstances(state *environmentExecutionState, cu
 						continue
 					}
 				}
-				log.Debugf("[s:%s, e:%s] Adding task %s to stop tasks list", s.id, environment.Name, dt.taskARN)
+				log.Infof("[s:%s, e:%s] Adding task %s to stop tasks list", s.id, environment.Name, dt.taskARN)
 				tasksToStop = append(tasksToStop, dt.taskARN)
 			} else {
 				deployedAt, ok := state.trackingInfo[instanceARN]
@@ -340,7 +341,7 @@ func (s *scheduler) deployToNewInstances(state *environmentExecutionState, resul
 			Instances:   result.newInstances,
 		}
 		s.events <- event
-		log.Debugf("Sent event to start tasks on %d instances", len(result.newInstances))
+		log.Infof("Sent event to start tasks on %d instances in environment %s", len(result.newInstances), state.environment)
 	}
 }
 

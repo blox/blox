@@ -64,7 +64,7 @@ func (suite *SchedulerTestSuite) TestRunListEnvironmentsReturnsError() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 	var err error
-	err = errors.New("Error calling ListEnvironemts")
+	err = errors.New("Error calling ListEnvironments")
 	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(nil, err)
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
@@ -73,7 +73,7 @@ func (suite *SchedulerTestSuite) TestRunListEnvironmentsReturnsError() {
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
 
 	//next run of scheduler should occur after ticker and do the same thing
-	err = errors.New("Error calling ListEnvironemts")
+	err = errors.New("Error calling ListEnvironments")
 	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(nil, err)
 	schedulerErrorEvent = (<-events).(SchedulerErrorEvent)
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
@@ -108,8 +108,8 @@ func (suite *SchedulerTestSuite) TestRunGetCurrentDeploymentReturnsNil() {
 	events := make(chan Event)
 	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
 	scheduler.Start()
-	schedulerErrorEvent := (<-events).(SchedulerErrorEvent)
-	assert.Error(suite.T(), schedulerErrorEvent.Error, "Expecting error due to no current deployment")
+	schedulerEnvironmentEvent := (<-events).(SchedulerEnvironmentEvent)
+	assert.Equal(suite.T(), environment.Name, schedulerEnvironmentEvent.Environment.Name)
 }
 
 func (suite *SchedulerTestSuite) TestRunListInstancesReturnsError() {

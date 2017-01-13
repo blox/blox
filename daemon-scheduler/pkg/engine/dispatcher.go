@@ -82,13 +82,13 @@ func (dispatcher *dispatcher) Start() {
 					}
 				}(event)
 			case <-dispatcher.ctx.Done():
-				log.Infof("Shutting down dispatcher")
+				log.Info("Shutting down dispatcher")
 				return
 			}
 		}
 	}()
 
-	log.Infof("Started dispatcher")
+	log.Info("Started dispatcher")
 }
 
 // Worker is actor which handles an event appropriately
@@ -146,8 +146,8 @@ func (w *worker) handleStartDeploymentEvent(ctx context.Context, event Event) er
 			deploymentEvent.Environment.Name, len(deploymentEvent.Instances))
 	}
 
-	log.Infof("Succesfully created a deployment with %s on %d instances",
-		deployment.ID, len(deploymentEvent.Instances))
+	log.Debugf("Succesfully created a deployment with %s on %d instances in environment %s",
+		deployment.ID, len(deploymentEvent.Instances), deploymentEvent.Environment.Name)
 
 	w.output <- StartDeploymentResult{
 		Deployment: *deployment,
@@ -182,7 +182,7 @@ func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 		}
 		err := w.ecs.StopTask(stopTasksEvent.Cluster, task)
 		if err != nil {
-			log.Errorf("Error stopping task %s : %v", task, err)
+			log.Errorf("Error stopping task %s in cluster %s: %v", task, stopTasksEvent.Cluster, err)
 			continue
 		}
 		stoppedTasks = append(stoppedTasks, task)
@@ -190,7 +190,7 @@ func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 
 	// TODO: Clear the tasks from environment
 
-	log.Infof("Successfully stopped %d tasks out of %d tasks under environment %s",
+	log.Debugf("Successfully stopped %d tasks out of %d tasks under environment %s",
 		len(stoppedTasks), len(stopTasksEvent.Tasks), stopTasksEvent.Environment.Name)
 
 	w.output <- StopTasksResult{
