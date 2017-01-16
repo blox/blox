@@ -188,13 +188,39 @@ func init() {
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
 
-	When(`^I try to list tasks with status, cluster and startedBy filters$`, func() {
-		exceptionList = nil
-		exceptionMsg, exceptionType, err := cssWrapper.TryListTasksWithAllFilters("running", "someCluster", "someone")
+	When(`^I list tasks in the ECS cluster with status (.+?) and startedBy someone filters$`, func(status string) {
+		time.Sleep(15 * time.Second)
+		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
 		}
-		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
+		cssTasks, err := cssWrapper.ListTasksWithAllFilters(status,
+			clusterName, "someone")
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTasks {
+			cssTaskList = append(cssTaskList, *t)
+		}
+	})
+
+	And(`^all tasks in the list tasks response belong to the ECS cluster, are started by someone and have status set to (.+?)$`, func(status string) {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		for _, t := range cssTaskList {
+			if t.StartedBy != "someone" {
+				T.Errorf("Task with ARN '%s' was expected to be started by '%s' not '%s'", *t.TaskARN, "someone", t.StartedBy)
+			}
+			if strings.ToLower(*t.LastStatus) != strings.ToLower(status) {
+				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.TaskARN, status, *t.LastStatus)
+			}
+			if !strings.HasSuffix(*t.ClusterARN, "/"+clusterName) {
+				T.Errorf("Task with ARN '%s' was expected to belong to cluster with name '%s' but belongs to cluster with ARN'%s'",
+					*t.TaskARN, clusterName, *t.ClusterARN)
+			}
+		}
 	})
 
 	When(`^I try to list tasks with redundant filters$`, func() {

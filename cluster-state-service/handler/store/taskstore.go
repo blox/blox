@@ -154,30 +154,34 @@ func (taskStore eventTaskStore) FilterTasks(filterMap map[string]string) ([]type
 		return nil, errors.Errorf("At least one of the provided filters '%v' is not supported.", filters)
 	}
 
-	status := filterMap[taskStatusFilter]
-	cluster := filterMap[taskClusterFilter]
-	startedBy := filterMap[taskStartedByFilter]
-
-	// Currently the only filter combination that is supported is status & cluster
-	if len(filters) == 2 {
-		if status != "" && cluster != "" {
-			return taskStore.filterTasksByClusterAndStatus(cluster, status)
+	var result []types.Task
+	var err error
+	// filterTasksByCluster does an etcd list by cluster prefix
+	// so it can't be combined with other task filters.
+	if cluster := filterMap[taskClusterFilter]; cluster != "" {
+		result, err = taskStore.filterTasksByCluster(cluster)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		result, err = taskStore.ListTasks()
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	if len(filters) == 1 {
-		switch {
-		case status != "":
-			return taskStore.filterTasks(isTaskStatus, status)
-		case startedBy != "":
-			return taskStore.filterTasks(isTaskStartedBy, startedBy)
-		case cluster != "":
-			return taskStore.filterTasksByCluster(cluster)
+	for k, v := range filterMap {
+		if k == taskClusterFilter || v == "" {
+			continue
 		}
+		taskFilter, err := taskStore.getTaskFilter(k)
+		if err != nil {
+			return nil, err
+		}
+		result = taskStore.filterTasks(result, taskFilter, v)
 	}
 
-	return nil, types.NewUnsupportedFilterCombination(
-		errors.Errorf("Unsupported filter combination '%v'", filters))
+	return result, nil
 }
 
 // StreamTasks streams all changes in the task keyspace into a channel
@@ -261,16 +265,17 @@ func isTaskStartedBy(startedBy string, task types.Task) bool {
 	return startedBy == task.Detail.StartedBy
 }
 
-func (taskStore eventTaskStore) filterTasks(filter taskFilter, filterValue string) ([]types.Task, error) {
-	tasks, err := taskStore.ListTasks()
-	if err != nil {
-		return nil, err
+func (taskStore eventTaskStore) getTaskFilter(filterName string) (taskFilter, error) {
+	switch filterName {
+	case "status":
+		return isTaskStatus, nil
+	case "startedBy":
+		return isTaskStartedBy, nil
 	}
-
-	return taskStore.filterTasksFromList(tasks, filter, filterValue), nil
+	return nil, errors.Errorf("Unsupported task filter: %v", filterName)
 }
 
-func (taskStore eventTaskStore) filterTasksFromList(tasks []types.Task, filter taskFilter, filterValue string) []types.Task {
+func (taskStore eventTaskStore) filterTasks(tasks []types.Task, filter taskFilter, filterValue string) []types.Task {
 	filteredTasks := []types.Task{}
 	for _, task := range tasks {
 		if filter(filterValue, task) {
@@ -293,14 +298,6 @@ func (taskStore eventTaskStore) filterTasksByCluster(cluster string) ([]types.Ta
 
 	tasksForClusterPrefix := taskKeyPrefix + clusterName + "/"
 	return taskStore.getTasksByKeyPrefix(tasksForClusterPrefix)
-}
-
-func (taskStore eventTaskStore) filterTasksByClusterAndStatus(cluster string, status string) ([]types.Task, error) {
-	tasksFilteredByCluster, err := taskStore.filterTasksByCluster(cluster)
-	if err != nil {
-		return nil, err
-	}
-	return taskStore.filterTasksFromList(tasksFilteredByCluster, isTaskStatus, status), nil
 }
 
 func (taskStore eventTaskStore) getTaskKey(cluster string, taskARN string) (string, error) {

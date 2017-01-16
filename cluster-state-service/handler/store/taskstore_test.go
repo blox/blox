@@ -30,6 +30,7 @@ import (
 var (
 	taskARN1      = "arn:aws:ecs:us-east-1:123456789012:task/271022c0-f894-4aa2-b063-25bae55088d5"
 	taskARN2      = "arn:aws:ecs:us-east-1:123456789012:task/345022c0-f894-4aa2-b063-25bae55088d5"
+	taskARN3      = "arn:aws:ecs:us-east-1:123456789012:task/345022c0-f894-4aa2-b063-25bae55088dd"
 	pendingStatus = "pending"
 	runningStatus = "running"
 	someoneElse   = "someone-else"
@@ -644,6 +645,42 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByClusterARNGetWithPrefixReturns
 	}
 }
 
+func (suite *TaskStoreTestSuite) TestFilterTasksByClusterAndStartedBy() {
+	cluster1SomeoneTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN1,
+			ClusterARN: &clusterARN1,
+			LastStatus: &pendingStatus,
+			StartedBy:  someoneElse,
+		},
+	}
+	cluster1SomeoneTaskJSON := suite.setupTask(cluster1SomeoneTask)
+
+	cluster1RandomTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN2,
+			ClusterARN: &clusterARN1,
+			LastStatus: &pendingStatus,
+			StartedBy:  "random",
+		},
+	}
+	cluster1RandomTaskJSON := suite.setupTask(cluster1RandomTask)
+	resp := map[string]string{
+		taskARN1: cluster1SomeoneTaskJSON,
+		taskARN2: cluster1RandomTaskJSON,
+	}
+
+	clusterKey := taskKeyPrefix + clusterName1 + "/"
+	suite.datastore.EXPECT().GetWithPrefix(clusterKey).Return(resp, nil)
+
+	tasks, err := suite.taskStore.FilterTasks(
+		map[string]string{taskClusterFilter: clusterARN1, taskStartedByFilter: someoneElse})
+
+	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
+	assert.Equal(suite.T(), 1, len(tasks))
+	assert.Exactly(suite.T(), cluster1SomeoneTask, tasks[0])
+}
+
 func (suite *TaskStoreTestSuite) TestFilterTasksByClusterAndStatus() {
 	cluster1PendingTask := types.Task{
 		Detail: &types.TaskDetail{
@@ -678,13 +715,101 @@ func (suite *TaskStoreTestSuite) TestFilterTasksByClusterAndStatus() {
 	assert.Exactly(suite.T(), cluster1PendingTask, tasks[0])
 }
 
-func (suite *TaskStoreTestSuite) TestFilterTasksInvalidFilterCombination() {
-	suite.datastore.EXPECT().GetWithPrefix(gomock.Any()).Times(0)
+func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByAndStatus() {
+	cluster1PendingSomeoneTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN1,
+			ClusterARN: &clusterARN1,
+			LastStatus: &pendingStatus,
+			StartedBy:  someoneElse,
+		},
+	}
+	cluster1PendingSomeoneTaskJSON := suite.setupTask(cluster1PendingSomeoneTask)
 
-	_, err := suite.taskStore.FilterTasks(
-		map[string]string{taskClusterFilter: clusterARN1, taskStatusFilter: pendingStatus, taskStartedByFilter: someoneElse})
+	cluster1RunningRandomTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN2,
+			ClusterARN: &clusterARN1,
+			LastStatus: &runningStatus,
+			StartedBy:  "random",
+		},
+	}
+	cluster1RunningRandomTaskJSON := suite.setupTask(cluster1RunningRandomTask)
 
-	assert.NotNil(suite.T(), err, "Expected an error when calling filter tasks with filters cluster, status and startedBy")
+	cluster1PendingRandomTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN2,
+			ClusterARN: &clusterARN1,
+			LastStatus: &pendingStatus,
+			StartedBy:  "random",
+		},
+	}
+	cluster1PendingRandomTaskJSON := suite.setupTask(cluster1PendingRandomTask)
+
+	resp := map[string]string{
+		taskARN1: cluster1PendingSomeoneTaskJSON,
+		taskARN2: cluster1RunningRandomTaskJSON,
+		taskARN3: cluster1PendingRandomTaskJSON,
+	}
+
+	suite.datastore.EXPECT().GetWithPrefix(taskKeyPrefix).Return(resp, nil)
+
+	tasks, err := suite.taskStore.FilterTasks(
+		map[string]string{taskStartedByFilter: "random", taskStatusFilter: pendingStatus})
+
+	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
+	assert.Equal(suite.T(), 1, len(tasks))
+	assert.Exactly(suite.T(), cluster1PendingRandomTask, tasks[0])
+}
+
+func (suite *TaskStoreTestSuite) TestFilterTasksByStartedByAndClusterAndStatus() {
+	cluster1PendingSomeoneTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN1,
+			ClusterARN: &clusterARN1,
+			LastStatus: &pendingStatus,
+			StartedBy:  someoneElse,
+		},
+	}
+	cluster1PendingSomeoneTaskJSON := suite.setupTask(cluster1PendingSomeoneTask)
+
+	cluster1RunningRandomTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN2,
+			ClusterARN: &clusterARN1,
+			LastStatus: &runningStatus,
+			StartedBy:  "random",
+		},
+	}
+	cluster1RunningRandomTaskJSON := suite.setupTask(cluster1RunningRandomTask)
+
+	cluster1PendingRandomTask := types.Task{
+		Detail: &types.TaskDetail{
+			TaskARN:    &taskARN2,
+			ClusterARN: &clusterARN1,
+			LastStatus: &pendingStatus,
+			StartedBy:  "random",
+		},
+	}
+	cluster1PendingRandomTaskJSON := suite.setupTask(cluster1PendingRandomTask)
+
+	resp := map[string]string{
+		taskARN1: cluster1PendingSomeoneTaskJSON,
+		taskARN2: cluster1RunningRandomTaskJSON,
+		taskARN3: cluster1PendingRandomTaskJSON,
+	}
+
+	clusterKey := taskKeyPrefix + clusterName1 + "/"
+	suite.datastore.EXPECT().GetWithPrefix(clusterKey).Return(resp, nil)
+
+	tasks, err := suite.taskStore.FilterTasks(
+		map[string]string{taskClusterFilter: clusterARN1,
+			taskStartedByFilter: "random",
+			taskStatusFilter:    pendingStatus})
+
+	assert.Nil(suite.T(), err, "Unexpected error when calling filter tasks")
+	assert.Equal(suite.T(), 1, len(tasks))
+	assert.Exactly(suite.T(), cluster1PendingRandomTask, tasks[0])
 }
 
 func (suite *TaskStoreTestSuite) TestStreamTasksDataStoreStreamReturnsError() {

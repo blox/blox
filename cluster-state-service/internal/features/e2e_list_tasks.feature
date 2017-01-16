@@ -54,6 +54,16 @@ Feature: List Tasks
       | count |
       |   1   |
 
+  Scenario: List tasks with status and startedBy filters
+    Given I start <count> task in the ECS cluster
+    When I list tasks in the ECS cluster with status running and startedBy someone filters
+    Then the list tasks response contains at least <count> task
+    And all tasks in the list tasks response belong to the ECS cluster, are started by someone and have status set to running
+
+    Examples:
+      | count |
+      |   1   |
+
   Scenario: List tasks with status and cluster filter returns tasks
     Given I start 1 task in the ECS cluster
     When I list tasks with filters set to running status and cluster name
@@ -79,8 +89,3 @@ Feature: List Tasks
     When I try to list tasks with redundant filters
     Then I get a ListTasksBadRequest task exception
     And the task exception message contains "At least one of the filters provided is specified multiple times"
-
-  Scenario: List tasks with invalid filter combination
-    When I try to list tasks with status, cluster and startedBy filters
-    Then I get a ListTasksBadRequest task exception
-    And the task exception message contains "The combination of filters provided are not supported"
