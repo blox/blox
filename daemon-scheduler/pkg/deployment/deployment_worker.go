@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
 
@@ -78,19 +79,59 @@ func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
 		return nil, nil
 	}
 
-	updatedDeployment, err := d.updateDeployment(environment, deployment)
+	taskProgress, err := d.checkDeploymentTaskProgress(environment, deployment)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error updating the deployment")
+		return nil, errors.Wrapf(err, "Error checking deployment %s progress in environment %s",
+			deployment.ID, environment.Name)
+	}
+
+	updatedDeployment, err := d.updateDeployment(ctx, environment, deployment, taskProgress)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDeployment, nil
+}
+
+func (d deploymentWorker) checkDeploymentTaskProgress(environment *types.Environment,
+	deployment *types.Deployment) (*ecs.DescribeTasksOutput, error) {
+
+	if environment.Cluster == "" {
+		return nil, errors.New("Environment cluster should not be empty")
+	}
+
+	// TODO: replace with cluster state calls
+	tasks, err := d.ecs.ListTasks(environment.Cluster, deployment.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := d.ecs.DescribeTasks(environment.Cluster, tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (d deploymentWorker) updateDeployment(ctx context.Context,
+	environment *types.Environment, deployment *types.Deployment,
+	resp *ecs.DescribeTasksOutput) (*types.Deployment, error) {
+
+	updatedDeployment, err := d.updateDeploymentObject(deployment, resp)
+	if err != nil {
+		return nil, err
 	}
 
 	// retrieve in-progress again to make sure it has not been updated by another process
 	// TODO: wrap the in-progress check and updateDeployment in a transaction
-	deployment, err = d.deployment.GetInProgressDeployment(ctx, environmentName)
+	deployment, err = d.deployment.GetInProgressDeployment(ctx, environment.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	if deployment == nil || deployment.ID != updatedDeployment.ID {
+		log.Infof("Deployment %s is no longer the in-progress deployment", updatedDeployment.ID)
 		return nil, nil
 	}
 
@@ -103,22 +144,8 @@ func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
 	return updatedDeployment, nil
 }
 
-func (d deploymentWorker) updateDeployment(environment *types.Environment,
-	deployment *types.Deployment) (*types.Deployment, error) {
-
-	if environment.Cluster == "" {
-		return nil, errors.New("Environment cluster should not be empty")
-	}
-
-	tasks, err := d.ecs.ListTasks(environment.Cluster, deployment.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := d.ecs.DescribeTasks(environment.Cluster, tasks)
-	if err != nil {
-		return nil, err
-	}
+func (d deploymentWorker) updateDeploymentObject(deployment *types.Deployment,
+	resp *ecs.DescribeTasksOutput) (*types.Deployment, error) {
 
 	if d.deploymentCompleted(resp.Tasks, resp.Failures) {
 		return deployment.UpdateDeploymentCompleted(resp.Failures)
@@ -134,6 +161,10 @@ func (d deploymentWorker) updateDeployment(environment *types.Environment,
 }
 
 func (d deploymentWorker) deploymentCompleted(tasks []*ecs.Task, failures []*ecs.Failure) bool {
+	if len(tasks) == 0 {
+		return false
+	}
+
 	for _, t := range tasks {
 		if aws.StringValue(t.LastStatus) == TaskPending {
 			return false
