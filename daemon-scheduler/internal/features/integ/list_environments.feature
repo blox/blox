@@ -35,4 +35,9 @@ Feature: Integration tests of ListEnvironment API
         Then I get a ListEnvironmentsBadRequest exception
         And the exception message contains "Invalid cluster ARN or name"
 
+    Scenario: List environments with redundant filters
+        When I try to call ListEnvironments with redundant filters
+        Then I get a ListEnvironmentsBadRequest exception
+        And the exception message contains "At least one of the filters provided is specified multiple times"
+
 #TODO: add tests with next token

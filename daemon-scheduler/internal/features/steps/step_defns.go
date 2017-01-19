@@ -16,6 +16,8 @@ package steps
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -34,6 +36,8 @@ const (
 	taskRunning                   = "RUNNING"
 	deploymentCompleteWaitSeconds = 50
 	invalidCluster                = "cluster/cluster"
+	badRequestHTTPResponse        = "400 Bad Request"
+	listEnvironmentsBadRequest    = "ListEnvironmentsBadRequest"
 )
 
 func init() {
@@ -341,6 +345,29 @@ func init() {
 			}
 			assert.True(T, found, "Did not find environment with name "+environment)
 		})
+
+	When(`^I try to call ListEnvironments with redundant filters$`, func() {
+		url := "http://localhost:2000/v1/environments?cluster=cluster1&cluster=cluster2"
+		resp, err := http.Get(url)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
+		var exceptionType string
+		if resp.Status == badRequestHTTPResponse {
+			exceptionType = listEnvironmentsBadRequest
+		} else {
+			T.Errorf("Unknown exception type '%s' when trying to list environments with redundant filters", resp.Status)
+		}
+
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			T.Errorf("Error reading expection message when trying to list environments with redundant filters")
+		}
+		exceptionMsg := string(body)
+		exception = Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg}
+	})
 
 	When(`^I try to call ListEnvironments with an invalid cluster filter$`, func() {
 		exception = Exception{}

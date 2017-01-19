@@ -322,3 +322,16 @@ func (suite *APITestSuite) createEnvironmentObject(name string, td string, clust
 	assert.Nil(suite.T(), err, "Unexpected error generating an environment object")
 	return environment
 }
+
+func (suite *APITestSuite) TestListEnvironmentsWithRedundantFilters() {
+	url := "/v1/environments?cluster=cluster1&cluster=cluster2"
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating list instances request with redundant filters")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	assert.NotNil(suite.T(), responseRecorder.Header(), "Unexpected empty header")
+	assert.Equal(suite.T(), http.StatusBadRequest, responseRecorder.Code, "Http response status is invalid")
+	assert.Equal(suite.T(), redundantFilterClientError+"\n", responseRecorder.Body.String(), "Error message is invalid")
+}

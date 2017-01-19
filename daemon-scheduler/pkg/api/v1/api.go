@@ -36,8 +36,9 @@ const (
 	clusterFilter   = "cluster"
 
 	// Client error messages
-	unsupportedFilterError = "At least one of the filters provided is not supported"
-	invalidClusterError    = "Invalid cluster ARN or name"
+	unsupportedFilterError     = "At least one of the filters provided is not supported"
+	invalidClusterError        = "Invalid cluster ARN or name"
+	redundantFilterClientError = "At least one of the filters provided is specified multiple times"
 )
 
 var (
@@ -134,6 +135,11 @@ func (api API) ListEnvironments(w http.ResponseWriter, r *http.Request) {
 
 	if api.hasUnsupportedFilters(query) {
 		writeBadRequestError(w, unsupportedFilterError)
+		return
+	}
+
+	if api.hasRedundantFilters(query) {
+		http.Error(w, redundantFilterClientError, http.StatusBadRequest)
 		return
 	}
 
@@ -290,6 +296,16 @@ func (api API) hasUnsupportedFilters(filters map[string][]string) bool {
 	for f := range filters {
 		_, ok := supportedEnvironmentFilters[f]
 		if !ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (api API) hasRedundantFilters(filters map[string][]string) bool {
+	for _, val := range filters {
+		// Multiple values for a given filter implies that it has been specified multiple times
+		if len(val) > 1 {
 			return true
 		}
 	}
