@@ -95,7 +95,7 @@ func (d deployment) CreateDeployment(ctx context.Context,
 		return nil, err
 	}
 
-	env, err = d.environment.AddDeployment(ctx, *env, *deployment)
+	env, err = d.environment.AddPendingDeployment(ctx, *env, *deployment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error adding deployment %v to environment %s", deployment, environmentName)
 	}
@@ -151,10 +151,11 @@ func (d deployment) CreateSubDeployment(ctx context.Context, environmentName str
 			"There is no deployment for environment with name '%s' to create a sub-deployment", environmentName)
 	}
 
-	return d.startSubDeployment(ctx, env, deployment, instanceARNs)
+	return d.startDeployment(ctx, env, deployment, instanceARNs)
 }
 
-func (d deployment) startSubDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
+//TODO: wrap in a transaction so the environment and the deployment do not get modified in between being retrieved and starting tasks
+func (d deployment) startDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
 	resp, err := d.ecs.StartTask(env.Cluster, instanceARNs, deployment.ID, deployment.TaskDefinition)
 	if err != nil {
 		return nil, errors.Wrapf(

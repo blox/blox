@@ -45,7 +45,7 @@ func (c clusterState) ListInstances(cluster string) ([]*models.ContainerInstance
 
 	resp, err := c.client.Operations.ListInstances(req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error calling ListInstances with req %v", req)
+		return nil, errors.Wrapf(err, "Error calling ListInstances with cluster %v", cluster)
 	}
 
 	return resp.Payload.Items, nil
@@ -57,7 +57,7 @@ func (c clusterState) ListTasks(cluster string) ([]*models.Task, error) {
 
 	resp, err := c.client.Operations.ListTasks(req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error calling ListTasks with req %v", req)
+		return nil, errors.Wrapf(err, "Error calling ListTasks with cluster %v", cluster)
 	}
 	return resp.Payload.Items, nil
 }

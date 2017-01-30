@@ -63,7 +63,7 @@ func (m monitor) InProgressMonitorLoop(tickerDuration time.Duration) {
 					}
 				}
 			case <-m.ctx.Done():
-				log.Infof("Shutting down in-progress monitor")
+				log.Info("Shutting down the in-progress monitor")
 				ticker.Stop()
 				return
 			}
@@ -84,7 +84,7 @@ func (m monitor) PendingMonitorLoop(tickerDuration time.Duration) {
 					}
 				}
 			case <-m.ctx.Done():
-				log.Infof("Shutting down pending monitor")
+				log.Info("Shutting down the pending monitor")
 				ticker.Stop()
 				return
 			}

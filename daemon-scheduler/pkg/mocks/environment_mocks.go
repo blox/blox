@@ -97,15 +97,15 @@ func (_mr *_MockEnvironmentRecorder) FilterEnvironments(arg0, arg1, arg2 interfa
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "FilterEnvironments", arg0, arg1, arg2)
 }
 
-func (_m *MockEnvironment) AddDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
-	ret := _m.ctrl.Call(_m, "AddDeployment", ctx, environment, deployment)
+func (_m *MockEnvironment) AddPendingDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
+	ret := _m.ctrl.Call(_m, "AddPendingDeployment", ctx, environment, deployment)
 	ret0, _ := ret[0].(*types.Environment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockEnvironmentRecorder) AddDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddDeployment", arg0, arg1, arg2)
+func (_mr *_MockEnvironmentRecorder) AddPendingDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddPendingDeployment", arg0, arg1, arg2)
 }
 
 func (_m *MockEnvironment) UpdateDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {

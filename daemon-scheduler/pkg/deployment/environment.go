@@ -44,9 +44,10 @@ type Environment interface {
 	// FilterEnvironments returns a list of all environments that match the filters
 	FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error)
 
-	// AddDeployment adds a deployment to the environment if a deployment with
+	//TODO: reconsider how these methods are structured when adding transactions (do we need 2 separate methods? etc)
+	// AddPendingDeployment adds a deployment to the environment if a deployment with
 	// the provided ID does not exist
-	AddDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
+	AddPendingDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
 	// UpdateDeployment replaces an existing deployment in the environment with the
 	// provided one if a deployment with the provided ID already exists
 	UpdateDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
@@ -201,7 +202,7 @@ func (e environment) filterEnvironmentsByClusterName(ctx context.Context, cluste
 	return filteredEnvs, nil
 }
 
-func (e environment) AddDeployment(ctx context.Context, environment types.Environment,
+func (e environment) AddPendingDeployment(ctx context.Context, environment types.Environment,
 	deployment types.Deployment) (*types.Environment, error) {
 
 	if len(deployment.ID) == 0 {
@@ -213,10 +214,16 @@ func (e environment) AddDeployment(ctx context.Context, environment types.Enviro
 		return nil, errors.Errorf("Deployment %s already exists: %+v", deployment.ID, deployment)
 	}
 
-	environment.Deployments[deployment.ID] = deployment
-	environment.PendingDeploymentID = deployment.ID
+	if deployment.Status != types.DeploymentPending {
+		return nil, errors.Errorf("Deployment status should be pending but is %v", deployment.Status)
+	}
 
-	err := e.environmentStore.PutEnvironment(ctx, environment)
+	err := environment.AddPendingDeployment(deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	err = e.environmentStore.PutEnvironment(ctx, environment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error saving environment %s to store", environment.Name)
 	}

@@ -29,12 +29,15 @@ const (
 type EnvironmentTestSuite struct {
 	suite.Suite
 	environment *Environment
+	deployment  *Deployment
 }
 
 func (suite *EnvironmentTestSuite) SetupTest() {
 	var err error
 	suite.environment, err = NewEnvironment(environmentName, taskDefinition, cluster)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+	suite.deployment, err = NewDeployment(taskDefinition, generateToken())
+	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
 }
 
 func TestEnvironmentTestSuite(t *testing.T) {
@@ -84,6 +87,55 @@ func (suite *EnvironmentTestSuite) TestSortDeploymentsReverseChronologically() {
 	assert.Nil(suite.T(), err, "Unexpected error when sorting deployments")
 	assert.Exactly(suite.T(), *deployment2, deployments[0], "Expected the deployments to match")
 	assert.Exactly(suite.T(), *deployment1, deployments[1], "Expected the deployments to match")
+}
+
+func (suite *EnvironmentTestSuite) TestAddPendingDeploymentStatusNotPending() {
+	suite.deployment.Status = DeploymentInProgress
+
+	err := suite.environment.AddPendingDeployment(*suite.deployment)
+	assert.Error(suite.T(), err, "Expected an error when the deployment status is not pending")
+}
+
+func (suite *EnvironmentTestSuite) TestAddPendingDeployment() {
+	err := suite.environment.AddPendingDeployment(*suite.deployment)
+	assert.Nil(suite.T(), err, "Unexpected error when adding a pending deployment")
+	assert.Exactly(suite.T(), *suite.deployment, suite.environment.Deployments[suite.deployment.ID], "")
+	assert.Exactly(suite.T(), suite.deployment.ID, suite.environment.PendingDeploymentID, "")
+}
+
+func (suite *EnvironmentTestSuite) TestUpdatePendingDeploymentToInProgressNoPendingDeployment() {
+	suite.environment.PendingDeploymentID = ""
+	err := suite.environment.UpdatePendingDeploymentToInProgress()
+	assert.Error(suite.T(), err, "Expected an error when there is no pending deployment")
+}
+
+func (suite *EnvironmentTestSuite) TestUpdatePendingDeploymentToInProgressPendingDeploymentNotInMap() {
+	suite.environment.PendingDeploymentID = generateToken()
+
+	err := suite.environment.UpdatePendingDeploymentToInProgress()
+	assert.Error(suite.T(), err, "")
+}
+
+func (suite *EnvironmentTestSuite) TestUpdatePendingDeploymentToInProgressPendingDeploymentStatusIncorrect() {
+	err := suite.environment.AddPendingDeployment(*suite.deployment)
+	assert.Nil(suite.T(), err, "Unexpected error when adding a pending deployment")
+	d := suite.environment.Deployments[suite.deployment.ID]
+	d.Status = DeploymentCompleted
+	suite.environment.Deployments[d.ID] = d
+
+	err = suite.environment.UpdatePendingDeploymentToInProgress()
+	assert.Error(suite.T(), err, "")
+}
+
+func (suite *EnvironmentTestSuite) TestUpdatePendingDeploymentToInProgress() {
+	err := suite.environment.AddPendingDeployment(*suite.deployment)
+	assert.Nil(suite.T(), err, "Unexpected error when adding a pending deployment")
+
+	err = suite.environment.UpdatePendingDeploymentToInProgress()
+	assert.Nil(suite.T(), err, "")
+	assert.Empty(suite.T(), suite.environment.PendingDeploymentID, "")
+	assert.Exactly(suite.T(), suite.deployment.ID, suite.environment.InProgressDeploymentID, "")
+	assert.Exactly(suite.T(), *suite.deployment, suite.environment.Deployments[suite.environment.InProgressDeploymentID], "")
 }
 
 func generateToken() string {

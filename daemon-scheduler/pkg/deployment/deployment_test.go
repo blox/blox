@@ -157,7 +157,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentThereIsAnInProgressDeploym
 	suite.environmentObject.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
 
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Times(0)
+	suite.environment.EXPECT().AddPendingDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Times(0)
 
 	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.environmentObject.Token)
 	assert.Error(suite.T(), err, "Expected an error when there is an in-progress deployment")
@@ -166,7 +166,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentThereIsAnInProgressDeploym
 func (suite *DeploymentTestSuite) TestCreateDeploymentAddDeploymentFails() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil).Times(2)
 
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Do(
+	suite.environment.EXPECT().AddPendingDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Do(
 		func(_ interface{}, _ interface{}, d types.Deployment) {
 			verifyDeployment(suite.T(), suite.deploymentObject, &d)
 		}).Return(nil, errors.New("Add deployment failed"))
@@ -178,7 +178,7 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentAddDeploymentFails() {
 func (suite *DeploymentTestSuite) TestCreateDeployment() {
 	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil).Times(2)
 
-	suite.environment.EXPECT().AddDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Do(
+	suite.environment.EXPECT().AddPendingDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Do(
 		func(_ interface{}, _ interface{}, d types.Deployment) {
 			verifyDeployment(suite.T(), suite.deploymentObject, &d)
 		}).Return(suite.environmentObject, nil)

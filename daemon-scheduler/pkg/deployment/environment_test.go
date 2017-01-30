@@ -329,14 +329,14 @@ func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterInvalidCluster
 func (suite *EnvironmentTestSuite) TestAddDeploymentEmptyDeploymentID() {
 	deployment := types.Deployment{}
 
-	_, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, deployment)
+	_, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, deployment)
 	assert.Error(suite.T(), err, "Expected an error when deployment ID is missing")
 }
 
 func (suite *EnvironmentTestSuite) TestAddDeploymentDeploymentExists() {
 	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
 
-	_, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, *suite.deployment)
+	_, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, *suite.deployment)
 	assert.Error(suite.T(), err, "Expected an error when deployment exists")
 }
 
@@ -345,7 +345,7 @@ func (suite *EnvironmentTestSuite) TestAddDeploymentPutEnvironmentFails() {
 		verifyEnvironment(suite.T(), suite.environment1, &e)
 	}).Return(errors.New("Put environment failed"))
 
-	_, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, *suite.deployment)
+	_, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, *suite.deployment)
 	assert.Error(suite.T(), err, "Expected an error when put environment fails")
 }
 
@@ -354,7 +354,7 @@ func (suite *EnvironmentTestSuite) TestAddDeployment() {
 	updatedEnv.PendingDeploymentID = suite.deployment.ID
 	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Eq(*updatedEnv)).Return(nil)
 
-	env, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, *suite.deployment)
+	env, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, *suite.deployment)
 	assert.Nil(suite.T(), err, "Unexpected error when adding a deployment")
 
 	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
@@ -414,7 +414,7 @@ func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentDoesNotHaveCur
 }
 
 func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentCurrentTasksContainsADifferentTaskDef() {
-	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
+	suite.environment1.AddPendingDeployment(*suite.deployment)
 
 	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
 
