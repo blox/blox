@@ -269,7 +269,7 @@
 		},
 		{
 			"ImportPath": "github.com/go-openapi/errors",
-			"Rev": "4178436c9f2430cdd945c50301cfb61563b56573"
+			"Rev": "fc3f73a224499b047eda7191e5d22e1e9631e86f"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/jsonpointer",

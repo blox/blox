@@ -61,6 +61,15 @@ func NewCreateEnvironmentParamsWithContext(ctx context.Context) *CreateEnvironme
 	}
 }
 
+// NewCreateEnvironmentParamsWithHTTPClient creates a new CreateEnvironmentParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewCreateEnvironmentParamsWithHTTPClient(client *http.Client) *CreateEnvironmentParams {
+	var ()
+	return &CreateEnvironmentParams{
+		HTTPClient: client,
+	}
+}
+
 /*CreateEnvironmentParams contains all the parameters to send to the API endpoint
 for the create environment operation typically these are written to a http.Request
 */
@@ -94,6 +103,17 @@ func (o *CreateEnvironmentParams) WithContext(ctx context.Context) *CreateEnviro
 // SetContext adds the context to the create environment params
 func (o *CreateEnvironmentParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the create environment params
+func (o *CreateEnvironmentParams) WithHTTPClient(client *http.Client) *CreateEnvironmentParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the create environment params
+func (o *CreateEnvironmentParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithBody adds the body to the create environment params

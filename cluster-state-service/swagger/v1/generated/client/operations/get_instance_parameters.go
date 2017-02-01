@@ -59,6 +59,15 @@ func NewGetInstanceParamsWithContext(ctx context.Context) *GetInstanceParams {
 	}
 }
 
+// NewGetInstanceParamsWithHTTPClient creates a new GetInstanceParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewGetInstanceParamsWithHTTPClient(client *http.Client) *GetInstanceParams {
+	var ()
+	return &GetInstanceParams{
+		HTTPClient: client,
+	}
+}
+
 /*GetInstanceParams contains all the parameters to send to the API endpoint
 for the get instance operation typically these are written to a http.Request
 */
@@ -100,6 +109,17 @@ func (o *GetInstanceParams) WithContext(ctx context.Context) *GetInstanceParams 
 // SetContext adds the context to the get instance params
 func (o *GetInstanceParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the get instance params
+func (o *GetInstanceParams) WithHTTPClient(client *http.Client) *GetInstanceParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the get instance params
+func (o *GetInstanceParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithArn adds the arn to the get instance params

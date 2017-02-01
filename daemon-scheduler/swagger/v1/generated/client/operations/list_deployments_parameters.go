@@ -59,6 +59,15 @@ func NewListDeploymentsParamsWithContext(ctx context.Context) *ListDeploymentsPa
 	}
 }
 
+// NewListDeploymentsParamsWithHTTPClient creates a new ListDeploymentsParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewListDeploymentsParamsWithHTTPClient(client *http.Client) *ListDeploymentsParams {
+	var ()
+	return &ListDeploymentsParams{
+		HTTPClient: client,
+	}
+}
+
 /*ListDeploymentsParams contains all the parameters to send to the API endpoint
 for the list deployments operation typically these are written to a http.Request
 */
@@ -105,6 +114,17 @@ func (o *ListDeploymentsParams) WithContext(ctx context.Context) *ListDeployment
 // SetContext adds the context to the list deployments params
 func (o *ListDeploymentsParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the list deployments params
+func (o *ListDeploymentsParams) WithHTTPClient(client *http.Client) *ListDeploymentsParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the list deployments params
+func (o *ListDeploymentsParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithDeploymentToken adds the deploymentToken to the list deployments params

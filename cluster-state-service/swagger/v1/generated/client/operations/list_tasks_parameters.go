@@ -59,6 +59,15 @@ func NewListTasksParamsWithContext(ctx context.Context) *ListTasksParams {
 	}
 }
 
+// NewListTasksParamsWithHTTPClient creates a new ListTasksParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewListTasksParamsWithHTTPClient(client *http.Client) *ListTasksParams {
+	var ()
+	return &ListTasksParams{
+		HTTPClient: client,
+	}
+}
+
 /*ListTasksParams contains all the parameters to send to the API endpoint
 for the list tasks operation typically these are written to a http.Request
 */
@@ -105,6 +114,17 @@ func (o *ListTasksParams) WithContext(ctx context.Context) *ListTasksParams {
 // SetContext adds the context to the list tasks params
 func (o *ListTasksParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the list tasks params
+func (o *ListTasksParams) WithHTTPClient(client *http.Client) *ListTasksParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the list tasks params
+func (o *ListTasksParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithCluster adds the cluster to the list tasks params

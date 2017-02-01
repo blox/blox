@@ -17,10 +17,12 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"strconv"
+
 	strfmt "github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
@@ -140,6 +142,9 @@ func (m *ContainerInstance) validateAttributes(formats strfmt.Registry) error {
 		if m.Attributes[i] != nil {
 
 			if err := m.Attributes[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("attributes" + "." + strconv.Itoa(i))
+				}
 				return err
 			}
 		}
@@ -182,6 +187,9 @@ func (m *ContainerInstance) validateRegisteredResources(formats strfmt.Registry)
 		if m.RegisteredResources[i] != nil {
 
 			if err := m.RegisteredResources[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("registeredResources" + "." + strconv.Itoa(i))
+				}
 				return err
 			}
 		}
@@ -206,6 +214,9 @@ func (m *ContainerInstance) validateRemainingResources(formats strfmt.Registry) 
 		if m.RemainingResources[i] != nil {
 
 			if err := m.RemainingResources[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("remainingResources" + "." + strconv.Itoa(i))
+				}
 				return err
 			}
 		}
@@ -233,6 +244,9 @@ func (m *ContainerInstance) validateVersionInfo(formats strfmt.Registry) error {
 	if m.VersionInfo != nil {
 
 		if err := m.VersionInfo.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("versionInfo")
+			}
 			return err
 		}
 	}

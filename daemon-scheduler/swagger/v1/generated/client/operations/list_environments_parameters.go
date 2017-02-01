@@ -59,6 +59,15 @@ func NewListEnvironmentsParamsWithContext(ctx context.Context) *ListEnvironments
 	}
 }
 
+// NewListEnvironmentsParamsWithHTTPClient creates a new ListEnvironmentsParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewListEnvironmentsParamsWithHTTPClient(client *http.Client) *ListEnvironmentsParams {
+	var ()
+	return &ListEnvironmentsParams{
+		HTTPClient: client,
+	}
+}
+
 /*ListEnvironmentsParams contains all the parameters to send to the API endpoint
 for the list environments operation typically these are written to a http.Request
 */
@@ -100,6 +109,17 @@ func (o *ListEnvironmentsParams) WithContext(ctx context.Context) *ListEnvironme
 // SetContext adds the context to the list environments params
 func (o *ListEnvironmentsParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the list environments params
+func (o *ListEnvironmentsParams) WithHTTPClient(client *http.Client) *ListEnvironmentsParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the list environments params
+func (o *ListEnvironmentsParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithCluster adds the cluster to the list environments params

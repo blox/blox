@@ -59,6 +59,15 @@ func NewGetEnvironmentParamsWithContext(ctx context.Context) *GetEnvironmentPara
 	}
 }
 
+// NewGetEnvironmentParamsWithHTTPClient creates a new GetEnvironmentParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewGetEnvironmentParamsWithHTTPClient(client *http.Client) *GetEnvironmentParams {
+	var ()
+	return &GetEnvironmentParams{
+		HTTPClient: client,
+	}
+}
+
 /*GetEnvironmentParams contains all the parameters to send to the API endpoint
 for the get environment operation typically these are written to a http.Request
 */
@@ -95,6 +104,17 @@ func (o *GetEnvironmentParams) WithContext(ctx context.Context) *GetEnvironmentP
 // SetContext adds the context to the get environment params
 func (o *GetEnvironmentParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the get environment params
+func (o *GetEnvironmentParams) WithHTTPClient(client *http.Client) *GetEnvironmentParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the get environment params
+func (o *GetEnvironmentParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithName adds the name to the get environment params

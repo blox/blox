@@ -59,6 +59,15 @@ func NewDeleteEnvironmentParamsWithContext(ctx context.Context) *DeleteEnvironme
 	}
 }
 
+// NewDeleteEnvironmentParamsWithHTTPClient creates a new DeleteEnvironmentParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewDeleteEnvironmentParamsWithHTTPClient(client *http.Client) *DeleteEnvironmentParams {
+	var ()
+	return &DeleteEnvironmentParams{
+		HTTPClient: client,
+	}
+}
+
 /*DeleteEnvironmentParams contains all the parameters to send to the API endpoint
 for the delete environment operation typically these are written to a http.Request
 */
@@ -95,6 +104,17 @@ func (o *DeleteEnvironmentParams) WithContext(ctx context.Context) *DeleteEnviro
 // SetContext adds the context to the delete environment params
 func (o *DeleteEnvironmentParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the delete environment params
+func (o *DeleteEnvironmentParams) WithHTTPClient(client *http.Client) *DeleteEnvironmentParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the delete environment params
+func (o *DeleteEnvironmentParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithName adds the name to the delete environment params

@@ -59,6 +59,15 @@ func NewListInstancesParamsWithContext(ctx context.Context) *ListInstancesParams
 	}
 }
 
+// NewListInstancesParamsWithHTTPClient creates a new ListInstancesParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewListInstancesParamsWithHTTPClient(client *http.Client) *ListInstancesParams {
+	var ()
+	return &ListInstancesParams{
+		HTTPClient: client,
+	}
+}
+
 /*ListInstancesParams contains all the parameters to send to the API endpoint
 for the list instances operation typically these are written to a http.Request
 */
@@ -100,6 +109,17 @@ func (o *ListInstancesParams) WithContext(ctx context.Context) *ListInstancesPar
 // SetContext adds the context to the list instances params
 func (o *ListInstancesParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the list instances params
+func (o *ListInstancesParams) WithHTTPClient(client *http.Client) *ListInstancesParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the list instances params
+func (o *ListInstancesParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithCluster adds the cluster to the list instances params

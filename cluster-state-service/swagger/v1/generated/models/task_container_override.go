@@ -17,10 +17,12 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"strconv"
+
 	strfmt "github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
@@ -88,6 +90,9 @@ func (m *TaskContainerOverride) validateEnvironment(formats strfmt.Registry) err
 		if m.Environment[i] != nil {
 
 			if err := m.Environment[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("environment" + "." + strconv.Itoa(i))
+				}
 				return err
 			}
 		}

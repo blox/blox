@@ -59,6 +59,15 @@ func NewGetDeploymentParamsWithContext(ctx context.Context) *GetDeploymentParams
 	}
 }
 
+// NewGetDeploymentParamsWithHTTPClient creates a new GetDeploymentParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewGetDeploymentParamsWithHTTPClient(client *http.Client) *GetDeploymentParams {
+	var ()
+	return &GetDeploymentParams{
+		HTTPClient: client,
+	}
+}
+
 /*GetDeploymentParams contains all the parameters to send to the API endpoint
 for the get deployment operation typically these are written to a http.Request
 */
@@ -100,6 +109,17 @@ func (o *GetDeploymentParams) WithContext(ctx context.Context) *GetDeploymentPar
 // SetContext adds the context to the get deployment params
 func (o *GetDeploymentParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the get deployment params
+func (o *GetDeploymentParams) WithHTTPClient(client *http.Client) *GetDeploymentParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the get deployment params
+func (o *GetDeploymentParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WithID adds the id to the get deployment params

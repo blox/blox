@@ -75,6 +75,9 @@ func (m *CreateEnvironmentRequest) validateInstanceGroup(formats strfmt.Registry
 	if m.InstanceGroup != nil {
 
 		if err := m.InstanceGroup.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("instanceGroup")
+			}
 			return err
 		}
 	}

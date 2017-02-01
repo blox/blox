@@ -59,6 +59,15 @@ func NewStreamInstancesParamsWithContext(ctx context.Context) *StreamInstancesPa
 	}
 }
 
+// NewStreamInstancesParamsWithHTTPClient creates a new StreamInstancesParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewStreamInstancesParamsWithHTTPClient(client *http.Client) *StreamInstancesParams {
+
+	return &StreamInstancesParams{
+		HTTPClient: client,
+	}
+}
+
 /*StreamInstancesParams contains all the parameters to send to the API endpoint
 for the stream instances operation typically these are written to a http.Request
 */
@@ -88,6 +97,17 @@ func (o *StreamInstancesParams) WithContext(ctx context.Context) *StreamInstance
 // SetContext adds the context to the stream instances params
 func (o *StreamInstancesParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the stream instances params
+func (o *StreamInstancesParams) WithHTTPClient(client *http.Client) *StreamInstancesParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the stream instances params
+func (o *StreamInstancesParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WriteToRequest writes these params to a swagger request

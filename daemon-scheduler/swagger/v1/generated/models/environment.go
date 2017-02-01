@@ -74,6 +74,9 @@ func (m *Environment) Validate(formats strfmt.Registry) error {
 func (m *Environment) validateHealth(formats strfmt.Registry) error {
 
 	if err := m.Health.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("health")
+		}
 		return err
 	}
 
@@ -89,6 +92,9 @@ func (m *Environment) validateInstanceGroup(formats strfmt.Registry) error {
 	if m.InstanceGroup != nil {
 
 		if err := m.InstanceGroup.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("instanceGroup")
+			}
 			return err
 		}
 	}

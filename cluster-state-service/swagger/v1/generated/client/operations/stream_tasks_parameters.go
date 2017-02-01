@@ -59,6 +59,15 @@ func NewStreamTasksParamsWithContext(ctx context.Context) *StreamTasksParams {
 	}
 }
 
+// NewStreamTasksParamsWithHTTPClient creates a new StreamTasksParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewStreamTasksParamsWithHTTPClient(client *http.Client) *StreamTasksParams {
+
+	return &StreamTasksParams{
+		HTTPClient: client,
+	}
+}
+
 /*StreamTasksParams contains all the parameters to send to the API endpoint
 for the stream tasks operation typically these are written to a http.Request
 */
@@ -88,6 +97,17 @@ func (o *StreamTasksParams) WithContext(ctx context.Context) *StreamTasksParams 
 // SetContext adds the context to the stream tasks params
 func (o *StreamTasksParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the stream tasks params
+func (o *StreamTasksParams) WithHTTPClient(client *http.Client) *StreamTasksParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the stream tasks params
+func (o *StreamTasksParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WriteToRequest writes these params to a swagger request

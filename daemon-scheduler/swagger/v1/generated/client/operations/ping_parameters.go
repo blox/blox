@@ -59,6 +59,15 @@ func NewPingParamsWithContext(ctx context.Context) *PingParams {
 	}
 }
 
+// NewPingParamsWithHTTPClient creates a new PingParams object
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
+func NewPingParamsWithHTTPClient(client *http.Client) *PingParams {
+
+	return &PingParams{
+		HTTPClient: client,
+	}
+}
+
 /*PingParams contains all the parameters to send to the API endpoint
 for the ping operation typically these are written to a http.Request
 */
@@ -88,6 +97,17 @@ func (o *PingParams) WithContext(ctx context.Context) *PingParams {
 // SetContext adds the context to the ping params
 func (o *PingParams) SetContext(ctx context.Context) {
 	o.Context = ctx
+}
+
+// WithHTTPClient adds the HTTPClient to the ping params
+func (o *PingParams) WithHTTPClient(client *http.Client) *PingParams {
+	o.SetHTTPClient(client)
+	return o
+}
+
+// SetHTTPClient adds the HTTPClient to the ping params
+func (o *PingParams) SetHTTPClient(client *http.Client) {
+	o.HTTPClient = client
 }
 
 // WriteToRequest writes these params to a swagger request
