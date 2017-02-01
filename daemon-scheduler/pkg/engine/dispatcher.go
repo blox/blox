@@ -107,6 +107,8 @@ func (w *worker) handleEvent(ctx context.Context, event Event) error {
 		return w.handleStartDeploymentEvent(ctx, event)
 	case StopTasksEventType:
 		return w.handleStopTasksEvent(ctx, event)
+	case StartPendingDeploymentEventType:
+		return w.handleStartPendingDeploymentEvent(ctx, event)
 	case UpdateInProgressDeploymentEventType:
 		return w.handleUpdateInProgressDeploymentEvent(ctx, event)
 	default:
@@ -129,6 +131,33 @@ func (w *worker) handleUpdateInProgressDeploymentEvent(ctx context.Context, even
 	_, err := w.deploymentWorker.UpdateInProgressDeployment(ctx, deploymentEvent.Environment.Name)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (w *worker) handleStartPendingDeploymentEvent(ctx context.Context, event Event) error {
+	deploymentEvent, ok := event.(StartPendingDeploymentEvent)
+	if !ok {
+		return errors.Errorf("Expected event with event-type %v to be of struct-type StartPendingDeploymentEvent",
+			event.GetType())
+	}
+
+	deployment, err := w.deploymentWorker.StartPendingDeployment(ctx, deploymentEvent.Environment.Name)
+	if err != nil {
+		return err
+	}
+
+	if deployment == nil {
+		log.Debugf("There are no pending deployments in environment %s", deploymentEvent.Environment.Name)
+		return nil
+	}
+
+	log.Debugf("Succesfully moved pending deployment %s to in-progress in environment %s",
+		deployment.ID, deploymentEvent.Environment.Name)
+
+	w.output <- StartPendingDeploymentResult{
+		Deployment: *deployment,
 	}
 
 	return nil

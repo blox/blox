@@ -21,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	mocks "github.com/blox/blox/daemon-scheduler/pkg/mocks"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
@@ -33,7 +34,7 @@ type SchedulerTestSuite struct {
 	suite.Suite
 	environmentSvc *mocks.MockEnvironment
 	deploymentSvc  *mocks.MockDeployment
-	css            *mocks.MockClusterState
+	css            *facade.MockClusterState
 	ecs            *mocks.MockECS
 }
 
@@ -41,7 +42,7 @@ func (suite *SchedulerTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.environmentSvc = mocks.NewMockEnvironment(mockCtrl)
 	suite.deploymentSvc = mocks.NewMockDeployment(mockCtrl)
-	suite.css = mocks.NewMockClusterState(mockCtrl)
+	suite.css = facade.NewMockClusterState(mockCtrl)
 	suite.ecs = mocks.NewMockECS(mockCtrl)
 }
 

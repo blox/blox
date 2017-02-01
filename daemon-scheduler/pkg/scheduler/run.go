@@ -23,6 +23,7 @@ import (
 	"github.com/blox/blox/daemon-scheduler/pkg/engine"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
+	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	log "github.com/cihub/seelog"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/pkg/errors"
@@ -90,7 +91,12 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 	}
 
 	deploymentSvc := deployment.NewDeployment(environment, css, ecs)
-	deploymentWorker := deployment.NewDeploymentWorker(environment, deploymentSvc, ecs, css)
+	environmentFacade, err := types.NewEnvironmentFacade(css)
+	if err != nil {
+		log.Criticalf("Could not initialize environmentFacade: %+v", err)
+		return err
+	}
+	deploymentWorker := deployment.NewDeploymentWorker(environment, environmentFacade, deploymentSvc, ecs, css)
 
 	ctx := context.Background()
 	input := make(chan engine.Event)
@@ -101,6 +107,7 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 	scheduler.Start()
 
 	monitor := engine.NewMonitor(ctx, environment, input)
+	monitor.PendingMonitorLoop(engine.PendingMonitorTickerDuration)
 	monitor.InProgressMonitorLoop(engine.InProgressMonitorTickerDuration)
 
 	api := v1.NewAPI(environment, deploymentSvc, ecs)

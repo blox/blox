@@ -82,17 +82,17 @@ func (e *Environment) AddPendingDeployment(d Deployment) error {
 }
 
 func (e *Environment) UpdatePendingDeploymentToInProgress() error {
-	d, err := e.getPendingDeployment()
+	pending, err := e.getPendingDeployment()
 	if err != nil {
 		return err
 	}
 
-	if d == nil {
+	if pending == nil {
 		return errors.Errorf("There is no pending deployment in the environment %v", e.Name)
 	}
 
-	e.InProgressDeploymentID = d.ID
 	e.PendingDeploymentID = ""
+	e.InProgressDeploymentID = pending.ID
 
 	return nil
 }

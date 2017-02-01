@@ -65,6 +65,17 @@ func (_mr *_MockDeploymentRecorder) CreateSubDeployment(arg0, arg1, arg2 interfa
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "CreateSubDeployment", arg0, arg1, arg2)
 }
 
+func (_m *MockDeployment) StartDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "StartDeployment", ctx, env, deployment, instanceARNs)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) StartDeployment(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "StartDeployment", arg0, arg1, arg2, arg3)
+}
+
 func (_m *MockDeployment) GetDeployment(ctx context.Context, environmentName string, id string) (*types.Deployment, error) {
 	ret := _m.ctrl.Call(_m, "GetDeployment", ctx, environmentName, id)
 	ret0, _ := ret[0].(*types.Deployment)
@@ -85,6 +96,17 @@ func (_m *MockDeployment) GetCurrentDeployment(ctx context.Context, environmentN
 
 func (_mr *_MockDeploymentRecorder) GetCurrentDeployment(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetCurrentDeployment", arg0, arg1)
+}
+
+func (_m *MockDeployment) GetPendingDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "GetPendingDeployment", ctx, environmentName)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) GetPendingDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetPendingDeployment", arg0, arg1)
 }
 
 func (_m *MockDeployment) GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {

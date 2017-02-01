@@ -68,12 +68,12 @@ func NewDeployment(taskDefinition string, token string) (*Deployment, error) {
 	}, nil
 }
 
-func (d Deployment) UpdateDeploymentInProgress(
+func (d *Deployment) UpdateDeploymentToInProgress(
 	desiredTaskCount int,
-	failedInstances []*ecs.Failure) (*Deployment, error) {
+	failedInstances []*ecs.Failure) error {
 
 	if d.Status == DeploymentCompleted {
-		return nil, errors.New("Deployment cannot move from completed to in-progress")
+		return errors.New("Deployment cannot move from completed to in-progress")
 	}
 
 	if failedInstances == nil || len(failedInstances) == 0 {
@@ -86,10 +86,10 @@ func (d Deployment) UpdateDeploymentInProgress(
 	d.DesiredTaskCount = desiredTaskCount
 	d.FailedInstances = failedInstances
 
-	return &d, nil
+	return nil
 }
 
-func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) (*Deployment, error) {
+func (d *Deployment) UpdateDeploymentToCompleted(failedInstances []*ecs.Failure) error {
 	d.Status = DeploymentCompleted
 
 	if failedInstances == nil || len(failedInstances) == 0 {
@@ -101,5 +101,5 @@ func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) (*
 	d.FailedInstances = failedInstances
 	d.EndTime = time.Now()
 
-	return &d, nil
+	return nil
 }

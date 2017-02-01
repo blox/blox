@@ -124,7 +124,7 @@ func (suite *MonitorTestSuite) TestPendingListMultipleEnvironments() {
 	monitor.PendingMonitorLoop(1 * time.Millisecond)
 
 	for i := 0; i < len(environments); i++ {
-		pendingEvent, ok := (<-events).(UpdatePendingDeploymentEvent)
+		pendingEvent, ok := (<-events).(StartPendingDeploymentEvent)
 		if !ok {
 			assert.Fail(suite.T(), "Expected only pending deployment events")
 		}

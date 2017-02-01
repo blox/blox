@@ -18,17 +18,18 @@ import "github.com/blox/blox/daemon-scheduler/pkg/types"
 type EventType string
 
 const (
-	StartDeploymentEventType      EventType = "StartDeploymentEvent"
-	StopTasksEventType            EventType = "StopTasksEvent"
-	SchedulerErrorEventType       EventType = "SchedulerErrorEvent"
-	SchedulerEnvironmentEventType EventType = "SchedulerEnvironmentEvent"
-	ErrorEventType                EventType = "ErrorEventType"
-	StopTasksResultType           EventType = "StopTasksResultType"
-	StartDeploymentResultType     EventType = "StartDeploymentResultType"
+	StartDeploymentEventType         EventType = "StartDeploymentEvent"
+	StopTasksEventType               EventType = "StopTasksEvent"
+	SchedulerErrorEventType          EventType = "SchedulerErrorEvent"
+	SchedulerEnvironmentEventType    EventType = "SchedulerEnvironmentEvent"
+	ErrorEventType                   EventType = "ErrorEventType"
+	StopTasksResultType              EventType = "StopTasksResultType"
+	StartDeploymentResultType        EventType = "StartDeploymentResultType"
+	StartPendingDeploymentResultType EventType = "StartPendingDeploymentResultType"
 
 	MonitorErrorEventType               EventType = "MonitorErrorEventType"
 	UpdateInProgressDeploymentEventType EventType = "UpdateInProgressDeploymentEvent"
-	UpdatePendingDeploymentEventType    EventType = "UpdatePendingDeploymentEvent"
+	StartPendingDeploymentEventType     EventType = "StartPendingDeploymentEvent"
 )
 
 type Event interface {
@@ -104,6 +105,15 @@ func (e StartDeploymentResult) GetType() EventType {
 	return StartDeploymentResultType
 }
 
+// StartPendingDeploymentResult is result of StartPendingDeploymentEvent action
+type StartPendingDeploymentResult struct {
+	Deployment types.Deployment
+}
+
+func (e StartPendingDeploymentResult) GetType() EventType {
+	return StartPendingDeploymentResultType
+}
+
 // MonitorErrorEvent is message used to notify of any execution errors from Monitor
 type MonitorErrorEvent struct {
 	Error error
@@ -121,10 +131,10 @@ func (e UpdateInProgressDeploymentEvent) GetType() EventType {
 	return UpdateInProgressDeploymentEventType
 }
 
-type UpdatePendingDeploymentEvent struct {
+type StartPendingDeploymentEvent struct {
 	Environment types.Environment
 }
 
-func (e UpdatePendingDeploymentEvent) GetType() EventType {
-	return UpdatePendingDeploymentEventType
+func (e StartPendingDeploymentEvent) GetType() EventType {
+	return StartPendingDeploymentEventType
 }

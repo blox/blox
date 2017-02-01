@@ -14,6 +14,9 @@
 package types
 
 const (
-	taskDefinition = "arn:aws:ecs:us-east-1:12345678912:task-definition/test"
-	cluster        = "arn:aws:ecs:us-east-1:123456789123:cluster/test"
+	taskDefinition  = "arn:aws:ecs:us-east-1:12345678912:task-definition/test"
+	cluster         = "arn:aws:ecs:us-east-1:123456789123:cluster/test"
+	instanceARN1    = "arn:aws:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597"
+	instanceARN2    = "arn:aws:us-east-1:123456789123:container-instance/5d6d45ea-a4b4-4269-9d04-3af6ddfdc687"
+	environmentName = "environmentName"
 )

@@ -22,10 +22,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	environmentName = "environmentName"
-)
-
 type EnvironmentTestSuite struct {
 	suite.Suite
 	environment *Environment

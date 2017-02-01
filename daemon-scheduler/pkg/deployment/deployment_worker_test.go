@@ -19,6 +19,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
@@ -34,10 +35,12 @@ const (
 type DeploymentWorkerTestSuite struct {
 	suite.Suite
 	environment                *mocks.MockEnvironment
+	environmentFacade          *types.MockEnvironmentFacade
 	deployment                 *mocks.MockDeployment
-	clusterState               *mocks.MockClusterState
+	clusterState               *facade.MockClusterState
 	ecs                        *mocks.MockECS
 	environmentObject          *types.Environment
+	pendingDeploymentObject    *types.Deployment
 	inProgressDeploymentObject *types.Deployment
 	clusterTaskARNs            []*string
 	emptyDescribeTasksOutput   *ecs.DescribeTasksOutput
@@ -49,20 +52,24 @@ func (suite *DeploymentWorkerTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 
 	suite.environment = mocks.NewMockEnvironment(mockCtrl)
+	suite.environmentFacade = types.NewMockEnvironmentFacade(mockCtrl)
 	suite.deployment = mocks.NewMockDeployment(mockCtrl)
-	suite.clusterState = mocks.NewMockClusterState(mockCtrl)
+	suite.clusterState = facade.NewMockClusterState(mockCtrl)
 	suite.ecs = mocks.NewMockECS(mockCtrl)
-	suite.deploymentWorker = NewDeploymentWorker(suite.environment, suite.deployment, suite.ecs, suite.clusterState)
+	suite.deploymentWorker = NewDeploymentWorker(suite.environment, suite.environmentFacade,
+		suite.deployment, suite.ecs, suite.clusterState)
 
 	var err error
 	suite.environmentObject, err = types.NewEnvironment(environmentName, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Cannot initialize DeploymentWorkerTestSuite")
 
-	suite.inProgressDeploymentObject, err = types.NewDeployment(taskDefinition, suite.environmentObject.Token)
+	suite.pendingDeploymentObject, err = types.NewDeployment(taskDefinition, suite.environmentObject.Token)
 	assert.Nil(suite.T(), err, "Cannot initialize DeploymentWorkerTestSuite")
-	assert.NotNil(suite.T(), suite.inProgressDeploymentObject, "Cannot initialize DeploymentWorkerTestSuite")
 
-	suite.inProgressDeploymentObject, err = suite.inProgressDeploymentObject.UpdateDeploymentInProgress(0, nil)
+	inProgressDeployment := *suite.pendingDeploymentObject
+	suite.inProgressDeploymentObject = &inProgressDeployment
+
+	err = suite.inProgressDeploymentObject.UpdateDeploymentToInProgress(0, nil)
 	assert.Nil(suite.T(), err, "Cannot initialize DeploymentWorkerTestSuite")
 
 	suite.clusterTaskARNs = []*string{aws.String(taskARN1), aws.String(taskARN2)}
@@ -78,8 +85,103 @@ func TestDeploymentWorkerTestSuite(t *testing.T) {
 }
 
 func (suite *DeploymentWorkerTestSuite) TestNewDeploymentWorker() {
-	w := NewDeploymentWorker(suite.environment, suite.deployment, suite.ecs, suite.clusterState)
+	w := NewDeploymentWorker(suite.environment, suite.environmentFacade, suite.deployment, suite.ecs, suite.clusterState)
 	assert.NotNil(suite.T(), w, "Worker should not be nil")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentEmptyEnvironmentName() {
+	_, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, "")
+	assert.Error(suite.T(), err, "Expected an error when env name is missing")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentGetInProgressDeploymentFails() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).
+		Return(nil, errors.New("Get in progress deployment failed"))
+
+	_, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Error(suite.T(), err, "Expected an error when get in progress deployment fails")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentInProgressDeploymentExists() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).
+		Return(suite.inProgressDeploymentObject, nil)
+
+	d, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err, "Unexpected error when get in progress deployment exists")
+	assert.Nil(suite.T(), d, "Deployment should be nil when in progress deployment exists")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentGetPendingDeploymentFails() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).Return(nil, nil)
+
+	suite.deployment.EXPECT().GetPendingDeployment(suite.ctx, environmentName).
+		Return(nil, errors.New("Get pending deployment failed"))
+
+	_, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Error(suite.T(), err, "Expected an error when get pending deployment fails")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentNoPendingDeploymentExists() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).Return(nil, nil)
+	suite.deployment.EXPECT().GetPendingDeployment(suite.ctx, environmentName).Return(nil, nil)
+
+	d, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err, "Unexpected error when no pending deployment exists")
+	assert.Nil(suite.T(), d, "Expected no deployments when no pending deployment exists")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentGetEnvironmentFails() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).Return(nil, nil)
+	suite.deployment.EXPECT().GetPendingDeployment(suite.ctx, environmentName).Return(suite.pendingDeploymentObject, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, errors.New("Get environment failed"))
+
+	_, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Error(suite.T(), err, "Expected an error when get environment fails")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentGetEnvironmentIsEmpty() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).Return(nil, nil)
+	suite.deployment.EXPECT().GetPendingDeployment(suite.ctx, environmentName).Return(suite.pendingDeploymentObject, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+
+	d, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err, "Unexpected error when get environment is empty")
+	assert.Nil(suite.T(), d)
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentInstanceARNsFails() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).Return(nil, nil)
+	suite.deployment.EXPECT().GetPendingDeployment(suite.ctx, environmentName).Return(suite.pendingDeploymentObject, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
+	suite.environmentFacade.EXPECT().InstanceARNs(suite.environmentObject).Return(nil, errors.New("Instance ARNs fails"))
+
+	_, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Error(suite.T(), err, "Expected an error when get instance arns fails")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeploymentStartDeploymentFails() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).Return(nil, nil)
+	suite.deployment.EXPECT().GetPendingDeployment(suite.ctx, environmentName).Return(suite.pendingDeploymentObject, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
+	suite.environmentFacade.EXPECT().InstanceARNs(suite.environmentObject).Return(suite.clusterTaskARNs, nil)
+	suite.deployment.EXPECT().StartDeployment(suite.ctx, suite.environmentObject, suite.pendingDeploymentObject, suite.clusterTaskARNs).
+		Return(nil, errors.New("Start deployment fails"))
+
+	_, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Error(suite.T(), err, "Expected an error when start deployment fails")
+}
+
+func (suite *DeploymentWorkerTestSuite) TestStartPendingDeployment() {
+	suite.deployment.EXPECT().GetInProgressDeployment(suite.ctx, environmentName).Return(nil, nil)
+	suite.deployment.EXPECT().GetPendingDeployment(suite.ctx, environmentName).Return(suite.pendingDeploymentObject, nil)
+	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
+	suite.environmentFacade.EXPECT().InstanceARNs(suite.environmentObject).Return(suite.clusterTaskARNs, nil)
+	suite.deployment.EXPECT().StartDeployment(suite.ctx, suite.environmentObject, suite.pendingDeploymentObject, suite.clusterTaskARNs).
+		Return(suite.inProgressDeploymentObject, nil)
+
+	d, err := suite.deploymentWorker.StartPendingDeployment(suite.ctx, environmentName)
+	assert.Nil(suite.T(), err)
+	verifyDeployment(suite.T(), suite.inProgressDeploymentObject, d)
 }
 
 func (suite *DeploymentWorkerTestSuite) TestUpdateInProgressDeploymentEmptyEnvironmentName() {
@@ -212,8 +314,8 @@ func (suite *DeploymentWorkerTestSuite) TestUpdateInProgressDeploymentDeployment
 
 	suite.ecs.EXPECT().DescribeTasks(suite.environmentObject.Cluster, suite.clusterTaskARNs).Return(tasks, nil)
 
-	completedDeployment, err := suite.inProgressDeploymentObject.UpdateDeploymentCompleted(nil)
-
+	err := suite.inProgressDeploymentObject.UpdateDeploymentToCompleted(nil)
+	completedDeployment := suite.inProgressDeploymentObject
 	assert.Nil(suite.T(), err, "Unexpected error when moving deployment to completed")
 
 	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Do(

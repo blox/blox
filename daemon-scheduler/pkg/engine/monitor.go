@@ -122,7 +122,7 @@ func (m monitor) runPendingOnce() error {
 	}
 
 	for _, environment := range environments {
-		m.events <- UpdatePendingDeploymentEvent{
+		m.events <- StartPendingDeploymentEvent{
 			Environment: environment,
 		}
 	}

@@ -31,13 +31,18 @@ type Deployment interface {
 	// CreateSubDeployment kicks off a deployment corresponding to the in progress deployment ID
 	// in the environment to start tasks on given instances
 	CreateSubDeployment(ctx context.Context, environmentName string, instanceARNs []*string) (*types.Deployment, error)
+	// StartDeployment kicks off the provided deployment in the given environment (by starting tasks)
+	StartDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error)
 
 	// GetDeployment returns the deployment with the provided id in the provided environment
 	GetDeployment(ctx context.Context, environmentName string, id string) (*types.Deployment, error)
 	// GetCurrentDeployment returns the deployment which needs to be used for starting tasks, i.e.
 	// the in-progress deployment for the environment if one exists, otherwise the latest completed deployment.
 	GetCurrentDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
-	// GetInProgressDeployment returns the in-progress deployment for thd deployment.
+	// GetPendingDeployment returns the pending deployment for the environment deployment.
+	// There should be no more than one pending deployments in an environment.
+	GetPendingDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
+	// GetInProgressDeployment returns the in-progress deployment for the environmentName.
 	// There should be no more than one in progress deployments in an environment.
 	GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
 	// ListDeploymentsSortedReverseChronologically returns a list of deployments reverse-ordered by start time,
@@ -151,21 +156,15 @@ func (d deployment) CreateSubDeployment(ctx context.Context, environmentName str
 			"There is no deployment for environment with name '%s' to create a sub-deployment", environmentName)
 	}
 
-	return d.startDeployment(ctx, env, deployment, instanceARNs)
+	return d.StartDeployment(ctx, env, deployment, instanceARNs)
 }
 
-//TODO: wrap in a transaction so the environment and the deployment do not get modified in between being retrieved and starting tasks
-func (d deployment) startDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
+// TODO: wrap in a transaction so the environment and the deployment do not get modified in between being retrieved and starting tasks
+func (d deployment) StartDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
 	resp, err := d.ecs.StartTask(env.Cluster, instanceARNs, deployment.ID, deployment.TaskDefinition)
 	if err != nil {
 		return nil, errors.Wrapf(
 			err, "Error starting tasks for deployment with ID '%s' in environment with name '%s'", deployment.ID)
-	}
-
-	// if deployment is already completed then we do not update
-	// TODO: Figure out how we want to track failures in sub-deployments
-	if deployment.Status == types.DeploymentCompleted {
-		return deployment, nil
 	}
 
 	failures := resp.Failures
@@ -173,18 +172,38 @@ func (d deployment) startDeployment(ctx context.Context, env *types.Environment,
 		failures = append(failures, deployment.FailedInstances...)
 	}
 
-	updatedDeployment, err := deployment.UpdateDeploymentInProgress(len(instanceARNs), failures)
+	// if deployment is already completed (in the case where a new instance joins
+	// and there are no in-progress deployments) then we do not update the deployment object
+	// TODO: Figure out how we want to track failures in sub-deployments
+	if deployment.Status == types.DeploymentCompleted {
+		return deployment, nil
+	}
 
+	if deployment.Status == types.DeploymentPending {
+		err = deployment.UpdateDeploymentToInProgress(len(instanceARNs), failures)
+		if err != nil {
+			return nil, err
+		}
+		err = env.UpdatePendingDeploymentToInProgress()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if deployment.Status == types.DeploymentInProgress {
+		// just update succeeded and failed instances
+		err = deployment.UpdateDeploymentToInProgress(len(instanceARNs), failures)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = d.environment.UpdateDeployment(ctx, *env, *deployment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error updating deployment with ID '%s'", deployment.ID)
 	}
 
-	env, err = d.environment.UpdateDeployment(ctx, *env, *updatedDeployment)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error updating deployment with ID '%s'", deployment.ID)
-	}
-
-	return updatedDeployment, nil
+	return deployment, nil
 }
 
 func (d deployment) GetDeployment(ctx context.Context,
@@ -259,6 +278,29 @@ func (d deployment) GetCurrentDeployment(ctx context.Context, environmentName st
 	return nil, nil
 }
 
+func (d deployment) GetPendingDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	if len(environmentName) == 0 {
+		return nil, types.NewBadRequestError(errors.New("Environment name is missing"))
+	}
+
+	env, err := d.getEnvironmentOrFailIfDoesNotExist(ctx, environmentName)
+	if err != nil {
+		return nil, err
+	}
+
+	if env.PendingDeploymentID == "" {
+		return nil, nil
+	}
+
+	pending, ok := env.Deployments[env.PendingDeploymentID]
+	if !ok {
+		return nil, errors.Errorf("Deployment with ID '%s' does not exist in the deployments for environment with name '%s'",
+			env.PendingDeploymentID, env.Name)
+	}
+
+	return &pending, nil
+}
+
 func (d deployment) GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
 	if len(environmentName) == 0 {
 		return nil, types.NewBadRequestError(errors.New("Environment name is missing"))
@@ -270,27 +312,13 @@ func (d deployment) GetInProgressDeployment(ctx context.Context, environmentName
 	}
 
 	if env.InProgressDeploymentID == "" {
-		// TODO : We may want to change where the in progress deployment id is set
-		// using the pending deployment id later
-		if env.PendingDeploymentID == "" {
-			return nil, nil
-		}
-		env.InProgressDeploymentID = env.PendingDeploymentID
+		return nil, nil
 	}
 
 	inProgress, ok := env.Deployments[env.InProgressDeploymentID]
 	if !ok {
 		return nil, errors.Errorf("Deployment with ID '%s' does not exist in the deployments for environment with name '%s'",
 			env.InProgressDeploymentID, env.Name)
-	}
-
-	// If the status of the deployment is pending (this happens if we just set the
-	// in progress deployment id from the pending deployment id), update the status
-	// of the deployment to in progress
-	if inProgress.Status == types.DeploymentPending {
-		inProgress.Status = types.DeploymentInProgress
-	} else if inProgress.Status != types.DeploymentInProgress {
-		return nil, nil
 	}
 
 	return &inProgress, nil

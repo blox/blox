@@ -20,6 +20,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	mocks "github.com/blox/blox/daemon-scheduler/pkg/mocks"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
@@ -33,7 +34,7 @@ type DispatcherTestSuite struct {
 	suite.Suite
 	environmentSvc   *mocks.MockEnvironment
 	deploymentSvc    *mocks.MockDeployment
-	css              *mocks.MockClusterState
+	css              *facade.MockClusterState
 	ecs              *mocks.MockECS
 	deploymentWorker *mocks.MockDeploymentWorker
 }
@@ -42,7 +43,7 @@ func (suite *DispatcherTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.environmentSvc = mocks.NewMockEnvironment(mockCtrl)
 	suite.deploymentSvc = mocks.NewMockDeployment(mockCtrl)
-	suite.css = mocks.NewMockClusterState(mockCtrl)
+	suite.css = facade.NewMockClusterState(mockCtrl)
 	suite.ecs = mocks.NewMockECS(mockCtrl)
 	suite.deploymentWorker = mocks.NewMockDeploymentWorker(mockCtrl)
 }
@@ -147,6 +148,72 @@ func (suite *DispatcherTestSuite) TestUpdateInProgressDeploymentEvent() {
 
 	dispatcher.Start()
 	input <- event
+}
+
+func (suite *DispatcherTestSuite) TestStartPendingDeploymentEventReturnsError() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	input := make(chan Event)
+	output := make(chan Event)
+	dispatcher := NewDispatcher(ctx,
+		suite.environmentSvc,
+		suite.deploymentSvc,
+		suite.ecs, suite.css,
+		suite.deploymentWorker,
+		input, output,
+	)
+
+	environment := types.Environment{
+		Name:    environmentName,
+		Cluster: clusterARN,
+	}
+	event := StartPendingDeploymentEvent{
+		Environment: environment,
+	}
+
+	err := errors.New("Error starting a deployment")
+	suite.deploymentWorker.EXPECT().StartPendingDeployment(ctx, event.Environment.Name).Return(nil, err)
+
+	dispatcher.Start()
+	input <- event
+
+	observedErr := errors.Cause((<-output).(ErrorEvent).Error)
+	assert.Equal(suite.T(), err, observedErr)
+}
+
+func (suite *DispatcherTestSuite) TestStartPendingDeploymentEvent() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	input := make(chan Event)
+	output := make(chan Event)
+	dispatcher := NewDispatcher(ctx,
+		suite.environmentSvc,
+		suite.deploymentSvc,
+		suite.ecs, suite.css,
+		suite.deploymentWorker,
+		input, output,
+	)
+
+	environment := types.Environment{
+		Name:    environmentName,
+		Cluster: clusterARN,
+	}
+	event := StartPendingDeploymentEvent{
+		Environment: environment,
+	}
+
+	deployment := types.Deployment{
+		ID: uuid.NewRandom().String(),
+	}
+	suite.deploymentWorker.EXPECT().StartPendingDeployment(ctx, event.Environment.Name).Return(&deployment, nil)
+
+	dispatcher.Start()
+	input <- event
+
+	deploymentResult := (<-output).(StartPendingDeploymentResult).Deployment
+	assert.Equal(suite.T(), deployment.ID, deploymentResult.ID)
 }
 
 func (suite *DispatcherTestSuite) TestStartDeploymentEventReturnsError() {

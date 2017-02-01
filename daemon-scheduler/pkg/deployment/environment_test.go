@@ -79,11 +79,16 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 	suite.deployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.updatedDeployment, err = suite.deployment.UpdateDeploymentInProgress(desiredTaskCount, nil)
+	suite.updatedDeployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
+	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+	*suite.updatedDeployment = *suite.deployment
+	err = suite.updatedDeployment.UpdateDeploymentToInProgress(desiredTaskCount, nil)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.unhealthyDeployment, err = suite.deployment.UpdateDeploymentInProgress(
-		desiredTaskCount, []*ecs.Failure{&failedTask})
+	suite.unhealthyDeployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
+	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+	*suite.unhealthyDeployment = *suite.deployment
+	err = suite.unhealthyDeployment.UpdateDeploymentToInProgress(desiredTaskCount, []*ecs.Failure{&failedTask})
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.updatedEnvironment, err = types.NewEnvironment(environmentName1, taskDefinition, cluster1)
