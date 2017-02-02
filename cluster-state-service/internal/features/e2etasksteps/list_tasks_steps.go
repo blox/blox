@@ -54,10 +54,10 @@ func init() {
 	})
 
 	And(`^all (\d+) tasks are present in the list tasks response$`, func(numTasks int) {
-		if len(ecsTaskList) != numTasks {
+		if len(EcsTaskList) != numTasks {
 			T.Errorf("Error memorizing tasks started using ECS client. ")
 		}
-		for _, t := range ecsTaskList {
+		for _, t := range EcsTaskList {
 			err := ValidateListContainsTask(t, cssTaskList)
 			if err != nil {
 				T.Errorf(err.Error())
@@ -106,22 +106,6 @@ func init() {
 		}
 	})
 
-	And(`^I stop the (\d+) tasks in the ECS cluster$`, func(numTasks int) {
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-		}
-		if len(ecsTaskList) != numTasks {
-			T.Errorf("Error memorizing tasks started using ECS client. ")
-		}
-		for _, t := range ecsTaskList {
-			err := ecsWrapper.StopTask(clusterName, *t.TaskArn)
-			if err != nil {
-				T.Errorf(err.Error())
-			}
-		}
-	})
-
 	When(`^I list tasks with filters set to (.+?) status and cluster name$`, func(status string) {
 		time.Sleep(15 * time.Second)
 		clusterName, err := wrappers.GetClusterName()
@@ -143,12 +127,12 @@ func init() {
 			T.Errorf(err.Error())
 		}
 		for _, t := range cssTaskList {
-			if strings.ToLower(*t.LastStatus) != strings.ToLower(status) {
-				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.TaskARN, status, *t.LastStatus)
+			if strings.ToLower(*t.Entity.LastStatus) != strings.ToLower(status) {
+				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.Entity.TaskARN, status, *t.Entity.LastStatus)
 			}
-			if !strings.HasSuffix(*t.ClusterARN, "/"+clusterName) {
+			if !strings.HasSuffix(*t.Entity.ClusterARN, "/"+clusterName) {
 				T.Errorf("Task with ARN '%s' was expected to belong to cluster with name '%s' but belongs to cluster with ARN'%s'",
-					*t.TaskARN, clusterName, *t.ClusterARN)
+					*t.Entity.TaskARN, clusterName, *t.Entity.ClusterARN)
 			}
 		}
 	})
@@ -210,15 +194,15 @@ func init() {
 			T.Errorf(err.Error())
 		}
 		for _, t := range cssTaskList {
-			if t.StartedBy != "someone" {
-				T.Errorf("Task with ARN '%s' was expected to be started by '%s' not '%s'", *t.TaskARN, "someone", t.StartedBy)
+			if t.Entity.StartedBy != "someone" {
+				T.Errorf("Task with ARN '%s' was expected to be started by '%s' not '%s'", *t.Entity.TaskARN, "someone", t.Entity.StartedBy)
 			}
-			if strings.ToLower(*t.LastStatus) != strings.ToLower(status) {
-				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.TaskARN, status, *t.LastStatus)
+			if strings.ToLower(*t.Entity.LastStatus) != strings.ToLower(status) {
+				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.Entity.TaskARN, status, *t.Entity.LastStatus)
 			}
-			if !strings.HasSuffix(*t.ClusterARN, "/"+clusterName) {
+			if !strings.HasSuffix(*t.Entity.ClusterARN, "/"+clusterName) {
 				T.Errorf("Task with ARN '%s' was expected to belong to cluster with name '%s' but belongs to cluster with ARN'%s'",
-					*t.TaskARN, clusterName, *t.ClusterARN)
+					*t.Entity.TaskARN, clusterName, *t.Entity.ClusterARN)
 			}
 		}
 	})

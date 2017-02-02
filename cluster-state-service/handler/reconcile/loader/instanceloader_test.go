@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/blox/blox/cluster-state-service/handler/mocks"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -36,13 +37,15 @@ var (
 
 type InstanceLoaderTestSuite struct {
 	suite.Suite
-	instanceStore     *mocks.MockContainerInstanceStore
-	ecsWrapper        *mocks.MockECSWrapper
-	instanceLoader    ContainerInstanceLoader
-	clusterARNList    []*string
-	instance          types.ContainerInstance
-	redundantInstance types.ContainerInstance
-	instanceJSON      string
+	instanceStore              *mocks.MockContainerInstanceStore
+	ecsWrapper                 *mocks.MockECSWrapper
+	instanceLoader             ContainerInstanceLoader
+	clusterARNList             []*string
+	instance                   types.ContainerInstance
+	versionedInstance          storetypes.VersionedContainerInstance
+	redundantInstance          types.ContainerInstance
+	redundantVersionedInstance storetypes.VersionedContainerInstance
+	instanceJSON               string
 }
 
 func (suite *InstanceLoaderTestSuite) SetupTest() {
@@ -75,6 +78,10 @@ func (suite *InstanceLoaderTestSuite) SetupTest() {
 			VersionInfo:          &types.VersionInfo{},
 		},
 	}
+	suite.versionedInstance = storetypes.VersionedContainerInstance{
+		ContainerInstance: suite.instance,
+		Version: "123",
+	}
 
 	ins, err := json.Marshal(suite.instance)
 	assert.Nil(suite.T(), err, "Cannot setup testSuite: Unexpected error when marshaling instance")
@@ -86,6 +93,10 @@ func (suite *InstanceLoaderTestSuite) SetupTest() {
 			ContainerInstanceARN: &redundantInstanceARN,
 		},
 	}
+	suite.redundantVersionedInstance = storetypes.VersionedContainerInstance{
+		ContainerInstance: suite.redundantInstance,
+		Version: "123",
+	}
 }
 
 func TestInstanceLoaderTestSuite(t *testing.T) {
@@ -94,7 +105,7 @@ func TestInstanceLoaderTestSuite(t *testing.T) {
 
 func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesListAllClustersReturnsError() {
 	gomock.InOrder(
-		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]types.ContainerInstance, 0), nil),
+		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]storetypes.VersionedContainerInstance, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(nil, errors.New("Error while listing all clusters")),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(gomock.Any()).Times(0),
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(gomock.Any(), gomock.Any()).Times(0),
@@ -106,7 +117,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesListAllClustersR
 
 func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesListAllContainerInstancesReturnsError() {
 	gomock.InOrder(
-		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]types.ContainerInstance, 0), nil),
+		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]storetypes.VersionedContainerInstance, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[0]).Return(nil, errors.New("Error while listing all container instances")),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[1]).Times(0),
@@ -121,7 +132,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesDescribeContaine
 	instanceARNList := []*string{&instanceARN1}
 
 	gomock.InOrder(
-		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]types.ContainerInstance, 0), nil),
+		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]storetypes.VersionedContainerInstance, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[0]).Return(instanceARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[1]).Times(0),
@@ -137,7 +148,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesStoreReturnsErro
 	emptyInstanceARNList := []*string{}
 
 	gomock.InOrder(
-		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]types.ContainerInstance, 0), nil),
+		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]storetypes.VersionedContainerInstance, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[0]).Return(instanceARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[0], instanceARNList).Return(instanceList, nil, nil),
@@ -154,7 +165,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesEmptyLocalStore(
 	instanceList := []types.ContainerInstance{suite.instance}
 	emptyInstanceARNList := []*string{}
 	gomock.InOrder(
-		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]types.ContainerInstance, 0), nil),
+		suite.instanceStore.EXPECT().ListContainerInstances().Return(make([]storetypes.VersionedContainerInstance, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[0]).Return(instanceARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[0], instanceARNList).Return(instanceList, nil, nil),
@@ -169,7 +180,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesEmptyLocalStore(
 func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesLocalStoreSameAsECS() {
 	instanceARNList := []*string{&instanceARN1}
 	emptyInstanceARNList := []*string{}
-	instanceListInStore := []types.ContainerInstance{suite.instance}
+	instanceListInStore := []storetypes.VersionedContainerInstance{suite.versionedInstance}
 	instanceList := []types.ContainerInstance{suite.instance}
 	// instanceListInStore == instanceList, which should mean that there shouldn't
 	// be a call to DeleteContainerInstance()
@@ -190,7 +201,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesLocalStoreSameAs
 func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesRedundantEntriesInLocalStore() {
 	instanceARNList := []*string{&instanceARN1}
 	emptyInstanceARNList := []*string{}
-	instanceListInStore := []types.ContainerInstance{suite.instance, suite.redundantInstance}
+	instanceListInStore := []storetypes.VersionedContainerInstance{suite.versionedInstance, suite.redundantVersionedInstance}
 	instanceList := []types.ContainerInstance{suite.instance}
 	gomock.InOrder(
 		suite.instanceStore.EXPECT().ListContainerInstances().Return(instanceListInStore, nil),

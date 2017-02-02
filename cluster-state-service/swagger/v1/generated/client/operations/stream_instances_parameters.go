@@ -32,7 +32,7 @@ import (
 // NewStreamInstancesParams creates a new StreamInstancesParams object
 // with the default values initialized.
 func NewStreamInstancesParams() *StreamInstancesParams {
-
+	var ()
 	return &StreamInstancesParams{
 
 		timeout: cr.DefaultTimeout,
@@ -42,7 +42,7 @@ func NewStreamInstancesParams() *StreamInstancesParams {
 // NewStreamInstancesParamsWithTimeout creates a new StreamInstancesParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewStreamInstancesParamsWithTimeout(timeout time.Duration) *StreamInstancesParams {
-
+	var ()
 	return &StreamInstancesParams{
 
 		timeout: timeout,
@@ -52,7 +52,7 @@ func NewStreamInstancesParamsWithTimeout(timeout time.Duration) *StreamInstances
 // NewStreamInstancesParamsWithContext creates a new StreamInstancesParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewStreamInstancesParamsWithContext(ctx context.Context) *StreamInstancesParams {
-
+	var ()
 	return &StreamInstancesParams{
 
 		Context: ctx,
@@ -62,7 +62,7 @@ func NewStreamInstancesParamsWithContext(ctx context.Context) *StreamInstancesPa
 // NewStreamInstancesParamsWithHTTPClient creates a new StreamInstancesParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewStreamInstancesParamsWithHTTPClient(client *http.Client) *StreamInstancesParams {
-
+	var ()
 	return &StreamInstancesParams{
 		HTTPClient: client,
 	}
@@ -72,6 +72,13 @@ func NewStreamInstancesParamsWithHTTPClient(client *http.Client) *StreamInstance
 for the stream instances operation typically these are written to a http.Request
 */
 type StreamInstancesParams struct {
+
+	/*EntityVersion
+	  Entity version to start streaming from
+
+	*/
+	EntityVersion *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -110,11 +117,38 @@ func (o *StreamInstancesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithEntityVersion adds the entityVersion to the stream instances params
+func (o *StreamInstancesParams) WithEntityVersion(entityVersion *string) *StreamInstancesParams {
+	o.SetEntityVersion(entityVersion)
+	return o
+}
+
+// SetEntityVersion adds the entityVersion to the stream instances params
+func (o *StreamInstancesParams) SetEntityVersion(entityVersion *string) {
+	o.EntityVersion = entityVersion
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *StreamInstancesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
 	r.SetTimeout(o.timeout)
 	var res []error
+
+	if o.EntityVersion != nil {
+
+		// query param entityVersion
+		var qrEntityVersion string
+		if o.EntityVersion != nil {
+			qrEntityVersion = *o.EntityVersion
+		}
+		qEntityVersion := qrEntityVersion
+		if qEntityVersion != "" {
+			if err := r.SetQueryParam("entityVersion", qEntityVersion); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

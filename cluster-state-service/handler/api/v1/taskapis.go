@@ -21,6 +21,7 @@ import (
 
 	"github.com/blox/blox/cluster-state-service/handler/regex"
 	"github.com/blox/blox/cluster-state-service/handler/store"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/gorilla/mux"
@@ -34,6 +35,8 @@ const (
 	taskStatusFilter    = "status"
 	taskClusterFilter   = "cluster"
 	taskStartedByFilter = "startedBy"
+
+	taskEntityVersionKey = "entityVersion"
 )
 
 var (
@@ -126,7 +129,7 @@ func (taskAPIs TaskAPIs) ListTasks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var tasks []types.Task
+	var tasks []storetypes.VersionedTask
 	var err error
 
 	// No filters are set. List all tasks.
@@ -180,8 +183,23 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	taskRespChan, err := taskAPIs.taskStore.StreamTasks(ctx)
+	query := r.URL.Query()
+
+	entityVersion := query.Get(taskEntityVersionKey)
+
+	if entityVersion != "" {
+		if !regex.IsEntityVersion(entityVersion) {
+			http.Error(w, invalidEntityVersionClientErrMsg, http.StatusBadRequest)
+			return
+		}
+	}
+
+	taskRespChan, err := taskAPIs.taskStore.StreamTasks(ctx, entityVersion)
 	if err != nil {
+		if _, ok := errors.Cause(err).(types.OutOfRangeEntityVersion); ok {
+			http.Error(w, outOfRangeEntityVersionClientErrMsg, http.StatusBadRequest)
+			return
+		}
 		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
@@ -201,7 +219,7 @@ func (taskAPIs TaskAPIs) StreamTasks(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
-		extTask, err := ToTask(taskResp.Task)
+		extTask, err := ToTask(taskResp)
 		if err != nil {
 			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return

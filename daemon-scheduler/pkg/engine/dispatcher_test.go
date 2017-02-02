@@ -356,9 +356,12 @@ func (suite *DispatcherTestSuite) TestStopTasksEventECSStopTaskReturnsError() {
 
 	tasksFromECS := []*models.Task{
 		&models.Task{
-			TaskARN:       aws.String("task-arn-1"),
-			ClusterARN:    aws.String(event.Cluster),
-			DesiredStatus: aws.String("RUNNING"),
+			Metadata: &models.Metadata{EntityVersion: aws.String("123")},
+			Entity: &models.TaskDetail{
+				TaskARN:       aws.String("task-arn-1"),
+				ClusterARN:    aws.String(event.Cluster),
+				DesiredStatus: aws.String("RUNNING"),
+			},
 		},
 	}
 	suite.css.EXPECT().ListTasks(event.Cluster).Return(tasksFromECS, nil).Times(1)
@@ -399,19 +402,28 @@ func (suite *DispatcherTestSuite) TestStopTasksEvent() {
 
 	tasksFromECS := []*models.Task{
 		&models.Task{
-			TaskARN:       aws.String("task-arn-1"),
-			ClusterARN:    aws.String(event.Cluster),
-			DesiredStatus: aws.String("RUNNING"),
+			Metadata: &models.Metadata{EntityVersion: aws.String("123")},
+			Entity: &models.TaskDetail{
+				TaskARN:       aws.String("task-arn-1"),
+				ClusterARN:    aws.String(event.Cluster),
+				DesiredStatus: aws.String("RUNNING"),
+			},
 		},
 		&models.Task{
-			TaskARN:       aws.String("task-arn-2"),
-			ClusterARN:    aws.String(event.Cluster),
-			DesiredStatus: aws.String("STOPPED"),
+			Metadata: &models.Metadata{EntityVersion: aws.String("123")},
+			Entity: &models.TaskDetail{
+				TaskARN:       aws.String("task-arn-2"),
+				ClusterARN:    aws.String(event.Cluster),
+				DesiredStatus: aws.String("STOPPED"),
+			},
 		},
 		&models.Task{
-			TaskARN:       aws.String("task-arn-3"),
-			ClusterARN:    aws.String(event.Cluster),
-			DesiredStatus: aws.String("RUNNING"),
+			Metadata: &models.Metadata{EntityVersion: aws.String("123")},
+			Entity: &models.TaskDetail{
+				TaskARN:       aws.String("task-arn-3"),
+				ClusterARN:    aws.String(event.Cluster),
+				DesiredStatus: aws.String("RUNNING"),
+			},
 		},
 	}
 	suite.css.EXPECT().ListTasks(event.Cluster).Return(tasksFromECS, nil).Times(1)

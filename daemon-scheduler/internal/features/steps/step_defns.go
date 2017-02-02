@@ -106,7 +106,7 @@ func init() {
 			}
 			activeCount := 0
 			for _, instance := range instances {
-				if "ACTIVE" == aws.StringValue(instance.Status) {
+				if "ACTIVE" == aws.StringValue(instance.Entity.Status) {
 					activeCount++
 				}
 			}

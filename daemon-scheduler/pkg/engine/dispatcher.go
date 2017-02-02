@@ -196,7 +196,7 @@ func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 	}
 	taskMap := make(map[string]*models.Task)
 	for _, task := range tasksInCluster {
-		taskMap[aws.StringValue(task.TaskARN)] = task
+		taskMap[aws.StringValue(task.Entity.TaskARN)] = task
 	}
 
 	stoppedTasks := []string{}
@@ -205,7 +205,7 @@ func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 		if !ok {
 			continue
 		}
-		if aws.StringValue(knownTask.DesiredStatus) == "STOPPED" {
+		if aws.StringValue(knownTask.Entity.DesiredStatus) == "STOPPED" {
 			stoppedTasks = append(stoppedTasks, task)
 			continue
 		}

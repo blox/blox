@@ -45,3 +45,15 @@ func TestGetClusterNameFromARN(t *testing.T) {
 	assert.NotNil(t, c, "Expected cluster name to be retrieved from ARN")
 	assert.Equal(t, validClusterName, c, "Invalid cluster name retrieved from ARN")
 }
+
+func TestGetEntityVersionNonNumber(t *testing.T) {
+	_, err := GetEntityVersion(invalidEntityVersionNonNumber)
+	assert.NotNil(t, err, "Expected an error when retrieving a non-number entity version")
+}
+
+func TestGetEntityVersion(t *testing.T) {
+	e, err := GetEntityVersion(validEntityVersion)
+	assert.Nil(t, err, "Unexpected error when retrieving entity version")
+	assert.NotNil(t, e, "Expected integer to be retrieved from entity version")
+	assert.Equal(t, int64(123), e, "Invalid integer retrieved from entity version")
+}

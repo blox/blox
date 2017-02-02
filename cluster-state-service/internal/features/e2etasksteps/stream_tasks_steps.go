@@ -16,6 +16,7 @@ package e2etasksteps
 import (
 	"bufio"
 	"encoding/json"
+	"strings"
 
 	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
@@ -32,6 +33,8 @@ func init() {
 	stream := make(chan string)
 
 	When(`^I start streaming all task events$`, func() {
+		streamTaskList = nil
+
 		r, err := cssWrapper.StreamTasks()
 		if err != nil {
 			T.Errorf(err.Error())
@@ -48,8 +51,32 @@ func init() {
 		}()
 	})
 
+	When(`^I start streaming all task events with past entity version$`, func() {
+		streamTaskList = nil
+
+		if len(cssTaskList) != 1 {
+			T.Errorf("Error memorizing task retrieved using CSS client. ")
+			return
+		}
+
+		r, err := cssWrapper.StreamTasksWithEntityVersion(*cssTaskList[0].Metadata.EntityVersion)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
+		go func() {
+			scanner := bufio.NewScanner(r)
+			for scanner.Scan() {
+				task := &models.Task{}
+				json.Unmarshal([]byte(scanner.Text()), task)
+				streamTaskList = append(streamTaskList, *task)
+			}
+			stream <- "done"
+		}()
+	})
+
 	Then(`^the stream tasks response contains at least (\d+) task$`, func(numTasks int) {
-		if len(ecsTaskList) != 1 {
+		if len(EcsTaskList) != 1 {
 			T.Errorf("Error memorizing task started using ECS client. ")
 		}
 
@@ -59,8 +86,8 @@ func init() {
 		}
 	})
 
-	And(`^the stream tasks response contains the task started$`, func() {
-		err := ValidateListContainsTaskWithStatus(ecsTaskList[0], streamTaskList, "PENDING", "RUNNING")
+	And(`^the stream tasks response contains the task with desired status (.+?)$`, func(desiredStatus string) {
+		err := ValidateListContainsTaskWithDesiredStatus(EcsTaskList[0], streamTaskList, strings.ToUpper(desiredStatus))
 		if err != nil {
 			T.Errorf(err.Error())
 		}

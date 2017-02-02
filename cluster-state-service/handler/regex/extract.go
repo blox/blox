@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 // GetClusterNameFromARN extracts the cluster name from a cluster ARN
@@ -38,4 +39,18 @@ func GetClusterNameFromARN(clusterARN string) (string, error) {
 	// matchedStrs[0]=/clusterName. Strip off "/" in the beginning.
 	clusterName := matchedStrs[0][1:]
 	return clusterName, nil
+}
+
+// GetEntityVersion extracts the entity version as an int.
+func GetEntityVersion(entityVersion string) (int64, error) {
+	if !IsEntityVersion(entityVersion) {
+		return 0, fmt.Errorf("Invalid entity version: %s", entityVersion)
+	}
+
+	value, err := strconv.ParseInt(entityVersion, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return value, nil
 }

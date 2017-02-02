@@ -17,97 +17,33 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"strconv"
-
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // ContainerInstance container instance
 // swagger:model ContainerInstance
 type ContainerInstance struct {
 
-	// e c2 instance ID
-	EC2InstanceID string `json:"EC2InstanceID,omitempty"`
+	// entity
+	Entity *ContainerInstanceDetail `json:"entity,omitempty"`
 
-	// agent connected
-	// Required: true
-	AgentConnected *bool `json:"agentConnected"`
-
-	// agent update status
-	AgentUpdateStatus string `json:"agentUpdateStatus,omitempty"`
-
-	// attributes
-	Attributes []*ContainerInstanceAttribute `json:"attributes"`
-
-	// cluster a r n
-	// Required: true
-	ClusterARN *string `json:"clusterARN"`
-
-	// container instance a r n
-	// Required: true
-	ContainerInstanceARN *string `json:"containerInstanceARN"`
-
-	// registered resources
-	// Required: true
-	RegisteredResources []*ContainerInstanceResource `json:"registeredResources"`
-
-	// remaining resources
-	// Required: true
-	RemainingResources []*ContainerInstanceResource `json:"remainingResources"`
-
-	// status
-	// Required: true
-	Status *string `json:"status"`
-
-	// version info
-	// Required: true
-	VersionInfo *ContainerInstanceVersionInfo `json:"versionInfo"`
+	// metadata
+	Metadata *Metadata `json:"metadata,omitempty"`
 }
 
 // Validate validates this container instance
 func (m *ContainerInstance) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAgentConnected(formats); err != nil {
+	if err := m.validateEntity(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
-	if err := m.validateAttributes(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateClusterARN(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateContainerInstanceARN(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateRegisteredResources(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateRemainingResources(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateStatus(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateVersionInfo(formats); err != nil {
+	if err := m.validateMetadata(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -118,134 +54,36 @@ func (m *ContainerInstance) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ContainerInstance) validateAgentConnected(formats strfmt.Registry) error {
+func (m *ContainerInstance) validateEntity(formats strfmt.Registry) error {
 
-	if err := validate.Required("agentConnected", "body", m.AgentConnected); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateAttributes(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Attributes) { // not required
+	if swag.IsZero(m.Entity) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.Attributes); i++ {
+	if m.Entity != nil {
 
-		if swag.IsZero(m.Attributes[i]) { // not required
-			continue
-		}
-
-		if m.Attributes[i] != nil {
-
-			if err := m.Attributes[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("attributes" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateClusterARN(formats strfmt.Registry) error {
-
-	if err := validate.Required("clusterARN", "body", m.ClusterARN); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateContainerInstanceARN(formats strfmt.Registry) error {
-
-	if err := validate.Required("containerInstanceARN", "body", m.ContainerInstanceARN); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateRegisteredResources(formats strfmt.Registry) error {
-
-	if err := validate.Required("registeredResources", "body", m.RegisteredResources); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.RegisteredResources); i++ {
-
-		if swag.IsZero(m.RegisteredResources[i]) { // not required
-			continue
-		}
-
-		if m.RegisteredResources[i] != nil {
-
-			if err := m.RegisteredResources[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("registeredResources" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateRemainingResources(formats strfmt.Registry) error {
-
-	if err := validate.Required("remainingResources", "body", m.RemainingResources); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.RemainingResources); i++ {
-
-		if swag.IsZero(m.RemainingResources[i]) { // not required
-			continue
-		}
-
-		if m.RemainingResources[i] != nil {
-
-			if err := m.RemainingResources[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("remainingResources" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateStatus(formats strfmt.Registry) error {
-
-	if err := validate.Required("status", "body", m.Status); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ContainerInstance) validateVersionInfo(formats strfmt.Registry) error {
-
-	if err := validate.Required("versionInfo", "body", m.VersionInfo); err != nil {
-		return err
-	}
-
-	if m.VersionInfo != nil {
-
-		if err := m.VersionInfo.Validate(formats); err != nil {
+		if err := m.Entity.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("versionInfo")
+				return ve.ValidateName("entity")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ContainerInstance) validateMetadata(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Metadata) { // not required
+		return nil
+	}
+
+	if m.Metadata != nil {
+
+		if err := m.Metadata.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("metadata")
 			}
 			return err
 		}

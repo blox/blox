@@ -17,113 +17,33 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"strconv"
-
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // Task task
 // swagger:model Task
 type Task struct {
 
-	// cluster a r n
-	// Required: true
-	ClusterARN *string `json:"clusterARN"`
+	// entity
+	Entity *TaskDetail `json:"entity,omitempty"`
 
-	// container instance a r n
-	// Required: true
-	ContainerInstanceARN *string `json:"containerInstanceARN"`
-
-	// containers
-	// Required: true
-	Containers []*TaskContainer `json:"containers"`
-
-	// created at
-	// Required: true
-	CreatedAt *string `json:"createdAt"`
-
-	// desired status
-	// Required: true
-	DesiredStatus *string `json:"desiredStatus"`
-
-	// last status
-	// Required: true
-	LastStatus *string `json:"lastStatus"`
-
-	// overrides
-	// Required: true
-	Overrides *TaskOverride `json:"overrides"`
-
-	// started at
-	StartedAt string `json:"startedAt,omitempty"`
-
-	// started by
-	StartedBy string `json:"startedBy,omitempty"`
-
-	// stopped at
-	StoppedAt string `json:"stoppedAt,omitempty"`
-
-	// stopped reason
-	StoppedReason string `json:"stoppedReason,omitempty"`
-
-	// task a r n
-	// Required: true
-	TaskARN *string `json:"taskARN"`
-
-	// task definition a r n
-	// Required: true
-	TaskDefinitionARN *string `json:"taskDefinitionARN"`
+	// metadata
+	Metadata *Metadata `json:"metadata,omitempty"`
 }
 
 // Validate validates this task
 func (m *Task) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateClusterARN(formats); err != nil {
+	if err := m.validateEntity(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
 
-	if err := m.validateContainerInstanceARN(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateContainers(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateCreatedAt(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateDesiredStatus(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateLastStatus(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateOverrides(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateTaskARN(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if err := m.validateTaskDefinitionARN(formats); err != nil {
+	if err := m.validateMetadata(formats); err != nil {
 		// prop
 		res = append(res, err)
 	}
@@ -134,89 +54,17 @@ func (m *Task) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Task) validateClusterARN(formats strfmt.Registry) error {
+func (m *Task) validateEntity(formats strfmt.Registry) error {
 
-	if err := validate.Required("clusterARN", "body", m.ClusterARN); err != nil {
-		return err
+	if swag.IsZero(m.Entity) { // not required
+		return nil
 	}
 
-	return nil
-}
+	if m.Entity != nil {
 
-func (m *Task) validateContainerInstanceARN(formats strfmt.Registry) error {
-
-	if err := validate.Required("containerInstanceARN", "body", m.ContainerInstanceARN); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Task) validateContainers(formats strfmt.Registry) error {
-
-	if err := validate.Required("containers", "body", m.Containers); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.Containers); i++ {
-
-		if swag.IsZero(m.Containers[i]) { // not required
-			continue
-		}
-
-		if m.Containers[i] != nil {
-
-			if err := m.Containers[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("containers" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *Task) validateCreatedAt(formats strfmt.Registry) error {
-
-	if err := validate.Required("createdAt", "body", m.CreatedAt); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Task) validateDesiredStatus(formats strfmt.Registry) error {
-
-	if err := validate.Required("desiredStatus", "body", m.DesiredStatus); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Task) validateLastStatus(formats strfmt.Registry) error {
-
-	if err := validate.Required("lastStatus", "body", m.LastStatus); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Task) validateOverrides(formats strfmt.Registry) error {
-
-	if err := validate.Required("overrides", "body", m.Overrides); err != nil {
-		return err
-	}
-
-	if m.Overrides != nil {
-
-		if err := m.Overrides.Validate(formats); err != nil {
+		if err := m.Entity.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("overrides")
+				return ve.ValidateName("entity")
 			}
 			return err
 		}
@@ -225,19 +73,20 @@ func (m *Task) validateOverrides(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Task) validateTaskARN(formats strfmt.Registry) error {
+func (m *Task) validateMetadata(formats strfmt.Registry) error {
 
-	if err := validate.Required("taskARN", "body", m.TaskARN); err != nil {
-		return err
+	if swag.IsZero(m.Metadata) { // not required
+		return nil
 	}
 
-	return nil
-}
+	if m.Metadata != nil {
 
-func (m *Task) validateTaskDefinitionARN(formats strfmt.Registry) error {
-
-	if err := validate.Required("taskDefinitionARN", "body", m.TaskDefinitionARN); err != nil {
-		return err
+		if err := m.Metadata.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("metadata")
+			}
+			return err
+		}
 	}
 
 	return nil

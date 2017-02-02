@@ -14,10 +14,16 @@
 package types
 
 import (
-	"github.com/blox/blox/cluster-state-service/handler/types"
+	"fmt"
 )
 
-type TaskErrorWrapper struct {
-	Task types.Task
-	Err  error
+// Entity represents an object stored in Etcd.
+type Entity struct {
+	Key string // Etcd key
+	Value string // Etcd value
+	Version string // Etcd mod_revision
+}
+
+func (entity Entity) String() string {
+	return fmt.Sprintf("Key: '%s'. Value: '%s'. Version: '%s'.", entity.Key, entity.Value, entity.Version)
 }

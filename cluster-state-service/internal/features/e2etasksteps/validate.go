@@ -20,9 +20,9 @@ import (
 )
 
 func ValidateTasksMatch(ecsTask ecs.Task, cssTask models.Task) error {
-	if *ecsTask.TaskArn != *cssTask.TaskARN ||
-		*ecsTask.ClusterArn != *cssTask.ClusterARN ||
-		*ecsTask.ContainerInstanceArn != *cssTask.ContainerInstanceARN {
+	if *ecsTask.TaskArn != *cssTask.Entity.TaskARN ||
+		*ecsTask.ClusterArn != *cssTask.Entity.ClusterARN ||
+		*ecsTask.ContainerInstanceArn != *cssTask.Entity.ContainerInstanceARN {
 		return errors.New("Tasks don't match.")
 	}
 	return nil
@@ -32,28 +32,28 @@ func ValidateListContainsTask(ecsTask ecs.Task, cssTaskList []models.Task) error
 	taskARN := *ecsTask.TaskArn
 	var cssTask models.Task
 	for _, t := range cssTaskList {
-		if *t.TaskARN == taskARN {
+		if *t.Entity.TaskARN == taskARN {
 			cssTask = t
 			break
 		}
 	}
-	if cssTask.TaskARN == nil {
+	if cssTask.Entity.TaskARN == nil {
 		return errors.Errorf("Task with ARN '%s' not found in response. ", taskARN)
 	}
 	return ValidateTasksMatch(ecsTask, cssTask)
 }
 
-func ValidateListContainsTaskWithStatus(ecsTask ecs.Task, cssTaskList []models.Task, lastStatus string, desiredStatus string) error {
+func ValidateListContainsTaskWithDesiredStatus(ecsTask ecs.Task, cssTaskList []models.Task, desiredStatus string) error {
 	taskARN := *ecsTask.TaskArn
 	var cssTask models.Task
 	for _, t := range cssTaskList {
-		if *t.TaskARN == taskARN && *t.LastStatus == lastStatus && *t.DesiredStatus == desiredStatus {
+		if *t.Entity.TaskARN == taskARN && *t.Entity.DesiredStatus == desiredStatus {
 			cssTask = t
 			break
 		}
 	}
-	if cssTask.TaskARN == nil {
-		return errors.Errorf("Task with ARN '%s', last status '%s', and desired status '%s' not found in response. ", taskARN, lastStatus, desiredStatus)
+	if cssTask.Entity == nil || cssTask.Entity.TaskARN == nil {
+		return errors.Errorf("Task with ARN '%s' and desired status '%s' not found in response. ", taskARN, desiredStatus)
 	}
 	return ValidateTasksMatch(ecsTask, cssTask)
 }

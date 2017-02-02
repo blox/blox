@@ -48,7 +48,7 @@ func (f environmentFacade) InstanceARNs(environment *Environment) ([]*string, er
 
 	instanceARNs := make([]*string, 0, len(instances))
 	for _, instance := range instances {
-		instanceARNs = append(instanceARNs, instance.ContainerInstanceARN)
+		instanceARNs = append(instanceARNs, instance.Entity.ContainerInstanceARN)
 	}
 
 	return instanceARNs, nil

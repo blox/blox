@@ -55,6 +55,8 @@ type TaskAPIsTestSuite struct {
 	taskAPIs             TaskAPIs
 	task1                types.Task
 	task2                types.Task
+	versionedTask1       storetypes.VersionedTask
+	versionedTask2       storetypes.VersionedTask
 	extTask1             models.Task
 	extTask2             models.Task
 	responseHeaderJSON   http.Header
@@ -96,8 +98,12 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		Resources: []string{taskARN1},
 		Time:      &time,
 	}
+	suite.versionedTask1 = storetypes.VersionedTask{
+		Task: suite.task1,
+		Version: entityVersion,
+	}
 
-	extTask, err := ToTask(suite.task1)
+	extTask, err := ToTask(suite.versionedTask1)
 	if err != nil {
 		suite.T().Error("Cannot setup testSuite: Error when tranlating task to external task")
 	}
@@ -115,8 +121,12 @@ func (suite *TaskAPIsTestSuite) SetupTest() {
 		Resources: []string{taskARN2},
 		Time:      &time,
 	}
+	suite.versionedTask2 = storetypes.VersionedTask{
+		Task: suite.task2,
+		Version: entityVersion,
+	}
 
-	extTask, err = ToTask(suite.task2)
+	extTask, err = ToTask(suite.versionedTask2)
 	if err != nil {
 		suite.T().Error("Cannot setup testSuite: Error when tranlating task to external model")
 	}
@@ -141,7 +151,7 @@ func TestTaskAPIsTestSuite(t *testing.T) {
 }
 
 func (suite *TaskAPIsTestSuite) TestGetReturnsTask() {
-	suite.taskStore.EXPECT().GetTask(clusterName1, taskARN1).Return(&suite.task1, nil)
+	suite.taskStore.EXPECT().GetTask(clusterName1, taskARN1).Return(&suite.versionedTask1, nil)
 
 	request := suite.getTaskRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -194,7 +204,7 @@ func (suite *TaskAPIsTestSuite) TestGetTaskWithoutTaskARN() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksReturnsTasks() {
-	taskList := []types.Task{suite.task1, suite.task2}
+	taskList := []storetypes.VersionedTask{suite.versionedTask1, suite.versionedTask2}
 	suite.taskStore.EXPECT().ListTasks().Return(taskList, nil)
 	suite.taskStore.EXPECT().FilterTasks(gomock.Any()).Times(0)
 	extTasks := models.Tasks{
@@ -204,7 +214,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksReturnsTasks() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksNoTasks() {
-	emptyTaskList := make([]types.Task, 0)
+	emptyTaskList := make([]storetypes.VersionedTask, 0)
 	suite.taskStore.EXPECT().ListTasks().Return(emptyTaskList, nil)
 	suite.taskStore.EXPECT().FilterTasks(gomock.Any()).Times(0)
 	emptyExtTasks := models.Tasks{
@@ -241,7 +251,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksInvalidFilter() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksBothStatusAndClusterFilter() {
-	taskList := []types.Task{suite.task1}
+	taskList := []storetypes.VersionedTask{suite.versionedTask1}
 
 	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: clusterARN1, taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
@@ -262,7 +272,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksBothStatusAndClusterFilter() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterReturnsTasks() {
-	taskList := []types.Task{suite.task1}
+	taskList := []storetypes.VersionedTask{suite.versionedTask1}
 
 	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: "", taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
@@ -275,7 +285,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterReturnsTasks() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithCapitalizedStatusFilterReturnsTasks() {
-	taskList := []types.Task{suite.task1}
+	taskList := []storetypes.VersionedTask{suite.versionedTask1}
 
 	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: "", taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
@@ -288,7 +298,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithCapitalizedStatusFilterReturnsT
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithStatusFilterNoTasks() {
-	emptyTaskList := make([]types.Task, 0)
+	emptyTaskList := make([]storetypes.VersionedTask, 0)
 
 	filters := map[string]string{taskStatusFilter: taskStatus1, taskClusterFilter: "", taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(emptyTaskList, nil)
@@ -329,7 +339,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithInvalidStatusFilter() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterReturnsTasks() {
-	taskList := []types.Task{suite.task1}
+	taskList := []storetypes.VersionedTask{suite.versionedTask1}
 
 	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterName1, taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
@@ -342,7 +352,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterReturnsTasks()
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterNoTasks() {
-	emptyTaskList := make([]types.Task, 0)
+	emptyTaskList := make([]storetypes.VersionedTask, 0)
 
 	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterName1, taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(emptyTaskList, nil)
@@ -368,7 +378,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterNameFilterStoreReturnsEr
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterReturnsTasks() {
-	taskList := []types.Task{suite.task1}
+	taskList := []storetypes.VersionedTask{suite.versionedTask1}
 
 	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterARN1, taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(taskList, nil)
@@ -381,7 +391,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterReturnsTasks() 
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithClusterARNFilterNoTasks() {
-	emptyTaskList := make([]types.Task, 0)
+	emptyTaskList := make([]storetypes.VersionedTask, 0)
 
 	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: clusterARN1, taskStartedByFilter: ""}
 	suite.taskStore.EXPECT().FilterTasks(filters).Return(emptyTaskList, nil)
@@ -419,7 +429,7 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithInvalidClusterFilter() {
 }
 
 func (suite *TaskAPIsTestSuite) TestListTasksWithStartedByFilterReturnsTasks() {
-	taskList := []types.Task{suite.task1}
+	taskList := []storetypes.VersionedTask{suite.versionedTask1}
 
 	startedBy := "someone"
 	filters := map[string]string{taskStatusFilter: "", taskClusterFilter: "", taskStartedByFilter: startedBy}
@@ -467,14 +477,14 @@ func (suite *TaskAPIsTestSuite) TestListTasksWithRedundantFilter() {
 }
 
 func (suite *TaskAPIsTestSuite) TestStreamTasksReturnsTasks() {
-	taskRespChan := make(chan storetypes.TaskErrorWrapper)
-	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+	taskRespChan := make(chan storetypes.VersionedTask)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any(), gomock.Any()).Return(taskRespChan, nil)
 	expectedTasks := []models.Task{suite.extTask1, suite.extTask2}
 
 	go func() {
 		defer close(taskRespChan)
-		taskRespChan <- storetypes.TaskErrorWrapper{Task: suite.task1, Err: nil}
-		taskRespChan <- storetypes.TaskErrorWrapper{Task: suite.task2, Err: nil}
+		taskRespChan <- suite.versionedTask1
+		taskRespChan <- suite.versionedTask2
 	}()
 
 	request := suite.streamTasksRequest()
@@ -486,8 +496,8 @@ func (suite *TaskAPIsTestSuite) TestStreamTasksReturnsTasks() {
 }
 
 func (suite *TaskAPIsTestSuite) TestStreamTasksNoTasks() {
-	taskRespChan := make(chan storetypes.TaskErrorWrapper)
-	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+	taskRespChan := make(chan storetypes.VersionedTask)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any(), gomock.Any()).Return(taskRespChan, nil)
 	emptyTasks := []models.Task{}
 
 	go func() {
@@ -502,8 +512,56 @@ func (suite *TaskAPIsTestSuite) TestStreamTasksNoTasks() {
 	suite.validateTasksInStreamTasksResponse(responseRecorder, emptyTasks)
 }
 
+func (suite *TaskAPIsTestSuite) TestStreamTasksWithValidEntityVersion() {
+	taskRespChan := make(chan storetypes.VersionedTask)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any(), entityVersion).Return(taskRespChan, nil)
+	expectedTasks := []models.Task{suite.extTask1, suite.extTask2}
+
+	go func() {
+		defer close(taskRespChan)
+		taskRespChan <- suite.versionedTask1
+		taskRespChan <- suite.versionedTask2
+	}()
+
+	url := streamTasksPrefix + "?entityVersion=" + entityVersion
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating stream tasks request with valid entity version")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateSuccessfulStreamResponseHeaderAndStatus(responseRecorder)
+	suite.validateTasksInStreamTasksResponse(responseRecorder, expectedTasks)
+}
+
+func (suite *TaskAPIsTestSuite) TestStreamTasksWithInvalidEntityVersion() {
+	url := streamTasksPrefix + "?entityVersion=invalidEntityVersion"
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating stream tasks request with invalid entity version")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
+	suite.decodeErrorResponseAndValidate(responseRecorder, invalidEntityVersionClientErrMsg)
+}
+
+func (suite *TaskAPIsTestSuite) TestStreamTasksWithCompactedEntityVersion() {
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any(), entityVersion).Return(nil, types.NewOutOfRangeEntityVersion(errors.New("Out of range entity version")))
+
+	url := streamTasksPrefix + "?entityVersion=" + entityVersion
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating stream tasks request with compacted entity version")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
+	suite.decodeErrorResponseAndValidate(responseRecorder, outOfRangeEntityVersionClientErrMsg)
+}
+
 func (suite *TaskAPIsTestSuite) TestStreamTasksCreateChannelReturnsError() {
-	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(nil, errors.New("StreamTasks failed"))
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any(), gomock.Any()).Return(nil, errors.New("StreamTasks failed"))
 
 	request := suite.streamTasksRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -514,12 +572,12 @@ func (suite *TaskAPIsTestSuite) TestStreamTasksCreateChannelReturnsError() {
 }
 
 func (suite *TaskAPIsTestSuite) TestStreamTasksTaskResponseChannelReturnsError() {
-	taskRespChan := make(chan storetypes.TaskErrorWrapper)
-	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+	taskRespChan := make(chan storetypes.VersionedTask)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any(), gomock.Any()).Return(taskRespChan, nil)
 
 	go func() {
 		defer close(taskRespChan)
-		taskRespChan <- storetypes.TaskErrorWrapper{Task: types.Task{}, Err: errors.New("TaskErrorWrapper failure")}
+		taskRespChan <- storetypes.VersionedTask{Task: types.Task{}, Err: errors.New("VersionedTask failure")}
 	}()
 
 	request := suite.streamTasksRequest()
@@ -531,12 +589,12 @@ func (suite *TaskAPIsTestSuite) TestStreamTasksTaskResponseChannelReturnsError()
 }
 
 func (suite *TaskAPIsTestSuite) TestStreamTasksTranslateTaskReturnsError() {
-	taskRespChan := make(chan storetypes.TaskErrorWrapper)
-	suite.taskStore.EXPECT().StreamTasks(gomock.Any()).Return(taskRespChan, nil)
+	taskRespChan := make(chan storetypes.VersionedTask)
+	suite.taskStore.EXPECT().StreamTasks(gomock.Any(), gomock.Any()).Return(taskRespChan, nil)
 
 	go func() {
 		defer close(taskRespChan)
-		taskRespChan <- storetypes.TaskErrorWrapper{Task: types.Task{}, Err: nil}
+		taskRespChan <- storetypes.VersionedTask{Task: types.Task{}, Err: nil}
 	}()
 
 	request := suite.streamTasksRequest()

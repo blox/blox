@@ -113,12 +113,12 @@ func (loader taskLoader) loadLocalClusterStateFromStore() (clusterARNsToTasks, e
 	}
 
 	state := make(clusterARNsToTasks)
-	for _, task := range tasks {
-		clusterARN := aws.StringValue(task.Detail.ClusterARN)
+	for _, versionedTask := range tasks {
+		clusterARN := aws.StringValue(versionedTask.Task.Detail.ClusterARN)
 		if _, ok := state[clusterARN]; !ok {
 			state[clusterARN] = make(taskARNLookup)
 		}
-		state[clusterARN][aws.StringValue(task.Detail.TaskARN)] = struct{}{}
+		state[clusterARN][aws.StringValue(versionedTask.Task.Detail.TaskARN)] = struct{}{}
 	}
 
 	return state, nil

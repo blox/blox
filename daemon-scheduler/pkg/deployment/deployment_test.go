@@ -384,7 +384,10 @@ func createContainerInstances(instanceARNs []*string) []*models.ContainerInstanc
 	containerInstances := make([]*models.ContainerInstance, 0, len(instanceARNs))
 	for _, i := range instanceARNs {
 		containerInstance := &models.ContainerInstance{
-			ContainerInstanceARN: i,
+			Metadata: &models.Metadata{EntityVersion: aws.String("123")},
+			Entity: &models.ContainerInstanceDetail{
+				ContainerInstanceARN: i,
+			},
 		}
 		containerInstances = append(containerInstances, containerInstance)
 	}

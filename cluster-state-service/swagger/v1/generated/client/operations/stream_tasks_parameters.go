@@ -32,7 +32,7 @@ import (
 // NewStreamTasksParams creates a new StreamTasksParams object
 // with the default values initialized.
 func NewStreamTasksParams() *StreamTasksParams {
-
+	var ()
 	return &StreamTasksParams{
 
 		timeout: cr.DefaultTimeout,
@@ -42,7 +42,7 @@ func NewStreamTasksParams() *StreamTasksParams {
 // NewStreamTasksParamsWithTimeout creates a new StreamTasksParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewStreamTasksParamsWithTimeout(timeout time.Duration) *StreamTasksParams {
-
+	var ()
 	return &StreamTasksParams{
 
 		timeout: timeout,
@@ -52,7 +52,7 @@ func NewStreamTasksParamsWithTimeout(timeout time.Duration) *StreamTasksParams {
 // NewStreamTasksParamsWithContext creates a new StreamTasksParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewStreamTasksParamsWithContext(ctx context.Context) *StreamTasksParams {
-
+	var ()
 	return &StreamTasksParams{
 
 		Context: ctx,
@@ -62,7 +62,7 @@ func NewStreamTasksParamsWithContext(ctx context.Context) *StreamTasksParams {
 // NewStreamTasksParamsWithHTTPClient creates a new StreamTasksParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewStreamTasksParamsWithHTTPClient(client *http.Client) *StreamTasksParams {
-
+	var ()
 	return &StreamTasksParams{
 		HTTPClient: client,
 	}
@@ -72,6 +72,13 @@ func NewStreamTasksParamsWithHTTPClient(client *http.Client) *StreamTasksParams 
 for the stream tasks operation typically these are written to a http.Request
 */
 type StreamTasksParams struct {
+
+	/*EntityVersion
+	  Entity version to start streaming from
+
+	*/
+	EntityVersion *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -110,11 +117,38 @@ func (o *StreamTasksParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithEntityVersion adds the entityVersion to the stream tasks params
+func (o *StreamTasksParams) WithEntityVersion(entityVersion *string) *StreamTasksParams {
+	o.SetEntityVersion(entityVersion)
+	return o
+}
+
+// SetEntityVersion adds the entityVersion to the stream tasks params
+func (o *StreamTasksParams) SetEntityVersion(entityVersion *string) {
+	o.EntityVersion = entityVersion
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *StreamTasksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
 	r.SetTimeout(o.timeout)
 	var res []error
+
+	if o.EntityVersion != nil {
+
+		// query param entityVersion
+		var qrEntityVersion string
+		if o.EntityVersion != nil {
+			qrEntityVersion = *o.EntityVersion
+		}
+		qEntityVersion := qrEntityVersion
+		if qEntityVersion != "" {
+			if err := r.SetQueryParam("entityVersion", qEntityVersion); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

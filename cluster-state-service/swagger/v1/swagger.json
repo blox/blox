@@ -114,6 +114,14 @@
         "produces": [
           "application/octet-stream"
         ],
+        "parameters": [
+          {
+            "name": "entityVersion",
+            "in": "query",
+            "description": "Entity version to start streaming from",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Stream instances - success",
@@ -229,6 +237,14 @@
         "produces": [
           "application/octet-stream"
         ],
+        "parameters": [
+          {
+            "name": "entityVersion",
+            "in": "query",
+            "description": "Entity version to start streaming from",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Stream tasks - success",
@@ -248,7 +264,29 @@
     }
   },
   "definitions": {
+    "Metadata": {
+      "type": "object",
+      "required": [
+        "entityVersion"
+      ],
+      "properties": {
+        "entityVersion": {
+          "type": "string"
+        }
+      }
+    },
     "ContainerInstance": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/Metadata"
+        },
+        "entity": {
+          "$ref": "#/definitions/ContainerInstanceDetail"
+        }
+      }
+    },
+    "ContainerInstanceDetail": {
       "type": "object",
       "required": [
         "agentConnected",
@@ -365,6 +403,17 @@
       }
     },
     "Task": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/Metadata"
+        },
+        "entity": {
+          "$ref": "#/definitions/TaskDetail"
+        }
+      }
+    },
+    "TaskDetail": {
       "type": "object",
       "required": [
         "clusterARN",

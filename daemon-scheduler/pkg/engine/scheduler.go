@@ -357,7 +357,7 @@ func (s *scheduler) lookupInstances(state *environmentExecutionState) (*instance
 
 	instanceARNToInstance := make(map[string]*models.ContainerInstance)
 	for _, instance := range instances {
-		instanceARNToInstance[aws.StringValue(instance.ContainerInstanceARN)] = instance
+		instanceARNToInstance[aws.StringValue(instance.Entity.ContainerInstanceARN)] = instance
 	}
 
 	result := &instanceLookupResult{
@@ -373,15 +373,15 @@ func (s *scheduler) lookupInstances(state *environmentExecutionState) (*instance
 
 	// collect all the instances which do not have this environment installed
 	for _, i := range instances {
-		instanceARN := aws.StringValue(i.ContainerInstanceARN)
-		if aws.StringValue(i.Status) == inactiveInstanceStatus {
+		instanceARN := aws.StringValue(i.Entity.ContainerInstanceARN)
+		if aws.StringValue(i.Entity.Status) == inactiveInstanceStatus {
 			delete(result.deployedInstances, instanceARN)
 			continue
 		}
 		result.totalInstanceCount++
 		_, ok := result.deployedInstances[instanceARN]
 		if !ok {
-			result.newInstances = append(result.newInstances, i.ContainerInstanceARN)
+			result.newInstances = append(result.newInstances, i.Entity.ContainerInstanceARN)
 		}
 	}
 	return result, nil
@@ -416,13 +416,13 @@ func (s *scheduler) loadInstancesAlreadyDeployed(state *environmentExecutionStat
 	// for each task find the deployment it corresponds to and tag the instance of the task as deployed
 	for _, task := range tasks {
 		// ignore if task does not belong to this environment
-		_, ok := deploymentsMap[task.StartedBy]
+		_, ok := deploymentsMap[task.Entity.StartedBy]
 		if !ok {
 			continue
 		}
-		instanceARN := aws.StringValue(task.ContainerInstanceARN)
+		instanceARN := aws.StringValue(task.Entity.ContainerInstanceARN)
 		instance, ok := instanceARNToInstance[instanceARN]
-		if !ok || aws.StringValue(instance.Status) == inactiveInstanceStatus {
+		if !ok || aws.StringValue(instance.Entity.Status) == inactiveInstanceStatus {
 			continue
 		}
 
@@ -433,8 +433,8 @@ func (s *scheduler) loadInstancesAlreadyDeployed(state *environmentExecutionStat
 
 		deployedTasks = append(deployedTasks, &deployedTask{
 			instanceARN:             instanceARN,
-			taskARN:                 aws.StringValue(task.TaskARN),
-			deploymentID:            task.StartedBy,
+			taskARN:                 aws.StringValue(task.Entity.TaskARN),
+			deploymentID:            task.Entity.StartedBy,
 			availableInClusterState: true,
 		})
 
@@ -466,8 +466,8 @@ func (s *scheduler) getRunningTasks(cluster string) (map[string]*models.Task, er
 
 	tasks := make(map[string]*models.Task)
 	for _, task := range resp {
-		if aws.StringValue(task.DesiredStatus) == runningTaskStatus {
-			tasks[aws.StringValue(task.TaskARN)] = task
+		if aws.StringValue(task.Entity.DesiredStatus) == runningTaskStatus {
+			tasks[aws.StringValue(task.Entity.TaskARN)] = task
 		}
 	}
 

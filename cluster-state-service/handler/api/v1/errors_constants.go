@@ -22,6 +22,8 @@ const (
 	redundantFilterClientErrMsg              = "At least one of the filters provided is specified multiple times"
 	invalidClusterClientErrMsg               = "Invalid cluster ARN or name"
 	unsupportedFilterCombinationClientErrMsg = "The combination of filters provided are not supported"
+	invalidEntityVersionClientErrMsg         = "Invalid entity version"
+	outOfRangeEntityVersionClientErrMsg      = "Entity version is out of range"
 
 	// 5xx error messages
 	internalServerErrMsg = "Unexpected internal server error"

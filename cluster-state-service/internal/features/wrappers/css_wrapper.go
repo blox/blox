@@ -171,6 +171,18 @@ func (wrapper CSSWrapper) StreamTasks() (*io.PipeReader, error) {
 	return r, nil
 }
 
+func (wrapper CSSWrapper) StreamTasksWithEntityVersion(entityVersion string) (*io.PipeReader, error) {
+	r, w := io.Pipe()
+	in := operations.NewStreamTasksParams()
+	in.SetTimeout(10 * time.Second)
+	in.SetEntityVersion(&entityVersion)
+	go func() {
+		defer w.Close()
+		wrapper.client.Operations.StreamTasks(in, w)
+	}()
+	return r, nil
+}
+
 func (wrapper CSSWrapper) GetInstance(clusterName string, instanceARN string) (*models.ContainerInstance, error) {
 	in := operations.NewGetInstanceParams()
 	in.SetCluster(clusterName)
@@ -247,6 +259,18 @@ func (wrapper CSSWrapper) StreamInstances() (*io.PipeReader, error) {
 	r, w := io.Pipe()
 	in := operations.NewStreamInstancesParams()
 	in.SetTimeout(10 * time.Second)
+	go func() {
+		defer w.Close()
+		wrapper.client.Operations.StreamInstances(in, w)
+	}()
+	return r, nil
+}
+
+func (wrapper CSSWrapper) StreamInstancesWithEntityVersion(entityVersion string) (*io.PipeReader, error) {
+	r, w := io.Pipe()
+	in := operations.NewStreamInstancesParams()
+	in.SetTimeout(10 * time.Second)
+	in.SetEntityVersion(&entityVersion)
 	go func() {
 		defer w.Close()
 		wrapper.client.Operations.StreamInstances(in, w)

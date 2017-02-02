@@ -89,10 +89,16 @@ func (suite *EnvironmentFacadeTestSuite) TestEnvironmentFacadeInstanceARNsListIn
 func (suite *EnvironmentFacadeTestSuite) TestEnvironmentFacadeInstanceARNs() {
 	listInstancesResponse := make([]*models.ContainerInstance, 2)
 	listInstancesResponse[0] = &models.ContainerInstance{
-		ContainerInstanceARN: aws.String(instanceARN1),
+		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
+		Entity: &models.ContainerInstanceDetail{
+			ContainerInstanceARN: aws.String(instanceARN1),
+		},
 	}
 	listInstancesResponse[1] = &models.ContainerInstance{
-		ContainerInstanceARN: aws.String(instanceARN2),
+		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
+		Entity: &models.ContainerInstanceDetail{
+			ContainerInstanceARN: aws.String(instanceARN2),
+		},
 	}
 
 	suite.css.EXPECT().ListInstances(suite.environment.Cluster).Return(listInstancesResponse, nil)

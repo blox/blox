@@ -14,41 +14,33 @@
 package e2einstancesteps
 
 import (
-	"strings"
-
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/pkg/errors"
 )
 
 func ValidateInstancesMatch(ecsInstance ecs.ContainerInstance, cssInstance models.ContainerInstance) error {
-	if *ecsInstance.ContainerInstanceArn != *cssInstance.ContainerInstanceARN ||
-		*ecsInstance.Status != *cssInstance.Status {
+	if *ecsInstance.ContainerInstanceArn != *cssInstance.Entity.ContainerInstanceARN ||
+		*ecsInstance.Status != *cssInstance.Entity.Status {
 		return errors.New("Container instances don't match. ")
 	}
 	return nil
 }
 
 func ValidateListContainsInstance(ecsInstance ecs.ContainerInstance, cssInstanceList []models.ContainerInstance) error {
-	instanceARN := *ecsInstance.ContainerInstanceArn
-	var cssInstance models.ContainerInstance
-	for _, i := range cssInstanceList {
-		if *i.ContainerInstanceARN == instanceARN {
-			cssInstance = i
-			break
-		}
+	cssInstance, err := ValidateListContainsInstanceArn(*ecsInstance.ContainerInstanceArn, cssInstanceList)
+	if err != nil {
+		return err
 	}
-	if cssInstance.ContainerInstanceARN == nil {
-		return errors.Errorf("Instance with ARN '%s' not found in response. ", instanceARN)
-	}
-	return ValidateInstancesMatch(ecsInstance, cssInstance)
+
+	return ValidateInstancesMatch(ecsInstance, *cssInstance)
 }
 
-func ValidateListContainsCluster(ecsCluster string, cssInstanceList []models.ContainerInstance) error {
+func ValidateListContainsInstanceArn(instanceARN string, cssInstanceList []models.ContainerInstance) (*models.ContainerInstance, error) {
 	for _, i := range cssInstanceList {
-		if strings.HasSuffix(*i.ClusterARN, "/"+ecsCluster) {
-			return nil
+		if *i.Entity.ContainerInstanceARN == instanceARN {
+			return &i, nil
 		}
 	}
-	return errors.Errorf("Instance with cluster '%s' not found in response. ", ecsCluster)
+	return nil, errors.Errorf("Instance with ARN '%s' not found in response. ", instanceARN)
 }

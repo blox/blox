@@ -18,8 +18,7 @@ package mocks
 
 import (
 	context "context"
-	types0 "github.com/blox/blox/cluster-state-service/handler/store/types"
-	types "github.com/blox/blox/cluster-state-service/handler/types"
+	types "github.com/blox/blox/cluster-state-service/handler/store/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -64,9 +63,9 @@ func (_mr *_MockContainerInstanceStoreRecorder) AddUnversionedContainerInstance(
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddUnversionedContainerInstance", arg0)
 }
 
-func (_m *MockContainerInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error) {
+func (_m *MockContainerInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*types.VersionedContainerInstance, error) {
 	ret := _m.ctrl.Call(_m, "GetContainerInstance", cluster, instanceARN)
-	ret0, _ := ret[0].(*types.ContainerInstance)
+	ret0, _ := ret[0].(*types.VersionedContainerInstance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -75,9 +74,9 @@ func (_mr *_MockContainerInstanceStoreRecorder) GetContainerInstance(arg0, arg1 
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetContainerInstance", arg0, arg1)
 }
 
-func (_m *MockContainerInstanceStore) ListContainerInstances() ([]types.ContainerInstance, error) {
+func (_m *MockContainerInstanceStore) ListContainerInstances() ([]types.VersionedContainerInstance, error) {
 	ret := _m.ctrl.Call(_m, "ListContainerInstances")
-	ret0, _ := ret[0].([]types.ContainerInstance)
+	ret0, _ := ret[0].([]types.VersionedContainerInstance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,9 +85,9 @@ func (_mr *_MockContainerInstanceStoreRecorder) ListContainerInstances() *gomock
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListContainerInstances")
 }
 
-func (_m *MockContainerInstanceStore) FilterContainerInstances(filterMap map[string]string) ([]types.ContainerInstance, error) {
+func (_m *MockContainerInstanceStore) FilterContainerInstances(filterMap map[string]string) ([]types.VersionedContainerInstance, error) {
 	ret := _m.ctrl.Call(_m, "FilterContainerInstances", filterMap)
-	ret0, _ := ret[0].([]types.ContainerInstance)
+	ret0, _ := ret[0].([]types.VersionedContainerInstance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -97,15 +96,15 @@ func (_mr *_MockContainerInstanceStoreRecorder) FilterContainerInstances(arg0 in
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "FilterContainerInstances", arg0)
 }
 
-func (_m *MockContainerInstanceStore) StreamContainerInstances(ctx context.Context) (chan types0.ContainerInstanceErrorWrapper, error) {
-	ret := _m.ctrl.Call(_m, "StreamContainerInstances", ctx)
-	ret0, _ := ret[0].(chan types0.ContainerInstanceErrorWrapper)
+func (_m *MockContainerInstanceStore) StreamContainerInstances(ctx context.Context, entityVersion string) (chan types.VersionedContainerInstance, error) {
+	ret := _m.ctrl.Call(_m, "StreamContainerInstances", ctx, entityVersion)
+	ret0, _ := ret[0].(chan types.VersionedContainerInstance)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockContainerInstanceStoreRecorder) StreamContainerInstances(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "StreamContainerInstances", arg0)
+func (_mr *_MockContainerInstanceStoreRecorder) StreamContainerInstances(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "StreamContainerInstances", arg0, arg1)
 }
 
 func (_m *MockContainerInstanceStore) DeleteContainerInstance(cluster string, instanceARN string) error {

@@ -31,4 +31,10 @@ const (
 	invalidInstanceARNWithNoID          = "arn:aws:ecs:us-east-1:123456789123:container-instance/"
 	invalidInstanceARNWithInvalidID     = "arn:aws:ecs:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597/-"
 	invalidInstanceARNWithInvalidPrefix = "arn/container-instance"
+
+	validEntityVersion                      = "123"
+	invalidEntityVersionFloatingPointNumber = "123.123"
+	invalidEntityVersionNegativeNumber      = "-123"
+	invalidEntityVersionNonNumber           = "invalidEntityVersion"
+
 )

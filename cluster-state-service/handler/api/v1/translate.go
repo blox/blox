@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 )
@@ -87,50 +88,56 @@ func toContainerInstanceResource(r *types.Resource) *models.ContainerInstanceRes
 	return resource
 }
 
-// ToContainerInstance tranlates a container instance represented by the internal structure (types.ContainerInstance) to it's external representation (models.ContainerInstance)
-func ToContainerInstance(instance types.ContainerInstance) (models.ContainerInstance, error) {
-	err := validateContainerInstance(instance)
+// ToContainerInstance translates a container instance represented by the internal structure (storetypes.VersionedContainerInstance) to it's external representation (models.ContainerInstance)
+func ToContainerInstance(versionedInstance storetypes.VersionedContainerInstance) (models.ContainerInstance, error) {
+	c := versionedInstance.ContainerInstance
+	err := validateContainerInstance(c)
 	if err != nil {
 		return models.ContainerInstance{}, err
 	}
-	regRes := make([]*models.ContainerInstanceResource, len(instance.Detail.RegisteredResources))
-	for i := range instance.Detail.RegisteredResources {
-		regRes[i] = toContainerInstanceResource(instance.Detail.RegisteredResources[i])
+	regRes := make([]*models.ContainerInstanceResource, len(c.Detail.RegisteredResources))
+	for i := range c.Detail.RegisteredResources {
+		regRes[i] = toContainerInstanceResource(c.Detail.RegisteredResources[i])
 	}
 
-	remRes := make([]*models.ContainerInstanceResource, len(instance.Detail.RemainingResources))
-	for i := range instance.Detail.RegisteredResources {
-		remRes[i] = toContainerInstanceResource(instance.Detail.RemainingResources[i])
+	remRes := make([]*models.ContainerInstanceResource, len(c.Detail.RemainingResources))
+	for i := range c.Detail.RegisteredResources {
+		remRes[i] = toContainerInstanceResource(c.Detail.RemainingResources[i])
 	}
 
 	versionInfo := models.ContainerInstanceVersionInfo{
-		AgentHash:     instance.Detail.VersionInfo.AgentHash,
-		AgentVersion:  instance.Detail.VersionInfo.AgentVersion,
-		DockerVersion: instance.Detail.VersionInfo.DockerVersion,
+		AgentHash:     c.Detail.VersionInfo.AgentHash,
+		AgentVersion:  c.Detail.VersionInfo.AgentVersion,
+		DockerVersion: c.Detail.VersionInfo.DockerVersion,
 	}
 
 	containerInstance := models.ContainerInstance{
-		AgentConnected:       instance.Detail.AgentConnected,
-		AgentUpdateStatus:    instance.Detail.AgentUpdateStatus,
-		ClusterARN:           instance.Detail.ClusterARN,
-		ContainerInstanceARN: instance.Detail.ContainerInstanceARN,
-		EC2InstanceID:        instance.Detail.EC2InstanceID,
-		RegisteredResources:  regRes,
-		RemainingResources:   remRes,
-		Status:               instance.Detail.Status,
-		VersionInfo:          &versionInfo,
+		Metadata: &models.Metadata{
+			EntityVersion: &versionedInstance.Version,
+		},
+		Entity: &models.ContainerInstanceDetail{
+			AgentConnected:       c.Detail.AgentConnected,
+			AgentUpdateStatus:    c.Detail.AgentUpdateStatus,
+			ClusterARN:           c.Detail.ClusterARN,
+			ContainerInstanceARN: c.Detail.ContainerInstanceARN,
+			EC2InstanceID:        c.Detail.EC2InstanceID,
+			RegisteredResources:  regRes,
+			RemainingResources:   remRes,
+			Status:               c.Detail.Status,
+			VersionInfo:          &versionInfo,
+		},
 	}
 
-	if instance.Detail.Attributes != nil {
-		attributes := make([]*models.ContainerInstanceAttribute, len(instance.Detail.Attributes))
-		for i := range instance.Detail.Attributes {
-			a := instance.Detail.Attributes[i]
+	if c.Detail.Attributes != nil {
+		attributes := make([]*models.ContainerInstanceAttribute, len(c.Detail.Attributes))
+		for i := range c.Detail.Attributes {
+			a := c.Detail.Attributes[i]
 			attributes[i] = &models.ContainerInstanceAttribute{
 				Name:  a.Name,
 				Value: a.Value,
 			}
 		}
-		containerInstance.Attributes = attributes
+		containerInstance.Entity.Attributes = attributes
 	}
 
 	return containerInstance, nil
@@ -172,16 +179,17 @@ func validateTask(task types.Task) error {
 	return nil
 }
 
-// ToTask tranlates a task represented by the internal structure (types.Task) to it's external representation (models.Task)
-func ToTask(task types.Task) (models.Task, error) {
-	err := validateTask(task)
+// ToTask translates a task represented by the internal structure (storetypes.VersionedTask) to it's external representation (models.Task)
+func ToTask(versionedTask storetypes.VersionedTask) (models.Task, error) {
+	t := versionedTask.Task
+	err := validateTask(t)
 	if err != nil {
 		return models.Task{}, err
 	}
 
-	containers := make([]*models.TaskContainer, len(task.Detail.Containers))
-	for i := range task.Detail.Containers {
-		c := task.Detail.Containers[i]
+	containers := make([]*models.TaskContainer, len(t.Detail.Containers))
+	for i := range t.Detail.Containers {
+		c := t.Detail.Containers[i]
 		containers[i] = &models.TaskContainer{
 			ContainerARN: c.ContainerARN,
 			ExitCode:     c.ExitCode,
@@ -204,9 +212,9 @@ func ToTask(task types.Task) (models.Task, error) {
 		}
 	}
 
-	containerOverrides := make([]*models.TaskContainerOverride, len(task.Detail.Overrides.ContainerOverrides))
-	for i := range task.Detail.Overrides.ContainerOverrides {
-		c := task.Detail.Overrides.ContainerOverrides[i]
+	containerOverrides := make([]*models.TaskContainerOverride, len(t.Detail.Overrides.ContainerOverrides))
+	for i := range t.Detail.Overrides.ContainerOverrides {
+		c := t.Detail.Overrides.ContainerOverrides[i]
 		containerOverrides[i] = &models.TaskContainerOverride{
 			Command: c.Command,
 			Name:    c.Name,
@@ -226,22 +234,27 @@ func ToTask(task types.Task) (models.Task, error) {
 
 	overrides := models.TaskOverride{
 		ContainerOverrides: containerOverrides,
-		TaskRoleArn:        task.Detail.Overrides.TaskRoleArn,
+		TaskRoleArn:        t.Detail.Overrides.TaskRoleArn,
 	}
 
 	return models.Task{
-		ClusterARN:           task.Detail.ClusterARN,
-		ContainerInstanceARN: task.Detail.ContainerInstanceARN,
-		Containers:           containers,
-		CreatedAt:            task.Detail.CreatedAt,
-		DesiredStatus:        task.Detail.DesiredStatus,
-		LastStatus:           task.Detail.LastStatus,
-		Overrides:            &overrides,
-		StartedAt:            task.Detail.StartedAt,
-		StartedBy:            task.Detail.StartedBy,
-		StoppedAt:            task.Detail.StoppedAt,
-		StoppedReason:        task.Detail.StoppedReason,
-		TaskARN:              task.Detail.TaskARN,
-		TaskDefinitionARN:    task.Detail.TaskDefinitionARN,
+		Metadata: &models.Metadata{
+			EntityVersion: &versionedTask.Version,
+		},
+		Entity: &models.TaskDetail{
+			ClusterARN:           t.Detail.ClusterARN,
+			ContainerInstanceARN: t.Detail.ContainerInstanceARN,
+			Containers:           containers,
+			CreatedAt:            t.Detail.CreatedAt,
+			DesiredStatus:        t.Detail.DesiredStatus,
+			LastStatus:           t.Detail.LastStatus,
+			Overrides:            &overrides,
+			StartedAt:            t.Detail.StartedAt,
+			StartedBy:            t.Detail.StartedBy,
+			StoppedAt:            t.Detail.StoppedAt,
+			StoppedReason:        t.Detail.StoppedReason,
+			TaskARN:              t.Detail.TaskARN,
+			TaskDefinitionARN:    t.Detail.TaskDefinitionARN,
+		},
 	}, nil
 }

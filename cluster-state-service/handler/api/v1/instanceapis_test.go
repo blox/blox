@@ -58,6 +58,7 @@ type InstanceAPIsTestSuite struct {
 	instanceStore        *mocks.MockContainerInstanceStore
 	instanceAPIs         ContainerInstanceAPIs
 	instance1            types.ContainerInstance
+	versionedInstance1   storetypes.VersionedContainerInstance
 	extInstance1         models.ContainerInstance
 	responseHeaderJSON   http.Header
 	responseHeaderStream http.Header
@@ -94,8 +95,12 @@ func (suite *InstanceAPIsTestSuite) SetupTest() {
 		Resources: []string{instanceARN1},
 		Detail:    &instanceDetail,
 	}
+	suite.versionedInstance1 = storetypes.VersionedContainerInstance{
+		ContainerInstance: suite.instance1,
+		Version: entityVersion,
+	}
 
-	instanceModel, err := ToContainerInstance(suite.instance1)
+	instanceModel, err := ToContainerInstance(suite.versionedInstance1)
 	if err != nil {
 		suite.T().Error("Cannot setup testSuite: Error when tranlating instance to external model")
 	}
@@ -116,7 +121,7 @@ func TestInstanceAPIsTestSuite(t *testing.T) {
 }
 
 func (suite *InstanceAPIsTestSuite) TestGetInstanceReturnsInstance() {
-	suite.instanceStore.EXPECT().GetContainerInstance(clusterName1, instanceARN1).Return(&suite.instance1, nil)
+	suite.instanceStore.EXPECT().GetContainerInstance(clusterName1, instanceARN1).Return(&suite.versionedInstance1, nil)
 
 	request := suite.getInstanceRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -168,7 +173,7 @@ func (suite *InstanceAPIsTestSuite) TestGetInstanceWithoutARN() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsInstances() {
-	instanceList := []types.ContainerInstance{suite.instance1}
+	instanceList := []storetypes.VersionedContainerInstance{suite.versionedInstance1}
 	suite.instanceStore.EXPECT().ListContainerInstances().Return(instanceList, nil)
 	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any()).Times(0)
 
@@ -184,7 +189,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsInstances() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesReturnsNoInstances() {
-	emptyInstanceList := make([]types.ContainerInstance, 0)
+	emptyInstanceList := make([]storetypes.VersionedContainerInstance, 0)
 	suite.instanceStore.EXPECT().ListContainerInstances().Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().FilterContainerInstances(gomock.Any()).Times(0)
 
@@ -227,7 +232,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesInvalidFilter() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesStatusAndClusterARNFilter() {
-	instanceList := []types.ContainerInstance{suite.instance1}
+	instanceList := []storetypes.VersionedContainerInstance{suite.versionedInstance1}
 	filters := map[string]string{instanceStatusFilter: instanceStatus1, instanceClusterFilter: clusterARN1}
 	suite.instanceStore.EXPECT().FilterContainerInstances(filters).
 		Return(instanceList, nil)
@@ -246,7 +251,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesStatusAndClusterARNFilter()
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesStatusAndClusterNameFilter() {
-	instanceList := []types.ContainerInstance{suite.instance1}
+	instanceList := []storetypes.VersionedContainerInstance{suite.versionedInstance1}
 	filters := map[string]string{instanceStatusFilter: instanceStatus1, instanceClusterFilter: clusterName1}
 	suite.instanceStore.EXPECT().FilterContainerInstances(filters).
 		Return(instanceList, nil)
@@ -265,7 +270,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesStatusAndClusterNameFilter(
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsInstances() {
-	instanceList := []types.ContainerInstance{suite.instance1}
+	instanceList := []storetypes.VersionedContainerInstance{suite.versionedInstance1}
 	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceStatusFilter: instanceStatus1}).
 		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
@@ -282,7 +287,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsInst
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithCapitalizedStatusFilterReturnsInstances() {
-	instanceList := []types.ContainerInstance{suite.instance1}
+	instanceList := []storetypes.VersionedContainerInstance{suite.versionedInstance1}
 	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceStatusFilter: instanceStatus1}).
 		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
@@ -299,7 +304,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithCapitalizedStatusFilter
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithStatusFilterReturnsNoInstances() {
-	emptyInstanceList := []types.ContainerInstance{}
+	emptyInstanceList := []storetypes.VersionedContainerInstance{}
 	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceStatusFilter: instanceStatus1}).
 		Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
@@ -344,7 +349,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithInvalidStatusFilter() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameReturnsInstances() {
-	instanceList := []types.ContainerInstance{suite.instance1}
+	instanceList := []storetypes.VersionedContainerInstance{suite.versionedInstance1}
 	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterName1}).
 		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
@@ -361,7 +366,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameReturnsInsta
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameReturnsNoInstances() {
-	emptyInstanceList := []types.ContainerInstance{}
+	emptyInstanceList := []storetypes.VersionedContainerInstance{}
 	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterName1}).
 		Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
@@ -391,7 +396,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterNameFilterStoreR
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNReturnsInstances() {
-	instanceList := []types.ContainerInstance{suite.instance1}
+	instanceList := []storetypes.VersionedContainerInstance{suite.versionedInstance1}
 	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterARN1}).
 		Return(instanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
@@ -408,7 +413,7 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNReturnsInstan
 }
 
 func (suite *InstanceAPIsTestSuite) TestListInstancesWithClusterARNReturnsNoInstances() {
-	emptyInstanceList := []types.ContainerInstance{}
+	emptyInstanceList := []storetypes.VersionedContainerInstance{}
 	suite.instanceStore.EXPECT().FilterContainerInstances(map[string]string{instanceClusterFilter: clusterARN1}).
 		Return(emptyInstanceList, nil)
 	suite.instanceStore.EXPECT().ListContainerInstances().Times(0)
@@ -462,13 +467,13 @@ func (suite *InstanceAPIsTestSuite) TestListInstancesWithRedundantFilters() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestStreamInstancesReturnsInstances() {
-	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper)
-	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any()).Return(instanceRespChan, nil)
+	instanceRespChan := make(chan storetypes.VersionedContainerInstance)
+	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any(), "").Return(instanceRespChan, nil)
 	expectedInstances := []models.ContainerInstance{suite.extInstance1}
 
 	go func() {
 		defer close(instanceRespChan)
-		instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: suite.instance1, Err: nil}
+		instanceRespChan <- suite.versionedInstance1
 	}()
 
 	request := suite.streamInstancesRequest()
@@ -480,8 +485,8 @@ func (suite *InstanceAPIsTestSuite) TestStreamInstancesReturnsInstances() {
 }
 
 func (suite *InstanceAPIsTestSuite) TestStreamInstancesNoInstances() {
-	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper)
-	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any()).Return(instanceRespChan, nil)
+	instanceRespChan := make(chan storetypes.VersionedContainerInstance)
+	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any(), "").Return(instanceRespChan, nil)
 	emptyInstances := []models.ContainerInstance{}
 
 	go func() {
@@ -496,8 +501,55 @@ func (suite *InstanceAPIsTestSuite) TestStreamInstancesNoInstances() {
 	suite.validateInstancesInStreamInstancesResponse(responseRecorder, emptyInstances)
 }
 
+func (suite *InstanceAPIsTestSuite) TestStreamInstancesWithValidEntityVersion() {
+	instanceRespChan := make(chan storetypes.VersionedContainerInstance)
+	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any(), entityVersion).Return(instanceRespChan, nil)
+	expectedInstances := []models.ContainerInstance{suite.extInstance1}
+
+	go func() {
+		defer close(instanceRespChan)
+		instanceRespChan <- suite.versionedInstance1
+	}()
+
+	url := streamInstancesPrefix + "?entityVersion=" + entityVersion
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating stream instances request with valid entity version")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateSuccessfulStreamResponseHeaderAndStatus(responseRecorder)
+	suite.validateInstancesInStreamInstancesResponse(responseRecorder, expectedInstances)
+}
+
+func (suite *InstanceAPIsTestSuite) TestStreamInstancesWithInvalidEntityVersion() {
+	url := streamInstancesPrefix + "?entityVersion=invalidEntityVersion"
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating stream instances request with invalid entity version")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
+	suite.decodeErrorResponseAndValidate(responseRecorder, invalidEntityVersionClientErrMsg)
+}
+
+func (suite *InstanceAPIsTestSuite) TestStreamInstancesWithCompactedEntityVersion() {
+	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any(), entityVersion).Return(nil, types.NewOutOfRangeEntityVersion(errors.New("Out of range entity version")))
+
+	url := streamInstancesPrefix + "?entityVersion=" + entityVersion
+	request, err := http.NewRequest("GET", url, nil)
+	assert.Nil(suite.T(), err, "Unexpected error creating stream instances request with compacted entity version")
+
+	responseRecorder := httptest.NewRecorder()
+	suite.router.ServeHTTP(responseRecorder, request)
+
+	suite.validateErrorResponseHeaderAndStatus(responseRecorder, http.StatusBadRequest)
+	suite.decodeErrorResponseAndValidate(responseRecorder, outOfRangeEntityVersionClientErrMsg)
+}
+
 func (suite *InstanceAPIsTestSuite) TestStreamInstancesCreateChannelReturnsError() {
-	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any()).Return(nil, errors.New("StreamInstances failed"))
+	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any(), gomock.Any()).Return(nil, errors.New("StreamInstances failed"))
 
 	request := suite.streamInstancesRequest()
 	responseRecorder := httptest.NewRecorder()
@@ -508,12 +560,12 @@ func (suite *InstanceAPIsTestSuite) TestStreamInstancesCreateChannelReturnsError
 }
 
 func (suite *InstanceAPIsTestSuite) TestStreamInstancesInstanceResponseChannelReturnsError() {
-	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper)
-	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any()).Return(instanceRespChan, nil)
+	instanceRespChan := make(chan storetypes.VersionedContainerInstance)
+	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any(), gomock.Any()).Return(instanceRespChan, nil)
 
 	go func() {
 		defer close(instanceRespChan)
-		instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: types.ContainerInstance{}, Err: errors.New("ContainerInstanceErrorWrapper failure")}
+		instanceRespChan <- storetypes.VersionedContainerInstance{ContainerInstance: types.ContainerInstance{}, Err: errors.New("VersionedContainerInstance failure")}
 	}()
 
 	request := suite.streamInstancesRequest()
@@ -525,12 +577,12 @@ func (suite *InstanceAPIsTestSuite) TestStreamInstancesInstanceResponseChannelRe
 }
 
 func (suite *InstanceAPIsTestSuite) TestStreamInstancesTranslateInstanceReturnsError() {
-	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper)
-	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any()).Return(instanceRespChan, nil)
+	instanceRespChan := make(chan storetypes.VersionedContainerInstance)
+	suite.instanceStore.EXPECT().StreamContainerInstances(gomock.Any(), gomock.Any()).Return(instanceRespChan, nil)
 
 	go func() {
 		defer close(instanceRespChan)
-		instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: types.ContainerInstance{}, Err: nil}
+		instanceRespChan <- storetypes.VersionedContainerInstance{ContainerInstance: types.ContainerInstance{}, Err: nil}
 	}()
 
 	request := suite.streamInstancesRequest()

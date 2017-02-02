@@ -35,6 +35,7 @@ var (
 	taskARN1           = "arn:aws:ecs:us-east-1:123456789012:task/271022c0-f894-4aa2-b063-25bae55088d5"
 	taskARN2           = "arn:aws:ecs:us-east-1:123456789012:task/b6b9eace-958e-4f2a-a09c-8cf43b76cf97"
 	taskDefinitionARN  = "arn:aws:ecs:us-east-1:123456789012:task-definition/testTask:1"
+	entityVersion      = "123"
 )
 
 const (

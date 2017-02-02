@@ -13,22 +13,12 @@
 
 package types
 
-type OutOfRangeEntityVersion struct {
-	error
-}
+import (
+	"github.com/blox/blox/cluster-state-service/handler/types"
+)
 
-type UnsupportedFilterCombination struct {
-	error
-}
-
-func NewOutOfRangeEntityVersion(err error) OutOfRangeEntityVersion {
-	return OutOfRangeEntityVersion{
-		err,
-	}
-}
-
-func NewUnsupportedFilterCombination(err error) UnsupportedFilterCombination {
-	return UnsupportedFilterCombination{
-		err,
-	}
+type VersionedTask struct {
+	Task    types.Task
+	Version string
+	Err     error
 }

@@ -17,7 +17,8 @@ import (
 	"github.com/blox/blox/cluster-state-service/handler/types"
 )
 
-type ContainerInstanceErrorWrapper struct {
+type VersionedContainerInstance struct {
 	ContainerInstance types.ContainerInstance
+	Version           string
 	Err               error
 }

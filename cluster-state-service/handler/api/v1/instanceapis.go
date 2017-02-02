@@ -21,9 +21,11 @@ import (
 
 	"github.com/blox/blox/cluster-state-service/handler/regex"
 	"github.com/blox/blox/cluster-state-service/handler/store"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -32,6 +34,8 @@ const (
 
 	instanceStatusFilter  = "status"
 	instanceClusterFilter = "cluster"
+
+	instanceEntityVersionKey = "entityVersion"
 )
 
 var (
@@ -122,7 +126,7 @@ func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r
 		}
 	}
 
-	var instances []types.ContainerInstance
+	var instances []storetypes.VersionedContainerInstance
 	var err error
 	switch {
 	case status != "" && cluster != "":
@@ -172,8 +176,23 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx)
+	query := r.URL.Query()
+
+	entityVersion := query.Get(instanceEntityVersionKey)
+
+	if entityVersion != "" {
+		if !regex.IsEntityVersion(entityVersion) {
+			http.Error(w, invalidEntityVersionClientErrMsg, http.StatusBadRequest)
+			return
+		}
+	}
+
+	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx, entityVersion)
 	if err != nil {
+		if _, ok := errors.Cause(err).(types.OutOfRangeEntityVersion); ok {
+			http.Error(w, outOfRangeEntityVersionClientErrMsg, http.StatusBadRequest)
+			return
+		}
 		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
@@ -193,7 +212,7 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
-		extInstance, err := ToContainerInstance(instanceResp.ContainerInstance)
+		extInstance, err := ToContainerInstance(instanceResp)
 		if err != nil {
 			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return

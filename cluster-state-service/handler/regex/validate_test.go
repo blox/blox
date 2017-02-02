@@ -108,3 +108,28 @@ func TestIsInstanceARN(t *testing.T) {
 	isValid := IsInstanceARN(validInstanceARN)
 	assert.True(t, isValid, "Valid instance ARN should satisfy regex")
 }
+
+func TestIsEntityVersionEmptyVersion(t *testing.T) {
+	isValid := IsEntityVersion("")
+	assert.False(t, isValid, "Empty entity version should not satisfy method")
+}
+
+func TestIsEntityVersionFloatingPoint(t *testing.T) {
+	isValid := IsEntityVersion(invalidEntityVersionFloatingPointNumber)
+	assert.False(t, isValid, "Floating point number entity version should not satisfy method")
+}
+
+func TestIsEntityVersionNegativeNumber(t *testing.T) {
+	isValid := IsEntityVersion(invalidEntityVersionNegativeNumber)
+	assert.False(t, isValid, "Negative entity version should not satisfy method")
+}
+
+func TestIsEntityVersionNonNumber(t *testing.T) {
+	isValid := IsEntityVersion(invalidEntityVersionNonNumber)
+	assert.False(t, isValid, "Non-number entity version should not satisfy method")
+}
+
+func TestIsEntityVersion(t *testing.T) {
+	isValid := IsEntityVersion(validEntityVersion)
+	assert.True(t, isValid, "Valid entity version should satisfy method")
+}

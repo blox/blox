@@ -19,7 +19,6 @@ package mocks
 import (
 	context "context"
 	types "github.com/blox/blox/cluster-state-service/handler/store/types"
-	types0 "github.com/blox/blox/cluster-state-service/handler/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -64,9 +63,9 @@ func (_mr *_MockTaskStoreRecorder) AddUnversionedTask(arg0 interface{}) *gomock.
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddUnversionedTask", arg0)
 }
 
-func (_m *MockTaskStore) GetTask(cluster string, taskARN string) (*types0.Task, error) {
+func (_m *MockTaskStore) GetTask(cluster string, taskARN string) (*types.VersionedTask, error) {
 	ret := _m.ctrl.Call(_m, "GetTask", cluster, taskARN)
-	ret0, _ := ret[0].(*types0.Task)
+	ret0, _ := ret[0].(*types.VersionedTask)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -75,9 +74,9 @@ func (_mr *_MockTaskStoreRecorder) GetTask(arg0, arg1 interface{}) *gomock.Call 
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetTask", arg0, arg1)
 }
 
-func (_m *MockTaskStore) ListTasks() ([]types0.Task, error) {
+func (_m *MockTaskStore) ListTasks() ([]types.VersionedTask, error) {
 	ret := _m.ctrl.Call(_m, "ListTasks")
-	ret0, _ := ret[0].([]types0.Task)
+	ret0, _ := ret[0].([]types.VersionedTask)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,9 +85,9 @@ func (_mr *_MockTaskStoreRecorder) ListTasks() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListTasks")
 }
 
-func (_m *MockTaskStore) FilterTasks(filterMap map[string]string) ([]types0.Task, error) {
+func (_m *MockTaskStore) FilterTasks(filterMap map[string]string) ([]types.VersionedTask, error) {
 	ret := _m.ctrl.Call(_m, "FilterTasks", filterMap)
-	ret0, _ := ret[0].([]types0.Task)
+	ret0, _ := ret[0].([]types.VersionedTask)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -97,15 +96,15 @@ func (_mr *_MockTaskStoreRecorder) FilterTasks(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "FilterTasks", arg0)
 }
 
-func (_m *MockTaskStore) StreamTasks(ctx context.Context) (chan types.TaskErrorWrapper, error) {
-	ret := _m.ctrl.Call(_m, "StreamTasks", ctx)
-	ret0, _ := ret[0].(chan types.TaskErrorWrapper)
+func (_m *MockTaskStore) StreamTasks(ctx context.Context, entityVersion string) (chan types.VersionedTask, error) {
+	ret := _m.ctrl.Call(_m, "StreamTasks", ctx, entityVersion)
+	ret0, _ := ret[0].(chan types.VersionedTask)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockTaskStoreRecorder) StreamTasks(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "StreamTasks", arg0)
+func (_mr *_MockTaskStoreRecorder) StreamTasks(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "StreamTasks", arg0, arg1)
 }
 
 func (_m *MockTaskStore) DeleteTask(cluster string, taskARN string) error {

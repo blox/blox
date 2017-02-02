@@ -15,6 +15,7 @@ package e2etasksteps
 
 import (
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
@@ -29,7 +30,7 @@ type Exception struct {
 
 var (
 	// Lists to memorize results required for the subsequent steps
-	ecsTaskList   = []ecs.Task{}
+	EcsTaskList   = []ecs.Task{}
 	cssTaskList   = []models.Task{}
 	exceptionList = []Exception{}
 
@@ -38,6 +39,7 @@ var (
 
 func init() {
 
+	cssWrapper := wrappers.NewCSSWrapper()
 	ecsWrapper := wrappers.NewECSWrapper()
 
 	BeforeAll(func() {
@@ -78,6 +80,42 @@ func init() {
 		startNTasks(numTasks, "someone", ecsWrapper)
 	})
 
+	And(`^I stop the (\d+) task(?:|s) in the ECS cluster$`, func(numTasks int) {
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		if len(EcsTaskList) != numTasks {
+			T.Errorf("Error memorizing tasks started using ECS client. ")
+		}
+		for _, t := range EcsTaskList {
+			err := ecsWrapper.StopTask(clusterName, *t.TaskArn)
+			if err != nil {
+				T.Errorf(err.Error())
+			}
+		}
+	})
+
+	When(`^I get task with the cluster name and task ARN$`, func() {
+		cssTaskList = nil
+
+		clusterName, err := wrappers.GetClusterName()
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
+		time.Sleep(15 * time.Second)
+		if len(EcsTaskList) != 1 {
+			T.Errorf("Error memorizing task started using ECS client. ")
+		}
+		taskARN := *EcsTaskList[0].TaskArn
+		cssTask, err := cssWrapper.GetTask(clusterName, taskARN)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		cssTaskList = append(cssTaskList, *cssTask)
+	})
+
 	Then(`^I get a (.+?) task exception$`, func(exceptionType string) {
 		if len(exceptionList) != 1 {
 			T.Errorf("Error memorizing exception. ")
@@ -112,7 +150,7 @@ func stopAllTasks(ecsWrapper wrappers.ECSWrapper, clusterName string) error {
 }
 
 func startNTasks(numTasks int, startedBy string, ecsWrapper wrappers.ECSWrapper) {
-	ecsTaskList = nil
+	EcsTaskList = nil
 	cssTaskList = nil
 
 	clusterName, err := wrappers.GetClusterName()
@@ -125,6 +163,6 @@ func startNTasks(numTasks int, startedBy string, ecsWrapper wrappers.ECSWrapper)
 		if err != nil {
 			T.Errorf(err.Error())
 		}
-		ecsTaskList = append(ecsTaskList, ecsTask)
+		EcsTaskList = append(EcsTaskList, ecsTask)
 	}
 }

@@ -19,19 +19,25 @@ import (
 	"time"
 
 	"github.com/blox/blox/cluster-state-service/handler/mocks"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
+	"github.com/blox/blox/cluster-state-service/handler/types"
 	etcd "github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	mvccpb "github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"strconv"
 )
 
 const (
-	key          = "key"
-	anotherKey   = key + "suffix"
-	value        = "value"
-	anotherValue = "anotherValue"
+	key            = "key"
+	anotherKey     = key + "suffix"
+	value          = "value"
+	anotherValue   = "anotherValue"
+	version        = int64(123)
+	anotherVersion = int64(124)
 )
 
 type DataStoreTestSuite struct {
@@ -125,12 +131,14 @@ func (testSuite *DataStoreTestSuite) TestGetWithPrefixEtcd() {
 	var getResp etcd.GetResponse
 	getResp.Kvs = make([]*mvccpb.KeyValue, 2)
 	getResp.Kvs[0] = &mvccpb.KeyValue{
-		Key:   []byte(key),
-		Value: []byte(value),
+		Key:         []byte(key),
+		Value:       []byte(value),
+		ModRevision: version,
 	}
 	getResp.Kvs[1] = &mvccpb.KeyValue{
-		Key:   []byte(anotherKey),
-		Value: []byte(anotherValue),
+		Key:         []byte(anotherKey),
+		Value:       []byte(anotherValue),
+		ModRevision: anotherVersion,
 	}
 	testSuite.etcdInterface.EXPECT().Get(gomock.Any(), key, gomock.Any()).Return(&getResp, nil)
 
@@ -140,11 +148,12 @@ func (testSuite *DataStoreTestSuite) TestGetWithPrefixEtcd() {
 
 	for i := 0; i < len(getResp.Kvs); i++ {
 		expectedKey := string(getResp.Kvs[i].Key)
-		value, ok := resp[expectedKey]
+		entity, ok := resp[expectedKey]
 		if !ok {
 			testSuite.T().Errorf("Expected key %v does not exist in resp", expectedKey)
 		} else {
-			assert.Exactly(testSuite.T(), string(getResp.Kvs[i].Value), value, "Expected value does not match the received response")
+			assert.Exactly(testSuite.T(), string(getResp.Kvs[i].Value), entity.Value, "Expected value does not match the received response")
+			assert.Exactly(testSuite.T(), strconv.FormatInt(getResp.Kvs[i].ModRevision, 10), entity.Version, "Expected version does not match the received response")
 		}
 	}
 }
@@ -193,8 +202,9 @@ func (testSuite *DataStoreTestSuite) TestGetEtcd() {
 	var getResp etcd.GetResponse
 	getResp.Kvs = make([]*mvccpb.KeyValue, 1)
 	getResp.Kvs[0] = &mvccpb.KeyValue{
-		Key:   []byte(key),
-		Value: []byte(value),
+		Key:         []byte(key),
+		Value:       []byte(value),
+		ModRevision: version,
 	}
 	testSuite.etcdInterface.EXPECT().Get(gomock.Any(), key).Return(&getResp, nil)
 
@@ -203,17 +213,18 @@ func (testSuite *DataStoreTestSuite) TestGetEtcd() {
 	assert.Equal(testSuite.T(), len(getResp.Kvs), len(resp), "Expected lengths of resp and getResp to be the same")
 
 	expectedKey := string(getResp.Kvs[0].Key)
-	value, ok := resp[expectedKey]
+	entity, ok := resp[expectedKey]
 	if !ok {
 		testSuite.T().Errorf("Expected key %v does not exist in resp", expectedKey)
 	} else {
-		assert.Exactly(testSuite.T(), string(getResp.Kvs[0].Value), value, "Expected value does not match the received response")
+		assert.Exactly(testSuite.T(), string(getResp.Kvs[0].Value), entity.Value, "Expected value does not match the received response")
+		assert.Exactly(testSuite.T(), strconv.FormatInt(getResp.Kvs[0].ModRevision, 10), entity.Version, "Expected version does not match the received response")
 	}
 }
 
 func (testSuite *DataStoreTestSuite) TestStreamWithPrefixEmptyKeyPrefix() {
 	ctx := context.Background()
-	_, err := testSuite.datastore.StreamWithPrefix(ctx, "")
+	_, err := testSuite.datastore.StreamWithPrefix(ctx, "", "")
 	assert.Error(testSuite.T(), err, "Expected an error when key is nil")
 }
 
@@ -221,25 +232,48 @@ func (testSuite *DataStoreTestSuite) TestStreamWithPrefix() {
 	ctx := context.Background()
 	watchChan := make(chan etcd.WatchResponse)
 	defer close(watchChan)
-	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any(), gomock.Any()).Return(watchChan)
 
-	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key, "")
 	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
 	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
 
 	dsVal := addToWatchChanAndReadFromDataChan(watchChan, dsChan)
-	expectedDsVal := map[string]string{
-		key: value,
+	expectedDsVal := map[string]storetypes.Entity{
+		key: storetypes.Entity{
+			Key:     key,
+			Value:   value,
+			Version: strconv.FormatInt(version, 10),
+		},
 	}
 	assert.Equal(testSuite.T(), expectedDsVal, dsVal, "Expected key-val read from dsChan to match what was put into watchChan")
+}
+
+func (testSuite *DataStoreTestSuite) TestStreamWithPrefixWithInvalidEntityVersion() {
+	ctx := context.Background()
+	invalidEntityVersion := "invalidEntityVersion"
+
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key, invalidEntityVersion)
+	assert.Error(testSuite.T(), err, "Expected an error when entity version is invalid")
+	assert.Nil(testSuite.T(), dsChan, "Expected nil channel for streaming")
+}
+
+func (testSuite *DataStoreTestSuite) TestStreamWithPrefixWithCompactedEntityVersion() {
+	ctx := context.Background()
+	testSuite.etcdInterface.EXPECT().Get(gomock.Any(), key, gomock.Any()).Return(nil, rpctypes.ErrCompacted)
+
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key, entityVersion)
+	assert.Error(testSuite.T(), err, "Expected an error when entity version is compacted")
+	assert.IsType(testSuite.T(), types.OutOfRangeEntityVersion{}, err, "Expected the error to be of type OutOfRangeEntityVersion")
+	assert.Nil(testSuite.T(), dsChan, "Expected nil channel for streaming")
 }
 
 func (testSuite *DataStoreTestSuite) TestStreamWithPrefixCancelUpstreamContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 	var watchChan etcd.WatchChan
-	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any(), gomock.Any()).Return(watchChan)
 
-	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key, "")
 	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
 	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
 
@@ -252,9 +286,9 @@ func (testSuite *DataStoreTestSuite) TestStreamWithPrefixCancelUpstreamContext()
 func (testSuite *DataStoreTestSuite) TestStreamWithPrefixCloseDownstreamChannel() {
 	ctx := context.Background()
 	watchChan := make(chan etcd.WatchResponse)
-	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any(), gomock.Any()).Return(watchChan)
 
-	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key, "")
 	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
 	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
 
@@ -271,9 +305,9 @@ func (testSuite *DataStoreTestSuite) TestStreamWithPrefixStreamTimeout() {
 
 	ctx := context.Background()
 	var watchChan etcd.WatchChan
-	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any()).Return(watchChan)
+	testSuite.etcdInterface.EXPECT().Watch(gomock.Any(), key, gomock.Any(), gomock.Any()).Return(watchChan)
 
-	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key)
+	dsChan, err := testSuite.datastore.StreamWithPrefix(ctx, key, "")
 	assert.Nil(testSuite.T(), err, "Unexpected error when setting up streaming")
 	assert.NotNil(testSuite.T(), dsChan, "Expected valid channel for streaming")
 
@@ -314,8 +348,8 @@ func (testSuite *DataStoreTestSuite) TestDeleteEtcd() {
 	assert.Equal(testSuite.T(), resp, int64(1), "Mismatch between expected and returned number of deleted keys")
 }
 
-func addToWatchChanAndReadFromDataChan(watchChan chan etcd.WatchResponse, dsChan chan map[string]string) map[string]string {
-	var dsVal map[string]string
+func addToWatchChanAndReadFromDataChan(watchChan chan etcd.WatchResponse, dsChan chan map[string]storetypes.Entity) map[string]storetypes.Entity {
+	var dsVal map[string]storetypes.Entity
 
 	doneChan := make(chan bool)
 	defer close(doneChan)
@@ -326,8 +360,9 @@ func addToWatchChanAndReadFromDataChan(watchChan chan etcd.WatchResponse, dsChan
 
 	var event etcd.Event
 	event.Kv = &mvccpb.KeyValue{
-		Key:   []byte(key),
-		Value: []byte(value),
+		Key:         []byte(key),
+		Value:       []byte(value),
+		ModRevision: version,
 	}
 	var watchResp etcd.WatchResponse
 	watchResp.Events = make([]*etcd.Event, 1)
