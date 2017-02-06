@@ -50,6 +50,7 @@ def run_local(params):
 	api.headers = {}
 	api.host = params.host
 	api.uri = '/v1/environments'
+	api.queryParams = {}
 	api.data = {'name': params.environment, 'instanceGroup': {'cluster': params.cluster}, 'taskDefinition': params.taskDef}
 
 	response = common.call_api(api)

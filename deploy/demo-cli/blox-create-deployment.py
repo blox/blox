@@ -28,7 +28,11 @@ def run_apigateway(params):
 	command = ["cloudformation", "describe-stack-resource", "--stack-name", params.stack, "--logical-resource-id", "ApiResource"]
 	restResource = common.run_shell_command(params.region, command)
 
-	command = ["apigateway", "test-invoke-method", "--rest-api-id", restApi['StackResourceDetail']['PhysicalResourceId'], "--resource-id", restResource['StackResourceDetail']['PhysicalResourceId'], "--http-method", "POST", "--headers", "{}", "--path-with-query-string", "/v1/environments/%s/deployments?deploymentToken=%s" % (params.environment, params.token), "--body", ""]
+	uri = '/v1/environments/%s/deployments' % params.environment
+	queryParams = {'deploymentToken': params.token}
+	uri += common.get_query_string(queryParams)
+
+	command = ["apigateway", "test-invoke-method", "--rest-api-id", restApi['StackResourceDetail']['PhysicalResourceId'], "--resource-id", restResource['StackResourceDetail']['PhysicalResourceId'], "--http-method", "POST", "--headers", "{}", "--path-with-query-string", uri, "--body", ""]
 	response = common.run_shell_command(params.region, command)
 
 	print "HTTP Response Code: %d" % response['status']
@@ -47,7 +51,8 @@ def run_local(params):
 	api.method = 'POST'
 	api.headers = {}
 	api.host = params.host
-	api.uri = '/v1/environments/%s/deployments?deploymentToken=%s' % (params.environment, params.token)
+	api.uri = '/v1/environments/%s/deployments' % params.environment
+	api.queryParams = {'deploymentToken': params.token}
 	api.data = None
 
 	response = common.call_api(api)

@@ -9,15 +9,19 @@ $ ./blox-list-environments.py --help
 == Blox Demo CLI - List Blox Environments ==
 
 usage: blox-list-environments.py [-h] [--region REGION] [--apigateway]
-                                 [--host HOST]
+                                 [--host HOST] [--environment ENVIRONMENT]
+                                 [--cluster CLUSTER]
 
 List Blox Environments
 
 optional arguments:
-  -h, --help       show this help message and exit
-  --region REGION  AWS region
-  --apigateway     Call API Gateway endpoint
-  --host HOST      Blox Scheduler <Host>:<Port>
+  -h, --help            show this help message and exit
+  --region REGION       AWS region
+  --apigateway          Call API Gateway endpoint
+  --host HOST           Blox Scheduler <Host>:<Port>
+  --environment ENVIRONMENT
+                        Blox environment name
+  --cluster CLUSTER     ECS cluster name
 ```
 
 ## Create Blox Environment
@@ -53,6 +57,7 @@ $ ./blox-list-deployments.py --help
 
 usage: blox-list-deployments.py [-h] [--region REGION] [--apigateway]
                                 [--host HOST] [--environment ENVIRONMENT]
+                                [--deployment-id ID]
 
 List Blox Deployments
 
@@ -63,6 +68,7 @@ optional arguments:
   --host HOST           Blox Scheduler <Host>:<Port>
   --environment ENVIRONMENT
                         Blox environment name
+  --deployment-id ID    Blox deployment id
 ```
 
 ## Create Blox Deployment
@@ -118,17 +124,18 @@ $ ./css-list-tasks.py --help
 
 usage: css-list-tasks.py [-h] [--region REGION] [--host HOST]
                          [--cluster CLUSTER] [--status STATUS]
-                         [--task-arn TASK]
+                         [--started-by STARTED] [--task-arn TASK]
 
 List Blox Tasks
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --region REGION    AWS region
-  --host HOST        Blox CSS <Host>:<Port>
-  --cluster CLUSTER  ECS cluster name
-  --status STATUS    ECS task status
-  --task-arn TASK    ECS task Arn
+  -h, --help            show this help message and exit
+  --region REGION       AWS region
+  --host HOST           Blox CSS <Host>:<Port>
+  --cluster CLUSTER     ECS cluster name
+  --status STATUS       ECS task status
+  --started-by STARTED  ECS task started by
+  --task-arn TASK       ECS task Arn
 ```
 
 ## List ECS Task Definitions

@@ -10,6 +10,7 @@ def main(argv):
 	else:
 		args.extend([{'arg':'--host', 'dest':'host', 'default':'localhost:2000', 'help':'Blox Scheduler <Host>:<Port>'}])
 	args.extend([{'arg':'--environment', 'dest':'environment', 'default':None, 'help':'Blox environment name'}])
+	args.extend([{'arg':'--deployment-id', 'dest':'id', 'default':None, 'required':False, 'help':'Blox deployment id'}])
 
 	# Parse Command Line Arguments
 	params = common.parse_cli_args('List Blox Deployments', args)
@@ -27,7 +28,11 @@ def run_apigateway(params):
 	command = ["cloudformation", "describe-stack-resource", "--stack-name", params.stack, "--logical-resource-id", "ApiResource"]
 	restResource = common.run_shell_command(params.region, command)
 
-	command = ["apigateway", "test-invoke-method", "--rest-api-id", restApi['StackResourceDetail']['PhysicalResourceId'], "--resource-id", restResource['StackResourceDetail']['PhysicalResourceId'], "--http-method", "GET", "--headers", "{}", "--path-with-query-string", "/v1/environments/%s/deployments" % params.environment]
+	uri = '/v1/environments/%s/deployments' % params.environment
+	if params.id != None:
+		uri = '/v1/environments/%s/deployments/%s' % (params.environment, params.id)
+
+	command = ["apigateway", "test-invoke-method", "--rest-api-id", restApi['StackResourceDetail']['PhysicalResourceId'], "--resource-id", restResource['StackResourceDetail']['PhysicalResourceId'], "--http-method", "GET", "--headers", "{}", "--path-with-query-string", uri]
 	response = common.run_shell_command(params.region, command)
 
 	print "HTTP Response Code: %d" % response['status']
@@ -47,7 +52,11 @@ def run_local(params):
 	api.headers = {}
 	api.host = params.host
 	api.uri = '/v1/environments/%s/deployments' % params.environment
+	api.queryParams = {}
 	api.data = None
+
+	if params.id != None:
+		api.uri = '/v1/environments/%s/deployments/%s' % (params.environment, params.id)
 
 	response = common.call_api(api)
 
