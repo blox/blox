@@ -304,6 +304,7 @@
                   "Effect": "Allow",
                   "Action": [
                     "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes",
                     "sqs:GetQueueUrl",
                     "sqs:ReceiveMessage"
                   ],
@@ -432,7 +433,7 @@
           {
             "Name": "scheduler",
             "Hostname": "scheduler",
-            "Image": "bloxoss/daemon-scheduler:0.1.0",
+            "Image": "bloxoss/daemon-scheduler:0.2.0",
             "Memory": "128",
             "PortMappings": [
               {
@@ -459,7 +460,7 @@
           {
             "Name": "css",
             "Hostname": "css",
-            "Image": "bloxoss/cluster-state-service:0.1.0",
+            "Image": "bloxoss/cluster-state-service:0.2.0",
             "Memory": "128",
             "Environment": [
               {
@@ -480,7 +481,7 @@
           {
             "Name": "etcd",
             "Hostname": "etcd",
-            "Image": "quay.io/coreos/etcd:v3.0.13",
+            "Image": "quay.io/coreos/etcd:v3.0.15",
             "Memory": "256",
             "Environment": [
               {

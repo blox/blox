@@ -23,6 +23,6 @@ COPY out/LICENSE /LICENSE
 # https://golang.org/src/pkg/crypto/x509/root_unix.go
 COPY misc/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-EXPOSE 80
+EXPOSE 3000
 ENTRYPOINT ["/cluster-state-service"]
 

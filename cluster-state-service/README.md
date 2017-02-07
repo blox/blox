@@ -49,7 +49,7 @@ docker run -e AWS_REGION=us-west-2 \
     AWS_PROFILE=default \
     -v ~/.aws:/.aws \
     -v /tmp/css-logs:/var/output/logs \
-    bloxoss/cluster-state-service:0.1.0 \
+    bloxoss/cluster-state-service:0.2.0 \
     --etcd-endpoint $ETCD_IP:$ETCD_PORT \
     --queue_name $SQS_QUEUE_NAME
 ```
@@ -63,7 +63,7 @@ AWS_PROFILE=default \
     CSS_LOG_LEVEL=info \
     -v ~/.aws:/.aws \
     -v /tmp/css-logs:/var/output/logs \
-    bloxoss/cluster-state-service:0.1.0 \
+    bloxoss/cluster-state-service:0.2.0 \
     --etcd-endpoint $ETCD_IP:$ETCD_PORT \
     --queue event_stream
 ```
