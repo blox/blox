@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -86,15 +86,26 @@ func (_mr *_MockEnvironmentRecorder) ListEnvironments(arg0 interface{}) *gomock.
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListEnvironments", arg0)
 }
 
-func (_m *MockEnvironment) AddDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
-	ret := _m.ctrl.Call(_m, "AddDeployment", ctx, environment, deployment)
+func (_m *MockEnvironment) FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error) {
+	ret := _m.ctrl.Call(_m, "FilterEnvironments", ctx, filterKey, filterVal)
+	ret0, _ := ret[0].([]types.Environment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockEnvironmentRecorder) FilterEnvironments(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "FilterEnvironments", arg0, arg1, arg2)
+}
+
+func (_m *MockEnvironment) AddPendingDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
+	ret := _m.ctrl.Call(_m, "AddPendingDeployment", ctx, environment, deployment)
 	ret0, _ := ret[0].(*types.Environment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockEnvironmentRecorder) AddDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddDeployment", arg0, arg1, arg2)
+func (_mr *_MockEnvironmentRecorder) AddPendingDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddPendingDeployment", arg0, arg1, arg2)
 }
 
 func (_m *MockEnvironment) UpdateDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
@@ -106,15 +117,4 @@ func (_m *MockEnvironment) UpdateDeployment(ctx context.Context, environment typ
 
 func (_mr *_MockEnvironmentRecorder) UpdateDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "UpdateDeployment", arg0, arg1, arg2)
-}
-
-func (_m *MockEnvironment) GetCurrentDeployment(ctx context.Context, name string) (*types.Deployment, error) {
-	ret := _m.ctrl.Call(_m, "GetCurrentDeployment", ctx, name)
-	ret0, _ := ret[0].(*types.Deployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-func (_mr *_MockEnvironmentRecorder) GetCurrentDeployment(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetCurrentDeployment", arg0, arg1)
 }

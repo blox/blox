@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -68,15 +68,15 @@ func NewDeployment(taskDefinition string, token string) (*Deployment, error) {
 	}, nil
 }
 
-func (d Deployment) UpdateDeploymentInProgress(
+func (d *Deployment) UpdateDeploymentToInProgress(
 	desiredTaskCount int,
-	failedInstances []*ecs.Failure) (*Deployment, error) {
+	failedInstances []*ecs.Failure) error {
 
 	if d.Status == DeploymentCompleted {
-		return nil, errors.New("Deployment cannot move from completed to in-progress")
+		return errors.New("Deployment cannot move from completed to in-progress")
 	}
 
-	if len(failedInstances) == 0 {
+	if failedInstances == nil || len(failedInstances) == 0 {
 		d.Health = DeploymentHealthy
 	} else {
 		d.Health = DeploymentUnhealthy
@@ -86,13 +86,13 @@ func (d Deployment) UpdateDeploymentInProgress(
 	d.DesiredTaskCount = desiredTaskCount
 	d.FailedInstances = failedInstances
 
-	return &d, nil
+	return nil
 }
 
-func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) (*Deployment, error) {
+func (d *Deployment) UpdateDeploymentToCompleted(failedInstances []*ecs.Failure) error {
 	d.Status = DeploymentCompleted
 
-	if len(failedInstances) == 0 {
+	if failedInstances == nil || len(failedInstances) == 0 {
 		d.Health = DeploymentHealthy
 	} else {
 		d.Health = DeploymentUnhealthy
@@ -101,5 +101,5 @@ func (d Deployment) UpdateDeploymentCompleted(failedInstances []*ecs.Failure) (*
 	d.FailedInstances = failedInstances
 	d.EndTime = time.Now()
 
-	return &d, nil
+	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -18,10 +18,10 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/cluster-state-service/handler/regex"
 	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
-	"github.com/aws/aws-sdk-go/aws"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -34,14 +34,18 @@ const (
 	unversionedInstance = -1
 )
 
+var (
+	supportedInstanceFilters = map[string]string{instanceStatusFilter: "", instanceClusterFilter: ""}
+)
+
 // ContainerInstanceStore defines methods to access container instances from the datastore
 type ContainerInstanceStore interface {
 	AddContainerInstance(instance string) error
 	AddUnversionedContainerInstance(instance string) error
-	GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error)
-	ListContainerInstances() ([]types.ContainerInstance, error)
-	FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error)
-	StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error)
+	GetContainerInstance(cluster string, instanceARN string) (*storetypes.VersionedContainerInstance, error)
+	ListContainerInstances() ([]storetypes.VersionedContainerInstance, error)
+	FilterContainerInstances(filterMap map[string]string) ([]storetypes.VersionedContainerInstance, error)
+	StreamContainerInstances(ctx context.Context, entityVersion string) (chan storetypes.VersionedContainerInstance, error)
 	DeleteContainerInstance(cluster, instanceARN string) error
 }
 
@@ -116,7 +120,7 @@ func (instanceStore eventInstanceStore) AddUnversionedContainerInstance(instance
 }
 
 // GetContainerInstance gets a container with ARN 'instanceARN' belonging to cluster 'cluster'
-func (instanceStore eventInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*types.ContainerInstance, error) {
+func (instanceStore eventInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*storetypes.VersionedContainerInstance, error) {
 	key, err := instanceStore.getInstanceKey(cluster, instanceARN)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not generate instance key for cluster '%s' and instance '%s'", cluster, instanceARN)
@@ -125,37 +129,56 @@ func (instanceStore eventInstanceStore) GetContainerInstance(cluster string, ins
 }
 
 // ListContainerInstances lists all container instances existing in the datastore
-func (instanceStore eventInstanceStore) ListContainerInstances() ([]types.ContainerInstance, error) {
+func (instanceStore eventInstanceStore) ListContainerInstances() ([]storetypes.VersionedContainerInstance, error) {
 	return instanceStore.getInstancesByKeyPrefix(instanceKeyPrefix)
 }
 
 // FilterContainerInstances returns all container instances from the datastore that match the provided filters
-func (instanceStore eventInstanceStore) FilterContainerInstances(filterKey string, filterValue string) ([]types.ContainerInstance, error) {
-	if len(filterKey) == 0 || len(filterValue) == 0 {
-		return nil, errors.New("Filter key and value cannot be empty")
+func (instanceStore eventInstanceStore) FilterContainerInstances(filterMap map[string]string) ([]storetypes.VersionedContainerInstance, error) {
+	if len(filterMap) == 0 {
+		return nil, errors.New("There has to be at least one filter")
 	}
 
+	filters := make([]string, 0, len(filterMap))
+	for k := range filterMap {
+		filters = append(filters, k)
+	}
+
+	if !instanceStore.areFiltersValid(filters) {
+		return nil, errors.Errorf("At least one of the provided filters '%v' is not supported.", filters)
+	}
+
+	for key, val := range filterMap {
+		if val == "" {
+			return nil, errors.Errorf("Filter value for filter '%s' is empty", key)
+		}
+	}
+
+	status, statusFilterExists := filterMap[instanceStatusFilter]
+	cluster, clusterFilterExists := filterMap[instanceClusterFilter]
 	switch {
-	case filterKey == instanceStatusFilter:
-		return instanceStore.filterContainerInstancesByStatus(filterValue)
-	case filterKey == instanceClusterFilter:
-		return instanceStore.filterContainerInstancesByCluster(filterValue)
+	case statusFilterExists && clusterFilterExists:
+		return instanceStore.filterContainerInstancesByStatusAndCluster(status, cluster)
+	case statusFilterExists:
+		return instanceStore.filterContainerInstancesByStatus(status)
+	case clusterFilterExists:
+		return instanceStore.filterContainerInstancesByCluster(cluster)
 	default:
-		return nil, errors.Errorf("Unsupported filter key: %s", filterKey)
+		return nil, errors.Errorf("Unsupported filter combination '%v'", filters)
 	}
 }
 
 // StreamContainerInstances returns a stream of all changes in the container instance keyspace
-func (instanceStore eventInstanceStore) StreamContainerInstances(ctx context.Context) (chan storetypes.ContainerInstanceErrorWrapper, error) {
+func (instanceStore eventInstanceStore) StreamContainerInstances(ctx context.Context, entityVersion string) (chan storetypes.VersionedContainerInstance, error) {
 	instanceStoreCtx, cancel := context.WithCancel(ctx) // go routine instanceStore.pipeBetweenChannels() handles canceling this context
 
-	dsChan, err := instanceStore.datastore.StreamWithPrefix(instanceStoreCtx, instanceKeyPrefix)
+	dsChan, err := instanceStore.datastore.StreamWithPrefix(instanceStoreCtx, instanceKeyPrefix, entityVersion)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
 
-	instanceRespChan := make(chan storetypes.ContainerInstanceErrorWrapper) // go routine instanceStore.pipeBetweenChannels() handles closing of this channel
+	instanceRespChan := make(chan storetypes.VersionedContainerInstance) // go routine instanceStore.pipeBetweenChannels() handles closing of this channel
 	go instanceStore.pipeBetweenChannels(instanceStoreCtx, cancel, dsChan, instanceRespChan)
 	return instanceRespChan, nil
 }
@@ -208,21 +231,38 @@ func (instanceStore eventInstanceStore) unmarshalInstanceAndGenerateKey(instance
 	return &instance, key, nil
 }
 
-func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string) ([]types.ContainerInstance, error) {
+func (instanceStore eventInstanceStore) areFiltersValid(filters []string) bool {
+	if len(filters) > len(supportedInstanceFilters) {
+		return false
+	}
+	for _, f := range filters {
+		_, ok := supportedInstanceFilters[f]
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByStatus(status string) ([]storetypes.VersionedContainerInstance, error) {
 	instances, err := instanceStore.ListContainerInstances()
 	if err != nil {
 		return nil, err
 	}
-	filteredInstances := make([]types.ContainerInstance, 0, len(instances))
+	return instanceStore.filterContainerInstancesByStatusFromList(status, instances), nil
+}
+
+func (instanceStore eventInstanceStore) filterContainerInstancesByStatusFromList(status string, instances []storetypes.VersionedContainerInstance) []storetypes.VersionedContainerInstance {
+	filteredInstances := make([]storetypes.VersionedContainerInstance, 0, len(instances))
 	for _, instance := range instances {
-		if strings.ToLower(status) == strings.ToLower(aws.StringValue(instance.Detail.Status)) {
+		if strings.ToLower(status) == strings.ToLower(aws.StringValue(instance.ContainerInstance.Detail.Status)) {
 			filteredInstances = append(filteredInstances, instance)
 		}
 	}
-	return filteredInstances, nil
+	return filteredInstances
 }
 
-func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluster string) ([]types.ContainerInstance, error) {
+func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluster string) ([]storetypes.VersionedContainerInstance, error) {
 	clusterName := cluster
 	var err error
 	if regex.IsClusterARN(cluster) {
@@ -236,7 +276,15 @@ func (instanceStore eventInstanceStore) filterContainerInstancesByCluster(cluste
 	return instanceStore.getInstancesByKeyPrefix(instancesForClusterPrefix)
 }
 
-func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*types.ContainerInstance, error) {
+func (instanceStore eventInstanceStore) filterContainerInstancesByStatusAndCluster(status string, cluster string) ([]storetypes.VersionedContainerInstance, error) {
+	instancesFilteredByCluster, err := instanceStore.filterContainerInstancesByCluster(cluster)
+	if err != nil {
+		return nil, err
+	}
+	return instanceStore.filterContainerInstancesByStatusFromList(status, instancesFilteredByCluster), nil
+}
+
+func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*storetypes.VersionedContainerInstance, error) {
 	if len(key) == 0 {
 		return nil, errors.New("Key cannot be empty")
 	}
@@ -254,18 +302,19 @@ func (instanceStore eventInstanceStore) getInstanceByKey(key string) (*types.Con
 		return nil, errors.Errorf("Multiple entries exist in the datastore with key %v", key)
 	}
 
-	var instance types.ContainerInstance
-	for _, v := range resp {
-		instance, err = instanceStore.unmarshalInstance(v)
+	var versionedInstance storetypes.VersionedContainerInstance
+	for _, entity := range resp {
+		versionedInstance.ContainerInstance, err = instanceStore.unmarshalInstance(entity.Value)
+		versionedInstance.Version = entity.Version
 		if err != nil {
 			return nil, err
 		}
 		break
 	}
-	return &instance, nil
+	return &versionedInstance, nil
 }
 
-func (instanceStore eventInstanceStore) getInstancesByKeyPrefix(key string) ([]types.ContainerInstance, error) {
+func (instanceStore eventInstanceStore) getInstancesByKeyPrefix(key string) ([]storetypes.VersionedContainerInstance, error) {
 	if len(key) == 0 {
 		return nil, errors.New("Key cannot be empty")
 	}
@@ -276,18 +325,20 @@ func (instanceStore eventInstanceStore) getInstancesByKeyPrefix(key string) ([]t
 	}
 
 	if len(resp) == 0 {
-		return make([]types.ContainerInstance, 0), nil
+		return make([]storetypes.VersionedContainerInstance, 0), nil
 	}
 
-	instances := []types.ContainerInstance{}
-	for _, v := range resp {
-		instance, err := instanceStore.unmarshalInstance(string(v))
+	versionedInstances := []storetypes.VersionedContainerInstance{}
+	for _, entity := range resp {
+		var versionedInstance storetypes.VersionedContainerInstance
+		versionedInstance.ContainerInstance, err = instanceStore.unmarshalInstance(entity.Value)
+		versionedInstance.Version = entity.Version
 		if err != nil {
 			return nil, err
 		}
-		instances = append(instances, instance)
+		versionedInstances = append(versionedInstances, versionedInstance)
 	}
-	return instances, nil
+	return versionedInstances, nil
 }
 
 func (instanceStore eventInstanceStore) getInstanceKey(cluster string, instanceARN string) (string, error) {
@@ -310,7 +361,7 @@ func (instanceStore eventInstanceStore) getInstanceKey(cluster string, instanceA
 	return generateInstanceKey(clusterName, instanceARN)
 }
 
-func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context, cancel context.CancelFunc, dsChan chan map[string]string, instanceRespChan chan storetypes.ContainerInstanceErrorWrapper) {
+func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context, cancel context.CancelFunc, dsChan chan map[string]storetypes.Entity, instanceRespChan chan storetypes.VersionedContainerInstance) {
 	defer close(instanceRespChan)
 	defer cancel()
 
@@ -320,13 +371,17 @@ func (instanceStore eventInstanceStore) pipeBetweenChannels(ctx context.Context,
 			if !ok {
 				return
 			}
-			for _, v := range resp {
-				ins, err := instanceStore.unmarshalInstance(v)
+			for _, entity := range resp {
+				var versionedInstance storetypes.VersionedContainerInstance
+				ins, err := instanceStore.unmarshalInstance(entity.Value)
 				if err != nil {
-					instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: types.ContainerInstance{}, Err: err}
+					versionedInstance.Err = err
+					instanceRespChan <- versionedInstance
 					return
 				}
-				instanceRespChan <- storetypes.ContainerInstanceErrorWrapper{ContainerInstance: ins, Err: nil}
+				versionedInstance.ContainerInstance = ins
+				versionedInstance.Version = entity.Version
+				instanceRespChan <- versionedInstance
 			}
 
 		case <-ctx.Done():

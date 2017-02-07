@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -14,12 +14,11 @@
 package loader
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -95,7 +94,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 		},
 	}
 
-	resourceVal := strconv.FormatInt(resourceIntVal, 10)
 	instanceVersion := version
 	suite.instance = types.ContainerInstance{
 		Detail: &types.InstanceDetail{
@@ -112,16 +110,16 @@ func (suite *TranslateTestSuite) SetupTest() {
 			EC2InstanceID:        ec2InstanceID,
 			RegisteredResources: []*types.Resource{
 				&types.Resource{
-					Name:  &resourceName,
-					Type:  &resourceType,
-					Value: &resourceVal,
+					Name:         &resourceName,
+					Type:         &resourceType,
+					IntegerValue: &resourceIntVal,
 				},
 			},
 			RemainingResources: []*types.Resource{
 				&types.Resource{
-					Name:  &resourceName,
-					Type:  &resourceType,
-					Value: &resourceVal,
+					Name:         &resourceName,
+					Type:         &resourceType,
+					IntegerValue: &resourceIntVal,
 				},
 			},
 			Status:  &containerStatus,

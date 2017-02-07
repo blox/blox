@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -14,13 +14,11 @@
 package loader
 
 import (
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/handler/types"
 )
 
 const (
@@ -175,26 +173,14 @@ func toResources(ecsResources []*ecs.Resource) []*types.Resource {
 	resources := make([]*types.Resource, len(ecsResources))
 	for i := range ecsResources {
 		ecsRes := ecsResources[i]
-		r := types.Resource{
-			Name: ecsRes.Name,
-			Type: ecsRes.Type,
+		resources[i] = &types.Resource{
+			Name:           ecsRes.Name,
+			Type:           ecsRes.Type,
+			DoubleValue:    ecsRes.DoubleValue,
+			IntegerValue:   ecsRes.IntegerValue,
+			LongValue:      ecsRes.LongValue,
+			StringSetValue: ecsRes.StringSetValue,
 		}
-		val := ""
-		if ecsRes.DoubleValue != nil {
-			val = strconv.FormatFloat(aws.Float64Value(ecsRes.DoubleValue), 'f', 2, 64)
-		} else if ecsRes.IntegerValue != nil {
-			val = strconv.FormatInt(aws.Int64Value(ecsRes.IntegerValue), 10)
-		} else if ecsRes.LongValue != nil {
-			val = strconv.FormatInt(aws.Int64Value(ecsRes.LongValue), 10)
-		} else if ecsRes.StringSetValue != nil {
-			strVal := make([]string, len(ecsRes.StringSetValue))
-			for i := range ecsRes.StringSetValue {
-				strVal[i] = aws.StringValue(ecsRes.StringSetValue[i])
-			}
-			val = strings.Join(strVal, ",")
-		}
-		r.Value = &val
-		resources[i] = &r
 	}
 	return resources
 }

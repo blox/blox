@@ -23,14 +23,19 @@ def run_local(params):
 	api.headers = {}
 	api.host = params.host
 	api.uri = '/v1/instances'
+	api.queryParams = {}
 	api.data = None
 
 	if params.cluster != None and params.instance != None:
 		api.uri = '/v1/instances/%s/%s' % (params.cluster, params.instance)
-	elif params.cluster != None:
-		api.uri = '/v1/instances/filter?cluster=%s' % params.cluster
-	elif params.status != None:
-		api.uri = '/v1/instances/filter?status=%s' % params.status
+	elif params.instance != None:
+		print "Error: instance-arn must be accompanied with the cluster parameter."
+		sys.exit(1)
+	else:
+		if params.cluster != None:
+			api.queryParams['cluster'] = params.cluster
+		if params.status != None:
+			api.queryParams['status'] = params.status
 
 	response = common.call_api(api)
 

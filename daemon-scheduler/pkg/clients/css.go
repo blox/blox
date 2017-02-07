@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -14,7 +14,7 @@
 package clients
 
 import (
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/client"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/client"
 )
 
 func NewCSSClient() *client.BloxCSS {

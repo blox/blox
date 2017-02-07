@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -16,14 +16,13 @@ package main
 import (
 	"fmt"
 
+	"github.com/blox/blox/cluster-state-service/logger"
+	log "github.com/cihub/seelog"
+
 	"github.com/blox/blox/cluster-state-service/cmd"
 	"github.com/blox/blox/cluster-state-service/config"
 	"github.com/blox/blox/cluster-state-service/handler/run"
-	"github.com/blox/blox/cluster-state-service/logger"
 	"github.com/blox/blox/cluster-state-service/versioning"
-
-	log "github.com/cihub/seelog"
-
 	"os"
 )
 
@@ -36,15 +35,15 @@ func main() {
 		fmt.Printf("Could not initialize logger: %+v", err)
 	}
 	if err := cmd.RootCmd.Execute(); err != nil {
-		log.Criticalf("Error executing: %v", err)
+		log.Criticalf("Error executing: %+v", err)
 		os.Exit(errorCode)
 	}
 	if config.PrintVersion {
 		versioning.PrintVersion()
 		os.Exit(0)
 	}
-	if err := run.StartClusterStateService(config.SQSQueueName, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
-		log.Criticalf("Error starting event stream handler: %v", err)
+	if err := run.StartClusterStateService(config.QueueNameURI, config.CSSBindAddr, config.EtcdEndpoints); err != nil {
+		log.Criticalf("Error starting event stream handler: %+v", err)
 		os.Exit(errorCode)
 	}
 }

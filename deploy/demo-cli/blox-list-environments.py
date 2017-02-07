@@ -9,6 +9,8 @@ def main(argv):
 		args.extend([{'arg':'--stack', 'dest':'stack', 'default':None, 'help':'CloudFormation stack name'}])
 	else:
 		args.extend([{'arg':'--host', 'dest':'host', 'default':'localhost:2000', 'help':'Blox Scheduler <Host>:<Port>'}])
+	args.extend([{'arg':'--environment', 'dest':'environment', 'default':None, 'required':False, 'help':'Blox environment name'}])
+	args.extend([{'arg':'--cluster', 'dest':'cluster', 'default':None, 'required':False, 'help':'ECS cluster name'}])
 
 	# Parse Command Line Arguments
 	params = common.parse_cli_args('List Blox Environments', args)
@@ -26,7 +28,16 @@ def run_apigateway(params):
 	command = ["cloudformation", "describe-stack-resource", "--stack-name", params.stack, "--logical-resource-id", "ApiResource"]
 	restResource = common.run_shell_command(params.region, command)
 
-	command = ["apigateway", "test-invoke-method", "--rest-api-id", restApi['StackResourceDetail']['PhysicalResourceId'], "--resource-id", restResource['StackResourceDetail']['PhysicalResourceId'], "--http-method", "GET", "--headers", "{}", "--path-with-query-string", "/v1/environments"]
+	uri = '/v1/environments'
+	queryParams = {}
+	if params.environment != None:
+		uri = '/v1/environments/%s' % params.environment
+	else:
+		if params.cluster != None:
+			queryParams['cluster'] = params.cluster
+		uri += common.get_query_string(queryParams)
+
+	command = ["apigateway", "test-invoke-method", "--rest-api-id", restApi['StackResourceDetail']['PhysicalResourceId'], "--resource-id", restResource['StackResourceDetail']['PhysicalResourceId'], "--http-method", "GET", "--headers", "{}", "--path-with-query-string", uri]
 	response = common.run_shell_command(params.region, command)
 
 	print "HTTP Response Code: %d" % response['status']
@@ -46,7 +57,14 @@ def run_local(params):
 	api.headers = {}
 	api.host = params.host
 	api.uri = '/v1/environments'
+	api.queryParams = {}
 	api.data = None
+
+	if params.environment != None:
+		api.uri = '/v1/environments/%s' % params.environment
+	else:
+		if params.cluster != None:
+			api.queryParams['cluster'] = params.cluster
 
 	response = common.call_api(api)
 

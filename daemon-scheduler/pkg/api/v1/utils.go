@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -28,6 +28,10 @@ func setJSONContentType(w http.ResponseWriter) {
 func writeInternalServerError(w http.ResponseWriter, err error) {
 	log.Errorf("Unexpected error : %+v", err)
 	http.Error(w, "Server Error", http.StatusInternalServerError)
+}
+
+func writeBadRequestError(w http.ResponseWriter, errMsg string) {
+	http.Error(w, errMsg, http.StatusBadRequest)
 }
 
 func handleBackendError(w http.ResponseWriter, err error) {

@@ -1,4 +1,4 @@
-# Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -14,26 +14,28 @@
 SOURCEDIR=.
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 LOCAL_BINARY=out/cluster-state-service
+SWAGGER_SPEC := swagger/v1/swagger.json
+SWAGGER_GEN := $(shell find ./swagger/v1/generated -name '*.go')
 ROOT := $(shell pwd)
 
 .PHONY: all
-all: clean build unit-tests
-
-.PHONY: generate-models
-generate-models:
-	./scripts/v1/generate_swagger_models.sh
-	@echo "Generated swagger models"
+all: clean generate build unit-tests
 
 .PHONY: build
 build:	$(LOCAL_BINARY)
 
 $(LOCAL_BINARY): $(SOURCES)
 	./scripts/build_binary.sh ./out
-	@echo "Built cluster state service"
+	@echo "Built Cluster State Service"
+
+$(SWAGGER_GEN): $(SWAGGER_SPEC)
+	./scripts/v1/generate_swagger_artifacts.sh
+	@echo "Generated Swagger artifacts"
 
 .PHONY: generate
-generate: generate-models $(SOURCES)
+generate: $(SWAGGER_GEN) $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
+	@echo "Generated licenses and copyrights"
 
 .PHONY: generate build-in-docker
 build-in-docker:
@@ -91,3 +93,4 @@ e2e-tests:
 .PHONY: clean
 clean:
 	rm -rf ./out ||:
+	touch $(SWAGGER_SPEC)

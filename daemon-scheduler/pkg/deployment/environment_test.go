@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -70,23 +70,28 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 		Arn: aws.String(instanceARN),
 	}
 
-	suite.environment1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)
+	suite.environment1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.environment2, err = types.NewEnvironment(environmentName2, taskDefinition, cluster)
+	suite.environment2, err = types.NewEnvironment(environmentName2, taskDefinition, cluster2)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.deployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.updatedDeployment, err = suite.deployment.UpdateDeploymentInProgress(desiredTaskCount, nil)
+	suite.updatedDeployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
+	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+	*suite.updatedDeployment = *suite.deployment
+	err = suite.updatedDeployment.UpdateDeploymentToInProgress(desiredTaskCount, nil)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.unhealthyDeployment, err = suite.deployment.UpdateDeploymentInProgress(
-		desiredTaskCount, []*ecs.Failure{&failedTask})
+	suite.unhealthyDeployment, err = types.NewDeployment(taskDefinition, suite.environment1.Token)
+	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+	*suite.unhealthyDeployment = *suite.deployment
+	err = suite.unhealthyDeployment.UpdateDeploymentToInProgress(desiredTaskCount, []*ecs.Failure{&failedTask})
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
-	suite.updatedEnvironment, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)
+	suite.updatedEnvironment, err = types.NewEnvironment(environmentName1, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 
 	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
@@ -109,12 +114,12 @@ func (suite *EnvironmentTestSuite) TestNewEnvironmentStore() {
 }
 
 func (suite *EnvironmentTestSuite) TestCreateEnvironmentEmptyName() {
-	_, err := suite.environment.CreateEnvironment(suite.ctx, "", taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, "", taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when name is empty")
 }
 
 func (suite *EnvironmentTestSuite) TestCreateEnvironmentEmptyTaskDefinition() {
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, "", cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, "", cluster1)
 	assert.Error(suite.T(), err, "Expected an error when taskDefinition is empty")
 }
 
@@ -127,7 +132,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironmentGetEnvironmentFails() {
 	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName1).
 		Return(nil, errors.New("Get environment failed"))
 
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when get environment fails")
 }
 
@@ -135,7 +140,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironmentEnvironmentExists() {
 	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName1).
 		Return(suite.environment1, nil)
 
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when environment exists")
 }
 
@@ -147,7 +152,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironmentPutEnvironmentFails() {
 		verifyEnvironment(suite.T(), suite.environment1, &e)
 	}).Return(errors.New("Put environment failed"))
 
-	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	_, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Error(suite.T(), err, "Expected an error when put environment fails")
 }
 
@@ -158,7 +163,7 @@ func (suite *EnvironmentTestSuite) TestCreateEnvironment() {
 		verifyEnvironment(suite.T(), suite.environment1, &e)
 	}).Return(nil)
 
-	env, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster)
+	env, err := suite.environment.CreateEnvironment(suite.ctx, environmentName1, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating an environment")
 	verifyEnvironment(suite.T(), suite.environment1, env)
 }
@@ -185,6 +190,68 @@ func (suite *EnvironmentTestSuite) TestGetEnvironment() {
 	assert.Exactly(suite.T(), suite.environment1, env, "Expected the environment to match the expected one")
 }
 
+func (suite *EnvironmentTestSuite) TestDeleteEnvironment() {
+	environment, err := types.NewEnvironment("TestDeleteEnvironment", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
+		Return(environment, nil)
+	suite.environmentStore.EXPECT().DeleteEnvironment(suite.ctx, *environment).
+		Return(nil).Times(1)
+
+	err = suite.environment.DeleteEnvironment(suite.ctx, environment.Name)
+	assert.Nil(suite.T(), err, "Unexpected error when deleting environment")
+}
+
+func (suite *EnvironmentTestSuite) TestDeleteEnvironmentReturnsError() {
+	environment, err := types.NewEnvironment("TestDeleteEnvironmentReturnsError", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
+		Return(environment, nil)
+	err = errors.New("Error calling DeleteEnvironment")
+	suite.environmentStore.EXPECT().DeleteEnvironment(suite.ctx, *environment).
+		Return(err).Times(1)
+
+	observedErr := suite.environment.DeleteEnvironment(suite.ctx, environment.Name)
+	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
+}
+
+func (suite *EnvironmentTestSuite) TestDeleteEnvironmentEmptyName() {
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, gomock.Any()).
+		Times(0)
+	suite.environmentStore.EXPECT().DeleteEnvironment(suite.ctx, gomock.Any()).
+		Times(0)
+
+	_, ok := suite.environment.DeleteEnvironment(suite.ctx, "").(types.BadRequestError)
+	assert.True(suite.T(), ok, "Expecting BadRequestError when deleting environment with empty name")
+}
+
+func (suite *EnvironmentTestSuite) TestDeleteEnvironmentGetEnvironmentReturnsError() {
+	environment, err := types.NewEnvironment("TestDeleteEnvironmentReturnsError", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+
+	err = errors.New("Error calling GetEnvironment")
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
+		Return(nil, err)
+	suite.environmentStore.EXPECT().DeleteEnvironment(suite.ctx, *environment).
+		Times(0)
+
+	observedErr := suite.environment.DeleteEnvironment(suite.ctx, environment.Name)
+	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
+}
+
+func (suite *EnvironmentTestSuite) TestDeleteEnvironmentGetEnvironmentReturnsEmpty() {
+	environment, err := types.NewEnvironment("TestDeleteEnvironmentGetEnvironmentReturnsEmpty", taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
+
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).
+		Return(nil, nil)
+	suite.environmentStore.EXPECT().DeleteEnvironment(suite.ctx, *environment).
+		Times(0)
+
+	observedErr := suite.environment.DeleteEnvironment(suite.ctx, environment.Name)
+	assert.Nil(suite.T(), observedErr, "Unexpected error when deleting a missing environment")
+}
+
 func (suite *EnvironmentTestSuite) TestListEnvironmentsListFromStoreFails() {
 	suite.environmentStore.EXPECT().ListEnvironments(suite.ctx).
 		Return(nil, errors.New("List failed"))
@@ -203,17 +270,78 @@ func (suite *EnvironmentTestSuite) TestListEnvironments() {
 	assert.Exactly(suite.T(), expectedEnvs, envs, "Expected listed environments to match what's returned from the store")
 }
 
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsEmptyFilterKey() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, "", "filterVal")
+	assert.Error(suite.T(), err, "Expected an error when filter key is empty")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsEmptyFilterVal() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, "")
+	assert.Error(suite.T(), err, "Expected an error when filter val is empty")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsUnsupportedFilterKey() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, "unsupportedFilter", "filterVal")
+	assert.Error(suite.T(), err, "Expected an error when filter key is unsupported")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsListEnvironmentsReturnsError() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).
+		Return(nil, errors.New("Error listing environments"))
+
+	_, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, "filterVal")
+	assert.Error(suite.T(), err, "Expected an error filtering environments when store list environments returns an error")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterARN() {
+	suite.filterEnvironmentsByCluster(cluster1)
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterName() {
+	suite.filterEnvironmentsByCluster(clusterName1)
+}
+
+func (suite *EnvironmentTestSuite) filterEnvironmentsByCluster(cluster string) {
+	cluster1Env1 := suite.environment1
+	cluster2Env1 := suite.environment2
+	cluster1Env2, err := types.NewEnvironment(environmentName3, taskDefinition, cluster1)
+	assert.Nil(suite.T(), err, "Unexpected error creating new environment")
+
+	allEnvs := []types.Environment{*cluster1Env1, *cluster2Env1, *cluster1Env2}
+	suite.environmentStore.EXPECT().ListEnvironments(suite.ctx).
+		Return(allEnvs, nil)
+
+	envs, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, cluster)
+	assert.Nil(suite.T(), err, "Unexpected error when filtering environments")
+	expectedEnvs := []types.Environment{*cluster1Env1, *cluster1Env2}
+	assert.Exactly(suite.T(), expectedEnvs, envs, "Returned filtered environments does not match expected environments")
+}
+
+func (suite *EnvironmentTestSuite) TestFilterEnvironmentsByClusterInvalidCluster() {
+	suite.environmentStore.EXPECT().ListEnvironments(gomock.Any()).Times(0)
+
+	invalidCluster := "cluster/cluster"
+	_, err := suite.environment.FilterEnvironments(suite.ctx, clusterFilter, invalidCluster)
+	assert.Error(suite.T(), err, "Expected an error when filtering using invalid cluster")
+}
+
 func (suite *EnvironmentTestSuite) TestAddDeploymentEmptyDeploymentID() {
 	deployment := types.Deployment{}
 
-	_, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, deployment)
+	_, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, deployment)
 	assert.Error(suite.T(), err, "Expected an error when deployment ID is missing")
 }
 
 func (suite *EnvironmentTestSuite) TestAddDeploymentDeploymentExists() {
 	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
 
-	_, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, *suite.deployment)
+	_, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, *suite.deployment)
 	assert.Error(suite.T(), err, "Expected an error when deployment exists")
 }
 
@@ -222,7 +350,7 @@ func (suite *EnvironmentTestSuite) TestAddDeploymentPutEnvironmentFails() {
 		verifyEnvironment(suite.T(), suite.environment1, &e)
 	}).Return(errors.New("Put environment failed"))
 
-	_, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, *suite.deployment)
+	_, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, *suite.deployment)
 	assert.Error(suite.T(), err, "Expected an error when put environment fails")
 }
 
@@ -231,7 +359,7 @@ func (suite *EnvironmentTestSuite) TestAddDeployment() {
 	updatedEnv.PendingDeploymentID = suite.deployment.ID
 	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, gomock.Eq(*updatedEnv)).Return(nil)
 
-	env, err := suite.environment.AddDeployment(suite.ctx, *suite.environment1, *suite.deployment)
+	env, err := suite.environment.AddPendingDeployment(suite.ctx, *suite.environment1, *suite.deployment)
 	assert.Nil(suite.T(), err, "Unexpected error when adding a deployment")
 
 	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
@@ -291,7 +419,7 @@ func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentDoesNotHaveCur
 }
 
 func (suite *EnvironmentTestSuite) TestUpdateDeploymentEnvironmentCurrentTasksContainsADifferentTaskDef() {
-	suite.environment1.Deployments[suite.deployment.ID] = *suite.deployment
+	suite.environment1.AddPendingDeployment(*suite.deployment)
 
 	suite.updatedEnvironment.Deployments[suite.deployment.ID] = *suite.updatedDeployment
 

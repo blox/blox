@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -13,16 +13,24 @@
 
 package steps
 
-import "github.com/blox/blox/daemon-scheduler/generated/v1/models"
+import "github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
+
+type Exception struct {
+	exceptionType string
+	exceptionMsg  string
+}
 
 var (
 	taskDefinition  string
 	cluster         string
+	clusterARN      string
 	environment     string
 	asg             string
 	deploymentID    string
 	deploymentToken string
+	environmentList []*models.Environment
 	err             error
+	exception       Exception
 )
 
 var deploymentIDs = make(map[string]*models.Deployment)

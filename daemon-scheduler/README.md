@@ -48,11 +48,11 @@ docker run -e AWS_REGION=us-west-2 \
     AWS_PROFILE=default \
     -v ~/.aws:/.aws \
     -v /tmp/ds-logs:/var/output/logs \
-    bloxoss/daemon-scheduler:0.1.0 \
+    bloxoss/daemon-scheduler:0.2.0 \
     --etcd-endpoint $ETCD_IP:$ETCD_PORT \
     --css-endpoint $CSS_IP:$CS_PORT
 ```
 
 #### API endpoint
 
-After you launch the daemon-scheduler, you can interact with and use the REST API by using the endpoint at port 2000. Identify the daemon-scheduler container IP address and connect to port 2000. For more information about the API definitions, see the [swagger specification](generated/v1/swagger.json).
+After you launch the daemon-scheduler, you can interact with and use the REST API by using the endpoint at port 2000. Identify the daemon-scheduler container IP address and connect to port 2000. For more information about the API definitions, see the [swagger specification](swagger/v1/swagger.json).

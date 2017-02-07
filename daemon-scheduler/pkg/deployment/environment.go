@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -15,11 +15,21 @@ package deployment
 
 import (
 	"context"
+	"strings"
 
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	"github.com/blox/blox/daemon-scheduler/pkg/validate"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
+)
+
+const (
+	clusterFilter = "cluster"
+)
+
+var (
+	supportedFilterKeys = []string{clusterFilter}
 )
 
 type Environment interface {
@@ -31,15 +41,16 @@ type Environment interface {
 	DeleteEnvironment(ctx context.Context, name string) error
 	// ListEnvironments returns a list with all the existing environments
 	ListEnvironments(ctx context.Context) ([]types.Environment, error)
+	// FilterEnvironments returns a list of all environments that match the filters
+	FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error)
 
-	// AddDeployment adds a deployment to the environment if a deployment with
+	//TODO: reconsider how these methods are structured when adding transactions (do we need 2 separate methods? etc)
+	// AddPendingDeployment adds a deployment to the environment if a deployment with
 	// the provided ID does not exist
-	AddDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
+	AddPendingDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
 	// UpdateDeployment replaces an existing deployment in the environment with the
 	// provided one if a deployment with the provided ID already exists
 	UpdateDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
-	//GetCurrentDeployment returns the deployment which needs to be used for starting tasks
-	GetCurrentDeployment(ctx context.Context, name string) (*types.Deployment, error)
 }
 
 type environment struct {
@@ -135,7 +146,63 @@ func (e environment) ListEnvironments(ctx context.Context) ([]types.Environment,
 	return e.environmentStore.ListEnvironments(ctx)
 }
 
-func (e environment) AddDeployment(ctx context.Context, environment types.Environment,
+func (e environment) FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error) {
+	if filterKey == "" {
+		return nil, errors.New("Filter key is missing")
+	}
+	if filterVal == "" {
+		return nil, errors.New("Filter value is missing")
+	}
+	switch filterKey {
+	case clusterFilter:
+		return e.filterEnvironmentsByCluster(ctx, filterVal)
+	default:
+		return nil, errors.Errorf("Unsupported filter key '%s'. Supported filters are '%v'", filterKey, supportedFilterKeys)
+	}
+}
+
+func (e environment) filterEnvironmentsByCluster(ctx context.Context, cluster string) ([]types.Environment, error) {
+	if validate.IsClusterARN(cluster) {
+		return e.filterEnvironmentsByClusterARN(ctx, cluster)
+	}
+	if validate.IsClusterName(cluster) {
+		return e.filterEnvironmentsByClusterName(ctx, cluster)
+	}
+	return nil, errors.Errorf("'%s' is neither a cluster name nor a cluster ARN", cluster)
+}
+
+func (e environment) filterEnvironmentsByClusterARN(ctx context.Context, clusterARN string) ([]types.Environment, error) {
+	envs, err := e.environmentStore.ListEnvironments(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredEnvs := make([]types.Environment, 0, len(envs))
+	for _, env := range envs {
+		if clusterARN == env.Cluster {
+			filteredEnvs = append(filteredEnvs, env)
+		}
+	}
+	return filteredEnvs, nil
+}
+
+func (e environment) filterEnvironmentsByClusterName(ctx context.Context, clusterName string) ([]types.Environment, error) {
+	envs, err := e.environmentStore.ListEnvironments(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredEnvs := make([]types.Environment, 0, len(envs))
+	for _, env := range envs {
+		clusterARNSuffix := "/" + clusterName
+		if strings.HasSuffix(env.Cluster, clusterARNSuffix) {
+			filteredEnvs = append(filteredEnvs, env)
+		}
+	}
+	return filteredEnvs, nil
+}
+
+func (e environment) AddPendingDeployment(ctx context.Context, environment types.Environment,
 	deployment types.Deployment) (*types.Environment, error) {
 
 	if len(deployment.ID) == 0 {
@@ -147,10 +214,16 @@ func (e environment) AddDeployment(ctx context.Context, environment types.Enviro
 		return nil, errors.Errorf("Deployment %s already exists: %+v", deployment.ID, deployment)
 	}
 
-	environment.Deployments[deployment.ID] = deployment
-	environment.PendingDeploymentID = deployment.ID
+	if deployment.Status != types.DeploymentPending {
+		return nil, errors.Errorf("Deployment status should be pending but is %v", deployment.Status)
+	}
 
-	err := e.environmentStore.PutEnvironment(ctx, environment)
+	err := environment.AddPendingDeployment(deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	err = e.environmentStore.PutEnvironment(ctx, environment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error saving environment %s to store", environment.Name)
 	}
@@ -186,13 +259,4 @@ func (e environment) UpdateDeployment(ctx context.Context, environment types.Env
 	}
 
 	return &environment, nil
-}
-
-func (e environment) GetCurrentDeployment(ctx context.Context, name string) (*types.Deployment, error) {
-	env, err := e.GetEnvironment(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-
-	return env.GetCurrentDeployment()
 }

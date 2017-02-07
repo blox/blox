@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -110,7 +110,7 @@ func (ecsWrapper ECSWrapper) DeregisterTaskDefinition(taskDefnARN string) error 
 	return nil
 }
 
-func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string) (ecs.Task, error) {
+func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string, startedBy string) (ecs.Task, error) {
 	containerInstances, err := ecsWrapper.ListContainerInstances(clusterName)
 	if err != nil {
 		return ecs.Task{}, err
@@ -122,6 +122,7 @@ func (ecsWrapper ECSWrapper) StartTask(clusterName string, taskDefn string) (ecs
 		Cluster:            &clusterName,
 		ContainerInstances: containerInstances[0:1],
 		TaskDefinition:     &taskDefn,
+		StartedBy:          &startedBy,
 	}
 	resp, err := ecsWrapper.client.StartTask(&in)
 	if err != nil {

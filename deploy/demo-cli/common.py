@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import argparse, json, subprocess, sys, urllib2
+import argparse, json, subprocess, sys, urllib, urllib2
 
 # Create blank object class.
 class Object():
@@ -81,7 +81,7 @@ def call_api(api):
 	obj = Object()
 
 	# URL to call.
-	url = 'http://%s%s' % (api.host, api.uri)
+	url = 'http://%s%s%s' % (api.host, api.uri, get_query_string(api.queryParams))
 	request = urllib2.Request(url=url)
 
 	# Add any given headers.
@@ -105,3 +105,13 @@ def call_api(api):
 		sys.exit(1)
 
 	return obj
+
+# Get the HTTP query string to append, if applicable.
+def get_query_string(params):
+	foundParams = {}
+	for key, value in params.iteritems():
+		# Only append query string parameters that are set.
+		if value != None and value != '':
+			foundParams[key] = value.strip()
+
+	return "" if len(foundParams) == 0 else '?%s' % (urllib.urlencode(foundParams))

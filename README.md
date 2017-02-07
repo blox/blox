@@ -1,4 +1,5 @@
-# Blox
+# ![Logo](blox-logo.png)
+
 
 ### Description
 Blox is a collection of open source projects for container management and orchestration. Blox gives you more control over how your containerized applications run on Amazon ECS. It enables you to build schedulers and integrate third-party schedulers on top of ECS, while leveraging Amazon ECS to fully manage and scale your clusters.
@@ -48,4 +49,4 @@ For more information about how to build these components, see [cluster-state-ser
 
 ### Contributing to Blox
 
-All projects under Blox are released under Apache 2.0 and the usual Apache Contributor Agreements apply for individual contributors. All projects are maintained in public on GitHub, issues and pull requests use GitHub, and discussions use our Gitter channel. We look forward to collaborating with the community.
+All projects under Blox are released under Apache 2.0 and the usual Apache Contributor Agreements apply for individual contributors. All projects are maintained in public on GitHub, issues and pull requests use GitHub, and discussions use our [Gitter channel](https://gitter.im/blox). We look forward to collaborating with the community.

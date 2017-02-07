@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -15,8 +15,15 @@ package v1
 
 const (
 	// 4xx error messages
-	instanceNotFoundClientErrMsg = "Instance not found"
-	taskNotFoundClientErrMsg     = "Task not found"
+	instanceNotFoundClientErrMsg             = "Instance not found"
+	taskNotFoundClientErrMsg                 = "Task not found"
+	invalidStatusClientErrMsg                = "Invalid status"
+	unsupportedFilterClientErrMsg            = "At least one of the filters provided is unsupported"
+	redundantFilterClientErrMsg              = "At least one of the filters provided is specified multiple times"
+	invalidClusterClientErrMsg               = "Invalid cluster ARN or name"
+	unsupportedFilterCombinationClientErrMsg = "The combination of filters provided are not supported"
+	invalidEntityVersionClientErrMsg         = "Invalid entity version"
+	outOfRangeEntityVersionClientErrMsg      = "Entity version is out of range"
 
 	// 5xx error messages
 	internalServerErrMsg = "Unexpected internal server error"

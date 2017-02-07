@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/blox/blox/cluster-state-service/handler/mocks"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -38,13 +39,15 @@ var (
 
 type TaskLoaderTestSuite struct {
 	suite.Suite
-	taskStore      *mocks.MockTaskStore
-	ecsWrapper     *mocks.MockECSWrapper
-	taskLoader     TaskLoader
-	clusterARNList []*string
-	task           types.Task
-	redundantTask  types.Task
-	taskJSON       string
+	taskStore              *mocks.MockTaskStore
+	ecsWrapper             *mocks.MockECSWrapper
+	taskLoader             TaskLoader
+	clusterARNList         []*string
+	task                   types.Task
+	versionedTask          storetypes.VersionedTask
+	redundantTask          types.Task
+	redundantVersionedTask storetypes.VersionedTask
+	taskJSON               string
 }
 
 func (suite *TaskLoaderTestSuite) SetupTest() {
@@ -81,6 +84,10 @@ func (suite *TaskLoaderTestSuite) SetupTest() {
 			Version:              &taskVersion,
 		},
 	}
+	suite.versionedTask = storetypes.VersionedTask{
+		Task: suite.task,
+		Version: "123",
+	}
 
 	task, err := json.Marshal(suite.task)
 	assert.Nil(suite.T(), err, "Cannot setup testSuite: Unexpected error when marshaling task")
@@ -92,6 +99,10 @@ func (suite *TaskLoaderTestSuite) SetupTest() {
 			TaskARN:    &redundantTaskARN,
 		},
 	}
+	suite.redundantVersionedTask = storetypes.VersionedTask{
+		Task: suite.redundantTask,
+		Version: "123",
+	}
 }
 
 func TestTaskLoaderTestSuite(t *testing.T) {
@@ -100,7 +111,7 @@ func TestTaskLoaderTestSuite(t *testing.T) {
 
 func (suite *TaskLoaderTestSuite) TestLoadTasksListAllClustersReturnsError() {
 	gomock.InOrder(
-		suite.taskStore.EXPECT().ListTasks().Return(make([]types.Task, 0), nil),
+		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(nil, errors.New("Error while listing all clusters")),
 		suite.ecsWrapper.EXPECT().ListAllTasks(gomock.Any()).Times(0),
 		suite.ecsWrapper.EXPECT().DescribeTasks(gomock.Any(), gomock.Any()).Times(0),
@@ -112,7 +123,7 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksListAllClustersReturnsError() {
 
 func (suite *TaskLoaderTestSuite) TestLoadTasksListAllTasksReturnsError() {
 	gomock.InOrder(
-		suite.taskStore.EXPECT().ListTasks().Return(make([]types.Task, 0), nil),
+		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(nil, errors.New("Error while listing all tasks")),
 		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Times(0),
@@ -126,7 +137,7 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksListAllTasksReturnsError() {
 func (suite *TaskLoaderTestSuite) TestLoadTasksDescribeTasksReturnsError() {
 	taskARNList := []*string{&taskARN1}
 	gomock.InOrder(
-		suite.taskStore.EXPECT().ListTasks().Return(make([]types.Task, 0), nil),
+		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Times(0),
@@ -142,7 +153,7 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksStoreReturnsError() {
 	taskList := []types.Task{suite.task}
 	emptyTaskARNList := []*string{}
 	gomock.InOrder(
-		suite.taskStore.EXPECT().ListTasks().Return(make([]types.Task, 0), nil),
+		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[0], taskARNList).Return(taskList, nil, nil),
@@ -160,7 +171,7 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksEmptyLocalStore() {
 	taskList := []types.Task{suite.task}
 	emptyTaskARNList := []*string{}
 	gomock.InOrder(
-		suite.taskStore.EXPECT().ListTasks().Return(make([]types.Task, 0), nil),
+		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
 		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[0], taskARNList).Return(taskList, nil, nil),
@@ -175,7 +186,7 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksEmptyLocalStore() {
 func (suite *TaskLoaderTestSuite) TestLoadTasksLocalStoreSameAsECS() {
 	taskARNList := []*string{&taskARN1}
 	emptyTaskARNList := []*string{}
-	taskListInStore := []types.Task{suite.task}
+	taskListInStore := []storetypes.VersionedTask{suite.versionedTask}
 	taskList := []types.Task{suite.task}
 	// taskListInStore == taskList, which should mean that there shouldn't
 	// be a call to DeleteTask()
@@ -196,7 +207,7 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksLocalStoreSameAsECS() {
 func (suite *TaskLoaderTestSuite) TestLoadTasksRedundantEntriesInLocalStore() {
 	taskARNList := []*string{&taskARN1}
 	emptyTaskARNList := []*string{}
-	taskListInStore := []types.Task{suite.task, suite.redundantTask}
+	taskListInStore := []storetypes.VersionedTask{suite.versionedTask, suite.redundantVersionedTask}
 	taskList := []types.Task{suite.task}
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(taskListInStore, nil),

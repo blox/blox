@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -14,9 +14,10 @@
 package store
 
 var (
-	clusterName1 = "cluster1"
-	clusterName2 = "cluster2"
-	clusterName3 = "cluster3"
-	clusterARN1  = "arn:aws:ecs:us-east-1:123456789123:cluster/" + clusterName1
-	clusterARN2  = "arn:aws:ecs:us-east-1:123456789123:cluster/" + clusterName2
+	clusterName1  = "cluster1"
+	clusterName2  = "cluster2"
+	clusterName3  = "cluster3"
+	clusterARN1   = "arn:aws:ecs:us-east-1:123456789123:cluster/" + clusterName1
+	clusterARN2   = "arn:aws:ecs:us-east-1:123456789123:cluster/" + clusterName2
+	entityVersion = "123"
 )

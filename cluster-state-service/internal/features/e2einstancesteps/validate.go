@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -14,30 +14,33 @@
 package e2einstancesteps
 
 import (
-	"github.com/blox/blox/cluster-state-service/internal/models"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/pkg/errors"
 )
 
 func ValidateInstancesMatch(ecsInstance ecs.ContainerInstance, cssInstance models.ContainerInstance) error {
-	if *ecsInstance.ContainerInstanceArn != *cssInstance.ContainerInstanceARN ||
-		*ecsInstance.Status != *cssInstance.Status {
+	if *ecsInstance.ContainerInstanceArn != *cssInstance.Entity.ContainerInstanceARN ||
+		*ecsInstance.Status != *cssInstance.Entity.Status {
 		return errors.New("Container instances don't match. ")
 	}
 	return nil
 }
 
 func ValidateListContainsInstance(ecsInstance ecs.ContainerInstance, cssInstanceList []models.ContainerInstance) error {
-	instanceARN := *ecsInstance.ContainerInstanceArn
-	var cssInstance models.ContainerInstance
+	cssInstance, err := ValidateListContainsInstanceArn(*ecsInstance.ContainerInstanceArn, cssInstanceList)
+	if err != nil {
+		return err
+	}
+
+	return ValidateInstancesMatch(ecsInstance, *cssInstance)
+}
+
+func ValidateListContainsInstanceArn(instanceARN string, cssInstanceList []models.ContainerInstance) (*models.ContainerInstance, error) {
 	for _, i := range cssInstanceList {
-		if *i.ContainerInstanceARN == instanceARN {
-			cssInstance = i
-			break
+		if *i.Entity.ContainerInstanceARN == instanceARN {
+			return &i, nil
 		}
 	}
-	if cssInstance.ContainerInstanceARN == nil {
-		return errors.Errorf("Instance with ARN '%s' not found in response. ", instanceARN)
-	}
-	return ValidateInstancesMatch(ecsInstance, cssInstance)
+	return nil, errors.Errorf("Instance with ARN '%s' not found in response. ", instanceARN)
 }

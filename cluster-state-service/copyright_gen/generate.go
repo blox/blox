@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -13,4 +13,4 @@
 
 package copyright_gen
 
-//go:generate slap_copyright.sh ../cmd ../handler ../internal ../licenses ../logger ../main.go
+//go:generate slap_copyright.sh ../cmd ../handler ../internal ../licenses ../logger ../main.go ../swagger

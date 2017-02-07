@@ -54,16 +54,6 @@
       "us-east-1" : { "ami" : "ami-eca289fb" },
       "us-east-2" : { "ami" : "ami-446f3521" },
       "us-west-2" : { "ami" : "ami-7abc111a" }
-    },
-    "RegionAvailabilityZones": {
-      "ap-northeast-1" : { "az1" : "ap-northeast-1a", "az2": "ap-northeast-1c" },
-      "ap-southeast-1" : { "az1" : "ap-southeast-1a", "az2": "ap-southeast-1b" },
-      "ap-southeast-2" : { "az1" : "ap-southeast-2a", "az2": "ap-southeast-2b" },
-      "eu-west-1" : { "az1" : "eu-west-1a", "az2": "eu-west-1b" },
-      "eu-central-1" : { "az1" : "eu-central-1a", "az2": "eu-central-1b" },
-      "us-east-1" : { "az1" : "us-east-1a", "az2": "us-east-1b" },
-      "us-east-2" : { "az1" : "us-east-2a", "az2": "us-east-2b" },
-      "us-west-2" : { "az1" : "us-west-2a", "az2": "us-west-2b" }
     }
   },
 
@@ -103,7 +93,7 @@
     "Subnet1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "AvailabilityZone": { "Fn::FindInMap" : [ "RegionAvailabilityZones", { "Ref" : "AWS::Region" }, "az1" ] },
+        "AvailabilityZone": { "Fn::Select": [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
         "VpcId": { "Ref": "Vpc" },
         "CidrBlock": "10.0.0.0/24",
         "MapPublicIpOnLaunch": "true"
@@ -112,7 +102,7 @@
     "Subnet2": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
-        "AvailabilityZone": { "Fn::FindInMap" : [ "RegionAvailabilityZones", { "Ref" : "AWS::Region" }, "az2" ] },
+        "AvailabilityZone": { "Fn::Select": [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
         "VpcId": { "Ref": "Vpc" },
         "CidrBlock": "10.0.1.0/24",
         "MapPublicIpOnLaunch": "true"
@@ -314,6 +304,7 @@
                   "Effect": "Allow",
                   "Action": [
                     "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes",
                     "sqs:GetQueueUrl",
                     "sqs:ReceiveMessage"
                   ],
@@ -442,7 +433,7 @@
           {
             "Name": "scheduler",
             "Hostname": "scheduler",
-            "Image": "bloxoss/daemon-scheduler:0.1.0",
+            "Image": "bloxoss/daemon-scheduler:0.2.0",
             "Memory": "128",
             "PortMappings": [
               {
@@ -469,7 +460,7 @@
           {
             "Name": "css",
             "Hostname": "css",
-            "Image": "bloxoss/cluster-state-service:0.1.0",
+            "Image": "bloxoss/cluster-state-service:0.2.0",
             "Memory": "128",
             "Environment": [
               {
@@ -490,8 +481,14 @@
           {
             "Name": "etcd",
             "Hostname": "etcd",
-            "Image": "quay.io/coreos/etcd:v3.0.13",
+            "Image": "quay.io/coreos/etcd:v3.0.15",
             "Memory": "256",
+            "Environment": [
+              {
+                "Name": "ETCDCTL_API",
+                "Value": "3"
+              }
+            ],
             "Command": [
               "/usr/local/bin/etcd",
               "--data-dir", "/var/lib/etcd/data",

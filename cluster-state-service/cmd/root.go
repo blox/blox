@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	sqsQueueNameFlag = "queue"
+	queueNameURIFlag = "queue"
 	cssBindFlag      = "bind"
 	etcdEndpointFlag = "etcd-endpoint"
 	versionFlag      = "version"
@@ -45,7 +45,7 @@ a localized data store, which provides you a near-real-time view of your cluster
 		},
 	}
 	// TODO: Fix the description
-	rootCmd.PersistentFlags().StringVar(&config.SQSQueueName, sqsQueueNameFlag, "", "SQS queue name")
+	rootCmd.PersistentFlags().StringVar(&config.QueueNameURI, queueNameURIFlag, "", "Queue name should be of the form sqs://name or kinesis://name")
 	rootCmd.PersistentFlags().StringVar(&config.CSSBindAddr, cssBindFlag, "", "Cluster State Service listen address")
 	rootCmd.PersistentFlags().StringArrayVar(&config.EtcdEndpoints, etcdEndpointFlag, make([]string, 0), "Etcd node addresses")
 	rootCmd.PersistentFlags().BoolVar(&config.PrintVersion, versionFlag, false, "Print version and exit")

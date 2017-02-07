@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -13,13 +13,12 @@
 
 package v1
 
-import (
-	"github.com/gorilla/mux"
-)
+import "github.com/gorilla/mux"
 
 const (
 	nextToken       = "nextToken"
 	deploymentToken = "deploymentToken"
+	cluster         = "cluster"
 )
 
 func NewRouter(api API) *mux.Router {
@@ -27,6 +26,7 @@ func NewRouter(api API) *mux.Router {
 	s := r.Path("/v1").Subrouter()
 
 	// health
+
 	s.Path("/ping").
 		Methods("GET").
 		HandlerFunc(api.Ping)

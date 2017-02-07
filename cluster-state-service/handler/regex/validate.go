@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -13,7 +13,12 @@
 
 package regex
 
-import "regexp"
+import (
+	"regexp"
+	"strconv"
+
+	log "github.com/cihub/seelog"
+)
 
 // IsClusterName validates a cluster name against the cluster name regex
 func IsClusterName(clusterName string) bool {
@@ -46,6 +51,20 @@ func IsTaskARN(taskARN string) bool {
 func IsInstanceARN(instanceARN string) bool {
 	validInstanceARN := regexp.MustCompile(InstanceARNRegex)
 	if validInstanceARN.MatchString(instanceARN) {
+		return true
+	}
+	return false
+}
+
+// IsEntityVersion validates an entity version as a positive integer
+func IsEntityVersion(entityVersion string) bool {
+	value, err := strconv.ParseInt(entityVersion, 10, 64)
+	if err != nil {
+		log.Warnf("Error parsing entity version: %v", err)
+		return false
+	}
+
+	if value >= 0 {
 		return true
 	}
 	return false

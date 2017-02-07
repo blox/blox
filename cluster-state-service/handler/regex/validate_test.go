@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -107,4 +107,29 @@ func TestIsInstanceARNInvalidPrefixInARN(t *testing.T) {
 func TestIsInstanceARN(t *testing.T) {
 	isValid := IsInstanceARN(validInstanceARN)
 	assert.True(t, isValid, "Valid instance ARN should satisfy regex")
+}
+
+func TestIsEntityVersionEmptyVersion(t *testing.T) {
+	isValid := IsEntityVersion("")
+	assert.False(t, isValid, "Empty entity version should not satisfy method")
+}
+
+func TestIsEntityVersionFloatingPoint(t *testing.T) {
+	isValid := IsEntityVersion(invalidEntityVersionFloatingPointNumber)
+	assert.False(t, isValid, "Floating point number entity version should not satisfy method")
+}
+
+func TestIsEntityVersionNegativeNumber(t *testing.T) {
+	isValid := IsEntityVersion(invalidEntityVersionNegativeNumber)
+	assert.False(t, isValid, "Negative entity version should not satisfy method")
+}
+
+func TestIsEntityVersionNonNumber(t *testing.T) {
+	isValid := IsEntityVersion(invalidEntityVersionNonNumber)
+	assert.False(t, isValid, "Non-number entity version should not satisfy method")
+}
+
+func TestIsEntityVersion(t *testing.T) {
+	isValid := IsEntityVersion(validEntityVersion)
+	assert.True(t, isValid, "Valid entity version should satisfy method")
 }

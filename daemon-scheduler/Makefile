@@ -1,4 +1,4 @@
-# Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You
 # may not use this file except in compliance with the License. A copy of
@@ -13,14 +13,14 @@
 
 SOURCEDIR=.
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
-SWAGGER_SPEC := generated/v1/swagger.json
-SWAGGER_GEN := $(shell find ./generated/v1 -name '*.go')
+SWAGGER_SPEC := swagger/v1/swagger.json
+SWAGGER_GEN := $(shell find ./swagger/v1/generated -name '*.go')
 LOCAL_BINARY=out/daemon-scheduler
 GOINSTALL_BINARY=$(GOPATH)/bin/daemon-scheduler
 ROOT := $(shell pwd)
 
 .PHONY: all
-all: clean build unit-tests
+all: clean generate build unit-tests
 
 .PHONY: build-incr
 build-incr: generate
@@ -34,6 +34,10 @@ $(LOCAL_BINARY): $(SOURCES)
 	./scripts/build_binary.sh ./out
 	@echo "Built Blox Daemon Scheduler"
 
+$(SWAGGER_GEN): $(SWAGGER_SPEC)
+	./scripts/v1/generate_swagger_artifacts.sh
+	@echo "Generated Swagger artifacts"
+
 .PHONY: unit-tests
 unit-tests:
 	go test -v ./pkg/...
@@ -43,13 +47,10 @@ clean:
 	rm -rf ./out $(GOINSTALL_BINARY) ||:
 	touch $(SWAGGER_SPEC)
 
-$(SWAGGER_GEN): $(SWAGGER_SPEC)
-	./scripts/generate_swagger_artifacts.sh
-	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
-
 .PHONY: generate
 generate: $(SWAGGER_GEN) $(SOURCES)
 	PATH="$(ROOT)/scripts:${PATH}" go generate ./licenses/... ./copyright_gen/...
+	@echo "Generated licenses and copyrights"
 
 .PHONY: generate build-in-docker
 build-in-docker:

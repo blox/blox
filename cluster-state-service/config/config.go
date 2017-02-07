@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License). You may
 // not use this file except in compliance with the License. A copy of the
@@ -16,8 +16,9 @@ package config
 // EtcdEndpoints represents the etcd servers to connect to.
 var EtcdEndpoints []string
 
-// SQSQueueName represents the SQS queue name to listen to for ECS events.
-var SQSQueueName string
+// QueueName represents the queue name to listen to for ECS events. Formatted as
+// a URI with the scheme determining the type.  For example sqs://name or kinesis://name
+var QueueNameURI string
 
 // CSSBindAddr represents the address CSS listens on.
 var CSSBindAddr string

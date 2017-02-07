@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -16,14 +16,16 @@ package steps
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/blox/blox/daemon-scheduler/generated/v1/client/operations"
-	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
 	"github.com/blox/blox/daemon-scheduler/internal/features/wrappers"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/client/operations"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
 	. "github.com/gucumber/gucumber"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +35,9 @@ const (
 	deploymentCompleted           = "completed"
 	taskRunning                   = "RUNNING"
 	deploymentCompleteWaitSeconds = 50
+	invalidCluster                = "cluster/cluster"
+	badRequestHTTPResponse        = "400 Bad Request"
+	listEnvironmentsBadRequest    = "ListEnvironmentsBadRequest"
 )
 
 func init() {
@@ -78,13 +83,14 @@ func init() {
 		cluster = c
 	})
 
-	Given(`^a cluster "(.+?)"$`, func(c string) {
-		_, err := ecsWrapper.CreateCluster(c)
+	Given(`^(?:a|another) cluster "(.+?)"$`, func(c string) {
+		cARN, err := ecsWrapper.CreateCluster(c)
 		if err != nil {
 			T.Errorf(err.Error())
 			return
 		}
 		cluster = c
+		clusterARN = *cARN
 	})
 
 	When(`^I update the desired-capacity of cluster to (\d+) instances and wait for a max of (\d+) seconds$`, func(count int, seconds int) {
@@ -100,7 +106,7 @@ func init() {
 			}
 			activeCount := 0
 			for _, instance := range instances {
-				if "ACTIVE" == aws.StringValue(instance.Status) {
+				if "ACTIVE" == aws.StringValue(instance.Entity.Status) {
 					activeCount++
 				}
 			}
@@ -295,6 +301,100 @@ func init() {
 			}
 			assert.Equal(T, true, found, "Did not find environment with name "+environment)
 		})
+
+	Then(`^there should be at least (\d+) environment returned when I call ListEnvironments with cluster filter set to the second cluster ARN$`, func(numEnvs int) {
+		environments, err := edsWrapper.ListEnvironmentsWithClusterFilter(clusterARN)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+		assert.True(T, len(environments) >= numEnvs,
+			"Number of environments in the response should be at least "+string(numEnvs))
+		environmentList = environments
+	})
+
+	Then(`^there should be at least (\d+) environment returned when I call ListEnvironments with cluster filter set to the second cluster name$`, func(numEnvs int) {
+		environments, err := edsWrapper.ListEnvironmentsWithClusterFilter(cluster)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+		assert.True(T, len(environments) >= numEnvs,
+			"Number of environments in the response should be at least "+string(numEnvs))
+		environmentList = environments
+	})
+
+	And(`^all the environments in the response should correspond to the second cluster$`,
+		func() {
+			for _, env := range environmentList {
+				if env.InstanceGroup.Cluster != clusterARN {
+					T.Errorf("Environment in list environments response with cluster filter set to '" +
+						clusterARN + "' belongs to cluster + '" + env.InstanceGroup.Cluster + "'")
+				}
+			}
+		})
+
+	And(`^second environment should be one of the environments in the response$`,
+		func() {
+			found := false
+			for _, env := range environmentList {
+				if *env.Name == environment {
+					found = true
+					break
+				}
+			}
+			assert.True(T, found, "Did not find environment with name "+environment)
+		})
+
+	When(`^I try to call ListEnvironments with redundant filters$`, func() {
+		url := "http://localhost:2000/v1/environments?cluster=cluster1&cluster=cluster2"
+		resp, err := http.Get(url)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+
+		var exceptionType string
+		if resp.Status == badRequestHTTPResponse {
+			exceptionType = listEnvironmentsBadRequest
+		} else {
+			T.Errorf("Unknown exception type '%s' when trying to list environments with redundant filters", resp.Status)
+		}
+
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			T.Errorf("Error reading expection message when trying to list environments with redundant filters")
+		}
+		exceptionMsg := string(body)
+		exception = Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg}
+	})
+
+	When(`^I try to call ListEnvironments with an invalid cluster filter$`, func() {
+		exception = Exception{}
+		exceptionMsg, exceptionType, err := edsWrapper.TryListEnvironmentsWithInvalidCluster(invalidCluster)
+		if err != nil {
+			T.Errorf(err.Error())
+		}
+		exception = Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg}
+	})
+
+	Then(`^I get a (.+?) exception$`, func(exceptionType string) {
+		if exception.exceptionType == "" {
+			T.Errorf("Error memorizing exception type")
+		}
+		if exceptionType != exception.exceptionType {
+			T.Errorf("Expected exception type '%s' but got '%s'. ", exceptionType, exception.exceptionType)
+		}
+	})
+
+	And(`^the exception message contains "(.+?)"$`, func(exceptionMsg string) {
+		if exception.exceptionMsg == "" {
+			T.Errorf("Error memorizing exception message")
+		}
+		if !strings.Contains(exception.exceptionMsg, exceptionMsg) {
+			T.Errorf("Expected exception message returned '%s' to contain '%s'. ", exception.exceptionMsg, exceptionMsg)
+		}
+	})
 
 	Then(`^I call CreateDeployment API$`, func() {
 		createDeployment(deploymentToken, ctx, edsWrapper)

@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -17,12 +17,15 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
-	"github.com/blox/blox/cluster-state-service/handler/api/v1/models"
 	"github.com/blox/blox/cluster-state-service/handler/regex"
 	"github.com/blox/blox/cluster-state-service/handler/store"
+	storetypes "github.com/blox/blox/cluster-state-service/handler/store/types"
 	"github.com/blox/blox/cluster-state-service/handler/types"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -31,6 +34,14 @@ const (
 
 	instanceStatusFilter  = "status"
 	instanceClusterFilter = "cluster"
+
+	instanceEntityVersionKey = "entityVersion"
+)
+
+var (
+	// Using maps because arrays don't support easy lookup
+	supportedInstanceFilters  = map[string]string{instanceStatusFilter: "", instanceClusterFilter: ""}
+	supportedInstanceStatuses = map[string]string{"active": "", "inactive": ""}
 )
 
 // ContainerInstanceAPIs encapsulates the backend datastore with which the container instance APIs interact
@@ -52,123 +63,98 @@ func (instanceAPIs ContainerInstanceAPIs) GetInstance(w http.ResponseWriter, r *
 	cluster := vars[instanceClusterKey]
 
 	if len(instanceARN) == 0 || len(cluster) == 0 || !regex.IsInstanceARN(instanceARN) || !regex.IsClusterName(cluster) {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
+		http.Error(w, routingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	instance, err := instanceAPIs.instanceStore.GetContainerInstance(cluster, instanceARN)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	if instance == nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(instanceNotFoundClientErrMsg)
+		http.Error(w, instanceNotFoundClientErrMsg, http.StatusNotFound)
 		return
 	}
 
 	extInstance, err := ToContainerInstance(*instance)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(extInstance)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
+		http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
 
-// ListInstances lists all container instances across all clusters
+// ListInstances lists all container instances across all clusters after applying filters, if any
 func (instanceAPIs ContainerInstanceAPIs) ListInstances(w http.ResponseWriter, r *http.Request) {
-	instances, err := instanceAPIs.instanceStore.ListContainerInstances()
+	query := r.URL.Query()
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+	if instanceAPIs.hasUnsupportedFilters(query) {
+		http.Error(w, unsupportedFilterClientErrMsg, http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
-	w.WriteHeader(http.StatusOK)
+	if instanceAPIs.hasRedundantFilters(query) {
+		http.Error(w, redundantFilterClientErrMsg, http.StatusBadRequest)
+		return
+	}
 
-	extInstanceItems := make([]*models.ContainerInstance, len(instances))
-	for i := range instances {
-		ins, err := ToContainerInstance(instances[i])
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+	status := strings.ToLower(query.Get(instanceStatusFilter))
+	cluster := query.Get(instanceClusterFilter)
+
+	if status != "" {
+		if !instanceAPIs.isValidStatus(status) {
+			http.Error(w, invalidStatusClientErrMsg, http.StatusBadRequest)
 			return
 		}
-		extInstanceItems[i] = &ins
 	}
 
-	extInstances := models.ContainerInstances{
-		Items: extInstanceItems,
+	if cluster != "" {
+		if !regex.IsClusterARN(cluster) && !regex.IsClusterName(cluster) {
+			http.Error(w, invalidClusterClientErrMsg, http.StatusBadRequest)
+			return
+		}
 	}
 
-	err = json.NewEncoder(w).Encode(extInstances)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
-		return
-	}
-}
-
-// FilterInstances filters container instances across all clusters by one of the following filter keys -
-// * status
-// * cluster name
-// * cluster ARN
-func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	status := vars[instanceStatusFilter]
-	cluster := vars[instanceClusterFilter]
-
-	if len(status) != 0 && len(cluster) != 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
-		return
-	}
-
-	var instances []types.ContainerInstance
+	var instances []storetypes.VersionedContainerInstance
 	var err error
-
 	switch {
-	case len(status) != 0:
-		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceStatusFilter, status)
-	case len(cluster) != 0:
-		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(instanceClusterFilter, cluster)
+	case status != "" && cluster != "":
+		filters := map[string]string{instanceStatusFilter: status, instanceClusterFilter: cluster}
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(filters)
+	case status != "":
+		filters := map[string]string{instanceStatusFilter: status}
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(filters)
+	case cluster != "":
+		filters := map[string]string{instanceClusterFilter: cluster}
+		instances, err = instanceAPIs.instanceStore.FilterContainerInstances(filters)
 	default:
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(routingServerErrMsg)
-		return
+		instances, err = instanceAPIs.instanceStore.ListContainerInstances()
 	}
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set(contentTypeKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 
 	extInstanceItems := make([]*models.ContainerInstance, len(instances))
 	for i := range instances {
 		ins, err := ToContainerInstance(instances[i])
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		extInstanceItems[i] = &ins
@@ -180,8 +166,7 @@ func (instanceAPIs ContainerInstanceAPIs) FilterInstances(w http.ResponseWriter,
 
 	err = json.NewEncoder(w).Encode(extInstances)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(encodingServerErrMsg)
+		http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
@@ -191,43 +176,83 @@ func (instanceAPIs ContainerInstanceAPIs) StreamInstances(w http.ResponseWriter,
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx)
+	query := r.URL.Query()
+
+	entityVersion := query.Get(instanceEntityVersionKey)
+
+	if entityVersion != "" {
+		if !regex.IsEntityVersion(entityVersion) {
+			http.Error(w, invalidEntityVersionClientErrMsg, http.StatusBadRequest)
+			return
+		}
+	}
+
+	instanceRespChan, err := instanceAPIs.instanceStore.StreamContainerInstances(ctx, entityVersion)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		if _, ok := errors.Cause(err).(types.OutOfRangeEntityVersion); ok {
+			http.Error(w, outOfRangeEntityVersionClientErrMsg, http.StatusBadRequest)
+			return
+		}
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(internalServerErrMsg)
+		http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set(connectionKey, contentTypeVal)
+	w.Header().Set(contentTypeKey, contentTypeStream)
+	w.Header().Set(connectionKey, connectionVal)
 	w.Header().Set(transferEncodingKey, transferEncodingVal)
 
 	for instanceResp := range instanceRespChan {
 		if instanceResp.Err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
-		extInstance, err := ToContainerInstance(instanceResp.ContainerInstance)
+		extInstance, err := ToContainerInstance(instanceResp)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(internalServerErrMsg)
+			http.Error(w, internalServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		err = json.NewEncoder(w).Encode(extInstance)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(encodingServerErrMsg)
+			http.Error(w, encodingServerErrMsg, http.StatusInternalServerError)
 			return
 		}
 		flusher.Flush()
 	}
 
 	// TODO: Handle client-side termination (Ctrl+C) using w.(http.CloseNotifier).closeNotify()
+}
+
+func (instanceAPIs ContainerInstanceAPIs) isValidStatus(status string) bool {
+	_, ok := supportedInstanceStatuses[status]
+	return ok
+}
+
+func (instanceAPIs ContainerInstanceAPIs) hasUnsupportedFilters(filters map[string][]string) bool {
+	if len(filters) > len(supportedInstanceFilters) {
+		return true
+	}
+
+	for f := range filters {
+		_, ok := supportedInstanceFilters[f]
+		if !ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (instanceAPIs ContainerInstanceAPIs) hasRedundantFilters(filters map[string][]string) bool {
+	for _, val := range filters {
+		// Multiple values for a given filter implies that it has been specified multiple times
+		if len(val) > 1 {
+			return true
+		}
+	}
+	return false
 }

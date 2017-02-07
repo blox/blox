@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -23,6 +23,7 @@ import (
 	"github.com/blox/blox/daemon-scheduler/pkg/engine"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
+	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	log "github.com/cihub/seelog"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/pkg/errors"
@@ -89,18 +90,27 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 		return err
 	}
 
-	deploymentWorker := deployment.NewDeploymentWorker(environment, ecs, css)
-	deployment := deployment.NewDeployment(environment, css, ecs)
+	deploymentSvc := deployment.NewDeployment(environment, css, ecs)
+	environmentFacade, err := types.NewEnvironmentFacade(css)
+	if err != nil {
+		log.Criticalf("Could not initialize environmentFacade: %+v", err)
+		return err
+	}
+	deploymentWorker := deployment.NewDeploymentWorker(environment, environmentFacade, deploymentSvc, ecs, css)
 
 	ctx := context.Background()
-	events := engine.StartDispatcher(ctx, environment, deployment, ecs, css, deploymentWorker)
-	scheduler := engine.NewScheduler(ctx, events, environment, deployment, css, ecs)
+	input := make(chan engine.Event)
+	output := make(chan engine.Event)
+	dispatcher := engine.NewDispatcher(ctx, environment, deploymentSvc, ecs, css, deploymentWorker, input, output)
+	dispatcher.Start()
+	scheduler := engine.NewScheduler(ctx, input, environment, deploymentSvc, css, ecs)
 	scheduler.Start()
 
-	monitor := engine.NewMonitor(ctx, environment, events)
-	monitor.InProgressMonitorLoop()
+	monitor := engine.NewMonitor(ctx, environment, input)
+	monitor.PendingMonitorLoop(engine.PendingMonitorTickerDuration)
+	monitor.InProgressMonitorLoop(engine.InProgressMonitorTickerDuration)
 
-	api := v1.NewAPI(environment, deployment, ecs)
+	api := v1.NewAPI(environment, deploymentSvc, ecs)
 
 	// start server
 	router := v1.NewRouter(api)

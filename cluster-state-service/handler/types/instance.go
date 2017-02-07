@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -65,9 +65,12 @@ type Attribute struct {
 }
 
 type Resource struct {
-	Name  *string `json:"name"`
-	Type  *string `json:"type"`
-	Value *string `json:"value"`
+	Name           *string   `json:"name"`
+	Type           *string   `json:"type"`
+	DoubleValue    *float64  `json:"doubleValue"`
+	IntegerValue   *int64    `json:"integerValue"`
+	LongValue      *int64    `json:"longValue"`
+	StringSetValue []*string `json:"stringSetValue"`
 }
 
 type VersionInfo struct {

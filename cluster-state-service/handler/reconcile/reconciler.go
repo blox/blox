@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/handler/reconcile/loader"
 	"github.com/blox/blox/cluster-state-service/handler/store"
-	"github.com/aws/aws-sdk-go/service/ecs"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )

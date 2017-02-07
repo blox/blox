@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -17,10 +17,10 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/blox/blox/cluster-state-service/handler/store"
-	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs/ecsiface"
+	"github.com/blox/blox/cluster-state-service/handler/store"
+	"github.com/blox/blox/cluster-state-service/handler/types"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -113,12 +113,12 @@ func (loader taskLoader) loadLocalClusterStateFromStore() (clusterARNsToTasks, e
 	}
 
 	state := make(clusterARNsToTasks)
-	for _, task := range tasks {
-		clusterARN := aws.StringValue(task.Detail.ClusterARN)
+	for _, versionedTask := range tasks {
+		clusterARN := aws.StringValue(versionedTask.Task.Detail.ClusterARN)
 		if _, ok := state[clusterARN]; !ok {
 			state[clusterARN] = make(taskARNLookup)
 		}
-		state[clusterARN][aws.StringValue(task.Detail.TaskARN)] = struct{}{}
+		state[clusterARN][aws.StringValue(versionedTask.Task.Detail.TaskARN)] = struct{}{}
 	}
 
 	return state, nil

@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -14,17 +14,24 @@
 package e2einstancesteps
 
 import (
-	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
-	"github.com/blox/blox/cluster-state-service/internal/models"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	. "github.com/gucumber/gucumber"
 )
+
+type Exception struct {
+	exceptionType string
+	exceptionMsg  string
+}
 
 var (
 	// Lists to memorize results required for the subsequent steps
 	ecsContainerInstanceList = []ecs.ContainerInstance{}
 	cssContainerInstanceList = []models.ContainerInstance{}
-	exceptionList            = []string{}
+	exceptionList            = []Exception{}
 )
 
 func init() {
@@ -56,12 +63,21 @@ func init() {
 		}
 	})
 
-	Then(`^I get a (.+?) instance exception$`, func(exception string) {
+	Then(`^I get a (.+?) instance exception$`, func(exceptionType string) {
 		if len(exceptionList) != 1 {
 			T.Errorf("Error memorizing exception")
 		}
-		if exception != exceptionList[0] {
-			T.Errorf("Expected exception '%s' but got '%s'. ", exception, exceptionList[0])
+		if exceptionType != exceptionList[0].exceptionType {
+			T.Errorf("Expected exception type '%s' but got '%s'. ", exceptionType, exceptionList[0].exceptionType)
+		}
+	})
+
+	And(`^the instance exception message contains "(.+?)"$`, func(exceptionMsg string) {
+		if len(exceptionList) != 1 {
+			T.Errorf("Error memorizing exception. ")
+		}
+		if !strings.Contains(exceptionList[0].exceptionMsg, exceptionMsg) {
+			T.Errorf("Expected exception message returned '%s' to contain '%s'. ", exceptionList[0].exceptionMsg, exceptionMsg)
 		}
 	})
 }

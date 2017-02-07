@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License). You may
 // not use this file except in compliance with the License. A copy of the
@@ -17,7 +17,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/blox/blox/daemon-scheduler/pkg/clients/css/models"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	log "github.com/cihub/seelog"
@@ -28,40 +28,67 @@ const (
 	capacity = 100
 )
 
-// StartDispatcher starts dispatcher. dispatcher listens to events on channel and forwards them to workers
-func StartDispatcher(ctx context.Context, environmentSvc deployment.Environment,
-	deploymentSvc deployment.Deployment, ecs facade.ECS, css facade.ClusterState,
-	deploymentWorker deployment.DeploymentWorker) chan<- Event {
+type dispatcher struct {
+	ctx              context.Context
+	environmentSvc   deployment.Environment
+	deploymentSvc    deployment.Deployment
+	ecs              facade.ECS
+	css              facade.ClusterState
+	deploymentWorker deployment.DeploymentWorker
+	input            <-chan Event
+	output           chan<- Event
+}
 
-	events := make(chan Event, capacity)
+func NewDispatcher(ctx context.Context,
+	environmentSvc deployment.Environment,
+	deploymentSvc deployment.Deployment,
+	ecs facade.ECS,
+	css facade.ClusterState,
+	deploymentWorker deployment.DeploymentWorker,
+	input <-chan Event,
+	output chan<- Event) *dispatcher {
+	return &dispatcher{
+		ctx:              ctx,
+		environmentSvc:   environmentSvc,
+		deploymentSvc:    deploymentSvc,
+		ecs:              ecs,
+		css:              css,
+		deploymentWorker: deploymentWorker,
+		input:            input,
+		output:           output,
+	}
+}
 
+// Start starts dispatcher. dispatcher listens to events on channel and forwards them to workers
+func (dispatcher *dispatcher) Start() {
 	go func() {
 		for {
 			select {
-			case event := <-events:
+			case event := <-dispatcher.input:
 				go func(event Event) {
 					worker := worker{
-						environmentSvc:   environmentSvc,
-						deploymentSvc:    deploymentSvc,
-						deploymentWorker: deploymentWorker,
-						ecs:              ecs,
-						css:              css,
+						environmentSvc:   dispatcher.environmentSvc,
+						deploymentSvc:    dispatcher.deploymentSvc,
+						deploymentWorker: dispatcher.deploymentWorker,
+						ecs:              dispatcher.ecs,
+						css:              dispatcher.css,
+						output:           dispatcher.output,
 					}
-					err := worker.handleEvent(ctx, event)
+					err := worker.handleEvent(dispatcher.ctx, event)
 					if err != nil {
-						log.Errorf("Error handling event: %v", err)
+						dispatcher.output <- ErrorEvent{
+							Error: err,
+						}
 					}
 				}(event)
-			case <-ctx.Done():
-				log.Infof("Shutting down dispatcher")
+			case <-dispatcher.ctx.Done():
+				log.Info("Shutting down dispatcher")
 				return
 			}
 		}
 	}()
 
-	log.Infof("Started dispatcher")
-
-	return events
+	log.Info("Started dispatcher")
 }
 
 // Worker is actor which handles an event appropriately
@@ -71,6 +98,7 @@ type worker struct {
 	deploymentWorker deployment.DeploymentWorker
 	ecs              facade.ECS
 	css              facade.ClusterState
+	output           chan<- Event
 }
 
 func (w *worker) handleEvent(ctx context.Context, event Event) error {
@@ -79,14 +107,16 @@ func (w *worker) handleEvent(ctx context.Context, event Event) error {
 		return w.handleStartDeploymentEvent(ctx, event)
 	case StopTasksEventType:
 		return w.handleStopTasksEvent(ctx, event)
+	case StartPendingDeploymentEventType:
+		return w.handleStartPendingDeploymentEvent(ctx, event)
 	case UpdateInProgressDeploymentEventType:
 		return w.handleUpdateInProgressDeploymentEvent(ctx, event)
 	default:
-		return w.handleDefaultEvent(ctx, event)
+		return w.handleUnknownEvent(ctx, event)
 	}
 }
 
-func (w *worker) handleDefaultEvent(ctx context.Context, event Event) error {
+func (w *worker) handleUnknownEvent(ctx context.Context, event Event) error {
 	log.Debugf("Received event : %s", event.GetType())
 	return nil
 }
@@ -106,6 +136,33 @@ func (w *worker) handleUpdateInProgressDeploymentEvent(ctx context.Context, even
 	return nil
 }
 
+func (w *worker) handleStartPendingDeploymentEvent(ctx context.Context, event Event) error {
+	deploymentEvent, ok := event.(StartPendingDeploymentEvent)
+	if !ok {
+		return errors.Errorf("Expected event with event-type %v to be of struct-type StartPendingDeploymentEvent",
+			event.GetType())
+	}
+
+	deployment, err := w.deploymentWorker.StartPendingDeployment(ctx, deploymentEvent.Environment.Name)
+	if err != nil {
+		return err
+	}
+
+	if deployment == nil {
+		log.Debugf("There are no pending deployments in environment %s", deploymentEvent.Environment.Name)
+		return nil
+	}
+
+	log.Debugf("Succesfully moved pending deployment %s to in-progress in environment %s",
+		deployment.ID, deploymentEvent.Environment.Name)
+
+	w.output <- StartPendingDeploymentResult{
+		Deployment: *deployment,
+	}
+
+	return nil
+}
+
 func (w *worker) handleStartDeploymentEvent(ctx context.Context, event Event) error {
 	deploymentEvent, ok := event.(StartDeploymentEvent)
 	if !ok {
@@ -118,8 +175,12 @@ func (w *worker) handleStartDeploymentEvent(ctx context.Context, event Event) er
 			deploymentEvent.Environment.Name, len(deploymentEvent.Instances))
 	}
 
-	log.Infof("Succesfully created a deployment with %s on %d instances",
-		deployment.ID, len(deploymentEvent.Instances))
+	log.Debugf("Succesfully created a deployment with %s on %d instances in environment %s",
+		deployment.ID, len(deploymentEvent.Instances), deploymentEvent.Environment.Name)
+
+	w.output <- StartDeploymentResult{
+		Deployment: *deployment,
+	}
 	return nil
 }
 
@@ -135,7 +196,7 @@ func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 	}
 	taskMap := make(map[string]*models.Task)
 	for _, task := range tasksInCluster {
-		taskMap[aws.StringValue(task.TaskARN)] = task
+		taskMap[aws.StringValue(task.Entity.TaskARN)] = task
 	}
 
 	stoppedTasks := []string{}
@@ -144,13 +205,13 @@ func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 		if !ok {
 			continue
 		}
-		if aws.StringValue(knownTask.DesiredStatus) == "STOPPED" {
+		if aws.StringValue(knownTask.Entity.DesiredStatus) == "STOPPED" {
 			stoppedTasks = append(stoppedTasks, task)
 			continue
 		}
 		err := w.ecs.StopTask(stopTasksEvent.Cluster, task)
 		if err != nil {
-			log.Errorf("Error stopping task %s : %v", task, err)
+			log.Errorf("Error stopping task %s in cluster %s: %v", task, stopTasksEvent.Cluster, err)
 			continue
 		}
 		stoppedTasks = append(stoppedTasks, task)
@@ -158,8 +219,12 @@ func (w *worker) handleStopTasksEvent(ctx context.Context, event Event) error {
 
 	// TODO: Clear the tasks from environment
 
-	log.Infof("Successfully stopped %d tasks out of %d tasks under environment %s",
+	log.Debugf("Successfully stopped %d tasks out of %d tasks under environment %s",
 		len(stoppedTasks), len(stopTasksEvent.Tasks), stopTasksEvent.Environment.Name)
+
+	w.output <- StopTasksResult{
+		StoppedTasks: stoppedTasks,
+	}
 
 	return nil
 }

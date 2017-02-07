@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -44,4 +44,16 @@ func TestGetClusterNameFromARN(t *testing.T) {
 	assert.Nil(t, err, "Unexpected error when retrieving cluster name from ARN")
 	assert.NotNil(t, c, "Expected cluster name to be retrieved from ARN")
 	assert.Equal(t, validClusterName, c, "Invalid cluster name retrieved from ARN")
+}
+
+func TestGetEntityVersionNonNumber(t *testing.T) {
+	_, err := GetEntityVersion(invalidEntityVersionNonNumber)
+	assert.NotNil(t, err, "Expected an error when retrieving a non-number entity version")
+}
+
+func TestGetEntityVersion(t *testing.T) {
+	e, err := GetEntityVersion(validEntityVersion)
+	assert.Nil(t, err, "Unexpected error when retrieving entity version")
+	assert.NotNil(t, e, "Expected integer to be retrieved from entity version")
+	assert.Equal(t, int64(123), e, "Invalid integer retrieved from entity version")
 }

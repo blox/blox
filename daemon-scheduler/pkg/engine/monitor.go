@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -23,11 +23,13 @@ import (
 )
 
 const (
-	inProgressMonitorTickerDuration = 10 * time.Second
+	InProgressMonitorTickerDuration = 10 * time.Second
+	PendingMonitorTickerDuration    = 10 * time.Second
 )
 
 type Monitor interface {
-	InProgressMonitorLoop()
+	PendingMonitorLoop(tickerDuration time.Duration)
+	InProgressMonitorLoop(tickerDuration time.Duration)
 }
 
 type monitor struct {
@@ -48,15 +50,20 @@ func NewMonitor(
 	}
 }
 
-func (m monitor) InProgressMonitorLoop() {
-	ticker := time.NewTicker(inProgressMonitorTickerDuration)
+func (m monitor) InProgressMonitorLoop(tickerDuration time.Duration) {
+	ticker := time.NewTicker(tickerDuration)
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				m.runOnce()
+				err := m.runInProgressOnce()
+				if err != nil {
+					m.events <- MonitorErrorEvent{
+						Error: err,
+					}
+				}
 			case <-m.ctx.Done():
-				log.Infof("Shutting down in-progress monitor")
+				log.Info("Shutting down the in-progress monitor")
 				ticker.Stop()
 				return
 			}
@@ -64,14 +71,58 @@ func (m monitor) InProgressMonitorLoop() {
 	}()
 }
 
-func (m monitor) runOnce() error {
+func (m monitor) PendingMonitorLoop(tickerDuration time.Duration) {
+	ticker := time.NewTicker(tickerDuration)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				err := m.runPendingOnce()
+				if err != nil {
+					m.events <- MonitorErrorEvent{
+						Error: err,
+					}
+				}
+			case <-m.ctx.Done():
+				log.Info("Shutting down the pending monitor")
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+}
+
+func (m monitor) runInProgressOnce() error {
 	environments, err := m.environment.ListEnvironments(m.ctx)
 	if err != nil {
-		return errors.New("Could not retrieve environments")
+		return errors.New("Could not retrieve environments while running the in-progress deployments monitor")
+	}
+
+	if environments == nil {
+		return nil
 	}
 
 	for _, environment := range environments {
 		m.events <- UpdateInProgressDeploymentEvent{
+			Environment: environment,
+		}
+	}
+
+	return nil
+}
+
+func (m monitor) runPendingOnce() error {
+	environments, err := m.environment.ListEnvironments(m.ctx)
+	if err != nil {
+		return errors.New("Could not retrieve environments while running the pending deployments monitor")
+	}
+
+	if environments == nil {
+		return nil
+	}
+
+	for _, environment := range environments {
+		m.events <- StartPendingDeploymentEvent{
 			Environment: environment,
 		}
 	}

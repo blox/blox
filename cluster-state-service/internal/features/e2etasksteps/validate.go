@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -14,15 +14,15 @@
 package e2etasksteps
 
 import (
-	"github.com/blox/blox/cluster-state-service/internal/models"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/pkg/errors"
 )
 
 func ValidateTasksMatch(ecsTask ecs.Task, cssTask models.Task) error {
-	if *ecsTask.TaskArn != *cssTask.TaskARN ||
-		*ecsTask.ClusterArn != *cssTask.ClusterARN ||
-		*ecsTask.ContainerInstanceArn != *cssTask.ContainerInstanceARN {
+	if *ecsTask.TaskArn != *cssTask.Entity.TaskARN ||
+		*ecsTask.ClusterArn != *cssTask.Entity.ClusterARN ||
+		*ecsTask.ContainerInstanceArn != *cssTask.Entity.ContainerInstanceARN {
 		return errors.New("Tasks don't match.")
 	}
 	return nil
@@ -32,13 +32,28 @@ func ValidateListContainsTask(ecsTask ecs.Task, cssTaskList []models.Task) error
 	taskARN := *ecsTask.TaskArn
 	var cssTask models.Task
 	for _, t := range cssTaskList {
-		if *t.TaskARN == taskARN {
+		if *t.Entity.TaskARN == taskARN {
 			cssTask = t
 			break
 		}
 	}
-	if cssTask.TaskARN == nil {
+	if cssTask.Entity.TaskARN == nil {
 		return errors.Errorf("Task with ARN '%s' not found in response. ", taskARN)
+	}
+	return ValidateTasksMatch(ecsTask, cssTask)
+}
+
+func ValidateListContainsTaskWithDesiredStatus(ecsTask ecs.Task, cssTaskList []models.Task, desiredStatus string) error {
+	taskARN := *ecsTask.TaskArn
+	var cssTask models.Task
+	for _, t := range cssTaskList {
+		if *t.Entity.TaskARN == taskARN && *t.Entity.DesiredStatus == desiredStatus {
+			cssTask = t
+			break
+		}
+	}
+	if cssTask.Entity == nil || cssTask.Entity.TaskARN == nil {
+		return errors.Errorf("Task with ARN '%s' and desired status '%s' not found in response. ", taskARN, desiredStatus)
 	}
 	return ValidateTasksMatch(ecsTask, cssTask)
 }

@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -18,8 +18,7 @@ package mocks
 
 import (
 	context "context"
-
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	types "github.com/blox/blox/daemon-scheduler/pkg/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -66,6 +65,17 @@ func (_mr *_MockDeploymentRecorder) CreateSubDeployment(arg0, arg1, arg2 interfa
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "CreateSubDeployment", arg0, arg1, arg2)
 }
 
+func (_m *MockDeployment) StartDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "StartDeployment", ctx, env, deployment, instanceARNs)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) StartDeployment(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "StartDeployment", arg0, arg1, arg2, arg3)
+}
+
 func (_m *MockDeployment) GetDeployment(ctx context.Context, environmentName string, id string) (*types.Deployment, error) {
 	ret := _m.ctrl.Call(_m, "GetDeployment", ctx, environmentName, id)
 	ret0, _ := ret[0].(*types.Deployment)
@@ -77,13 +87,46 @@ func (_mr *_MockDeploymentRecorder) GetDeployment(arg0, arg1, arg2 interface{}) 
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDeployment", arg0, arg1, arg2)
 }
 
-func (_m *MockDeployment) ListDeployments(ctx context.Context, environmentName string) ([]types.Deployment, error) {
-	ret := _m.ctrl.Call(_m, "ListDeployments", ctx, environmentName)
+func (_m *MockDeployment) GetCurrentDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "GetCurrentDeployment", ctx, environmentName)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) GetCurrentDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetCurrentDeployment", arg0, arg1)
+}
+
+func (_m *MockDeployment) GetPendingDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "GetPendingDeployment", ctx, environmentName)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) GetPendingDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetPendingDeployment", arg0, arg1)
+}
+
+func (_m *MockDeployment) GetInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "GetInProgressDeployment", ctx, environmentName)
+	ret0, _ := ret[0].(*types.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) GetInProgressDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetInProgressDeployment", arg0, arg1)
+}
+
+func (_m *MockDeployment) ListDeploymentsSortedReverseChronologically(ctx context.Context, environmentName string) ([]types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "ListDeploymentsSortedReverseChronologically", ctx, environmentName)
 	ret0, _ := ret[0].([]types.Deployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockDeploymentRecorder) ListDeployments(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListDeployments", arg0, arg1)
+func (_mr *_MockDeploymentRecorder) ListDeploymentsSortedReverseChronologically(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListDeploymentsSortedReverseChronologically", arg0, arg1)
 }

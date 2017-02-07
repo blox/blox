@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -31,4 +31,10 @@ const (
 	invalidInstanceARNWithNoID          = "arn:aws:ecs:us-east-1:123456789123:container-instance/"
 	invalidInstanceARNWithInvalidID     = "arn:aws:ecs:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597/-"
 	invalidInstanceARNWithInvalidPrefix = "arn/container-instance"
+
+	validEntityVersion                      = "123"
+	invalidEntityVersionFloatingPointNumber = "123.123"
+	invalidEntityVersionNegativeNumber      = "-123"
+	invalidEntityVersionNonNumber           = "invalidEntityVersion"
+
 )

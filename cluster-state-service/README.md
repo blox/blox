@@ -49,7 +49,7 @@ docker run -e AWS_REGION=us-west-2 \
     AWS_PROFILE=default \
     -v ~/.aws:/.aws \
     -v /tmp/css-logs:/var/output/logs \
-    bloxoss/cluster-state-service:0.1.0 \
+    bloxoss/cluster-state-service:0.2.0 \
     --etcd-endpoint $ETCD_IP:$ETCD_PORT \
     --queue_name $SQS_QUEUE_NAME
 ```
@@ -63,11 +63,11 @@ AWS_PROFILE=default \
     CSS_LOG_LEVEL=info \
     -v ~/.aws:/.aws \
     -v /tmp/css-logs:/var/output/logs \
-    bloxoss/cluster-state-service:0.1.0 \
+    bloxoss/cluster-state-service:0.2.0 \
     --etcd-endpoint $ETCD_IP:$ETCD_PORT \
     --queue event_stream
 ```
 
 #### API endpoint
 
-After you launch the cluster-state-service, you can interact with and use the REST API by using the endpoint at port 3000. Identify the cluster-state-service container IP address and connect to port 3000. For more information about the API definitions, see the [swagger specification](handler/api/v1/swagger/swagger.json).
+After you launch the cluster-state-service, you can interact with and use the REST API by using the endpoint at port 3000. Identify the cluster-state-service container IP address and connect to port 3000. For more information about the API definitions, see the [swagger specification](swagger/v1/swagger.json).

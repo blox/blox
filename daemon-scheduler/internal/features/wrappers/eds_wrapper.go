@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -15,16 +15,19 @@ package wrappers
 
 import (
 	"context"
+	"errors"
 	"os"
 
-	"github.com/blox/blox/daemon-scheduler/generated/v1/client"
-	"github.com/blox/blox/daemon-scheduler/generated/v1/client/operations"
-	"github.com/blox/blox/daemon-scheduler/generated/v1/models"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/client"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/client/operations"
+	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
 	httptransport "github.com/go-openapi/runtime/client"
 )
 
 const (
 	defaultSchedulerEndpoint = "localhost:2000"
+
+	listEnvironmentsBadRequestException = "ListEnvironmentsBadRequest"
 )
 
 type EDSWrapper struct {
@@ -96,6 +99,30 @@ func (eds EDSWrapper) GetDeployment(name *string, id *string) (*models.Deploymen
 func (eds EDSWrapper) ListEnvironments() ([]*models.Environment, error) {
 	//TODO: Handle pagination when available
 	params := operations.NewListEnvironmentsParams()
+	resp, err := eds.client.Operations.ListEnvironments(params)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload.Items, nil
+}
+
+func (eds EDSWrapper) TryListEnvironmentsWithInvalidCluster(cluster string) (string, string, error) {
+	in := operations.NewListEnvironmentsParams()
+	in.SetCluster(&cluster)
+	_, err := eds.client.Operations.ListEnvironments(in)
+	if err != nil {
+		if _, ok := err.(*operations.ListEnvironmentsBadRequest); ok {
+			return err.(*operations.ListEnvironmentsBadRequest).Payload, listEnvironmentsBadRequestException, nil
+		}
+		return "", "", errors.New("Unknown exception when calling ListEnvironments with invalid cluster")
+	}
+	return "", "", errors.New("Expected an exception when calling ListEnvironments with invalid cluster, but none received")
+}
+
+func (eds EDSWrapper) ListEnvironmentsWithClusterFilter(cluster string) ([]*models.Environment, error) {
+	//TODO: Handle pagination when available
+	params := operations.NewListEnvironmentsParams()
+	params.SetCluster(&cluster)
 	resp, err := eds.client.Operations.ListEnvironments(params)
 	if err != nil {
 		return nil, err

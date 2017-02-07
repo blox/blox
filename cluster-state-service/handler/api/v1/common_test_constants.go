@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -35,9 +35,15 @@ var (
 	taskARN1           = "arn:aws:ecs:us-east-1:123456789012:task/271022c0-f894-4aa2-b063-25bae55088d5"
 	taskARN2           = "arn:aws:ecs:us-east-1:123456789012:task/b6b9eace-958e-4f2a-a09c-8cf43b76cf97"
 	taskDefinitionARN  = "arn:aws:ecs:us-east-1:123456789012:task-definition/testTask:1"
+	entityVersion      = "123"
 )
 
 const (
-	responseContentTypeKey = "Content-Type"
-	responseContentTypeVal = "application/json; charset=UTF-8"
+	responseContentTypeKey      = "Content-Type"
+	responseContentTypeJSON     = "application/json; charset=UTF-8"
+	responseContentTypeStream   = "application/octet-stream"
+	responseConnectionKey       = "Connection"
+	responseConnectionVal       = "Keep-Alive"
+	responseTransferEncodingKey = "Transfer-Encoding"
+	responseTransferEncodingVal = "chunked"
 )

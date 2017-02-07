@@ -44,6 +44,8 @@ The AWS profile you use with the AWS CLI will need appropriate permissions to cr
 
 **Warning**: Attaching the `AWS Installation IAM Policy Document` to a user grants the user IAM administrator privileges, which the CloudFormation template uses to create new IAM roles and policies required by the Blox framework. You should only attach this policy to users that you would trust with full administrator access to your AWS account.
 
+**Warning**: Blox utilizes an Amazon SQS queue for consuming the ECS event stream. You should not grant IAM permissions on this queue to any secondary AWS users, as these permissions could be used to inject or delete messages from the queue. This could potentially lead to unwanted resources being started or stopped on your ECS clusters.
+
 
 ## Local Installation
 
@@ -181,6 +183,8 @@ $ aws --region <region> cloudformation describe-stack-resource --stack-name Blox
 $ Sample Output:
 abcdef1234
 ```
+
+**Warning**: The above Amazon API Gateway permissions apply to all ECS clusters in your account. You should only attach this policy to users that you would trust with launching or stopping tasks on any of your ECS clusters.
 
 ## Upgrade Process
 

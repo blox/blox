@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -19,6 +19,7 @@ package mocks
 import (
 	context "context"
 
+	types "github.com/blox/blox/cluster-state-service/handler/store/types"
 	clientv3 "github.com/coreos/etcd/clientv3"
 	concurrency "github.com/coreos/etcd/clientv3/concurrency"
 	gomock "github.com/golang/mock/gomock"
@@ -66,9 +67,9 @@ func (_mr *_MockDataStoreRecorder) Delete(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Delete", arg0)
 }
 
-func (_m *MockDataStore) Get(_param0 string) (map[string]string, error) {
+func (_m *MockDataStore) Get(_param0 string) (map[string]types.Entity, error) {
 	ret := _m.ctrl.Call(_m, "Get", _param0)
-	ret0, _ := ret[0].(map[string]string)
+	ret0, _ := ret[0].(map[string]types.Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -87,9 +88,9 @@ func (_mr *_MockDataStoreRecorder) GetV3Client() *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetV3Client")
 }
 
-func (_m *MockDataStore) GetWithPrefix(_param0 string) (map[string]string, error) {
+func (_m *MockDataStore) GetWithPrefix(_param0 string) (map[string]types.Entity, error) {
 	ret := _m.ctrl.Call(_m, "GetWithPrefix", _param0)
-	ret0, _ := ret[0].(map[string]string)
+	ret0, _ := ret[0].(map[string]types.Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -109,13 +110,13 @@ func (_mr *_MockDataStoreRecorder) NewSTMRepeatable(arg0, arg1, arg2 interface{}
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "NewSTMRepeatable", arg0, arg1, arg2)
 }
 
-func (_m *MockDataStore) StreamWithPrefix(_param0 context.Context, _param1 string) (chan map[string]string, error) {
-	ret := _m.ctrl.Call(_m, "StreamWithPrefix", _param0, _param1)
-	ret0, _ := ret[0].(chan map[string]string)
+func (_m *MockDataStore) StreamWithPrefix(_param0 context.Context, _param1 string, _param2 string) (chan map[string]types.Entity, error) {
+	ret := _m.ctrl.Call(_m, "StreamWithPrefix", _param0, _param1, _param2)
+	ret0, _ := ret[0].(chan map[string]types.Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockDataStoreRecorder) StreamWithPrefix(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "StreamWithPrefix", arg0, arg1)
+func (_mr *_MockDataStoreRecorder) StreamWithPrefix(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "StreamWithPrefix", arg0, arg1, arg2)
 }

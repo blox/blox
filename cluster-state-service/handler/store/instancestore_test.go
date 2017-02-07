@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -28,22 +28,25 @@ import (
 )
 
 var (
-	containerInstanceARN1 = "arn:aws:ecs:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597"
-	containerInstanceARN2 = "arn:aws:ecs:us-east-1:123456789123:container-instance/3af93452-d6b7-6759-0923-4f5123cfd025"
-	status1               = "active"
-	status2               = "inactive"
+	containerInstanceARN1    = "arn:aws:ecs:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597"
+	containerInstanceARN2    = "arn:aws:ecs:us-east-1:123456789123:container-instance/3af93452-d6b7-6759-0923-4f5123cfd025"
+	containerInstanceVersion = int64(1)
+	status1                  = "active"
+	status2                  = "inactive"
 )
 
 type instanceStoreMockContext struct {
-	mockCtrl      *gomock.Controller
-	datastore     *mocks.MockDataStore
-	etcdTxStore   *mocks.MockEtcdTXStore
-	instance1     types.ContainerInstance
-	instance2     types.ContainerInstance
-	instanceJSON1 string
-	instanceJSON2 string
-	instanceKey1  string
-	instanceKey2  string
+	mockCtrl        *gomock.Controller
+	datastore       *mocks.MockDataStore
+	etcdTxStore     *mocks.MockEtcdTXStore
+	instance1       types.ContainerInstance
+	instance2       types.ContainerInstance
+	instanceEntity1 storetypes.Entity
+	instanceEntity2 storetypes.Entity
+	instanceJSON1   string
+	instanceJSON2   string
+	instanceKey1    string
+	instanceKey2    string
 }
 
 func NewContainerInstanceStoreMockContext(t *testing.T) *instanceStoreMockContext {
@@ -52,28 +55,29 @@ func NewContainerInstanceStoreMockContext(t *testing.T) *instanceStoreMockContex
 	context.datastore = mocks.NewMockDataStore(context.mockCtrl)
 	context.etcdTxStore = mocks.NewMockEtcdTXStore(context.mockCtrl)
 
-	version := int64(1)
 	context.instance1 = types.ContainerInstance{
 		Detail: &types.InstanceDetail{
 			ContainerInstanceARN: &containerInstanceARN1,
 			ClusterARN:           &clusterARN1,
 			Status:               &status1,
-			Version:              &version,
+			Version:              &containerInstanceVersion,
 		},
 	}
 	context.instanceJSON1 = marshalInstance(t, context.instance1)
 	context.instanceKey1 = instanceKeyPrefix + clusterName1 + "/" + containerInstanceARN1
+	context.instanceEntity1 = setupEntity(context.instanceKey1, context.instanceJSON1, entityVersion)
 
 	context.instance2 = types.ContainerInstance{
 		Detail: &types.InstanceDetail{
 			ContainerInstanceARN: &containerInstanceARN2,
 			ClusterARN:           &clusterARN2,
 			Status:               &status2,
-			Version:              &version,
+			Version:              &containerInstanceVersion,
 		},
 	}
 	context.instanceJSON2 = marshalInstance(t, context.instance2)
 	context.instanceKey2 = instanceKeyPrefix + clusterName2 + "/" + containerInstanceARN2
+	context.instanceEntity2 = setupEntity(context.instanceKey2, context.instanceJSON2, entityVersion)
 
 	return &context
 }
@@ -322,7 +326,7 @@ func TestGetContainerInstanceGetNoResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	context.datastore.EXPECT().Get(context.instanceKey1).Return(make(map[string]string), nil)
+	context.datastore.EXPECT().Get(context.instanceKey1).Return(make(map[string]storetypes.Entity), nil)
 	instance, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
 	if err != nil {
 		t.Error("Unexpected error when datastore get returns empty results")
@@ -337,9 +341,9 @@ func TestGetContainerInstanceGetMultipleResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
-		containerInstanceARN2: context.instanceJSON2,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
+		containerInstanceARN2: context.instanceEntity2,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
 	_, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
@@ -354,8 +358,8 @@ func TestGetContainerInstanceGetInvalidJSONResult(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	resp := map[string]string{
-		containerInstanceARN1: "invalidJSON",
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: setupEntity(containerInstanceARN1, "invalidJSON", entityVersion),
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
 	_, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
@@ -369,13 +373,13 @@ func TestGetContainerInstanceWithClusterNameAndInstanceARN(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
 	instance, err := instanceStore.GetContainerInstance(clusterName1, containerInstanceARN1)
 	assert.NoError(t, err, "Unexpected error when getting an instance")
-	if !reflect.DeepEqual(*instance, context.instance1) {
+	if !reflect.DeepEqual(instance.ContainerInstance, context.instance1) {
 		t.Error("Expected the returned instance to match the one returned from the datastore")
 	}
 }
@@ -386,15 +390,15 @@ func TestGetContainerInstanceWithClusterARNAndInstanceARN(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
 	}
 	context.datastore.EXPECT().Get(context.instanceKey1).Return(resp, nil)
 	instance, err := instanceStore.GetContainerInstance(clusterARN1, containerInstanceARN1)
 	if err != nil {
 		t.Error("Unexpected error when getting an instance")
 	}
-	if !reflect.DeepEqual(*instance, context.instance1) {
+	if !reflect.DeepEqual(instance.ContainerInstance, context.instance1) {
 		t.Error("Expected the returned instance to match the one returned from the datastore")
 	}
 }
@@ -405,8 +409,8 @@ func TestListContainerInstancesGetWithPrefixInvalidJson(t *testing.T) {
 
 	instanceStore := instanceStore(t, context)
 
-	resp := map[string]string{
-		containerInstanceARN1: "invalidJSON",
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: setupEntity(containerInstanceARN1, "invalidJSON", entityVersion),
 	}
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(resp, nil)
 	_, err := instanceStore.ListContainerInstances()
@@ -432,7 +436,7 @@ func TestListContainerInstancesGetWithPrefixNoResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(make(map[string]string), nil)
+	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(make(map[string]storetypes.Entity), nil)
 	instances, err := instanceStore.ListContainerInstances()
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns empty")
@@ -448,9 +452,9 @@ func TestListContainerInstancesGetWithPrefixMultipleResults(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
-		containerInstanceARN2: context.instanceJSON2,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
+		containerInstanceARN2: context.instanceEntity2,
 	}
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(resp, nil)
 	instances, err := instanceStore.ListContainerInstances()
@@ -462,26 +466,27 @@ func TestListContainerInstancesGetWithPrefixMultipleResults(t *testing.T) {
 		t.Error("Expected ListContainerInstances result to be the same length as the GetWithPrefix result")
 	}
 	for _, v := range instances {
-		value, ok := resp[*v.Detail.ContainerInstanceARN]
+		value, ok := resp[*v.ContainerInstance.Detail.ContainerInstanceARN]
 		if !ok {
 			t.Errorf("Expected GetWithPrefix result to contain the same elements as ListContainerInstances result. Missing %v", v)
 		} else {
-			instance := unmarshalString(t, value)
-			if !reflect.DeepEqual(v, instance) {
+			instance := unmarshalString(t, value.Value)
+			if !reflect.DeepEqual(v.ContainerInstance, instance) {
 				t.Errorf("Expected GetWithPrefix result to contain the same elements as ListContainerInstances result. %v does not match %v", v, instance)
 			}
 		}
 	}
 }
 
-func TestFilterContainerInstancesEmptyKey(t *testing.T) {
+func TestFilterContainerInstancesNoFilters(t *testing.T) {
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	_, err := instanceStore.FilterContainerInstances("", "value")
+	var filters map[string]string
+	_, err := instanceStore.FilterContainerInstances(filters)
 	if err == nil {
-		t.Error("Expected an error when filterKey is empty in FilterContainerInstances")
+		t.Error("Expected an error when filter map is empty FilterContainerInstances")
 	}
 }
 
@@ -490,7 +495,7 @@ func TestFilterContainerInstancesEmptyValue(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	_, err := instanceStore.FilterContainerInstances(key, "")
+	_, err := instanceStore.FilterContainerInstances(map[string]string{instanceStatusFilter: ""})
 	if err == nil {
 		t.Error("Expected an error when filterValue is empty in FilterContainerInstances")
 	}
@@ -501,7 +506,8 @@ func TestFilterContainerInstancesUnsupportedFilter(t *testing.T) {
 	defer context.mockCtrl.Finish()
 
 	instanceStore := instanceStore(t, context)
-	_, err := instanceStore.FilterContainerInstances("invalidFilter", "value")
+	filters := map[string]string{"invalidFilter": "value"}
+	_, err := instanceStore.FilterContainerInstances(filters)
 	if err == nil {
 		t.Error("Expected an error when unsupported filter key is provided in FilterContainerInstances")
 	}
@@ -513,8 +519,9 @@ func TestFilterContainerInstancesDatastoreGetWithPrefixFails(t *testing.T) {
 
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(nil, errors.New("GetWithPrefix failed"))
 
+	filters := map[string]string{instanceStatusFilter: status1}
 	instanceStore := instanceStore(t, context)
-	_, err := instanceStore.FilterContainerInstances(instanceStatusFilter, status1)
+	_, err := instanceStore.FilterContainerInstances(filters)
 	if err == nil {
 		t.Error("Expected an error when datastore GetWithPrefix fails in FilterContainerInstances")
 	}
@@ -524,10 +531,11 @@ func TestFilterContainerInstancesDatastoreGetWithPrefixReturnsNoResults(t *testi
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(make(map[string]string), nil)
+	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(make(map[string]storetypes.Entity), nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(instanceStatusFilter, status1)
+	filters := map[string]string{instanceStatusFilter: status1}
+	instances, err := instanceStore.FilterContainerInstances(filters)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns empty map in FilterContainerInstances")
@@ -542,13 +550,14 @@ func TestFilterContainerInstancesNoResultsMatchStatusFilter(t *testing.T) {
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
 	}
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(resp, nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(instanceStatusFilter, status2)
+	filters := map[string]string{instanceStatusFilter: status2}
+	instances, err := instanceStore.FilterContainerInstances(filters)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")
@@ -563,14 +572,15 @@ func TestFilterContainerInstancesMultipleResultsOneMatchesStatusFilter(t *testin
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
-		containerInstanceARN2: context.instanceJSON2,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
+		containerInstanceARN2: context.instanceEntity2,
 	}
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(resp, nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(instanceStatusFilter, status1)
+	filters := map[string]string{instanceStatusFilter: status1}
+	instances, err := instanceStore.FilterContainerInstances(filters)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")
@@ -580,8 +590,8 @@ func TestFilterContainerInstancesMultipleResultsOneMatchesStatusFilter(t *testin
 		t.Error("Result should have 1 instance when 1 instance matches results in FilterContainerInstances")
 	}
 
-	if !reflect.DeepEqual(instances[0], context.instance1) {
-		t.Error("Expected the returned instance to match the instance with cluster name " + clusterName1)
+	if !reflect.DeepEqual(instances[0].ContainerInstance, context.instance1) {
+		t.Error("Expected the returned instance to match the instance with status" + status1)
 	}
 }
 
@@ -589,18 +599,25 @@ func TestFilterContainerInstancesMultipleResultsMatchStatusFilter(t *testing.T) 
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	instance := context.instance2
-	*instance.Detail.Status = status1
+	instance := types.ContainerInstance{
+		Detail: &types.InstanceDetail{
+			ContainerInstanceARN: &containerInstanceARN2,
+			ClusterARN:           &clusterARN2,
+			Status:               &status1,
+			Version:              &containerInstanceVersion,
+		},
+	}
 	instanceJSON := marshalInstance(t, instance)
 
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
-		containerInstanceARN2: instanceJSON,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
+		containerInstanceARN2: setupEntity(containerInstanceARN2, instanceJSON, entityVersion),
 	}
 	context.datastore.EXPECT().GetWithPrefix(instanceKeyPrefix).Return(resp, nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(instanceStatusFilter, status1)
+	filters := map[string]string{instanceStatusFilter: status1}
+	instances, err := instanceStore.FilterContainerInstances(filters)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")
@@ -612,15 +629,16 @@ func TestFilterContainerInstancesClusterNameFilter(t *testing.T) {
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
 	}
 
 	instancesForClusterPrefix := instanceKeyPrefix + clusterName1 + "/"
 	context.datastore.EXPECT().GetWithPrefix(instancesForClusterPrefix).Return(resp, nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(instanceClusterFilter, clusterName1)
+	filters := map[string]string{instanceClusterFilter: clusterName1}
+	instances, err := instanceStore.FilterContainerInstances(filters)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")
@@ -628,18 +646,19 @@ func TestFilterContainerInstancesClusterNameFilter(t *testing.T) {
 	validateFilterContainerInstancesResultsMatchDatastoreResponse(t, instances, resp)
 }
 
-func TestFilterContainerInstancesMultipleResultsMatchClusterArnFilter(t *testing.T) {
+func TestFilterContainerInstancesClusterARNFilter(t *testing.T) {
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()
 
-	resp := map[string]string{
-		containerInstanceARN1: context.instanceJSON1,
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1,
 	}
 	instancesForClusterPrefix := instanceKeyPrefix + clusterName1 + "/"
 	context.datastore.EXPECT().GetWithPrefix(instancesForClusterPrefix).Return(resp, nil)
 
 	instanceStore := instanceStore(t, context)
-	instances, err := instanceStore.FilterContainerInstances(instanceClusterFilter, clusterARN1)
+	filters := map[string]string{instanceClusterFilter: clusterARN1}
+	instances, err := instanceStore.FilterContainerInstances(filters)
 
 	if err != nil {
 		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")
@@ -647,18 +666,56 @@ func TestFilterContainerInstancesMultipleResultsMatchClusterArnFilter(t *testing
 	validateFilterContainerInstancesResultsMatchDatastoreResponse(t, instances, resp)
 }
 
-func validateFilterContainerInstancesResultsMatchDatastoreResponse(t *testing.T, instances []types.ContainerInstance, datastoreResp map[string]string) {
+func TestFilterContainerInstancesStatusAndClusterARNFilter(t *testing.T) {
+	context := NewContainerInstanceStoreMockContext(t)
+	defer context.mockCtrl.Finish()
+
+	instance := types.ContainerInstance{
+		Detail: &types.InstanceDetail{
+			ContainerInstanceARN: &containerInstanceARN2,
+			ClusterARN:           &clusterARN1,
+			Status:               &status2,
+			Version:              &containerInstanceVersion,
+		},
+	}
+	instanceJSON := marshalInstance(t, instance)
+
+	resp := map[string]storetypes.Entity{
+		containerInstanceARN1: context.instanceEntity1, // clusterARN1, status1
+		containerInstanceARN2: setupEntity(containerInstanceARN2, instanceJSON, entityVersion),
+	}
+	instancesForClusterPrefix := instanceKeyPrefix + clusterName1 + "/"
+	context.datastore.EXPECT().GetWithPrefix(instancesForClusterPrefix).Return(resp, nil)
+
+	instanceStore := instanceStore(t, context)
+	filters := map[string]string{instanceStatusFilter: status1, instanceClusterFilter: clusterARN1}
+	instances, err := instanceStore.FilterContainerInstances(filters)
+
+	if err != nil {
+		t.Error("Unexpected error when datastore GetWithPrefix returns results in FilterContainerInstances")
+	}
+
+	if instances == nil || len(instances) != 1 {
+		t.Error("Result should have 1 instance when 1 instance matches results in FilterContainerInstances")
+	}
+
+	if !reflect.DeepEqual(instances[0].ContainerInstance, context.instance1) {
+		t.Error("Expected the returned instance to match the instance with status" + status1)
+	}
+}
+
+func validateFilterContainerInstancesResultsMatchDatastoreResponse(t *testing.T, instances []storetypes.VersionedContainerInstance, datastoreResp map[string]storetypes.Entity) {
 	if instances == nil || len(instances) != len(datastoreResp) {
 		t.Error("Number or instances in result should match response from datastore")
 	}
 
 	for _, v := range instances {
-		value, ok := datastoreResp[*v.Detail.ContainerInstanceARN]
+		value, ok := datastoreResp[*v.ContainerInstance.Detail.ContainerInstanceARN]
 		if !ok {
 			t.Errorf("Expected FilterContainerInstances result to contain the same elements as datastore GetWithPrefix result. Missing %v", v)
 		} else {
-			instance := unmarshalString(t, value)
-			if !reflect.DeepEqual(v, instance) {
+			instance := unmarshalString(t, value.Value)
+			if !reflect.DeepEqual(v.ContainerInstance, instance) {
 				t.Errorf("Expected FilterContainerInstances result to contain the same elements as GetWithPrefix result. %v does not match %v", v, instance)
 			}
 		}
@@ -670,10 +727,10 @@ func TestStreamContainerInstancesDataStoreStreamReturnsError(t *testing.T) {
 	defer ctx.mockCtrl.Finish()
 
 	tstCtx := context.Background()
-	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(nil, errors.New("StreamWithPrefix failed"))
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix, gomock.Any()).Return(nil, errors.New("StreamWithPrefix failed"))
 
 	instanceStore := instanceStore(t, ctx)
-	instaceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	instaceRespChan, err := instanceStore.StreamContainerInstances(tstCtx, "")
 	if err == nil {
 		t.Error("Expected an error when datastore StreamWithPrefix returns an error")
 	}
@@ -687,12 +744,12 @@ func TestStreamContainerInstancesValidJSONInDSChannel(t *testing.T) {
 	defer ctx.mockCtrl.Finish()
 
 	tstCtx := context.Background()
-	dsChan := make(chan map[string]string)
+	dsChan := make(chan map[string]storetypes.Entity)
 	defer close(dsChan)
-	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix, gomock.Any()).Return(dsChan, nil)
 
 	instanceStore := instanceStore(t, ctx)
-	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx, "")
 	if err != nil {
 		t.Error("Unexpected error when calling stream instances")
 	}
@@ -700,7 +757,7 @@ func TestStreamContainerInstancesValidJSONInDSChannel(t *testing.T) {
 		t.Error("Expected valid non-nil instanceRespChannel")
 	}
 
-	instanceResp := addContainerInstanceToDSChanAndReadFromInstanceRespChan(ctx.instanceJSON1, dsChan, instanceRespChan)
+	instanceResp := addContainerInstanceToDSChanAndReadFromInstanceRespChan(ctx.instanceEntity1, dsChan, instanceRespChan)
 	if instanceResp.Err != nil {
 		t.Error("Unexpected error when reading instance from channel")
 	}
@@ -714,12 +771,12 @@ func TestStreamContainerInstancesInvalidJSONInDSChannel(t *testing.T) {
 	defer ctx.mockCtrl.Finish()
 
 	tstCtx := context.Background()
-	dsChan := make(chan map[string]string)
+	dsChan := make(chan map[string]storetypes.Entity)
 	defer close(dsChan)
-	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix, gomock.Any()).Return(dsChan, nil)
 
 	instanceStore := instanceStore(t, ctx)
-	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx, "")
 	if err != nil {
 		t.Error("Unexpected error when calling stream instances")
 	}
@@ -727,8 +784,8 @@ func TestStreamContainerInstancesInvalidJSONInDSChannel(t *testing.T) {
 		t.Error("Expected valid non-nil instanceRespChannel")
 	}
 
-	invalidJSON := "invalidJSON"
-	instanceResp := addContainerInstanceToDSChanAndReadFromInstanceRespChan(invalidJSON, dsChan, instanceRespChan)
+	invalidEntity := setupEntity(containerInstanceARN1, "invalidJSON", entityVersion)
+	instanceResp := addContainerInstanceToDSChanAndReadFromInstanceRespChan(invalidEntity, dsChan, instanceRespChan)
 
 	if instanceResp.Err == nil {
 		t.Error("Expected an error when dsChannel returns an invalid instance json")
@@ -748,12 +805,12 @@ func TestStreamContainerInstancesCancelUpstreamContext(t *testing.T) {
 	defer ctx.mockCtrl.Finish()
 
 	tstCtx, cancel := context.WithCancel(context.Background())
-	dsChan := make(chan map[string]string)
+	dsChan := make(chan map[string]storetypes.Entity)
 	defer close(dsChan)
-	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix, gomock.Any()).Return(dsChan, nil)
 
 	instanceStore := instanceStore(t, ctx)
-	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx, "")
 	if err != nil {
 		t.Error("Unexpected error when calling stream instances")
 	}
@@ -774,11 +831,11 @@ func TestStreamContainerInstancesCloseDownstreamChannel(t *testing.T) {
 	defer ctx.mockCtrl.Finish()
 
 	tstCtx := context.Background()
-	dsChan := make(chan map[string]string)
-	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix).Return(dsChan, nil)
+	dsChan := make(chan map[string]storetypes.Entity)
+	ctx.datastore.EXPECT().StreamWithPrefix(gomock.Any(), instanceKeyPrefix, gomock.Any()).Return(dsChan, nil)
 
 	instanceStore := instanceStore(t, ctx)
-	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx)
+	instanceRespChan, err := instanceStore.StreamContainerInstances(tstCtx, "")
 	if err != nil {
 		t.Error("Unexpected error when calling stream instances")
 	}
@@ -877,8 +934,16 @@ func unmarshalString(t *testing.T, str string) types.ContainerInstance {
 	return instance
 }
 
-func addContainerInstanceToDSChanAndReadFromInstanceRespChan(instanceToAdd string, dsChan chan map[string]string, instanceRespChan chan storetypes.ContainerInstanceErrorWrapper) storetypes.ContainerInstanceErrorWrapper {
-	var instanceResp storetypes.ContainerInstanceErrorWrapper
+func setupEntity(key, value, version string) storetypes.Entity {
+	return storetypes.Entity{
+		Key: key,
+		Value: value,
+		Version: version,
+	}
+}
+
+func addContainerInstanceToDSChanAndReadFromInstanceRespChan(instanceToAdd storetypes.Entity, dsChan chan map[string]storetypes.Entity, instanceRespChan chan storetypes.VersionedContainerInstance) storetypes.VersionedContainerInstance {
+	var instanceResp storetypes.VersionedContainerInstance
 
 	doneChan := make(chan bool)
 	defer close(doneChan)
@@ -887,7 +952,7 @@ func addContainerInstanceToDSChanAndReadFromInstanceRespChan(instanceToAdd strin
 		doneChan <- true
 	}()
 
-	dsVal := map[string]string{containerInstanceARN1: instanceToAdd}
+	dsVal := map[string]storetypes.Entity{containerInstanceARN1: instanceToAdd}
 	dsChan <- dsVal
 	<-doneChan
 

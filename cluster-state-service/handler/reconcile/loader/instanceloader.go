@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -17,10 +17,10 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/blox/blox/cluster-state-service/handler/store"
-	"github.com/blox/blox/cluster-state-service/handler/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs/ecsiface"
+	"github.com/blox/blox/cluster-state-service/handler/store"
+	"github.com/blox/blox/cluster-state-service/handler/types"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -112,12 +112,12 @@ func (loader instanceLoader) loadLocalClusterStateFromStore() (clusterARNsToInst
 	}
 
 	state := make(clusterARNsToInstances)
-	for _, instance := range instances {
-		clusterARN := aws.StringValue(instance.Detail.ClusterARN)
+	for _, versionedInstance := range instances {
+		clusterARN := aws.StringValue(versionedInstance.ContainerInstance.Detail.ClusterARN)
 		if _, ok := state[clusterARN]; !ok {
 			state[clusterARN] = make(instanceARNLookup)
 		}
-		state[clusterARN][aws.StringValue(instance.Detail.ContainerInstanceARN)] = struct{}{}
+		state[clusterARN][aws.StringValue(versionedInstance.ContainerInstance.Detail.ContainerInstanceARN)] = struct{}{}
 	}
 
 	return state, nil

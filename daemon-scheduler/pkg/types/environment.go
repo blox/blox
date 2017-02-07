@@ -1,4 +1,4 @@
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// Copyright 2016-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"). You may
 // not use this file except in compliance with the License. A copy of the
@@ -34,31 +34,16 @@ type Environment struct {
 	DesiredTaskCount      int
 	Cluster               string
 	Health                EnvironmentHealth
+
 	// ID of the deployment created by the latest create-deployment call.
-	// This need not necessarily correspond to the deployment picked up by the
-	// background jobs launching tasks
 	PendingDeploymentID string
-	// The ID of the deployment that is being used by the background workers to
-	// to launch tasks
+	// ID of the deployment that is currently in-progress. Background workers will pick
+	// up this deployment to launch tasks on new instances if there is an in-progress deployment.
+	// Otherwise, if no in-progress deployment exists, background workers pick up the latest completed deployment.
 	InProgressDeploymentID string
 
 	// deploymentID -> deployment
 	Deployments map[string]Deployment
-}
-
-type timeOrderedDeployments []Deployment
-
-func (p timeOrderedDeployments) Len() int {
-	return len(p)
-}
-
-// Less orders by latest startTime first
-func (p timeOrderedDeployments) Less(i, j int) bool {
-	return p[i].StartTime.After(p[j].StartTime)
-}
-
-func (p timeOrderedDeployments) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
 }
 
 func NewEnvironment(name string, taskDefinition string, cluster string) (*Environment, error) {
@@ -84,65 +69,70 @@ func NewEnvironment(name string, taskDefinition string, cluster string) (*Enviro
 	}, nil
 }
 
-// GetInProgressDeployment returns the in-progress deployment for the environment.
-// There should one or no in progress deployments in an environment
-func (e Environment) GetInProgressDeployment() (*Deployment, error) {
-	if e.InProgressDeploymentID == "" {
-		// TODO : We may want to change where the in progress deployment id is set
-		// using the pending deployment id later
-		if e.PendingDeploymentID == "" {
-			return nil, nil
-		}
-		e.InProgressDeploymentID = e.PendingDeploymentID
+func (e *Environment) AddPendingDeployment(d Deployment) error {
+	if d.Status != DeploymentPending {
+		return errors.Errorf("Cannot add deployment %v to environment %v as a pending deployment because its status is %v and not pending",
+			d.ID, e.Name, d.Status)
 	}
-	d, ok := e.Deployments[e.InProgressDeploymentID]
-	if !ok {
-		return nil, errors.Errorf("Deployment with ID '%s' does not exist in the deployments for environment with name '%s'",
-			e.InProgressDeploymentID, e.Name)
+
+	e.Deployments[d.ID] = d
+	e.PendingDeploymentID = d.ID
+
+	return nil
+}
+
+func (e *Environment) UpdatePendingDeploymentToInProgress() error {
+	pending, err := e.getPendingDeployment()
+	if err != nil {
+		return err
 	}
-	// If the status of the deployment is pending (this happens if we just set the
-	// in progress deployment id from the pending deployment id), update the status
-	// of the deployment to in progress
-	if d.Status == DeploymentPending {
-		d.Status = DeploymentInProgress
-	} else if d.Status != DeploymentInProgress {
+
+	if pending == nil {
+		return errors.Errorf("There is no pending deployment in the environment %v", e.Name)
+	}
+
+	e.PendingDeploymentID = ""
+	e.InProgressDeploymentID = pending.ID
+
+	return nil
+}
+
+func (e *Environment) getPendingDeployment() (*Deployment, error) {
+	if e.PendingDeploymentID == "" {
 		return nil, nil
 	}
+
+	d, ok := e.Deployments[e.PendingDeploymentID]
+	if !ok {
+		return nil, errors.Errorf("Pending deployment %v does not exist in the deployments for the environment %v",
+			e.PendingDeploymentID, e.Name)
+	}
+
+	if d.Status != DeploymentPending {
+		return nil, errors.Errorf("Pending deployment %v in the environment %v is not in a pending status but %v",
+			d.ID, e.Name, d.Status)
+	}
+
 	return &d, nil
 }
 
-// GetDeployments returns a list of deployments reverse-ordered by start time,
-// i.e. lastest deployment first
-func (e Environment) GetDeployments() ([]Deployment, error) {
-	return e.sortDeploymentsByStartTime()
+type timeOrderedDeployments []Deployment
+
+func (p timeOrderedDeployments) Len() int {
+	return len(p)
 }
 
-func (e Environment) GetCurrentDeployment() (*Deployment, error) {
-	deployment, err := e.GetInProgressDeployment()
-	if err != nil {
-		return nil, err
-	}
-
-	if deployment != nil {
-		return deployment, nil
-	}
-
-	// if there is no in-progress deployment then we take the latest completed deployment
-	deployments, err := e.GetDeployments()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, d := range deployments {
-		if d.Status == DeploymentCompleted {
-			return &d, nil
-		}
-	}
-
-	return nil, errors.Errorf("No deployment available for environment %s", e.Name)
+// Less orders deployments reverse-chronologically: latest startTime first
+func (p timeOrderedDeployments) Less(i, j int) bool {
+	return p[i].StartTime.After(p[j].StartTime)
 }
 
-func (e Environment) sortDeploymentsByStartTime() ([]Deployment, error) {
+func (p timeOrderedDeployments) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
+}
+
+// SortDeploymentsReverseChronologically returns deployments ordered reverse-chronologically: latest startTime first
+func (e *Environment) SortDeploymentsReverseChronologically() ([]Deployment, error) {
 	deployments := make([]Deployment, 0, len(e.Deployments))
 	for _, d := range e.Deployments {
 		deployments = append(deployments, d)
