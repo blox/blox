@@ -37,7 +37,7 @@ func ValidateListContainsTask(ecsTask ecs.Task, cssTaskList []models.Task) error
 			break
 		}
 	}
-	if cssTask.Entity.TaskARN == nil {
+	if cssTask.Entity == nil || cssTask.Entity.TaskARN == nil {
 		return errors.Errorf("Task with ARN '%s' not found in response. ", taskARN)
 	}
 	return ValidateTasksMatch(ecsTask, cssTask)
