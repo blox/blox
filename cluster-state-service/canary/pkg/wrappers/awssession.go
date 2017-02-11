@@ -4,13 +4,24 @@
 // not use this file except in compliance with the License. A copy of the
 // License is located at
 //
-//	http://aws.amazon.com/apache2.0/
+//     http://aws.amazon.com/apache2.0/
 //
 // or in the "license" file accompanying this file. This file is distributed
 // on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package copyright_gen
+package wrappers
 
-//go:generate slap_copyright.sh ../cmd ../handler ../internal ../licenses ../logger ../main.go ../swagger ../canary
+import "github.com/aws/aws-sdk-go/aws/session"
+
+// NewAWSSession creates an AWS session.
+func NewAWSSession() (*session.Session, error) {
+	var sess *session.Session
+	var err error
+	sess, err = session.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	return sess, nil
+}

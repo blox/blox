@@ -4,13 +4,24 @@
 // not use this file except in compliance with the License. A copy of the
 // License is located at
 //
-//	http://aws.amazon.com/apache2.0/
+//     http://aws.amazon.com/apache2.0/
 //
 // or in the "license" file accompanying this file. This file is distributed
 // on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package copyright_gen
+package util
 
-//go:generate slap_copyright.sh ../cmd ../handler ../internal ../licenses ../logger ../main.go ../swagger ../canary
+// CleanUpError encapsulates the error generated while cleaning up all the
+// resources used by a test run
+type CleanUpError struct {
+	error
+}
+
+// NewCleanUpError generates an error of type CleanUpError
+func NewCleanUpError(err error) CleanUpError {
+	return CleanUpError{
+		err,
+	}
+}
