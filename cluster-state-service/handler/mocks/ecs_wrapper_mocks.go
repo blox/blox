@@ -88,13 +88,13 @@ func (_mr *_MockECSWrapperRecorder) ListAllContainerInstances(arg0 interface{}) 
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListAllContainerInstances", arg0)
 }
 
-func (_m *MockECSWrapper) ListAllTasks(_param0 *string) ([]*string, error) {
-	ret := _m.ctrl.Call(_m, "ListAllTasks", _param0)
+func (_m *MockECSWrapper) ListTasksWithDesiredStatus(_param0 *string, _param1 *string) ([]*string, error) {
+	ret := _m.ctrl.Call(_m, "ListTasksWithDesiredStatus", _param0, _param1)
 	ret0, _ := ret[0].([]*string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockECSWrapperRecorder) ListAllTasks(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListAllTasks", arg0)
+func (_mr *_MockECSWrapperRecorder) ListTasksWithDesiredStatus(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListTasksWithDesiredStatus", arg0, arg1)
 }

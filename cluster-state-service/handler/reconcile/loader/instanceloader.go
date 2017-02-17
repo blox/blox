@@ -124,6 +124,7 @@ func (loader instanceLoader) loadLocalClusterStateFromStore() (clusterARNsToInst
 }
 
 // getContainerInstancesFromECS gets a list of container instances from ECS for the specified cluster.
+// The ECS ListContainerInstances method returns active and draining container instances. It does not return inactive container instances.
 func (loader instanceLoader) getContainerInstancesFromECS(cluster *string) ([]types.ContainerInstance, error) {
 	var instances []types.ContainerInstance
 	instanceARNs, err := loader.ecsWrapper.ListAllContainerInstances(cluster)

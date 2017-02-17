@@ -29,7 +29,7 @@ const (
 // ECSWrapper defines methods to access wrapper methods to call ECS APIs
 type ECSWrapper interface {
 	ListAllClusters() ([]*string, error)
-	ListAllTasks(clusterARN *string) ([]*string, error)
+	ListTasksWithDesiredStatus(clusterARN *string, desiredStatus *string) ([]*string, error)
 	DescribeTasks(clusterARN *string, taskARNs []*string) ([]types.Task, []string, error)
 	ListAllContainerInstances(clusterARN *string) ([]*string, error)
 	DescribeContainerInstances(clusterARN *string, instanceARNs []*string) ([]types.ContainerInstance, []string, error)
@@ -79,12 +79,12 @@ func (wrapper clientWrapper) listClusters(nextToken *string) ([]*string, *string
 }
 
 // ListAllTasks retrieves a list of all task ARNS in the cluster identified by 'clusterARN' by making one or more calls to ECS
-func (wrapper clientWrapper) ListAllTasks(clusterARN *string) ([]*string, error) {
+func (wrapper clientWrapper) ListTasksWithDesiredStatus(clusterARN *string, desiredStatus *string) ([]*string, error) {
 	var taskARNs []*string
 	var nextToken *string
 	nextToken = nil
 	for {
-		t, n, err := wrapper.listTasks(clusterARN, nextToken)
+		t, n, err := wrapper.listTasks(clusterARN, desiredStatus, nextToken)
 		if err != nil {
 			return nil, err
 		}
@@ -97,13 +97,14 @@ func (wrapper clientWrapper) ListAllTasks(clusterARN *string) ([]*string, error)
 	return taskARNs, nil
 }
 
-func (wrapper clientWrapper) listTasks(clusterARN *string, nextToken *string) ([]*string, *string, error) {
+func (wrapper clientWrapper) listTasks(clusterARN *string, desiredStatus *string, nextToken *string) ([]*string, *string, error) {
 	if aws.StringValue(clusterARN) == "" {
 		return nil, nil, errors.New("Failed to list ECS tasks. Error: Cluster cannot be empty")
 	}
 
 	in := ecs.ListTasksInput{
 		Cluster:   clusterARN,
+		DesiredStatus: desiredStatus,
 		NextToken: nextToken,
 	}
 

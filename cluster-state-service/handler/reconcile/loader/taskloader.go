@@ -25,6 +25,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	desiredStatuses = [...]string{"running", "stopped"}
+)
+
 // TaskLoader defines the interface to load container tasks from
 // the data store and ECS and to merge the same.
 type TaskLoader interface {
@@ -127,14 +131,15 @@ func (loader taskLoader) loadLocalClusterStateFromStore() (clusterARNsToTasks, e
 // getTasksFromECS gets a list of tasks from ECS for the specified cluster.
 func (loader taskLoader) getTasksFromECS(cluster *string) ([]types.Task, error) {
 	var tasks []types.Task
-	taskARNs, err := loader.ecsWrapper.ListAllTasks(cluster)
+
+	taskARNs, err := loader.getTaskARNsFromECS(cluster)
 	if err != nil {
-		return tasks, errors.Wrapf(err,
-			"Error listing all tasks for cluster '%s'", aws.StringValue(cluster))
+		return tasks, err
 	}
 	if len(taskARNs) == 0 {
 		return tasks, nil
 	}
+
 	tasks, failedTaskARNs, err := loader.ecsWrapper.DescribeTasks(cluster, taskARNs)
 	if err != nil {
 		return tasks, errors.Wrapf(err,
@@ -146,6 +151,30 @@ func (loader taskLoader) getTasksFromECS(cluster *string) ([]types.Task, error) 
 		log.Infof("Failed to describe listed tasks: %s", strings.Join(failedTaskARNs[:], " "))
 	}
 	return tasks, nil
+}
+
+// getTaskARNsFromECS gets a list of the task ARNs from ECS for both running and stopped tasks.
+func (loader taskLoader) getTaskARNsFromECS(cluster *string) ([]*string, error) {
+	taskARNs := make([]*string, 0)
+	taskARNsDedup := make(taskARNLookup)
+
+	for _, desiredStatus := range desiredStatuses {
+		ecsTaskARNs, err := loader.ecsWrapper.ListTasksWithDesiredStatus(cluster, &desiredStatus)
+
+		if err != nil {
+			return taskARNs, errors.Wrapf(err,
+				"Error listing tasks for cluster '%s' with desired status '%s'", aws.StringValue(cluster), desiredStatus)
+		}
+
+		for _, ecsTaskARN := range ecsTaskARNs {
+			if _, ok := taskARNsDedup[aws.StringValue(ecsTaskARN)]; !ok {
+				taskARNsDedup[aws.StringValue(ecsTaskARN)] = struct{}{}
+				taskARNs = append(taskARNs, ecsTaskARN)
+			}
+		}
+	}
+
+	return taskARNs, nil
 }
 
 // putTask puts the task record into the data store

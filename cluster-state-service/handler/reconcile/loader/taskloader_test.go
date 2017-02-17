@@ -27,6 +27,8 @@ import (
 )
 
 var (
+	desiredStatus1            = "running"
+	desiredStatus2            = "stopped"
 	taskClusterARN1           = "arn:aws:ecs:us-east-1:123456789012:cluster/cluster1"
 	taskClusterARN2           = "arn:aws:ecs:us-east-1:123456789012:cluster/cluster2"
 	taskARN1                  = "arn:aws:ecs:us-east-1:123456789012:task/b6b9eace-958e-4f2a-a09c-8cf43b76cf97"
@@ -48,6 +50,7 @@ type TaskLoaderTestSuite struct {
 	redundantTask          types.Task
 	redundantVersionedTask storetypes.VersionedTask
 	taskJSON               string
+	redundantTaskJSON      string
 }
 
 func (suite *TaskLoaderTestSuite) SetupTest() {
@@ -103,6 +106,9 @@ func (suite *TaskLoaderTestSuite) SetupTest() {
 		Task: suite.redundantTask,
 		Version: "123",
 	}
+	task, err = json.Marshal(suite.redundantTask)
+	assert.Nil(suite.T(), err, "Cannot setup testSuite: Unexpected error when marshaling task")
+	suite.redundantTaskJSON = string(task)
 }
 
 func TestTaskLoaderTestSuite(t *testing.T) {
@@ -113,7 +119,7 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksListAllClustersReturnsError() {
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(nil, errors.New("Error while listing all clusters")),
-		suite.ecsWrapper.EXPECT().ListAllTasks(gomock.Any()).Times(0),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(gomock.Any(), gomock.Any()).Times(0),
 		suite.ecsWrapper.EXPECT().DescribeTasks(gomock.Any(), gomock.Any()).Times(0),
 	)
 
@@ -121,26 +127,29 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksListAllClustersReturnsError() {
 	assert.Error(suite.T(), err, "Expected an error when ecs returns an error when listing all clusters")
 }
 
-func (suite *TaskLoaderTestSuite) TestLoadTasksListAllTasksReturnsError() {
+func (suite *TaskLoaderTestSuite) TestLoadTasksListTasksWithDesiredStatusReturnsError() {
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(nil, errors.New("Error while listing all tasks")),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Times(0),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus1).Return(nil, errors.New("Error while listing tasks with desired status")),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus2).Times(0),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], gomock.Any()).Times(0),
 		suite.ecsWrapper.EXPECT().DescribeTasks(gomock.Any(), gomock.Any()).Times(0),
 	)
 
 	err := suite.taskLoader.LoadTasks()
-	assert.Error(suite.T(), err, "Expected an error when ecs returns an error when listing all tasks in a cluster")
+	assert.Error(suite.T(), err, "Expected an error when ecs returns an error when listing tasks with desired status in a cluster")
 }
 
 func (suite *TaskLoaderTestSuite) TestLoadTasksDescribeTasksReturnsError() {
 	taskARNList := []*string{&taskARN1}
+	emptyTaskARNList := []*string{}
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Times(0),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus1).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus2).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], gomock.Any()).Times(0),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[0], taskARNList).Return(nil, nil, errors.New("Error while desribing task")),
 	)
 
@@ -155,9 +164,11 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksStoreReturnsError() {
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus1).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[0], taskARNList).Return(taskList, nil, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus1).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[1], gomock.Any()).Times(0),
 		suite.taskStore.EXPECT().AddUnversionedTask(suite.taskJSON).Return(errors.New("Error while adding task to store")),
 	)
@@ -173,9 +184,11 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksEmptyLocalStore() {
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(make([]storetypes.VersionedTask, 0), nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus1).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[0], taskARNList).Return(taskList, nil, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus1).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[1], gomock.Any()).Times(0),
 		suite.taskStore.EXPECT().AddUnversionedTask(suite.taskJSON).Return(nil),
 	)
@@ -194,9 +207,11 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksLocalStoreSameAsECS() {
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(taskListInStore, nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus1).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[0], taskARNList).Return(taskList, nil, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus1).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[1], gomock.Any()).Times(0),
 		suite.taskStore.EXPECT().AddUnversionedTask(suite.taskJSON).Return(nil),
 	)
@@ -212,13 +227,40 @@ func (suite *TaskLoaderTestSuite) TestLoadTasksRedundantEntriesInLocalStore() {
 	gomock.InOrder(
 		suite.taskStore.EXPECT().ListTasks().Return(taskListInStore, nil),
 		suite.ecsWrapper.EXPECT().ListAllClusters().Return(suite.clusterARNList, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[0]).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus1).Return(taskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[0], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[0], taskARNList).Return(taskList, nil, nil),
-		suite.ecsWrapper.EXPECT().ListAllTasks(suite.clusterARNList[1]).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus1).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(suite.clusterARNList[1], &desiredStatus2).Return(emptyTaskARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeTasks(suite.clusterARNList[1], gomock.Any()).Times(0),
 		suite.taskStore.EXPECT().AddUnversionedTask(suite.taskJSON).Return(nil),
 		// Expect delete task for the redundant task
 		suite.taskStore.EXPECT().DeleteTask(redundantClusterARNOfTask, redundantTaskARN).Return(nil),
+	)
+	err := suite.taskLoader.LoadTasks()
+	assert.Nil(suite.T(), err, "Unexpected error when loading tasks")
+}
+
+func (suite *TaskLoaderTestSuite) TestLoadTasksWithRunningAndStoppedTasksInECS() {
+	clusterARNList1 := []*string{&taskClusterARN1, &redundantClusterARNOfTask}
+	taskARNList1 := []*string{&taskARN1}
+	taskARNList2 := []*string{&redundantTaskARN}
+	emptyTaskARNList := []*string{}
+	taskListInStore := []storetypes.VersionedTask{suite.versionedTask, suite.redundantVersionedTask}
+	taskList1 := []types.Task{suite.task}
+	taskList2 := []types.Task{suite.redundantTask}
+	gomock.InOrder(
+		suite.taskStore.EXPECT().ListTasks().Return(taskListInStore, nil),
+		suite.ecsWrapper.EXPECT().ListAllClusters().Return(clusterARNList1, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(clusterARNList1[0], &desiredStatus1).Return(taskARNList1, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(clusterARNList1[0], &desiredStatus2).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().DescribeTasks(clusterARNList1[0], taskARNList1).Return(taskList1, nil, nil),
+		suite.taskStore.EXPECT().AddUnversionedTask(suite.taskJSON).Return(nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(clusterARNList1[1], &desiredStatus1).Return(emptyTaskARNList, nil),
+		suite.ecsWrapper.EXPECT().ListTasksWithDesiredStatus(clusterARNList1[1], &desiredStatus2).Return(taskARNList2, nil),
+		suite.ecsWrapper.EXPECT().DescribeTasks(clusterARNList1[1], taskARNList2).Return(taskList2, nil, nil),
+		suite.taskStore.EXPECT().AddUnversionedTask(suite.redundantTaskJSON).Return(nil),
+		suite.taskStore.EXPECT().DeleteTask(gomock.Any(), gomock.Any()).Times(0),
 	)
 	err := suite.taskLoader.LoadTasks()
 	assert.Nil(suite.T(), err, "Unexpected error when loading tasks")

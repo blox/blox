@@ -180,20 +180,22 @@ func (suite *ECSWrapperTestSuite) TestListAllClusters() {
 	assert.Equal(suite.T(), expectedClusterARNs, clusterARNs, "Cluster ARNs received using list clusters is not equal to the expected list")
 }
 
-func (suite *ECSWrapperTestSuite) TestListAllTasksECSListTasksWithoutTokenReturnsError() {
+func (suite *ECSWrapperTestSuite) TestListTasksWithDesiredStatusECSListTasksWithoutTokenReturnsError() {
 	in := ecs.ListTasksInput{
 		Cluster: &ecsClusterARN1,
+		DesiredStatus: &desiredStatus1,
 	}
 	suite.mockECSClient.EXPECT().ListTasks(&in).Return(nil, errors.New("Error while listing tasks without next token"))
 
-	_, err := suite.ecsWrapper.ListAllTasks(&ecsClusterARN1)
+	_, err := suite.ecsWrapper.ListTasksWithDesiredStatus(&ecsClusterARN1, &desiredStatus1)
 
 	assert.Error(suite.T(), err, "Expected an error when ecs client returns an error when listing tasks without next token")
 }
 
-func (suite *ECSWrapperTestSuite) TestListAllTasksECSListTasksWithTokenReturnsError() {
+func (suite *ECSWrapperTestSuite) TestListTasksWithDesiredStatusECSListTasksWithTokenReturnsError() {
 	in1 := ecs.ListTasksInput{
 		Cluster: &ecsClusterARN1,
+		DesiredStatus: &desiredStatus1,
 	}
 	resp := ecs.ListTasksOutput{
 		TaskArns:  []*string{&ecsTaskARN1},
@@ -203,20 +205,22 @@ func (suite *ECSWrapperTestSuite) TestListAllTasksECSListTasksWithTokenReturnsEr
 
 	in2 := ecs.ListTasksInput{
 		Cluster:   &ecsClusterARN1,
+		DesiredStatus: &desiredStatus1,
 		NextToken: &ecsNextToken,
 	}
 	listTasksWithTokenCall := suite.mockECSClient.EXPECT().ListTasks(&in2).Return(nil, errors.New("Error while listing tasks with next token"))
 
 	gomock.InOrder(listTasksWithoutTokenCall, listTasksWithTokenCall)
 
-	_, err := suite.ecsWrapper.ListAllTasks(&ecsClusterARN1)
+	_, err := suite.ecsWrapper.ListTasksWithDesiredStatus(&ecsClusterARN1, &desiredStatus1)
 
 	assert.Error(suite.T(), err, "Expected an error when ecs client returns an error when listing tasks with next token")
 }
 
-func (suite *ECSWrapperTestSuite) TestListAllTasks() {
+func (suite *ECSWrapperTestSuite) TestListTasksWithDesiredStatus() {
 	in1 := ecs.ListTasksInput{
 		Cluster: &ecsClusterARN1,
+		DesiredStatus: &desiredStatus1,
 	}
 	resp1 := ecs.ListTasksOutput{
 		TaskArns:  []*string{&ecsTaskARN1},
@@ -226,6 +230,7 @@ func (suite *ECSWrapperTestSuite) TestListAllTasks() {
 
 	in2 := ecs.ListTasksInput{
 		Cluster:   &ecsClusterARN1,
+		DesiredStatus: &desiredStatus1,
 		NextToken: &ecsNextToken,
 	}
 	resp2 := ecs.ListTasksOutput{
@@ -235,7 +240,7 @@ func (suite *ECSWrapperTestSuite) TestListAllTasks() {
 
 	gomock.InOrder(listTasksWithoutTokenCall, listTasksWithTokenCall)
 
-	taskARNs, err := suite.ecsWrapper.ListAllTasks(&ecsClusterARN1)
+	taskARNs, err := suite.ecsWrapper.ListTasksWithDesiredStatus(&ecsClusterARN1, &desiredStatus1)
 	assert.Nil(suite.T(), err, "Unexpected error when listing tasks")
 	expectedTaskARNs := []*string{&ecsTaskARN1, &ecsTaskARN2}
 	assert.Equal(suite.T(), expectedTaskARNs, taskARNs, "Task ARNs received using list tasks is not equal to the expected list")
