@@ -5,7 +5,7 @@ These tests call the cluster-state-service (CSS) APIs using the swagger generate
 
 ### What are the assumptions made?
 * CSS server is running locally.
-* An ECS cluster has already been created with at least one Container Instance registered to it. You can specify the cluster name by using the `ECS_CLUSTER` envrionment variable (This step can be automated in the future versions of the test suite by creating a test cluster and launching an EC2 instance with user data enabling to register itself to the created cluster).
+* An ECS cluster has already been created with at least one Container Instance registered to it. You can specify the cluster name by using the `ECS_CLUSTER` environment variable (This step can be automated in the future versions of the test suite by creating a test cluster and launching an EC2 instance with user data enabling to register itself to the created cluster).
 
 ### How to run the test suite?
 From a level above the ./internal directory, use the following commands depending on test suite you want to run.
