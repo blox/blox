@@ -251,42 +251,6 @@ func TestAddContainerInstanceSTMRepeatableFails(t *testing.T) {
 	assert.Error(t, err, "Expected error when STM repeatable fails to execute with an error")
 }
 
-func TestAddUnversionedContainerInstanceEmptyVersion(t *testing.T) {
-	context := NewContainerInstanceStoreMockContext(t)
-	defer context.mockCtrl.Finish()
-
-	instanceStore := instanceStore(t, context)
-
-	context.datastore.EXPECT().Get(gomock.Any()).Times(0)
-	context.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
-
-	instance := context.instance1
-	instance.Detail.Version = nil
-	instanceJSON := marshalInstance(t, instance)
-
-	err := instanceStore.AddUnversionedContainerInstance(instanceJSON)
-
-	if err == nil {
-		t.Error("Expected an error when adding unversioned container instance with empty version")
-	}
-}
-
-func TestAddUnversionedContainerInstanceInvalidVersion(t *testing.T) {
-	context := NewContainerInstanceStoreMockContext(t)
-	defer context.mockCtrl.Finish()
-
-	instanceStore := instanceStore(t, context)
-
-	context.datastore.EXPECT().Get(gomock.Any()).Times(0)
-	context.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
-
-	err := instanceStore.AddUnversionedContainerInstance(context.instanceJSON1)
-
-	if err == nil {
-		t.Error("Expected an error when adding unversioned container instance with invalid version")
-	}
-}
-
 func TestGetContainerInstanceEmptyClusterName(t *testing.T) {
 	context := NewContainerInstanceStoreMockContext(t)
 	defer context.mockCtrl.Finish()

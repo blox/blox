@@ -53,16 +53,6 @@ func (_mr *_MockContainerInstanceStoreRecorder) AddContainerInstance(arg0 interf
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddContainerInstance", arg0)
 }
 
-func (_m *MockContainerInstanceStore) AddUnversionedContainerInstance(instance string) error {
-	ret := _m.ctrl.Call(_m, "AddUnversionedContainerInstance", instance)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-func (_mr *_MockContainerInstanceStoreRecorder) AddUnversionedContainerInstance(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddUnversionedContainerInstance", arg0)
-}
-
 func (_m *MockContainerInstanceStore) GetContainerInstance(cluster string, instanceARN string) (*types.VersionedContainerInstance, error) {
 	ret := _m.ctrl.Call(_m, "GetContainerInstance", cluster, instanceARN)
 	ret0, _ := ret[0].(*types.VersionedContainerInstance)

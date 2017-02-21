@@ -155,9 +155,9 @@ func (loader instanceLoader) putContainerInstance(instance types.ContainerInstan
 		return errors.Wrapf(err, "Failed to marshal instance JSON")
 	}
 	instanceJSON := string(ins)
-	err = loader.instanceStore.AddUnversionedContainerInstance(instanceJSON)
+	err = loader.instanceStore.AddContainerInstance(instanceJSON)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to add unversioned container instance '%s'", instanceJSON)
+		return errors.Wrapf(err, "Failed to add container instance '%s'", instanceJSON)
 	}
 	return nil
 }

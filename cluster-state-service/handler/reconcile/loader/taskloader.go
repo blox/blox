@@ -184,9 +184,9 @@ func (loader taskLoader) putTask(task types.Task) error {
 		return errors.Wrapf(err, "Failed to marshal task JSON")
 	}
 	taskJSON := string(mTask)
-	err = loader.taskStore.AddUnversionedTask(taskJSON)
+	err = loader.taskStore.AddTask(taskJSON)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to add unversioned task '%s'", taskJSON)
+		return errors.Wrapf(err, "Failed to add task '%s'", taskJSON)
 	}
 	return nil
 }

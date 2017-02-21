@@ -69,7 +69,7 @@ func TestValidateApplierNoRecord(t *testing.T) {
 	assert.Error(t, err, "Expected error when record is not set in applier")
 }
 
-func TestAddVersionedRecordWhenNoOlderRecordExists(t *testing.T) {
+func TestAddRecordWhenNoOlderRecordExists(t *testing.T) {
 	getKey := "key"
 
 	newRecord := generateRecordWithVersion(t, 1)
@@ -91,11 +91,11 @@ func TestAddVersionedRecordWhenNoOlderRecordExists(t *testing.T) {
 		recordJSON: newRecord,
 	}
 
-	err := applier.applyVersionedRecord(mockSTM)
-	assert.NoError(t, err, "Unexpected error adding a versioned record when no older record exists")
+	err := applier.applyRecord(mockSTM)
+	assert.NoError(t, err, "Unexpected error adding a record when no older record exists")
 }
 
-func TestAddVersionedRecordWhenOlderRecordWithLowerVersionExists(t *testing.T) {
+func TestAddRecordWhenOlderRecordWithLowerVersionExists(t *testing.T) {
 	getKey := "key"
 
 	existingRecord := generateRecordWithVersion(t, 1)
@@ -118,11 +118,11 @@ func TestAddVersionedRecordWhenOlderRecordWithLowerVersionExists(t *testing.T) {
 		recordJSON: newRecord,
 	}
 
-	err := applier.applyVersionedRecord(mockSTM)
-	assert.NoError(t, err, "Unexpected error adding a versioned record when older record with lower version exists")
+	err := applier.applyRecord(mockSTM)
+	assert.NoError(t, err, "Unexpected error adding a record when older record with lower version exists")
 }
 
-func TestAddVersionedRecordWhenOlderRecordWithHigherVersionExists(t *testing.T) {
+func TestAddRecordWhenOlderRecordWithHigherVersionExists(t *testing.T) {
 	getKey := "key"
 
 	existingRecord := generateRecordWithVersion(t, 2)
@@ -141,11 +141,11 @@ func TestAddVersionedRecordWhenOlderRecordWithHigherVersionExists(t *testing.T) 
 		recordJSON: newRecord,
 	}
 
-	err := applier.applyVersionedRecord(mockSTM)
-	assert.NoError(t, err, "Unexpected error adding a versioned record when no older record with higher version exists")
+	err := applier.applyRecord(mockSTM)
+	assert.NoError(t, err, "Unexpected error adding a record when no older record with higher version exists")
 }
 
-func TestAddVersionedRecordWhenOlderRecordIsInvalid(t *testing.T) {
+func TestAddRecordWhenOlderRecordIsInvalid(t *testing.T) {
 	getKey := "key"
 
 	existingRecord := "invalidJSON"
@@ -164,11 +164,11 @@ func TestAddVersionedRecordWhenOlderRecordIsInvalid(t *testing.T) {
 		recordJSON: newRecord,
 	}
 
-	err := applier.applyVersionedRecord(mockSTM)
-	assert.Error(t, err, "Expected an error while adding a versioned record when older record is invalid")
+	err := applier.applyRecord(mockSTM)
+	assert.Error(t, err, "Expected an error while adding a record when older record is invalid")
 }
 
-func TestAddVersionedRecordWhenNewerRecordIsInvalid(t *testing.T) {
+func TestAddRecordWhenNewerRecordIsInvalid(t *testing.T) {
 	getKey := "key"
 
 	existingRecord := generateRecordWithVersion(t, 1)
@@ -187,11 +187,11 @@ func TestAddVersionedRecordWhenNewerRecordIsInvalid(t *testing.T) {
 		recordJSON: newRecord,
 	}
 
-	err := applier.applyVersionedRecord(mockSTM)
-	assert.Error(t, err, "Expected an error while adding a versioned record when new record is invalid")
+	err := applier.applyRecord(mockSTM)
+	assert.Error(t, err, "Expected an error while adding a record when new record is invalid")
 }
 
-func TestAddVersionedRecordWhenOlderRecordHasNoVersion(t *testing.T) {
+func TestAddRecordWhenOlderRecordHasNoVersion(t *testing.T) {
 	getKey := "key"
 
 	existingRecord := generateRecordWithNoVersion(t)
@@ -210,11 +210,11 @@ func TestAddVersionedRecordWhenOlderRecordHasNoVersion(t *testing.T) {
 		recordJSON: newRecord,
 	}
 
-	err := applier.applyVersionedRecord(mockSTM)
-	assert.Error(t, err, "Expected an error while adding a versioned record when older record has no version")
+	err := applier.applyRecord(mockSTM)
+	assert.Error(t, err, "Expected an error while adding a record when older record has no version")
 }
 
-func TestAddVersionedRecordWhenNewerRecordHasNoVersion(t *testing.T) {
+func TestAddRecordWhenNewerRecordHasNoVersion(t *testing.T) {
 	getKey := "key"
 
 	existingRecord := generateRecordWithVersion(t, 1)
@@ -233,57 +233,8 @@ func TestAddVersionedRecordWhenNewerRecordHasNoVersion(t *testing.T) {
 		recordJSON: newRecord,
 	}
 
-	err := applier.applyVersionedRecord(mockSTM)
-	assert.Error(t, err, "Expected an error while adding a versioned record when new record has no version")
-}
-
-func TestAddUnversionedRecordWhenNoOlderRecordExists(t *testing.T) {
-	getKey := "key"
-
-	newRecord := generateRecordWithVersion(t, 1)
-
-	mockSTM := &mockSTM{
-		getFunc: func(key string) string {
-			assert.Equal(t, getKey, key, "Unexpected key for Get")
-			return ""
-		},
-		putFunc: func(key string, val string, opts ...clientv3.OpOption) {
-			assert.Equal(t, getKey, key, "Unexpected key in Put")
-			assert.Equal(t, val, newRecord, "Unexpected record in Put")
-		},
-	}
-
-	applier := &STMApplier{
-		record:     SampleRecord{},
-		recordKey:  "key",
-		recordJSON: newRecord,
-	}
-
-	err := applier.applyUnversionedRecord(mockSTM)
-	assert.NoError(t, err, "Unexpected error adding an unversioned record when no older record exists")
-}
-
-func TestAddUnversionedRecordWhenOlderRecordExists(t *testing.T) {
-	getKey := "key"
-
-	existingRecord := generateRecordWithVersion(t, 1)
-	newRecord := generateRecordWithVersion(t, -1)
-
-	mockSTM := &mockSTM{
-		getFunc: func(key string) string {
-			assert.Equal(t, getKey, key, "Unexpected key for Get")
-			return existingRecord
-		},
-	}
-
-	applier := &STMApplier{
-		record:     SampleRecord{},
-		recordKey:  "key",
-		recordJSON: newRecord,
-	}
-
-	err := applier.applyUnversionedRecord(mockSTM)
-	assert.NoError(t, err, "Unexpected error adding an unversioned record when older record exists")
+	err := applier.applyRecord(mockSTM)
+	assert.Error(t, err, "Expected an error while adding a record when new record has no version")
 }
 
 func generateRecordWithVersion(t *testing.T, version int64) string {

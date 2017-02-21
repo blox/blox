@@ -59,7 +59,7 @@ func (suite *ECSWrapperTestSuite) SetupTest() {
 	startedAt := "2016-11-07T15:45:00Z"
 	desiredStatus := "RUNNING"
 	lastStatus := "PENDING"
-	taskVersion := version
+	taskVersion := int64(123)
 	ecsTaskInstanceARN := "arn:aws:ecs:us-east-1:123456789012:container-task/b6b9eace-958e-4f2a-a09c-8cf43b76cf97"
 	ecsTaskDefinitionARN := "arn:aws:ecs:us-east-1:123456789012:task-definition/testTask:1"
 	suite.task = types.Task{
@@ -97,7 +97,7 @@ func (suite *ECSWrapperTestSuite) SetupTest() {
 
 	agentConnected := true
 	containerStatus := "ACTIVE"
-	instanceVersion := version
+	instanceVersion := int64(123)
 	suite.instance = types.ContainerInstance{
 		Detail: &types.InstanceDetail{
 			AgentConnected:       &agentConnected,

@@ -273,28 +273,6 @@ func (suite *TaskStoreTestSuite) TestAddTaskSTMRepeatableFails() {
 	assert.Error(suite.T(), err, "Expected error when STM repeatable fails to execute with an error")
 }
 
-func (suite *TaskStoreTestSuite) TestAddUnversionedTaskEmptyVersion() {
-	suite.datastore.EXPECT().Get(gomock.Any()).Times(0)
-	suite.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
-
-	task := suite.firstPendingTask
-	task.Detail.Version = nil
-
-	taskJSON, err := json.Marshal(task)
-	assert.Nil(suite.T(), err, "Error when json marhsaling task %v", task)
-
-	err = suite.taskStore.AddUnversionedTask(string(taskJSON))
-	assert.NotNil(suite.T(), err, "Expected an error when adding unversioned task with empty version")
-}
-
-func (suite *TaskStoreTestSuite) TestAddUnversionedTaskInvalidVersion() {
-	suite.datastore.EXPECT().Get(gomock.Any()).Times(0)
-	suite.datastore.EXPECT().Add(gomock.Any(), gomock.Any()).Times(0)
-
-	err := suite.taskStore.AddUnversionedTask(suite.firstPendingTaskJSON)
-	assert.NotNil(suite.T(), err, "Expected ab error when adding unversioned task with invalid version")
-}
-
 func (suite *TaskStoreTestSuite) TestGetTaskEmptyClusterName() {
 	_, err := suite.taskStore.GetTask("", taskARN1)
 	assert.Error(suite.T(), err, "Expected an error when cluster name is empty in GetTask")

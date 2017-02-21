@@ -31,8 +31,6 @@ const (
 	taskStatusFilter    = "status"
 	taskStartedByFilter = "startedBy"
 	taskClusterFilter   = "cluster"
-
-	unversionedTask = -1
 )
 
 var (
@@ -42,7 +40,6 @@ var (
 // TaskStore defines methods to access tasks from the datastore
 type TaskStore interface {
 	AddTask(task string) error
-	AddUnversionedTask(task string) error
 	GetTask(cluster string, taskARN string) (*storetypes.VersionedTask, error)
 	ListTasks() ([]storetypes.VersionedTask, error)
 	FilterTasks(filterMap map[string]string) ([]storetypes.VersionedTask, error)
@@ -88,33 +85,7 @@ func (taskStore eventTaskStore) AddTask(taskJSON string) error {
 	// client. We should find a better way to handle that
 	_, err = taskStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
 		taskStore.etcdTXStore.GetV3Client(),
-		applier.applyVersionedRecord)
-	return err
-}
-
-// AddUnversionedTask adds a task represented in the taskJSON to the datastore only if the task version is set to -1
-func (taskStore eventTaskStore) AddUnversionedTask(taskJSON string) error {
-	task, key, err := taskStore.unmarshalTaskAndGenerateKey(taskJSON)
-	if err != nil {
-		return err
-	}
-
-	if task.Detail.Version == nil || aws.Int64Value(task.Detail.Version) != unversionedTask {
-		return errors.Errorf("Task version while adding unversioned task should be set to %d", unversionedTask)
-	}
-
-	log.Debugf("Task store unmarshalled unversioned task: %s, trying to add it to the store", task.Detail.String())
-
-	applier := &STMApplier{
-		record:     types.Task{},
-		recordKey:  key,
-		recordJSON: taskJSON,
-	}
-	// TODO: NewSTMRepeatble panics if there's any error from the etcd
-	// client. We should find a better way to handle that
-	_, err = taskStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
-		taskStore.etcdTXStore.GetV3Client(),
-		applier.applyUnversionedRecord)
+		applier.applyRecord)
 	return err
 }
 

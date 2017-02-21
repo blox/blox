@@ -26,10 +26,9 @@ type STMApplier struct {
 	recordJSON string
 }
 
-// applyVersionedRecord adds a new record to the store if the
-// version number in the record is higher than the one that exists in the
-// store
-func (applier STMApplier) applyVersionedRecord(stm concurrency.STM) error {
+// applyRecord adds a new record to the store if the version number
+// in the record is higher than the one that exists in the store
+func (applier STMApplier) applyRecord(stm concurrency.STM) error {
 	err := applier.validateApplier()
 	if err != nil {
 		return err
@@ -60,28 +59,6 @@ func (applier STMApplier) applyVersionedRecord(stm concurrency.STM) error {
 	}
 
 	// New record has a higher version. Add it.
-	stm.Put(applier.recordKey, applier.recordJSON)
-	return nil
-}
-
-// applyVersionedRecord adds a new unversioned record to the store.
-// An unversioned record is generated while bootstrapping and reconciliation
-// workflows.
-func (applier STMApplier) applyUnversionedRecord(stm concurrency.STM) error {
-	err := applier.validateApplier()
-	if err != nil {
-		return err
-	}
-
-	// Get existing record
-	existingRecord := stm.Get(applier.recordKey)
-
-	// A record already exists. Don't do anything.
-	if existingRecord != "" {
-		return nil
-	}
-
-	// No record exists. Add the unversioned record.
 	stm.Put(applier.recordKey, applier.recordJSON)
 	return nil
 }

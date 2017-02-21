@@ -30,8 +30,6 @@ const (
 	instanceKeyPrefix     = "ecs/instance/"
 	instanceStatusFilter  = "status"
 	instanceClusterFilter = "cluster"
-
-	unversionedInstance = -1
 )
 
 var (
@@ -41,7 +39,6 @@ var (
 // ContainerInstanceStore defines methods to access container instances from the datastore
 type ContainerInstanceStore interface {
 	AddContainerInstance(instance string) error
-	AddUnversionedContainerInstance(instance string) error
 	GetContainerInstance(cluster string, instanceARN string) (*storetypes.VersionedContainerInstance, error)
 	ListContainerInstances() ([]storetypes.VersionedContainerInstance, error)
 	FilterContainerInstances(filterMap map[string]string) ([]storetypes.VersionedContainerInstance, error)
@@ -87,34 +84,7 @@ func (instanceStore eventInstanceStore) AddContainerInstance(instanceJSON string
 	// client. We should find a better way to handle that
 	_, err = instanceStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
 		instanceStore.etcdTXStore.GetV3Client(),
-		applier.applyVersionedRecord)
-
-	return err
-}
-
-// AddUnversionedContainerInstance adds a container instance represented in the instanceJSON to the datastore only if the instance version is -1
-func (instanceStore eventInstanceStore) AddUnversionedContainerInstance(instanceJSON string) error {
-	instance, key, err := instanceStore.unmarshalInstanceAndGenerateKey(instanceJSON)
-	if err != nil {
-		return err
-	}
-
-	if instance.Detail.Version == nil || aws.Int64Value(instance.Detail.Version) != unversionedInstance {
-		return errors.Errorf("Instance version while adding unversioned instance should be set to %d", unversionedTask)
-	}
-
-	log.Debugf("Instance store unmarshalled unversioned instance: %s, trying to add it to the store", instance.Detail.String())
-
-	applier := &STMApplier{
-		record:     types.ContainerInstance{},
-		recordKey:  key,
-		recordJSON: instanceJSON,
-	}
-	// TODO: NewSTMRepeatble panics if there's any error from the etcd
-	// client. We should find a better way to handle that
-	_, err = instanceStore.etcdTXStore.NewSTMRepeatable(context.TODO(),
-		instanceStore.etcdTXStore.GetV3Client(),
-		applier.applyUnversionedRecord)
+		applier.applyRecord)
 
 	return err
 }

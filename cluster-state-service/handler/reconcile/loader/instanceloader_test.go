@@ -33,6 +33,7 @@ var (
 	instanceARN2                  = "arn:aws:ecs:us-east-1:123456789012:container-instance/ab345dfe-6578-2eab-c671-72847ffe8122"
 	redundantClusterARNOfInstance = "arn:aws:ecs:us-east-1:123456789012:cluster/red-un-da-nt"
 	redundantInstanceARN          = "arn:aws:ecs:us-east-1:123456789012:container-instance/"
+	instanceVersion               = int64(123)
 )
 
 type InstanceLoaderTestSuite struct {
@@ -64,7 +65,6 @@ func (suite *InstanceLoaderTestSuite) SetupTest() {
 
 	agentConnected := true
 	containerStatus := "ACTIVE"
-	instanceVersion := version
 	suite.instance = types.ContainerInstance{
 		Detail: &types.InstanceDetail{
 			AgentConnected:       &agentConnected,
@@ -154,7 +154,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesStoreReturnsErro
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[0], instanceARNList).Return(instanceList, nil, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[1]).Return(emptyInstanceARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[1], gomock.Any()).Times(0),
-		suite.instanceStore.EXPECT().AddUnversionedContainerInstance(suite.instanceJSON).Return(errors.New("Error while adding container instance to store")),
+		suite.instanceStore.EXPECT().AddContainerInstance(suite.instanceJSON).Return(errors.New("Error while adding container instance to store")),
 	)
 	err := suite.instanceLoader.LoadContainerInstances()
 	assert.Error(suite.T(), err, "Expected an error when store returns an error when adding container instance")
@@ -171,7 +171,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesEmptyLocalStore(
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[0], instanceARNList).Return(instanceList, nil, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[1]).Return(emptyInstanceARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[1], gomock.Any()).Times(0),
-		suite.instanceStore.EXPECT().AddUnversionedContainerInstance(suite.instanceJSON).Return(nil),
+		suite.instanceStore.EXPECT().AddContainerInstance(suite.instanceJSON).Return(nil),
 	)
 	err := suite.instanceLoader.LoadContainerInstances()
 	assert.Nil(suite.T(), err, "Unexpected error when loading container instances")
@@ -192,7 +192,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesLocalStoreSameAs
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[0], instanceARNList).Return(instanceList, nil, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[1]).Return(emptyInstanceARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[1], gomock.Any()).Times(0),
-		suite.instanceStore.EXPECT().AddUnversionedContainerInstance(suite.instanceJSON).Return(nil),
+		suite.instanceStore.EXPECT().AddContainerInstance(suite.instanceJSON).Return(nil),
 	)
 	err := suite.instanceLoader.LoadContainerInstances()
 	assert.Nil(suite.T(), err, "Unexpected error when loading container instances")
@@ -210,7 +210,7 @@ func (suite *InstanceLoaderTestSuite) TestLoadContainerInstancesRedundantEntries
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[0], instanceARNList).Return(instanceList, nil, nil),
 		suite.ecsWrapper.EXPECT().ListAllContainerInstances(suite.clusterARNList[1]).Return(emptyInstanceARNList, nil),
 		suite.ecsWrapper.EXPECT().DescribeContainerInstances(suite.clusterARNList[1], gomock.Any()).Times(0),
-		suite.instanceStore.EXPECT().AddUnversionedContainerInstance(suite.instanceJSON).Return(nil),
+		suite.instanceStore.EXPECT().AddContainerInstance(suite.instanceJSON).Return(nil),
 		// Expect delete container instance for the redundant instance
 		suite.instanceStore.EXPECT().DeleteContainerInstance(redundantClusterARNOfInstance, redundantInstanceARN).Return(nil),
 	)

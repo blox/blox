@@ -23,14 +23,12 @@ import (
 
 const (
 	timeLayout = "2006-01-02T15:04:05Z"
-	version    = int64(-1)
 )
 
 // ToTask tranlates an ECS task to the internal task type
 func ToTask(ecsTask ecs.Task) types.Task {
 	createdAt := ecsTask.CreatedAt.Format(timeLayout)
 	updatedAt := currentTime()
-	taskVersion := version
 	taskDetail := types.TaskDetail{
 		ClusterARN:           ecsTask.ClusterArn,
 		ContainerInstanceARN: ecsTask.ContainerInstanceArn,
@@ -43,7 +41,7 @@ func ToTask(ecsTask ecs.Task) types.Task {
 		StoppedReason:        aws.StringValue(ecsTask.StoppedReason),
 		TaskARN:              ecsTask.TaskArn,
 		TaskDefinitionARN:    ecsTask.TaskDefinitionArn,
-		Version:              &taskVersion,
+		Version:              ecsTask.Version,
 		UpdatedAt:            &updatedAt,
 	}
 	if ecsTask.StartedAt != nil {
@@ -135,7 +133,6 @@ func toEnvironment(ecsEnvironment []*ecs.KeyValuePair) []*types.Environment {
 
 // ToContainerInstance tranlates an ECS container instance to the internal container instance type
 func ToContainerInstance(ecsInstance ecs.ContainerInstance, clusterARN string) types.ContainerInstance {
-	instanceVersion := version
 	updatedAt := currentTime()
 	insDetail := types.InstanceDetail{
 		AgentConnected:       ecsInstance.AgentConnected,
@@ -147,7 +144,7 @@ func ToContainerInstance(ecsInstance ecs.ContainerInstance, clusterARN string) t
 		RegisteredResources:  toResources(ecsInstance.RegisteredResources),
 		RemainingResources:   toResources(ecsInstance.RemainingResources),
 		Status:               ecsInstance.Status,
-		Version:              &instanceVersion,
+		Version:              ecsInstance.Version,
 		VersionInfo:          toVersionInfo(ecsInstance.VersionInfo),
 		UpdatedAt:            &updatedAt,
 	}

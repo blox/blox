@@ -40,6 +40,8 @@ func (suite *TranslateTestSuite) SetupTest() {
 	containerARN := "arn:aws:ecs:us-east-1:123456789012:container/57156e30-e410-4773-9a9e-ae8264c10bbd"
 	taskARN := "arn:aws:ecs:us-east-1:123456789012:task/271022c0-f894-4aa2-b063-25bae55088d5"
 	taskDefinitionARN := "arn:aws:ecs:us-east-1:123456789012:task-definition/testTask:1"
+	instanceVersion := int64(123)
+	taskVersion := int64(123)
 	ec2InstanceID := "i-12345678"
 	attributeName := "Name"
 	attributeVal := "com.amazonaws.ecs.capability.privileged-container"
@@ -87,6 +89,7 @@ func (suite *TranslateTestSuite) SetupTest() {
 			},
 		},
 		Status: &containerStatus,
+		Version: &instanceVersion,
 		VersionInfo: &ecs.VersionInfo{
 			AgentHash:     &agentHash,
 			AgentVersion:  &agentVersion,
@@ -94,7 +97,6 @@ func (suite *TranslateTestSuite) SetupTest() {
 		},
 	}
 
-	instanceVersion := version
 	suite.instance = types.ContainerInstance{
 		Detail: &types.InstanceDetail{
 			AgentConnected:    &agentConnected,
@@ -156,9 +158,9 @@ func (suite *TranslateTestSuite) SetupTest() {
 		StartedAt:         &ecsStartedAt,
 		TaskArn:           &taskARN,
 		TaskDefinitionArn: &taskDefinitionARN,
+		Version: &taskVersion,
 	}
 
-	taskVersion := version
 	suite.task = types.Task{
 		Detail: &types.TaskDetail{
 			ClusterARN:           &clusterARN,
