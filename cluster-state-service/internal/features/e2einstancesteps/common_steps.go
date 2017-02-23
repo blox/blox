@@ -45,19 +45,23 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		instanceARNs, err := ecsWrapper.ListContainerInstances(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		if len(instanceARNs) < 1 {
 			T.Errorf("No container instances registered to the cluster '%s'. ", clusterName)
+			return
 		}
 		for _, instanceARN := range instanceARNs {
 			ecsInstance, err := ecsWrapper.DescribeContainerInstance(clusterName, *instanceARN)
 			if err != nil {
 				T.Errorf(err.Error())
+				return
 			}
 			ecsContainerInstanceList = append(ecsContainerInstanceList, ecsInstance)
 		}
@@ -66,6 +70,7 @@ func init() {
 	Then(`^I get a (.+?) instance exception$`, func(exceptionType string) {
 		if len(exceptionList) != 1 {
 			T.Errorf("Error memorizing exception")
+			return
 		}
 		if exceptionType != exceptionList[0].exceptionType {
 			T.Errorf("Expected exception type '%s' but got '%s'. ", exceptionType, exceptionList[0].exceptionType)
@@ -75,6 +80,7 @@ func init() {
 	And(`^the instance exception message contains "(.+?)"$`, func(exceptionMsg string) {
 		if len(exceptionList) != 1 {
 			T.Errorf("Error memorizing exception. ")
+			return
 		}
 		if !strings.Contains(exceptionList[0].exceptionMsg, exceptionMsg) {
 			T.Errorf("Expected exception message returned '%s' to contain '%s'. ", exceptionList[0].exceptionMsg, exceptionMsg)

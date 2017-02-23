@@ -33,18 +33,22 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		instanceARNs, err := ecsWrapper.ListContainerInstances(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		if len(instanceARNs) < 1 {
 			T.Errorf("No container instances registered to the cluster '%s'. ", clusterName)
+			return
 		}
 		ecsInstance, err := ecsWrapper.DescribeContainerInstance(clusterName, *instanceARNs[0])
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		ecsContainerInstanceList = append(ecsContainerInstanceList, ecsInstance)
 	})
@@ -53,15 +57,18 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		if len(ecsContainerInstanceList) != 1 {
 			T.Errorf("Error memorizing container instance registered to ECS. ")
+			return
 		}
 		instanceARN := *ecsContainerInstanceList[0].ContainerInstanceArn
 		cssInstance, err := cssWrapper.GetInstance(clusterName, instanceARN)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		cssContainerInstanceList = append(cssContainerInstanceList, *cssInstance)
 	})
@@ -69,6 +76,7 @@ func init() {
 	Then(`^I get an instance that matches the registered instance$`, func() {
 		if len(ecsContainerInstanceList) != 1 || len(cssContainerInstanceList) != 1 {
 			T.Errorf("Error memorizing results to validate them. ")
+			return
 		}
 		ecsInstance := ecsContainerInstanceList[0]
 		cssInstance := cssContainerInstanceList[0]
@@ -83,6 +91,7 @@ func init() {
 		exceptionMsg, exceptionType, err := cssWrapper.TryGetInstance(nonExistentInstanceARN)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})

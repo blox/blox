@@ -41,6 +41,7 @@ func init() {
 		cssTasks, err := cssWrapper.ListTasks()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTasks {
 			cssTaskList = append(cssTaskList, *t)
@@ -56,11 +57,13 @@ func init() {
 	And(`^all (\d+) tasks are present in the list tasks response$`, func(numTasks int) {
 		if len(EcsTaskList) != numTasks {
 			T.Errorf("Error memorizing tasks started using ECS client. ")
+			return
 		}
 		for _, t := range EcsTaskList {
 			err := ValidateListContainsTask(t, cssTaskList)
 			if err != nil {
 				T.Errorf(err.Error())
+				return
 			}
 		}
 	})
@@ -70,10 +73,12 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		cssTasks, err := cssWrapper.FilterTasksByCluster(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTasks {
 			cssTaskList = append(cssTaskList, *t)
@@ -85,6 +90,7 @@ func init() {
 		cssTasks, err := cssWrapper.FilterTasksByStatus(status)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTasks {
 			cssTaskList = append(cssTaskList, *t)
@@ -100,6 +106,7 @@ func init() {
 		cssTasks, err := cssWrapper.FilterTasksByStartedBy(startedBy)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTasks {
 			cssTaskList = append(cssTaskList, *t)
@@ -111,10 +118,12 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		cssTasks, err := cssWrapper.FilterTasksByStatusAndCluster(status, clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTasks {
 			cssTaskList = append(cssTaskList, *t)
@@ -125,14 +134,17 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTaskList {
 			if strings.ToLower(*t.Entity.LastStatus) != strings.ToLower(status) {
 				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.Entity.TaskARN, status, *t.Entity.LastStatus)
+				return
 			}
 			if !strings.HasSuffix(*t.Entity.ClusterARN, "/"+clusterName) {
 				T.Errorf("Task with ARN '%s' was expected to belong to cluster with name '%s' but belongs to cluster with ARN'%s'",
 					*t.Entity.TaskARN, clusterName, *t.Entity.ClusterARN)
+				return
 			}
 		}
 	})
@@ -142,6 +154,7 @@ func init() {
 		cssTasks, err := cssWrapper.FilterTasksByStatusAndCluster(status, clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTasks {
 			cssTaskList = append(cssTaskList, *t)
@@ -159,6 +172,7 @@ func init() {
 		exceptionMsg, exceptionType, err := cssWrapper.TryListTasksWithInvalidStatus(invalidStatus)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
@@ -168,6 +182,7 @@ func init() {
 		exceptionMsg, exceptionType, err := cssWrapper.TryListTasksWithInvalidCluster(invalidCluster)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
@@ -177,11 +192,13 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		cssTasks, err := cssWrapper.ListTasksWithAllFilters(status,
 			clusterName, "someone")
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTasks {
 			cssTaskList = append(cssTaskList, *t)
@@ -192,17 +209,21 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, t := range cssTaskList {
 			if t.Entity.StartedBy != "someone" {
 				T.Errorf("Task with ARN '%s' was expected to be started by '%s' not '%s'", *t.Entity.TaskARN, "someone", t.Entity.StartedBy)
+				return
 			}
 			if strings.ToLower(*t.Entity.LastStatus) != strings.ToLower(status) {
 				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.Entity.TaskARN, status, *t.Entity.LastStatus)
+				return
 			}
 			if !strings.HasSuffix(*t.Entity.ClusterARN, "/"+clusterName) {
 				T.Errorf("Task with ARN '%s' was expected to belong to cluster with name '%s' but belongs to cluster with ARN'%s'",
 					*t.Entity.TaskARN, clusterName, *t.Entity.ClusterARN)
+				return
 			}
 		}
 	})
@@ -212,6 +233,7 @@ func init() {
 		resp, err := http.Get(url)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		exceptionList = nil
@@ -220,12 +242,14 @@ func init() {
 			exceptionType = listTasksBadRequest
 		} else {
 			T.Errorf("Unknown exception type '%s' when trying to list tasks with redundant filters", resp.Status)
+			return
 		}
 
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			T.Errorf("Error reading expection message when trying to list tasks with redundant filters")
+			return
 		}
 		exceptionMsg := string(body)
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})

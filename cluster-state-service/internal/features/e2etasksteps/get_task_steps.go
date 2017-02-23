@@ -29,6 +29,7 @@ func init() {
 	Then(`^I get a task that matches the task started$`, func() {
 		if len(EcsTaskList) != 1 || len(cssTaskList) != 1 {
 			T.Errorf("Error memorizing results to validate them. ")
+			return
 		}
 		ecsTask := EcsTaskList[0]
 		cssTask := cssTaskList[0]
@@ -43,6 +44,7 @@ func init() {
 		exceptionMsg, exceptionType, err := cssWrapper.TryGetTask(nonExistentTaskARN)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})

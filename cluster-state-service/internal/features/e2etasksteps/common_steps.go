@@ -54,6 +54,7 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		err = stopAllTasks(ecsWrapper, clusterName)
 		if err != nil {
@@ -65,10 +66,12 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		err = stopAllTasks(ecsWrapper, clusterName)
 		if err != nil {
 			T.Errorf("Failed to stop all ECS tasks. Error: %s", err)
+			return
 		}
 		err = ecsWrapper.DeregisterTaskDefinition(taskDefnARN)
 		if err != nil {
@@ -84,14 +87,17 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		if len(EcsTaskList) != numTasks {
 			T.Errorf("Error memorizing tasks started using ECS client. ")
+			return
 		}
 		for _, t := range EcsTaskList {
 			err := ecsWrapper.StopTask(clusterName, *t.TaskArn)
 			if err != nil {
 				T.Errorf(err.Error())
+				return
 			}
 		}
 	})
@@ -102,16 +108,19 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		time.Sleep(15 * time.Second)
 		if len(EcsTaskList) != 1 {
 			T.Errorf("Error memorizing task started using ECS client. ")
+			return
 		}
 		taskARN := *EcsTaskList[0].TaskArn
 		cssTask, err := cssWrapper.GetTask(clusterName, taskARN)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		cssTaskList = append(cssTaskList, *cssTask)
 	})
@@ -119,6 +128,7 @@ func init() {
 	Then(`^I get a (.+?) task exception$`, func(exceptionType string) {
 		if len(exceptionList) != 1 {
 			T.Errorf("Error memorizing exception. ")
+			return
 		}
 		if exceptionType != exceptionList[0].exceptionType {
 			T.Errorf("Expected exception '%s' but got '%s'. ", exceptionType, exceptionList[0].exceptionType)
@@ -128,6 +138,7 @@ func init() {
 	And(`^the task exception message contains "(.+?)"$`, func(exceptionMsg string) {
 		if len(exceptionList) != 1 {
 			T.Errorf("Error memorizing exception. ")
+			return
 		}
 		if !strings.Contains(exceptionList[0].exceptionMsg, exceptionMsg) {
 			T.Errorf("Expected exception message returned '%s' to contain '%s'. ", exceptionList[0].exceptionMsg, exceptionMsg)
@@ -156,12 +167,14 @@ func startNTasks(numTasks int, startedBy string, ecsWrapper wrappers.ECSWrapper)
 	clusterName, err := wrappers.GetClusterName()
 	if err != nil {
 		T.Errorf(err.Error())
+		return
 	}
 
 	for i := 0; i < numTasks; i++ {
 		ecsTask, err := ecsWrapper.StartTask(clusterName, taskDefinitionSleep300, startedBy)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		EcsTaskList = append(EcsTaskList, ecsTask)
 	}

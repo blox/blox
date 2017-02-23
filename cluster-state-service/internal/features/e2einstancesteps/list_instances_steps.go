@@ -37,6 +37,7 @@ func init() {
 		cssInstances, err := cssWrapper.ListInstances()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, i := range cssInstances {
 			cssContainerInstanceList = append(cssContainerInstanceList, *i)
@@ -47,11 +48,13 @@ func init() {
 		// cssContainerInstanceList can have instances from other clusters too
 		if len(cssContainerInstanceList) < len(ecsContainerInstanceList) {
 			T.Errorf("Unexpected number of instances in the list instances response. ")
+			return
 		}
 		for _, ecsInstance := range ecsContainerInstanceList {
 			err := ValidateListContainsInstance(ecsInstance, cssContainerInstanceList)
 			if err != nil {
 				T.Errorf(err.Error())
+				return
 			}
 		}
 	})
@@ -60,11 +63,13 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		cssInstances, err := cssWrapper.FilterInstancesByClusterName(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		for _, i := range cssInstances {
 			cssContainerInstanceList = append(cssContainerInstanceList, *i)
@@ -74,11 +79,13 @@ func init() {
 	Then(`^the list instances response contains all the instances registered with the cluster$`, func() {
 		if len(ecsContainerInstanceList) != len(cssContainerInstanceList) {
 			T.Errorf("Unexpected number of instances in the filter instances response. ")
+			return
 		}
 		for _, ecsInstance := range ecsContainerInstanceList {
 			err := ValidateListContainsInstance(ecsInstance, cssContainerInstanceList)
 			if err != nil {
 				T.Errorf(err.Error())
+				return
 			}
 		}
 	})
@@ -88,6 +95,7 @@ func init() {
 		exceptionMsg, exceptionType, err := cssWrapper.TryListInstancesWithInvalidStatus(invalidStatus)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
@@ -97,6 +105,7 @@ func init() {
 		exceptionMsg, exceptionType, err := cssWrapper.TryListInstancesWithInvalidCluster(invalidCluster)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})
 	})
@@ -106,6 +115,7 @@ func init() {
 		resp, err := http.Get(url)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		exceptionList = nil
@@ -114,12 +124,14 @@ func init() {
 			exceptionType = listInstancesBadRequest
 		} else {
 			T.Errorf("Unknown exception type '%s' when trying to list instances with redundant filters", resp.Status)
+			return
 		}
 
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			T.Errorf("Error reading expection message when trying to list instances with redundant filters")
+			return
 		}
 		exceptionMsg := string(body)
 		exceptionList = append(exceptionList, Exception{exceptionType: exceptionType, exceptionMsg: exceptionMsg})

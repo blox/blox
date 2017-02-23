@@ -37,6 +37,7 @@ func init() {
 		r, err := cssWrapper.StreamInstances()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		go func() {
@@ -61,6 +62,7 @@ func init() {
 		r, err := cssWrapper.StreamInstancesWithEntityVersion(*cssContainerInstanceList[0].Metadata.EntityVersion)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		go func() {
@@ -80,6 +82,7 @@ func init() {
 		clusterName, err := wrappers.GetClusterName()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		if len(e2etasksteps.EcsTaskList) != 1 {
@@ -90,6 +93,7 @@ func init() {
 		cssInstance, err := cssWrapper.GetInstance(clusterName, *e2etasksteps.EcsTaskList[0].ContainerInstanceArn)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 		cssContainerInstanceList = append(cssContainerInstanceList, *cssInstance)
 	})

@@ -38,6 +38,7 @@ func init() {
 		r, err := cssWrapper.StreamTasks()
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		go func() {
@@ -62,6 +63,7 @@ func init() {
 		r, err := cssWrapper.StreamTasksWithEntityVersion(*cssTaskList[0].Metadata.EntityVersion)
 		if err != nil {
 			T.Errorf(err.Error())
+			return
 		}
 
 		go func() {
