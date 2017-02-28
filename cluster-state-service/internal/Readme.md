@@ -29,29 +29,29 @@ AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@i
 ```
 **All e2e task API tests**
 ```
-AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@task,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@task,@e2e
 ```
 **e2e GetInstance API tests**
 ```
-AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@get-instance,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@get-instance,@e2e
 ```
 **e2e ListInstances API tests**
 ```
-AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@list-instances,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@list-instances,@e2e
 ```
 **e2e FilterInstances API tests**
 ```
-AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@filter-instances,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@filter-instances,@e2e
 ```
 **e2e GetTask API tests**
 ```
-AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@get-task,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@get-task,@e2e
 ```
 **e2e ListTasks API tests**
 ```
-AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@list-tasks,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@list-tasks,@e2e
 ```
 **e2e FilterTasks API tests**
 ```
-AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gcucumber -tags=@filter-tasks,@e2e
+AWS_REGION=us-east-1 AWS_PROFILE=test-profile ECS_CLUSTER=test gucumber -tags=@filter-tasks,@e2e
 ```
