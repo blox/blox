@@ -655,13 +655,18 @@ func doSomething(ttl time.Duration, tickTime time.Duration, fn func() (bool, err
 }
 
 func filterTasksByStatusRunning(cluster *string, taskARNs []*string, ecsWrapper wrappers.ECSWrapper) []*string {
-	runningTasks := make([]*string, len(taskARNs))
+	runningTasks := make([]*string, 0, len(taskARNs))
 	if len(taskARNs) == 0 {
 		return runningTasks
 	}
 	tasks, err := ecsWrapper.DescribeTasks(cluster, taskARNs)
 	if err != nil {
 		T.Errorf(err.Error())
+		return runningTasks
+	}
+	if len(tasks) > len(taskARNs) {
+		T.Errorf("Expecting at most %d tasks to be returned", len(taskARNs))
+		return runningTasks
 	}
 	for _, t := range tasks {
 		if aws.StringValue(t.LastStatus) == taskRunning {
