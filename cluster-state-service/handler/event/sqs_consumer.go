@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	sqsVisibilityTimeout = 10
-	sqsWaitTimeSeconds   = 10
+	sqsErrorSleepInterval = 500 * time.Millisecond
+	sqsVisibilityTimeout  = 10
+	sqsWaitTimeSeconds    = 10
 )
 
 type sqsEventConsumer struct {
@@ -131,6 +132,11 @@ func (sqsConsumer sqsEventConsumer) pollForMessages() {
 		// wrap to get stack trace
 		err = errors.Wrap(err, "Could not poll sqs")
 		log.Errorf("%+v", err)
+
+		// To prevent log spamming when errors are encountered, let's sleep for 500ms.
+		// TODO: Figure out a better way to prevent repeat errors from log spamming.
+		time.Sleep(sqsErrorSleepInterval)
+
 		return
 	}
 

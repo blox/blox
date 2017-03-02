@@ -19,11 +19,15 @@ package httpclient
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/blox/blox/daemon-scheduler/versioning"
 )
 
-const userAgentHeader = "User-Agent"
+const (
+	httpClientTimeout = 30 * time.Second
+	userAgentHeader   = "User-Agent"
+)
 
 var userAgent string
 
@@ -47,10 +51,11 @@ func init() {
 
 // New returns an Blox httpClient that will insert custom HTTP UA header.
 func New() *http.Client {
-	transport := &http.Transport{}
+	transport := http.DefaultTransport
 
 	client := &http.Client{
 		Transport: &bloxRoundTripper{transport},
+		Timeout: httpClientTimeout,
 	}
 
 	return client
