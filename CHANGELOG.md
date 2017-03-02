@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+### Notable bug fixes
+* Fixed the cluster-state-service information from getting stale after network interruption. [#179](https://github.com/blox/blox/pull/179)
+* Fixed the cluster-state-service reconciler to not immediately delete stopped tasks. [#167](https://github.com/blox/blox/pull/167)
+* Fixed the cluster-state-service reconciler to replace outdated tasks and container instances. [#171](https://github.com/blox/blox/pull/171)
+
 ## 0.2.0
 
 ### New features

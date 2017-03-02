@@ -48,7 +48,7 @@ docker run -e AWS_REGION=us-west-2 \
     AWS_PROFILE=default \
     -v ~/.aws:/.aws \
     -v /tmp/ds-logs:/var/output/logs \
-    bloxoss/daemon-scheduler:0.2.0 \
+    bloxoss/daemon-scheduler:0.2.1 \
     --etcd-endpoint $ETCD_IP:$ETCD_PORT \
     --css-endpoint $CSS_IP:$CS_PORT
 ```
