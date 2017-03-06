@@ -17,6 +17,7 @@ import (
 	"context"
 
 	"github.com/blox/blox/daemon-scheduler/pkg/json"
+	storetypes "github.com/blox/blox/daemon-scheduler/pkg/store/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/pkg/errors"
 )
@@ -25,65 +26,73 @@ const (
 	environmentKeyPrefix = "ecs/environment/"
 )
 
+// EnvironmentStore defines methods to handle interations with the datastore related to environments
 type EnvironmentStore interface {
-	PutEnvironment(ctx context.Context, environment types.Environment) error
+	// PutEnvironment performs a transactional put. It retrieves the environment using the 'name', validates the environment
+	// based on the implementation of 'validateAndUpdateEnv' and updates the environment with the environment
+	// returned by 'validateAndUpdateEnv' all within a transaction.
+	PutEnvironment(ctx context.Context, name string, validateAndUpdateEnv storetypes.ValidateAndUpdateEnvironment) error
+
+	// GetEnvironment retrieves an enrironment by name
 	GetEnvironment(ctx context.Context, name string) (*types.Environment, error)
-	DeleteEnvironment(ctx context.Context, environment types.Environment) error
+
+	// DeleteEnvironment 'deletes' an environment by name
+	DeleteEnvironment(ctx context.Context, name string) error
+
+	// ListEnvironments lists all environments
 	ListEnvironments(ctx context.Context) ([]types.Environment, error)
 }
 
 type environmentStore struct {
-	datastore DataStore
+	datastore   DataStore
+	etcdTXStore EtcdTXStore
 }
 
-func NewEnvironmentStore(ds DataStore) (EnvironmentStore, error) {
+func NewEnvironmentStore(ds DataStore, ts EtcdTXStore) (EnvironmentStore, error) {
 	if ds == nil {
-		return nil, errors.New("The datastore cannot be nil")
+		return nil, errors.Errorf("Datastore is not initialized")
+	}
+	if ts == nil {
+		return nil, errors.Errorf("Etcd transactional store is not initialized")
 	}
 
 	return environmentStore{
-		datastore: ds,
+		datastore:   ds,
+		etcdTXStore: ts,
 	}, nil
 }
 
-func generateEnvironmentKey(environment types.Environment) (string, error) {
-	if len(environment.Name) == 0 {
+func generateEnvironmentKey(name string) (string, error) {
+	if name == "" {
 		return "", errors.New("Environment name is missing")
 	}
-	return environmentKeyPrefix + environment.Name, nil
+	return environmentKeyPrefix + name, nil
 }
 
-func (e environmentStore) PutEnvironment(ctx context.Context, environment types.Environment) error {
-	key, err := generateEnvironmentKey(environment)
+func (e environmentStore) PutEnvironment(ctx context.Context, name string,
+	validateAndUpdateEnv storetypes.ValidateAndUpdateEnvironment) error {
+	key, err := generateEnvironmentKey(name)
 	if err != nil {
 		return err
 	}
 
-	dataJSON, err := json.MarshalJSON(environment)
-	if err != nil {
-		return err
+	applier := &EnvironmentSTMApplier{
+		key:                  key,
+		validateAndUpdateEnv: validateAndUpdateEnv,
 	}
 
-	err = e.datastore.Put(ctx, key, dataJSON)
-	if err != nil {
-		return err
-	}
+	_, err = e.etcdTXStore.NewSTMRepeatable(ctx, e.etcdTXStore.GetV3Client(), applier.updateEnvironment)
 
-	return nil
+	return err
 }
 
 func (e environmentStore) GetEnvironment(ctx context.Context, name string) (*types.Environment, error) {
-	if len(name) == 0 {
-		return nil, errors.New("Environment name is missing")
-	}
-
-	var environment types.Environment
-	environment.Name = name
-
-	key, err := generateEnvironmentKey(environment)
+	key, err := generateEnvironmentKey(name)
 	if err != nil {
 		return nil, err
 	}
+
+	var environment types.Environment
 
 	resp, err := e.datastore.Get(ctx, key)
 	if err != nil {
@@ -109,8 +118,8 @@ func (e environmentStore) GetEnvironment(ctx context.Context, name string) (*typ
 	return &environment, nil
 }
 
-func (e environmentStore) DeleteEnvironment(ctx context.Context, environment types.Environment) error {
-	key, err := generateEnvironmentKey(environment)
+func (e environmentStore) DeleteEnvironment(ctx context.Context, name string) error {
+	key, err := generateEnvironmentKey(name)
 	if err != nil {
 		return err
 	}

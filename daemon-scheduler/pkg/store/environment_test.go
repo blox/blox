@@ -38,6 +38,7 @@ const (
 type EnvironmentTestSuite struct {
 	suite.Suite
 	datastore        *mocks.MockDataStore
+	txstore          *mocks.MockEtcdTXStore
 	environmentStore EnvironmentStore
 	ctx              context.Context
 	environment1     *types.Environment
@@ -51,16 +52,20 @@ func (suite *EnvironmentTestSuite) SetupTest() {
 	var err error
 
 	suite.datastore = mocks.NewMockDataStore(mockCtrl)
+	suite.txstore = mocks.NewMockEtcdTXStore(mockCtrl)
+
 	suite.ctx = context.TODO()
 	suite.environment1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 	suite.environment1JSON, err = json.MarshalJSON(suite.environment1)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
+
 	suite.environment2, err = types.NewEnvironment(environmentName2, taskDefinition, cluster)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 	suite.environment2JSON, err = json.MarshalJSON(suite.environment2)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
-	suite.environmentStore, err = NewEnvironmentStore(suite.datastore)
+
+	suite.environmentStore, err = NewEnvironmentStore(suite.datastore, suite.txstore)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
 }
 
@@ -69,35 +74,51 @@ func TestEnvironmentTestSuite(t *testing.T) {
 }
 
 func (suite *EnvironmentTestSuite) TestNewEnvironmentStoreEmptyDataStore() {
-	_, err := NewEnvironmentStore(nil)
+	_, err := NewEnvironmentStore(nil, suite.txstore)
 	assert.Error(suite.T(), err, "Expected an error when datastore is nil")
 }
 
+func (suite *EnvironmentTestSuite) TestNewEnvironmentStoreEmptyEtcdTransactionalStore() {
+	_, err := NewEnvironmentStore(suite.datastore, nil)
+	assert.Error(suite.T(), err, "Expected an error when etcd transactional store is nil")
+}
+
 func (suite *EnvironmentTestSuite) TestNewEnvironmentStore() {
-	es, err := NewEnvironmentStore(suite.datastore)
-	assert.Nil(suite.T(), err, "Unexpected error when datastore is not nil")
+	es, err := NewEnvironmentStore(suite.datastore, suite.txstore)
+	assert.Nil(suite.T(), err, "Unexpected error when datastore and etcd transactional store are not nil")
 	assert.NotNil(suite.T(), es, "Environment store should not be nil")
 }
 
-func (suite *EnvironmentTestSuite) TestPutWithMissingEnvironmentName() {
-	err := suite.environmentStore.PutEnvironment(suite.ctx, types.Environment{})
+func (suite *EnvironmentTestSuite) TestPutEnvironmentWithNoName() {
+	f := func(env *types.Environment) (*types.Environment, error) {
+		return nil, nil
+	}
+	err := suite.environmentStore.PutEnvironment(suite.ctx, "", f)
 	assert.Error(suite.T(), err, "Expected an error when environment name is missing")
 }
 
-func (suite *EnvironmentTestSuite) TestPutDataStorePutFails() {
-	suite.datastore.EXPECT().Put(suite.ctx, environmentKey1, suite.environment1JSON).
-		Return(errors.New("Put failed"))
+func (suite *EnvironmentTestSuite) TestPutEnvironmentSTMRepeatableFails() {
+	f := func(env *types.Environment) (*types.Environment, error) {
+		return nil, nil
+	}
 
-	err := suite.environmentStore.PutEnvironment(suite.ctx, *suite.environment1)
-	assert.Error(suite.T(), err, "Expected an error when datastore put fails")
+	suite.txstore.EXPECT().GetV3Client().Return(nil)
+	suite.txstore.EXPECT().NewSTMRepeatable(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("STMRepeatable error"))
+
+	err := suite.environmentStore.PutEnvironment(suite.ctx, suite.environment1.Name, f)
+	assert.Error(suite.T(), err, "Expected an error when STMRepeatable fails")
 }
 
-func (suite *EnvironmentTestSuite) TestPut() {
-	suite.datastore.EXPECT().Put(suite.ctx, environmentKey1, suite.environment1JSON).
-		Return(nil)
+func (suite *EnvironmentTestSuite) TestPutEnvironment() {
+	f := func(env *types.Environment) (*types.Environment, error) {
+		return nil, nil
+	}
 
-	err := suite.environmentStore.PutEnvironment(suite.ctx, *suite.environment1)
-	assert.Nil(suite.T(), err, "Unexpected error when datastore put succeeds")
+	suite.txstore.EXPECT().GetV3Client().Return(nil)
+	suite.txstore.EXPECT().NewSTMRepeatable(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil)
+
+	err := suite.environmentStore.PutEnvironment(suite.ctx, suite.environment1.Name, f)
+	assert.Nil(suite.T(), err, "Unexpeced error putting environment")
 }
 
 func (suite *EnvironmentTestSuite) TestGetWithMissingEnvironmentName() {
@@ -191,4 +212,25 @@ func (suite *EnvironmentTestSuite) TestList() {
 	for _, expectedEnv := range expectedEnvs {
 		assert.Contains(suite.T(), envs, expectedEnv, "Expected %s to be returned by ListEnvironments", expectedEnv)
 	}
+}
+
+func (suite *EnvironmentTestSuite) TestDeleteEnvironmentNoName() {
+	suite.datastore.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
+
+	err := suite.environmentStore.DeleteEnvironment(suite.ctx, "")
+	assert.Error(suite.T(), err, "Expected an error when deleting an environment with no name")
+}
+
+func (suite *EnvironmentTestSuite) TestDeleteEnvironmentStoreReturnsError() {
+	suite.datastore.EXPECT().Delete(suite.ctx, gomock.Any()).Return(errors.New("Delete failed"))
+
+	err := suite.environmentStore.DeleteEnvironment(suite.ctx, suite.environment1.Name)
+	assert.Error(suite.T(), err, "Expected an error when datastore delete returned an error")
+}
+
+func (suite *EnvironmentTestSuite) TestDeleteEnvironment() {
+	suite.datastore.EXPECT().Delete(suite.ctx, gomock.Any()).Return(nil)
+
+	err := suite.environmentStore.DeleteEnvironment(suite.ctx, suite.environment1.Name)
+	assert.Nil(suite.T(), err, "Unexpected error deleting an environment")
 }

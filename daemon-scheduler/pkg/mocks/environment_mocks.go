@@ -18,6 +18,7 @@ package mocks
 
 import (
 	context "context"
+	types0 "github.com/blox/blox/daemon-scheduler/pkg/store/types"
 	types "github.com/blox/blox/daemon-scheduler/pkg/types"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -97,24 +98,12 @@ func (_mr *_MockEnvironmentRecorder) FilterEnvironments(arg0, arg1, arg2 interfa
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "FilterEnvironments", arg0, arg1, arg2)
 }
 
-func (_m *MockEnvironment) AddPendingDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
-	ret := _m.ctrl.Call(_m, "AddPendingDeployment", ctx, environment, deployment)
-	ret0, _ := ret[0].(*types.Environment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+func (_m *MockEnvironment) ValidateAndCreateEnvironment(newEnv *types.Environment) types0.ValidateAndUpdateEnvironment {
+	ret := _m.ctrl.Call(_m, "ValidateAndCreateEnvironment", newEnv)
+	ret0, _ := ret[0].(types0.ValidateAndUpdateEnvironment)
+	return ret0
 }
 
-func (_mr *_MockEnvironmentRecorder) AddPendingDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddPendingDeployment", arg0, arg1, arg2)
-}
-
-func (_m *MockEnvironment) UpdateDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error) {
-	ret := _m.ctrl.Call(_m, "UpdateDeployment", ctx, environment, deployment)
-	ret0, _ := ret[0].(*types.Environment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-func (_mr *_MockEnvironmentRecorder) UpdateDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "UpdateDeployment", arg0, arg1, arg2)
+func (_mr *_MockEnvironmentRecorder) ValidateAndCreateEnvironment(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ValidateAndCreateEnvironment", arg0)
 }

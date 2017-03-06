@@ -65,26 +65,6 @@ func (d deploymentWorker) StartPendingDeployment(ctx context.Context,
 		return nil, errors.New("Environment name is missing")
 	}
 
-	inProgress, err := d.deployment.GetInProgressDeployment(ctx, environmentName)
-	if err != nil {
-		return nil, err
-	}
-
-	if inProgress != nil {
-		log.Debugf("There is already a deployment in-progress %v", inProgress)
-		return nil, nil
-	}
-
-	pending, err := d.deployment.GetPendingDeployment(ctx, environmentName)
-	if err != nil {
-		return nil, err
-	}
-
-	if pending == nil {
-		log.Debugf("There are no pending deployments to start in environment %s", environmentName)
-		return nil, nil
-	}
-
 	environment, err := d.environment.GetEnvironment(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding environment with name %s", environmentName)
@@ -99,7 +79,7 @@ func (d deploymentWorker) StartPendingDeployment(ctx context.Context,
 		return nil, err
 	}
 
-	startedDeployment, err := d.deployment.StartDeployment(ctx, environment, pending, instances)
+	startedDeployment, err := d.deployment.StartDeployment(ctx, environmentName, instances)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +118,7 @@ func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
 			deployment.ID, environment.Name)
 	}
 
-	updatedDeployment, err := d.updateDeployment(ctx, environment, deployment, taskProgress)
+	updatedDeployment, err := d.updateDeployment(ctx, environment.Name, deployment, taskProgress)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +148,7 @@ func (d deploymentWorker) checkDeploymentTaskProgress(environment *types.Environ
 }
 
 func (d deploymentWorker) updateDeployment(ctx context.Context,
-	environment *types.Environment, deployment *types.Deployment,
+	environmentName string, deployment *types.Deployment,
 	resp *ecs.DescribeTasksOutput) (*types.Deployment, error) {
 
 	updatedDeployment, err := d.updateDeploymentObject(deployment, resp)
@@ -176,22 +156,16 @@ func (d deploymentWorker) updateDeployment(ctx context.Context,
 		return nil, err
 	}
 
-	// retrieve in-progress again to make sure it has not been updated by another process
-	// TODO: wrap the in-progress check and updateDeployment in a transaction
-	deployment, err = d.deployment.GetInProgressDeployment(ctx, environment.Name)
-	if err != nil {
-		return nil, err
-	}
+	err = d.deployment.UpdateInProgressDeployment(ctx, environmentName, updatedDeployment)
 
-	if deployment == nil || deployment.ID != updatedDeployment.ID {
-		log.Infof("Deployment %s is no longer the in-progress deployment", updatedDeployment.ID)
-		return nil, nil
-	}
-
-	_, err = d.environment.UpdateDeployment(ctx, *environment, *updatedDeployment)
 	if err != nil {
+		if _, ok := errors.Cause(err).(types.UnexpectedDeploymentStatusError); ok {
+			// deployment updated is no longer the in-progress deployment of the environment
+			log.Infof("Deployment %s is no longer the in-progress deployment", updatedDeployment.ID)
+			return nil, nil
+		}
 		return nil, errors.Wrapf(err, "Error updating the deployment %v in the environment %v",
-			*updatedDeployment, environment.Name)
+			*updatedDeployment, environmentName)
 	}
 
 	return updatedDeployment, nil

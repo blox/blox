@@ -18,7 +18,8 @@ package mocks
 
 import (
 	context "context"
-	types "github.com/blox/blox/daemon-scheduler/pkg/types"
+	types "github.com/blox/blox/daemon-scheduler/pkg/store/types"
+	types0 "github.com/blox/blox/daemon-scheduler/pkg/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -43,19 +44,19 @@ func (_m *MockEnvironmentStore) EXPECT() *_MockEnvironmentStoreRecorder {
 	return _m.recorder
 }
 
-func (_m *MockEnvironmentStore) PutEnvironment(ctx context.Context, environment types.Environment) error {
-	ret := _m.ctrl.Call(_m, "PutEnvironment", ctx, environment)
+func (_m *MockEnvironmentStore) PutEnvironment(ctx context.Context, name string, validateAndUpdateEnv types.ValidateAndUpdateEnvironment) error {
+	ret := _m.ctrl.Call(_m, "PutEnvironment", ctx, name, validateAndUpdateEnv)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockEnvironmentStoreRecorder) PutEnvironment(arg0, arg1 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "PutEnvironment", arg0, arg1)
+func (_mr *_MockEnvironmentStoreRecorder) PutEnvironment(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "PutEnvironment", arg0, arg1, arg2)
 }
 
-func (_m *MockEnvironmentStore) GetEnvironment(ctx context.Context, name string) (*types.Environment, error) {
+func (_m *MockEnvironmentStore) GetEnvironment(ctx context.Context, name string) (*types0.Environment, error) {
 	ret := _m.ctrl.Call(_m, "GetEnvironment", ctx, name)
-	ret0, _ := ret[0].(*types.Environment)
+	ret0, _ := ret[0].(*types0.Environment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,8 +65,8 @@ func (_mr *_MockEnvironmentStoreRecorder) GetEnvironment(arg0, arg1 interface{})
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetEnvironment", arg0, arg1)
 }
 
-func (_m *MockEnvironmentStore) DeleteEnvironment(ctx context.Context, environment types.Environment) error {
-	ret := _m.ctrl.Call(_m, "DeleteEnvironment", ctx, environment)
+func (_m *MockEnvironmentStore) DeleteEnvironment(ctx context.Context, name string) error {
+	ret := _m.ctrl.Call(_m, "DeleteEnvironment", ctx, name)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -74,9 +75,9 @@ func (_mr *_MockEnvironmentStoreRecorder) DeleteEnvironment(arg0, arg1 interface
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "DeleteEnvironment", arg0, arg1)
 }
 
-func (_m *MockEnvironmentStore) ListEnvironments(ctx context.Context) ([]types.Environment, error) {
+func (_m *MockEnvironmentStore) ListEnvironments(ctx context.Context) ([]types0.Environment, error) {
 	ret := _m.ctrl.Call(_m, "ListEnvironments", ctx)
-	ret0, _ := ret[0].([]types.Environment)
+	ret0, _ := ret[0].([]types0.Environment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

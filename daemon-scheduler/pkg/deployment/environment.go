@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
+	storetypes "github.com/blox/blox/daemon-scheduler/pkg/store/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/validate"
 	log "github.com/cihub/seelog"
@@ -32,6 +33,7 @@ var (
 	supportedFilterKeys = []string{clusterFilter}
 )
 
+// Environment defines methods to handle environments
 type Environment interface {
 	// CreateEnvironment stores a new environment in the database
 	CreateEnvironment(ctx context.Context, name string, taskDefinition string, cluster string) (*types.Environment, error)
@@ -44,13 +46,12 @@ type Environment interface {
 	// FilterEnvironments returns a list of all environments that match the filters
 	FilterEnvironments(ctx context.Context, filterKey string, filterVal string) ([]types.Environment, error)
 
-	//TODO: reconsider how these methods are structured when adding transactions (do we need 2 separate methods? etc)
-	// AddPendingDeployment adds a deployment to the environment if a deployment with
-	// the provided ID does not exist
-	AddPendingDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
-	// UpdateDeployment replaces an existing deployment in the environment with the
-	// provided one if a deployment with the provided ID already exists
-	UpdateDeployment(ctx context.Context, environment types.Environment, deployment types.Deployment) (*types.Environment, error)
+	// This is meant to be a 'private' method to be called by exported methods. Adding it to the interface for the purpose of testing.
+	// TODO: Change these to unexported methods. Currently unable to do so because mocking unexported methods with gomock fails
+	// (https://github.com/golang/mock/issues/52).
+	// ValidateAndCreateEnvironment is a generator function for use by CreateEnvironment().
+	// It validates that the environment does not already exist before creating the new environment.
+	ValidateAndCreateEnvironment(newEnv *types.Environment) storetypes.ValidateAndUpdateEnvironment
 }
 
 type environment struct {
@@ -81,27 +82,28 @@ func (e environment) CreateEnvironment(ctx context.Context,
 		return nil, errors.New("Environment cluster is missing")
 	}
 
-	env, err := e.GetEnvironment(ctx, name)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error getting environment with name %s", name)
-	}
-
-	if env != nil {
-		log.Errorf("An environment with name %s already exists", name)
-		return nil, types.NewBadRequestError(errors.Errorf("An environment with name %s already exists", name))
-	}
-
 	environment, err := types.NewEnvironment(name, taskDefinition, cluster)
 	if err != nil {
 		return nil, err
 	}
 
-	err = e.environmentStore.PutEnvironment(ctx, *environment)
+	err = e.environmentStore.PutEnvironment(ctx, name, e.ValidateAndCreateEnvironment(environment))
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error saving environment %s to store", name)
 	}
 
 	return environment, nil
+}
+
+func (e environment) ValidateAndCreateEnvironment(newEnv *types.Environment) storetypes.ValidateAndUpdateEnvironment {
+	return func(existingEnv *types.Environment) (*types.Environment, error) {
+		if existingEnv == nil {
+			return newEnv, nil
+		}
+		log.Errorf("An environment with name %s already exists", existingEnv.Name)
+		return nil, types.NewBadRequestError(errors.Errorf("An environment with name %s already exists", existingEnv.Name))
+	}
 }
 
 func (e environment) GetEnvironment(ctx context.Context, name string) (*types.Environment, error) {
@@ -123,17 +125,7 @@ func (e environment) DeleteEnvironment(ctx context.Context, name string) error {
 		return types.NewBadRequestError(errors.New("Environment name is missing"))
 	}
 
-	env, err := e.environmentStore.GetEnvironment(ctx, name)
-	if err != nil {
-		return err
-	}
-
-	if env == nil {
-		log.Infof("Environment %s does not exist", name)
-		return nil
-	}
-
-	err = e.environmentStore.DeleteEnvironment(ctx, *env)
+	err := e.environmentStore.DeleteEnvironment(ctx, name)
 	if err != nil {
 		return errors.Wrapf(err, "Error deleting environment %s from store", name)
 	}
@@ -200,63 +192,4 @@ func (e environment) filterEnvironmentsByClusterName(ctx context.Context, cluste
 		}
 	}
 	return filteredEnvs, nil
-}
-
-func (e environment) AddPendingDeployment(ctx context.Context, environment types.Environment,
-	deployment types.Deployment) (*types.Environment, error) {
-
-	if len(deployment.ID) == 0 {
-		return nil, errors.New("Deployment id cannot be empty")
-	}
-
-	_, ok := environment.Deployments[deployment.ID]
-	if ok {
-		return nil, errors.Errorf("Deployment %s already exists: %+v", deployment.ID, deployment)
-	}
-
-	if deployment.Status != types.DeploymentPending {
-		return nil, errors.Errorf("Deployment status should be pending but is %v", deployment.Status)
-	}
-
-	err := environment.AddPendingDeployment(deployment)
-	if err != nil {
-		return nil, err
-	}
-
-	err = e.environmentStore.PutEnvironment(ctx, environment)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error saving environment %s to store", environment.Name)
-	}
-
-	return &environment, nil
-}
-
-func (e environment) UpdateDeployment(ctx context.Context, environment types.Environment,
-	deployment types.Deployment) (*types.Environment, error) {
-
-	if len(deployment.ID) == 0 {
-		return nil, errors.New("Deployment id cannot be empty")
-	}
-
-	_, ok := environment.Deployments[deployment.ID]
-	if !ok {
-		return nil, errors.Errorf("Deployment %s does not exist", deployment.ID)
-	}
-
-	// replace deployment with updated version
-	environment.Deployments[deployment.ID] = deployment
-	environment.DesiredTaskCount = deployment.DesiredTaskCount
-
-	if deployment.Health == types.DeploymentHealthy {
-		environment.Health = types.EnvironmentHealthy
-	} else {
-		environment.Health = types.EnvironmentUnhealthy
-	}
-
-	err := e.environmentStore.PutEnvironment(ctx, environment)
-	if err != nil {
-		return nil, err
-	}
-
-	return &environment, nil
 }

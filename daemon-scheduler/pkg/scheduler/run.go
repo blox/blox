@@ -61,7 +61,14 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 		return err
 	}
 
-	environmentStore, err := store.NewEnvironmentStore(datastore)
+	// initialize the etcd transactional store
+	etcdTxStore, err := store.NewEtcdTXStore(etcdClient)
+	if err != nil {
+		log.Criticalf("Could not initialize the etcd transactional store: %+v", err)
+		return err
+	}
+
+	environmentStore, err := store.NewEnvironmentStore(datastore, etcdTxStore)
 	if err != nil {
 		log.Criticalf("Could not initialize the environment store: %+v", err)
 		return err
@@ -90,7 +97,7 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 		return err
 	}
 
-	deploymentSvc := deployment.NewDeployment(environment, css, ecs)
+	deploymentSvc := deployment.NewDeployment(environmentStore, css, ecs)
 	environmentFacade, err := types.NewEnvironmentFacade(css)
 	if err != nil {
 		log.Criticalf("Could not initialize environmentFacade: %+v", err)

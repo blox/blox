@@ -39,7 +39,7 @@ const (
 
 type DeploymentTestSuite struct {
 	suite.Suite
-	environment       *mocks.MockEnvironment
+	environmentStore  *mocks.MockEnvironmentStore
 	clusterState      *facade.MockClusterState
 	ecs               *mocks.MockECS
 	deployment        Deployment
@@ -54,10 +54,10 @@ type DeploymentTestSuite struct {
 func (suite *DeploymentTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 
-	suite.environment = mocks.NewMockEnvironment(mockCtrl)
+	suite.environmentStore = mocks.NewMockEnvironmentStore(mockCtrl)
 	suite.clusterState = facade.NewMockClusterState(mockCtrl)
 	suite.ecs = mocks.NewMockECS(mockCtrl)
-	suite.deployment = NewDeployment(suite.environment, suite.clusterState, suite.ecs)
+	suite.deployment = NewDeployment(suite.environmentStore, suite.clusterState, suite.ecs)
 
 	var err error
 	suite.environmentObject, err = types.NewEnvironment(environmentName, taskDefinition, cluster1)
@@ -92,7 +92,7 @@ func TestDeploymentTestSuite(t *testing.T) {
 }
 
 func (suite *DeploymentTestSuite) TestNewDeployment() {
-	d := NewDeployment(suite.environment, suite.clusterState, suite.ecs)
+	d := NewDeployment(suite.environmentStore, suite.clusterState, suite.ecs)
 	assert.NotNil(suite.T(), d, "Expected an error when store is nil")
 }
 
@@ -106,87 +106,75 @@ func (suite *DeploymentTestSuite) TestCreateDeploymentEmptyToken() {
 	assert.Error(suite.T(), err, "Expected an error when token is empty")
 }
 
-func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(nil, errors.New("Get environment failed"))
+func (suite *DeploymentTestSuite) TestCreateDeploymentPutEnvironmentTxFails() {
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).
+		Return(errors.New("Put environment failed"))
 
 	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.token)
-	assert.Error(suite.T(), err, "Expected an error when get environment fails")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentGetEnvironmentIsNil() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(nil, nil)
-
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.token)
-	assert.Error(suite.T(), err, "Expected an error when get environment is nil")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentOutdatedToken() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(suite.environmentObject, nil)
-
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, "invalid")
-	assert.Error(suite.T(), err, "Expected an error when token is outdated")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentExistingToken() {
-	suite.deploymentObject.Token = suite.token
-
-	environment := *suite.environmentObject
-	environment.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
-		Return(suite.environmentObject, nil)
-
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.token)
-	assert.Error(suite.T(), err, "Expected an error when a deployment with the given token exists")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentGetInProgressDeploymentFails() {
-	// deployment does not exist in the deployments map -> GetCurrentDeployment fails
-	suite.environmentObject.InProgressDeploymentID = uuid.NewUUID().String()
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil).Times(2)
-
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.token)
-	assert.Error(suite.T(), err, "Expected an error when getting in progress deployment fails")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentThereIsAnInProgressDeployment() {
-	suite.environmentObject.InProgressDeploymentID = suite.deploymentObject.ID
-	suite.environmentObject.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
-	suite.environment.EXPECT().AddPendingDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Times(0)
-
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.environmentObject.Token)
-	assert.Error(suite.T(), err, "Expected an error when there is an in-progress deployment")
-}
-
-func (suite *DeploymentTestSuite) TestCreateDeploymentAddDeploymentFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil).Times(2)
-
-	suite.environment.EXPECT().AddPendingDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), suite.deploymentObject, &d)
-		}).Return(nil, errors.New("Add deployment failed"))
-
-	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.environmentObject.Token)
-	assert.Error(suite.T(), err, "Expected an error when add deployment fails")
+	assert.Error(suite.T(), err, "Expected an error when put environment transaction fails")
 }
 
 func (suite *DeploymentTestSuite) TestCreateDeployment() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil).Times(2)
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).Return(nil).Times(1)
 
-	suite.environment.EXPECT().AddPendingDeployment(suite.ctx, *suite.environmentObject, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), suite.deploymentObject, &d)
-		}).Return(suite.environmentObject, nil)
-
-	d, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.environmentObject.Token)
+	// Can't really verify the deployment because PutEnvironment mocks out the usage of the
+	// function pointer that creates the deployment
+	_, err := suite.deployment.CreateDeployment(suite.ctx, environmentName, suite.environmentObject.Token)
 	assert.Nil(suite.T(), err, "Unexpected error when creating a deployment")
-	verifyDeployment(suite.T(), suite.deploymentObject, d)
+}
+
+// Testing validateAndCreateDeployment used by CreateDeployment - environment does not exist
+func (suite *DeploymentTestSuite) TestValidateAndCreateDeploymentEnvironmentDoesNotExist() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateDeployment(suite.token)
+	_, err := validateAndCreate(nil)
+
+	assert.Error(suite.T(), err, "Expected an error creating a deployment when no environment exists")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create deployment fails")
+}
+
+// Testing validateAndCreateDeployment used by CreateDeployment - outdated token
+func (suite *DeploymentTestSuite) TestValidateAndCreateDeploymentOutdatedToken() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateDeployment("outdatedToken")
+	_, err := validateAndCreate(suite.environmentObject)
+
+	assert.Error(suite.T(), err, "Expected an error creating a deployment when token is outdated")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create deployment fails")
+}
+
+// Testing validateAndCreateDeployment used by CreateDeployment - deployment with token already exists
+func (suite *DeploymentTestSuite) TestValidateAndCreateDeploymentExistingToken() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateDeployment(suite.token)
+
+	suite.deploymentObject.Token = suite.token
+	environment := *suite.environmentObject
+	environment.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
+
+	_, err := validateAndCreate(suite.environmentObject)
+
+	assert.Error(suite.T(), err, "Expected an error creating a deployment when a deployment with given token already exists")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create deployment fails")
+}
+
+// Testing validateAndCreateDeployment used by CreateDeployment - in-progress deployment exists
+func (suite *DeploymentTestSuite) TestValidateAndCreateDeploymentThereIsAnInProgressDeployment() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateDeployment(suite.token)
+
+	suite.environmentObject.InProgressDeploymentID = suite.deploymentObject.ID
+	suite.environmentObject.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
+
+	_, err := validateAndCreate(suite.environmentObject)
+
+	assert.Error(suite.T(), err, "Expected an error creating a deployment when there is an in-progress deployment")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create deployment fails")
+}
+
+// Testing validateAndCreateDeployment used by CreateDeployment
+func (suite *DeploymentTestSuite) TestValidateAndCreateDeployment() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateDeployment(suite.token)
+	_, err := validateAndCreate(suite.environmentObject)
+
+	assert.Nil(suite.T(), err, "Unexpected error creating a deployment")
+	verifyDeployment(suite.T(), suite.deploymentObject, deployment)
 }
 
 func verifyDeployment(t *testing.T, expected *types.Deployment, actual *types.Deployment) {
@@ -210,7 +198,7 @@ func (suite *DeploymentTestSuite) TestGetDeploymentEmptyDeploymentID() {
 }
 
 func (suite *DeploymentTestSuite) TestGetDeploymentGetEnvironmentDeploymentsFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).
 		Return(nil, errors.New("Get environment failed"))
 
 	_, err := suite.deployment.GetDeployment(suite.ctx, environmentName, deploymentID)
@@ -219,7 +207,7 @@ func (suite *DeploymentTestSuite) TestGetDeploymentGetEnvironmentDeploymentsFail
 
 func (suite *DeploymentTestSuite) TestGetDeploymentEnvironmentDoesNotHaveDeployments() {
 	suite.environmentObject.Deployments = nil
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
 
 	d, err := suite.deployment.GetDeployment(suite.ctx, environmentName, deploymentID)
 	assert.Nil(suite.T(), err, "Unexpected error when the environment does not have deployments")
@@ -228,7 +216,7 @@ func (suite *DeploymentTestSuite) TestGetDeploymentEnvironmentDoesNotHaveDeploym
 
 func (suite *DeploymentTestSuite) TestGetDeploymentEnvironmentDoesNotHaveAMatchingDeployment() {
 	suite.environmentObject.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
 
 	d, err := suite.deployment.GetDeployment(suite.ctx, environmentName, "non-existing-ID")
 	assert.Nil(suite.T(), err, "Unexpected error when the environment does not have deployments")
@@ -245,7 +233,7 @@ func (suite *DeploymentTestSuite) TestGetDeployment() {
 	suite.environmentObject.Deployments[deployment1.ID] = *deployment1
 	suite.environmentObject.Deployments[deployment2.ID] = *deployment2
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil)
 
 	d, err := suite.deployment.GetDeployment(suite.ctx, environmentName, deployment2.ID)
 	assert.Nil(suite.T(), err, "Unexpected error when the environment has multiple deployments")
@@ -254,89 +242,81 @@ func (suite *DeploymentTestSuite) TestGetDeployment() {
 
 func (suite *DeploymentTestSuite) TestCreateSubDeploymentEmptyEnvironmentName() {
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, "", suite.instanceARNs)
-	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment without an environment name")
+	assert.Error(suite.T(), err, "Expected an error creating a sub-deployment without an environment name")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentFails() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, errors.New("Get environment failed"))
+func (suite *DeploymentTestSuite) TestCreateSubDeploymentPutEnvironmentTxFailed() {
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).
+		Return(errors.New("Put environment failed"))
 
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
-	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get environment fails")
+	assert.Error(suite.T(), err, "Expected an error creating a sub-deployment when put environment transaction fails")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetEnvironmentReturnsNil() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).Return(nil).Times(1)
 
+	// Can't really verify the deployment because PutEnvironment mocks out the usage of the
+	// function pointer that creates the deployment
 	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
-	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get environment returns nil")
+	assert.Nil(suite.T(), err, "Unexpected error when creating a sub-deployment")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetCurrentDeploymentReturnsError() {
+// Testing validateAndCreateSubDeployment used by CreateSubDeployment - environment does not exist
+func (suite *DeploymentTestSuite) TestValidateAndCreateSubDeploymentEnvironmentDoesNotExist() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateSubDeployment(suite.instanceARNs)
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	_, err := validateAndCreate(nil)
+
+	assert.Error(suite.T(), err, "Expected an error creating a sub-deployment when no environment exists")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create sub-deployment fails")
+}
+
+// Testing validateAndCreateSubDeployment used by CreateSubDeployment - error getting current deployment
+func (suite *DeploymentTestSuite) TestValidateAndCreateSubDeploymentNoValidCurrentDeployment() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateSubDeployment(suite.instanceARNs)
+
 	// deployment does not exist in the deployments map -> GetCurrentDeployment fails
 	suite.environmentObject.InProgressDeploymentID = uuid.NewUUID().String()
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	_, err := validateAndCreate(suite.environmentObject)
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil).Times(2)
-
-	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
-	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get in progress deployment returns an error")
+	assert.Error(suite.T(), err, "Expected an error creating a sub-deployment when getting the current deployment returns an error")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create sub-deployment fails")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentGetCurrentDeploymentReturnsNoDeployment() {
+// Testing validateAndCreateSubDeployment used by CreateSubDeployment - no current deployment
+func (suite *DeploymentTestSuite) TestValidateAndCreateSubDeploymentNoCurrentDeployment() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateSubDeployment(suite.instanceARNs)
+
 	suite.environmentObject.InProgressDeploymentID = ""
-	suite.environmentObject.PendingDeploymentID = ""
 	suite.environmentObject.Deployments = nil
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	_, err := validateAndCreate(suite.environmentObject)
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(suite.environmentObject, nil).Times(3)
-
-	_, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
-	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when get in progress deployment returns an error")
+	assert.Error(suite.T(), err, "Expected an error creating a sub-deployment when there is no current deployment")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create sub-deployment fails")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentStartTasksFails() {
-	err := suite.deploymentObject.UpdateDeploymentToInProgress(0, nil)
-	assert.Nil(suite.T(), err, "Unexpected error when moving deployment to in-progress")
+// Testing validateAndCreateSubDeployment used by CreateSubDeployment - ECS start tasks fails
+func (suite *DeploymentTestSuite) TestValidateAndCreateSubDeploymentStartTasksFails() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateSubDeployment(suite.instanceARNs)
 
 	env := suite.environmentObject
 	env.InProgressDeploymentID = suite.deploymentObject.ID
 	env.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(2)
 	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, suite.deploymentObject.ID, suite.deploymentObject.TaskDefinition).
-		Return(nil, errors.New("Error starting tasks"))
+		Return(nil, errors.New("Error starting tasks")).Times(1)
+	_, err := validateAndCreate(env)
 
-	_, err = suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
-	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when start tasks fails")
+	assert.Error(suite.T(), err, "Expected an error creating a sub-deployment when start tasks fails")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when create sub-deployment fails")
 }
 
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentUpdateDeploymentFails() {
-	inprogressDeployment, err := types.NewDeployment(suite.environmentObject.DesiredTaskDefinition, suite.environmentObject.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-	inprogressDeployment.Status = types.DeploymentInProgress
+// Testing validateAndCreateSubDeployment used by CreateSubDeployment
+func (suite *DeploymentTestSuite) TestValidateAndCreateSubDeployment() {
+	validateAndCreate, deployment := suite.deployment.ValidateAndCreateSubDeployment(suite.instanceARNs)
 
-	env := suite.environmentObject
-	env.Name = environmentName
-	env.InProgressDeploymentID = inprogressDeployment.ID
-	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(2)
-	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
-
-	updatedDeployment := *inprogressDeployment
-	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
-	updatedDeployment.Health = types.DeploymentUnhealthy
-	updatedDeployment.Status = types.DeploymentInProgress
-	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
-
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *env, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), &updatedDeployment, &d)
-		}).Return(nil, errors.New("Error updating deployment"))
-
-	_, err = suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
-	assert.NotNil(suite.T(), err, "Expected an error creating a sub-deployment when update deployment fails")
-}
-
-func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
 	inprogressDeployment, err := types.NewDeployment(suite.environmentObject.DesiredTaskDefinition, suite.environmentObject.Token)
 	assert.Nil(suite.T(), err, "Deployment creation failed")
 	inprogressDeployment.Status = types.DeploymentInProgress
@@ -345,8 +325,10 @@ func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
 	env.InProgressDeploymentID = inprogressDeployment.ID
 	env.Deployments[inprogressDeployment.ID] = *inprogressDeployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(2)
-	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
+	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, inprogressDeployment.ID, inprogressDeployment.TaskDefinition).
+		Return(suite.startTaskOutput, nil).Times(1)
+
+	_, err = validateAndCreate(env)
 
 	updatedDeployment := *inprogressDeployment
 	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
@@ -354,30 +336,8 @@ func (suite *DeploymentTestSuite) TestCreateSubDeployment() {
 	updatedDeployment.Status = types.DeploymentInProgress
 	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
 
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, *env, gomock.Any()).Do(
-		func(_ interface{}, _ interface{}, d types.Deployment) {
-			verifyDeployment(suite.T(), &updatedDeployment, &d)
-		}).Return(env, nil)
-
-	d, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
 	assert.Nil(suite.T(), err, "Unexpected error creating a sub-deployment")
-	verifyDeployment(suite.T(), &updatedDeployment, d)
-}
-
-func (suite *DeploymentTestSuite) TestCreateSubDeploymentWithCompletedDeployment() {
-	currentDeployment, err := types.NewDeployment(suite.environmentObject.DesiredTaskDefinition, suite.environmentObject.Token)
-	assert.Nil(suite.T(), err, "Deployment creation failed")
-	currentDeployment.Status = types.DeploymentCompleted
-
-	env := suite.environmentObject
-	env.Deployments[currentDeployment.ID] = *currentDeployment
-
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(env, nil).Times(3)
-	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, currentDeployment.ID, currentDeployment.TaskDefinition).Return(suite.startTaskOutput, nil)
-
-	d, err := suite.deployment.CreateSubDeployment(suite.ctx, environmentName, suite.instanceARNs)
-	assert.Nil(suite.T(), err, "Unexpected error creating a sub-deployment")
-	verifyDeployment(suite.T(), currentDeployment, d)
+	verifyDeployment(suite.T(), &updatedDeployment, deployment)
 }
 
 func createContainerInstances(instanceARNs []*string) []*models.ContainerInstance {
@@ -395,28 +355,195 @@ func createContainerInstances(instanceARNs []*string) []*models.ContainerInstanc
 	return containerInstances
 }
 
-func (suite *DeploymentTestSuite) TestStartDeploymentPendingDeployment() {
-	suite.environmentObject.PendingDeploymentID = suite.deploymentObject.ID
-	suite.environmentObject.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
-	suite.ecs.EXPECT().StartTask(suite.environmentObject.Cluster, suite.instanceARNs,
-		suite.deploymentObject.ID, suite.deploymentObject.TaskDefinition).Return(suite.startTaskOutput, nil)
+func (suite *DeploymentTestSuite) TestStartDeploymentEmptyEnvironmentName() {
+	_, err := suite.deployment.StartDeployment(suite.ctx, "", suite.instanceARNs)
+	assert.Error(suite.T(), err, "Expected an error staring a deployment without an environment name")
+}
 
-	updatedDeployment := *suite.deploymentObject
+func (suite *DeploymentTestSuite) TestStartDeploymentPutEnvironmentTxFailed() {
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).
+		Return(errors.New("Put environment failed"))
+
+	_, err := suite.deployment.StartDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.Error(suite.T(), err, "Expected an error starting a deployment when put environment transaction fails")
+}
+
+func (suite *DeploymentTestSuite) TestStartDeployment() {
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).Return(nil).Times(1)
+
+	// Can't really verify the deployment because PutEnvironment mocks out the usage of the
+	// function pointer that starts the deployment
+	_, err := suite.deployment.StartDeployment(suite.ctx, environmentName, suite.instanceARNs)
+	assert.Nil(suite.T(), err, "Unexpected error when starting a deployment")
+}
+
+// Testing validateAndStartDeployment used by StartDeployment - environment does not exist
+func (suite *DeploymentTestSuite) TestValidateAndStartDeploymentEnvironmentDoesNotExist() {
+	validateAndStart, deployment := suite.deployment.ValidateAndStartDeployment(suite.instanceARNs)
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	_, err := validateAndStart(nil)
+
+	assert.Error(suite.T(), err, "Expected an error starting a deployment when no environment exists")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when start deployment fails")
+}
+
+// Testing validateAndStartDeployment used by StartDeployment - in-progress deployment exists
+func (suite *DeploymentTestSuite) TestValidateAndStartDeploymentThereIsInProgressDeployment() {
+	validateAndStart, deployment := suite.deployment.ValidateAndStartDeployment(suite.instanceARNs)
+
+	env := suite.environmentObject
+	env.InProgressDeploymentID = suite.deploymentObject.ID
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	_, err := validateAndStart(env)
+
+	assert.Error(suite.T(), err, "Expected an error starting a deployment when there is already an in progress deployment")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when start deployment fails")
+}
+
+// Testing validateAndStartDeployment used by StartDeployment - no pending deployment
+func (suite *DeploymentTestSuite) TestValidateAndStartDeploymentThereIsNoPendingDeployment() {
+	validateAndStart, deployment := suite.deployment.ValidateAndStartDeployment(suite.instanceARNs)
+
+	env := suite.environmentObject
+	env.InProgressDeploymentID = ""
+	env.PendingDeploymentID = ""
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	_, err := validateAndStart(env)
+
+	assert.Error(suite.T(), err, "Expected an error starting a deployment when there is no pending deployment")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when start deployment fails")
+}
+
+// Testing validateAndStartDeployment used by StartDeployment - invalid pending deployment
+func (suite *DeploymentTestSuite) TestValidateAndStartDeploymentThereInvalidPendingDeployment() {
+	validateAndStart, deployment := suite.deployment.ValidateAndStartDeployment(suite.instanceARNs)
+
+	env := suite.environmentObject
+	env.InProgressDeploymentID = ""
+	env.PendingDeploymentID = suite.deploymentObject.ID
+	env.Deployments = nil
+	suite.ecs.EXPECT().StartTask(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	_, err := validateAndStart(env)
+
+	assert.Error(suite.T(), err, "Expected an error starting a deployment when there pending deployment is invalid")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when start deployment fails")
+}
+
+// Testing validateAndStartDeployment used by StartDeployment - ECS start tasks fails
+func (suite *DeploymentTestSuite) TestValidateAndStartDeploymentStartTasksFails() {
+	validateAndStart, deployment := suite.deployment.ValidateAndStartDeployment(suite.instanceARNs)
+
+	env := suite.environmentObject
+	env.InProgressDeploymentID = ""
+	env.PendingDeploymentID = suite.deploymentObject.ID
+	env.Deployments[suite.deploymentObject.ID] = *suite.deploymentObject
+	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, suite.deploymentObject.ID, suite.deploymentObject.TaskDefinition).
+		Return(nil, errors.New("Error starting tasks")).Times(1)
+	_, err := validateAndStart(env)
+
+	assert.Error(suite.T(), err, "Expected an error starting a deployment when start tasks fails")
+	assert.Equal(suite.T(), &types.Deployment{}, deployment, "Expected deployment to be empty when start deployment fails")
+}
+
+// Testing validateAndStartDeployment used by StartDeployment
+func (suite *DeploymentTestSuite) TestValidateAndStartDeployment() {
+	validateAndStart, deployment := suite.deployment.ValidateAndStartDeployment(suite.instanceARNs)
+
+	pendingDeployment, err := types.NewDeployment(suite.environmentObject.DesiredTaskDefinition, suite.environmentObject.Token)
+	assert.Nil(suite.T(), err, "Deployment creation failed")
+	pendingDeployment.Status = types.DeploymentPending
+
+	env := suite.environmentObject
+	env.PendingDeploymentID = pendingDeployment.ID
+	env.Deployments[pendingDeployment.ID] = *pendingDeployment
+
+	suite.ecs.EXPECT().StartTask(env.Cluster, suite.instanceARNs, pendingDeployment.ID, pendingDeployment.TaskDefinition).
+		Return(suite.startTaskOutput, nil).Times(1)
+
+	_, err = validateAndStart(env)
+
+	updatedDeployment := *pendingDeployment
 	updatedDeployment.DesiredTaskCount = len(suite.instanceARNs)
-	updatedDeployment.Status = types.DeploymentInProgress
 	updatedDeployment.Health = types.DeploymentUnhealthy
+	updatedDeployment.Status = types.DeploymentInProgress
 	updatedDeployment.FailedInstances = suite.startTaskOutput.Failures
 
-	suite.environment.EXPECT().UpdateDeployment(suite.ctx, gomock.Any(), gomock.Any()).Do(
-		func(_ interface{}, e types.Environment, d types.Deployment) {
-			assert.Empty(suite.T(), suite.environmentObject.PendingDeploymentID)
-			assert.Exactly(suite.T(), suite.deploymentObject.ID, suite.environmentObject.InProgressDeploymentID)
-			verifyDeployment(suite.T(), &updatedDeployment, &d)
-		}).Return(nil, nil)
+	assert.Nil(suite.T(), err, "Unexpected error staring a deployment")
+	verifyDeployment(suite.T(), &updatedDeployment, deployment)
+}
 
-	d, err := suite.deployment.StartDeployment(suite.ctx, suite.environmentObject, suite.deploymentObject, suite.instanceARNs)
-	assert.Nil(suite.T(), err)
-	assert.Exactly(suite.T(), types.DeploymentInProgress, d.Status)
+func (suite *DeploymentTestSuite) TestUpdateDeploymentEmptyEnvironmentName() {
+	err := suite.deployment.UpdateInProgressDeployment(suite.ctx, "", suite.deploymentObject)
+	assert.Error(suite.T(), err, "Expected an error updating an in-progress deployment without an environment name")
+}
+
+func (suite *DeploymentTestSuite) TestUpdateDeploymentEmptyDeploumentID() {
+	deployment := suite.deploymentObject
+	deployment.ID = ""
+	err := suite.deployment.UpdateInProgressDeployment(suite.ctx, environmentName, deployment)
+	assert.Error(suite.T(), err, "Expected an error updating an in-progress deployment without a deployment ID")
+}
+
+func (suite *DeploymentTestSuite) TestUpdateDeploymentPutEnvironmentTxFailed() {
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).
+		Return(errors.New("Put environment failed"))
+
+	err := suite.deployment.UpdateInProgressDeployment(suite.ctx, environmentName, suite.deploymentObject)
+	assert.Error(suite.T(), err, "Expected an error starting a deployment when put environment transaction fails")
+}
+
+func (suite *DeploymentTestSuite) TestUpdateInProgressDeployment() {
+	suite.environmentStore.EXPECT().PutEnvironment(suite.ctx, environmentName, gomock.Any()).Return(nil).Times(1)
+
+	err := suite.deployment.UpdateInProgressDeployment(suite.ctx, environmentName, suite.deploymentObject)
+	assert.Nil(suite.T(), err, "Unexpected error when updating an in-progress deployment")
+}
+
+// Testing ValidateAndUpdateInProgressDeployment used by UpdateDeployment - environment does not exist
+func (suite *DeploymentTestSuite) TestValidateAndUpdateInProgressDeploymentEnvironmentDoesNotExist() {
+	validateAndUpdate := suite.deployment.ValidateAndUpdateInProgressDeployment(suite.deploymentObject)
+	_, err := validateAndUpdate(nil)
+
+	assert.Error(suite.T(), err, "Expected an error updating an in-progress deployment when no environment exists")
+}
+
+// Testing ValidateAndUpdateInProgressDeployment used by UpdateDeployment - deployment is not in-progress
+func (suite *DeploymentTestSuite) TestValidateAndUpdateInProgressDeploymentDeploymentNotInProgress() {
+	validateAndUpdate := suite.deployment.ValidateAndUpdateInProgressDeployment(suite.deploymentObject)
+
+	env := suite.environmentObject
+	env.InProgressDeploymentID = "differentID"
+	_, err := validateAndUpdate(env)
+
+	assert.Error(suite.T(), err, "Expected an error updating an in-progress deployment when deployment is not in-progress")
+	_, ok := errors.Cause(err).(types.UnexpectedDeploymentStatusError)
+	assert.True(suite.T(), ok,
+		"Expected error to be of type UnexpectedDeploymentStatusError when updating an in-progress deployment when deployment is not in-progress")
+}
+
+// Testing ValidateAndUpdateInProgressDeployment used by UpdateDeployment - deployment does not exist
+func (suite *DeploymentTestSuite) TestValidateAndUpdateInProgressDeploymentDeploymentDoesNotExist() {
+	validateAndUpdate := suite.deployment.ValidateAndUpdateInProgressDeployment(suite.deploymentObject)
+
+	env := suite.environmentObject
+	env.Deployments = nil
+	_, err := validateAndUpdate(env)
+
+	assert.Error(suite.T(), err, "Expected an error updating an in-progress deployment when no deployment exists")
+}
+
+// Testing ValidateAndUpdateInProgressDeployment used by UpdateDeployment
+func (suite *DeploymentTestSuite) TestValidateAndUpdateInProgressDeployment() {
+	validateAndUpdate := suite.deployment.ValidateAndUpdateInProgressDeployment(suite.deploymentObject)
+
+	deployment := suite.deploymentObject
+	deployment.DesiredTaskCount = 10
+	env := suite.environmentObject
+	env.Deployments[suite.deploymentObject.ID] = *deployment
+	env.InProgressDeploymentID = deployment.ID
+	_, err := validateAndUpdate(env)
+
+	assert.Nil(suite.T(), err, "Unexpected error updating an in-progress deployment")
 }
 
 func (suite *DeploymentTestSuite) TestGetCurrentDeploymentOnlyInProgressExists() {
@@ -429,7 +556,7 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentOnlyInProgressExists()
 	environment.InProgressDeploymentID = deployment.ID
 	environment.Deployments[deployment.ID] = *deployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil)
 
 	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
 	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
@@ -445,7 +572,7 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentOnlyPendingExists() {
 	environment.PendingDeploymentID = deployment.ID
 	environment.Deployments[deployment.ID] = *deployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil).Times(2)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil).Times(2)
 
 	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
 	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
@@ -465,7 +592,7 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentPendingAndCompletedExi
 	assert.Nil(suite.T(), err)
 	environment.Deployments[completed.ID] = *completed
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil).Times(2)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil).Times(2)
 
 	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
 	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
@@ -487,7 +614,7 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentPendingAndInProgressEx
 	environment.InProgressDeploymentID = inProgress.ID
 	environment.Deployments[inProgress.ID] = *inProgress
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil)
 
 	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
 	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
@@ -503,7 +630,7 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentOnlyCompletedExists() 
 	deployment.Status = types.DeploymentCompleted
 	environment.Deployments[deployment.ID] = *deployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil).Times(2)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environment.Name).Return(environment, nil).Times(2)
 
 	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, environment.Name)
 	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
@@ -515,7 +642,7 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentEmpty() {
 	suite.environmentObject.InProgressDeploymentID = ""
 	suite.environmentObject.Deployments = nil
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, suite.environmentObject.Name).Return(suite.environmentObject, nil).Times(2)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, suite.environmentObject.Name).Return(suite.environmentObject, nil).Times(2)
 
 	d, err := suite.deployment.GetCurrentDeployment(suite.ctx, suite.environmentObject.Name)
 	assert.Nil(suite.T(), err, "Unexpected error when calling GetCurrentDeployment")
@@ -524,14 +651,14 @@ func (suite *DeploymentTestSuite) TestGetCurrentDeploymentEmpty() {
 
 func (suite *DeploymentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturnsErrors() {
 	err := errors.New("Error getting environment")
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
 
 	_, observedErr := suite.deployment.GetCurrentDeployment(suite.ctx, environmentName)
 	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
 }
 
 func (suite *DeploymentTestSuite) TestGetCurrentDeploymentGetEnvironmentReturnsEmpty() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
 
 	_, observedErr := suite.deployment.GetCurrentDeployment(suite.ctx, environmentName)
 	_, ok := observedErr.(types.NotFoundError)
@@ -554,14 +681,14 @@ func (suite *DeploymentTestSuite) TestGetInProgressDeploymentMissingName() {
 
 func (suite *DeploymentTestSuite) TestGetInProgressDeploymentGetEnvironmentReturnsErrors() {
 	err := errors.New("Error getting environment")
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
 
 	_, observedErr := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
 	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
 }
 
 func (suite *DeploymentTestSuite) TestGetInProgressDeploymentGetEnvironmentReturnsEmpty() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
 
 	_, observedErr := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
 	_, ok := observedErr.(types.NotFoundError)
@@ -574,7 +701,7 @@ func (suite *DeploymentTestSuite) TestGetInProgressDeploymentNoInProgressDeploym
 	environment.PendingDeploymentID = ""
 	environment.InProgressDeploymentID = ""
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	d, err := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
 	assert.Nil(suite.T(), err, "Did not expect errors when there are no in-progress deployments")
@@ -591,7 +718,7 @@ func (suite *DeploymentTestSuite) TestGetInProgressDeploymentOnlyPendingExists()
 	environment.PendingDeploymentID = deployment.ID
 	environment.Deployments[deployment.ID] = *deployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	d, err := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
 	assert.Nil(suite.T(), err, "Did not expect errors when there are no in-progress deployments")
@@ -609,7 +736,7 @@ func (suite *DeploymentTestSuite) TestGetInProgressDeploymentMissingDeploymentIn
 
 	environment.InProgressDeploymentID = deployment.ID
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	_, err = suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
 	assert.Error(suite.T(), err, "Expected an error when the in-progress deployment is not in the deployment map")
@@ -627,7 +754,7 @@ func (suite *DeploymentTestSuite) TestGetInProgressDeployment() {
 	environment.InProgressDeploymentID = deployment.ID
 	environment.Deployments[deployment.ID] = *deployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	d, err := suite.deployment.GetInProgressDeployment(suite.ctx, environmentName)
 	assert.Nil(suite.T(), err, "Did not expect an error when getting in-progress deployment")
@@ -643,14 +770,14 @@ func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologicall
 
 func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologicallyGetEnvironmentReturnsErrors() {
 	err := errors.New("Error getting environment")
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
 
 	_, observedErr := suite.deployment.ListDeploymentsSortedReverseChronologically(suite.ctx, environmentName)
 	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
 }
 
 func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologicallyGetEnvironmentReturnsEmpty() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
 
 	_, observedErr := suite.deployment.ListDeploymentsSortedReverseChronologically(suite.ctx, environmentName)
 	_, ok := observedErr.(types.NotFoundError)
@@ -661,7 +788,7 @@ func (suite *DeploymentTestSuite) TestListDeploymentsSortedReverseChronologicall
 	environment, err := types.NewEnvironment("TestGetDeployments", taskDefinition, cluster1)
 	assert.Nil(suite.T(), err, "Unexpected error when creating environment")
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	deployment1, err := types.NewDeployment(taskDefinition, uuid.NewRandom().String())
 	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
@@ -688,14 +815,14 @@ func (suite *DeploymentTestSuite) TestGetPendingDeploymentMissingName() {
 
 func (suite *DeploymentTestSuite) TestGetPendingDeploymentGetEnvironmentReturnsErrors() {
 	err := errors.New("Error getting environment")
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, err)
 
 	_, observedErr := suite.deployment.GetPendingDeployment(suite.ctx, environmentName)
 	assert.Exactly(suite.T(), err, errors.Cause(observedErr))
 }
 
 func (suite *DeploymentTestSuite) TestGetPendingDeploymentGetEnvironmentReturnsEmpty() {
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(nil, nil)
 
 	_, observedErr := suite.deployment.GetPendingDeployment(suite.ctx, environmentName)
 	_, ok := observedErr.(types.NotFoundError)
@@ -708,7 +835,7 @@ func (suite *DeploymentTestSuite) TestGetPendingDeploymentNoPendingDeployments()
 	environment.PendingDeploymentID = ""
 	environment.InProgressDeploymentID = ""
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	d, err := suite.deployment.GetPendingDeployment(suite.ctx, environmentName)
 	assert.Nil(suite.T(), err, "Did not expect errors when there are no pending deployments")
@@ -727,7 +854,7 @@ func (suite *DeploymentTestSuite) TestGetPendingDeploymentOnlyInProgressExists()
 	environment.InProgressDeploymentID = deployment.ID
 	environment.Deployments[deployment.ID] = *deployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	d, err := suite.deployment.GetPendingDeployment(suite.ctx, environmentName)
 	assert.Nil(suite.T(), err, "Did not expect errors when there are no pending deployments")
@@ -740,7 +867,7 @@ func (suite *DeploymentTestSuite) TestGetPendingDeploymentMissingDeploymentInEnv
 
 	environment.PendingDeploymentID = uuid.NewUUID().String()
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	_, err = suite.deployment.GetPendingDeployment(suite.ctx, environmentName)
 	assert.Error(suite.T(), err, "Expected an error when the pending deployment is not in the deployment map")
@@ -756,7 +883,7 @@ func (suite *DeploymentTestSuite) TestGetPendingDeployment() {
 	environment.PendingDeploymentID = deployment.ID
 	environment.Deployments[deployment.ID] = *deployment
 
-	suite.environment.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
+	suite.environmentStore.EXPECT().GetEnvironment(suite.ctx, environmentName).Return(environment, nil)
 
 	d, err := suite.deployment.GetPendingDeployment(suite.ctx, environmentName)
 	assert.Nil(suite.T(), err, "Did not expect an error when getting pending deployment")

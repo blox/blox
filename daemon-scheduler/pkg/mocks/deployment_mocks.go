@@ -18,6 +18,7 @@ package mocks
 
 import (
 	context "context"
+	types0 "github.com/blox/blox/daemon-scheduler/pkg/store/types"
 	types "github.com/blox/blox/daemon-scheduler/pkg/types"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -65,15 +66,25 @@ func (_mr *_MockDeploymentRecorder) CreateSubDeployment(arg0, arg1, arg2 interfa
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "CreateSubDeployment", arg0, arg1, arg2)
 }
 
-func (_m *MockDeployment) StartDeployment(ctx context.Context, env *types.Environment, deployment *types.Deployment, instanceARNs []*string) (*types.Deployment, error) {
-	ret := _m.ctrl.Call(_m, "StartDeployment", ctx, env, deployment, instanceARNs)
+func (_m *MockDeployment) StartDeployment(ctx context.Context, environmentName string, instanceARNs []*string) (*types.Deployment, error) {
+	ret := _m.ctrl.Call(_m, "StartDeployment", ctx, environmentName, instanceARNs)
 	ret0, _ := ret[0].(*types.Deployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockDeploymentRecorder) StartDeployment(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "StartDeployment", arg0, arg1, arg2, arg3)
+func (_mr *_MockDeploymentRecorder) StartDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "StartDeployment", arg0, arg1, arg2)
+}
+
+func (_m *MockDeployment) UpdateInProgressDeployment(ctx context.Context, environmentName string, deployment *types.Deployment) error {
+	ret := _m.ctrl.Call(_m, "UpdateInProgressDeployment", ctx, environmentName, deployment)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockDeploymentRecorder) UpdateInProgressDeployment(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "UpdateInProgressDeployment", arg0, arg1, arg2)
 }
 
 func (_m *MockDeployment) GetDeployment(ctx context.Context, environmentName string, id string) (*types.Deployment, error) {
@@ -129,4 +140,47 @@ func (_m *MockDeployment) ListDeploymentsSortedReverseChronologically(ctx contex
 
 func (_mr *_MockDeploymentRecorder) ListDeploymentsSortedReverseChronologically(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "ListDeploymentsSortedReverseChronologically", arg0, arg1)
+}
+
+func (_m *MockDeployment) ValidateAndCreateDeployment(token string) (types0.ValidateAndUpdateEnvironment, *types.Deployment) {
+	ret := _m.ctrl.Call(_m, "ValidateAndCreateDeployment", token)
+	ret0, _ := ret[0].(types0.ValidateAndUpdateEnvironment)
+	ret1, _ := ret[1].(*types.Deployment)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) ValidateAndCreateDeployment(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ValidateAndCreateDeployment", arg0)
+}
+
+func (_m *MockDeployment) ValidateAndCreateSubDeployment(instanceARNs []*string) (types0.ValidateAndUpdateEnvironment, *types.Deployment) {
+	ret := _m.ctrl.Call(_m, "ValidateAndCreateSubDeployment", instanceARNs)
+	ret0, _ := ret[0].(types0.ValidateAndUpdateEnvironment)
+	ret1, _ := ret[1].(*types.Deployment)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) ValidateAndCreateSubDeployment(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ValidateAndCreateSubDeployment", arg0)
+}
+
+func (_m *MockDeployment) ValidateAndStartDeployment(instanceARNs []*string) (types0.ValidateAndUpdateEnvironment, *types.Deployment) {
+	ret := _m.ctrl.Call(_m, "ValidateAndStartDeployment", instanceARNs)
+	ret0, _ := ret[0].(types0.ValidateAndUpdateEnvironment)
+	ret1, _ := ret[1].(*types.Deployment)
+	return ret0, ret1
+}
+
+func (_mr *_MockDeploymentRecorder) ValidateAndStartDeployment(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ValidateAndStartDeployment", arg0)
+}
+
+func (_m *MockDeployment) ValidateAndUpdateInProgressDeployment(deployment *types.Deployment) types0.ValidateAndUpdateEnvironment {
+	ret := _m.ctrl.Call(_m, "ValidateAndUpdateInProgressDeployment", deployment)
+	ret0, _ := ret[0].(types0.ValidateAndUpdateEnvironment)
+	return ret0
+}
+
+func (_mr *_MockDeploymentRecorder) ValidateAndUpdateInProgressDeployment(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "ValidateAndUpdateInProgressDeployment", arg0)
 }

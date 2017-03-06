@@ -13,32 +13,9 @@
 
 package types
 
-type BadRequestError struct {
-	error
-}
+import "github.com/blox/blox/daemon-scheduler/pkg/types"
 
-func NewBadRequestError(err error) BadRequestError {
-	return BadRequestError{
-		err,
-	}
-}
-
-type NotFoundError struct {
-	error
-}
-
-func NewNotFoundError(err error) NotFoundError {
-	return NotFoundError{
-		err,
-	}
-}
-
-type UnexpectedDeploymentStatusError struct {
-	error
-}
-
-func NewUnexpectedDeploymentStatusError(err error) UnexpectedDeploymentStatusError {
-	return UnexpectedDeploymentStatusError{
-		err,
-	}
-}
+// ValidateAndUpdateEnvironment - implementation should validate the environment
+// being passed into the function and return an updated environment based on the
+// action being performed (like creating environment, updating deployments, etc.)
+type ValidateAndUpdateEnvironment func(*types.Environment) (*types.Environment, error)
