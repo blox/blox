@@ -192,3 +192,55 @@ func (ecsWrapper ECSWrapper) DescribeContainerInstance(clusterName string, insta
 	}
 	return *resp.ContainerInstances[0], nil
 }
+
+func (ecsWrapper ECSWrapper) CreateCluster(clusterName *string) error {
+	in := ecs.CreateClusterInput{
+		ClusterName: clusterName,
+	}
+	_, err := ecsWrapper.client.CreateCluster(&in)
+	if err != nil {
+		return errors.Wrapf(err, "Error creating ECS cluster with name '%s'. ", *clusterName)
+	}
+
+	return nil
+}
+
+func (ecsWrapper ECSWrapper) DeleteCluster(clusterName *string) error {
+	in := ecs.DeleteClusterInput{
+		Cluster: clusterName,
+	}
+
+	_, err := ecsWrapper.client.DeleteCluster(&in)
+	if err != nil {
+		return errors.Wrapf(err, "Error deleting ECS cluster with name '%s'. ", *clusterName)
+	}
+
+	return nil
+}
+
+func (ecsWrapper ECSWrapper) DeregisterContainerInstances(clusterName *string, instanceARNs []*string) error {
+	for _, instanceARN := range instanceARNs {
+		err := ecsWrapper.deregisterContainerInstance(clusterName, instanceARN)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ecsWrapper ECSWrapper) deregisterContainerInstance(clusterName *string, instanceARN *string) error {
+	forceDeregister := true
+	in := ecs.DeregisterContainerInstanceInput{
+		Cluster:           clusterName,
+		ContainerInstance: instanceARN,
+		Force:             &forceDeregister,
+	}
+
+	_, err := ecsWrapper.client.DeregisterContainerInstance(&in)
+	if err != nil {
+		return errors.Wrapf(err, "Error deregistering container instance with ARN '%s' in cluster with name '%s'. ",
+			*instanceARN, *clusterName)
+	}
+
+	return nil
+}

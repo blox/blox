@@ -79,11 +79,7 @@ func init() {
 	When(`^I get instance where the task was started$`, func() {
 		cssContainerInstanceList = nil
 
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 
 		if len(e2etasksteps.EcsTaskList) != 1 {
 			T.Errorf("Error memorizing task retrieved using ECS client. ")

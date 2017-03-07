@@ -14,13 +14,17 @@
 package e2etasksteps
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/internal/features/wrappers"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	. "github.com/gucumber/gucumber"
+	"github.com/pkg/errors"
 )
 
 type Exception struct {
@@ -34,48 +38,120 @@ var (
 	cssTaskList   = []models.Task{}
 	exceptionList = []Exception{}
 
-	taskDefnARN = ""
+	taskDefnARN         = ""
+	roleName            = "E2ETestRole"
+	instanceProfileName = "E2ETestInstance"
+	policyARN           = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+)
+
+const (
+	errorCode            = 1
+	numInstancesLaunched = 1
 )
 
 func init() {
 
 	cssWrapper := wrappers.NewCSSWrapper()
 	ecsWrapper := wrappers.NewECSWrapper()
+	ec2Wrapper := wrappers.NewEC2Wrapper()
+	iamWrapper := wrappers.NewIAMWrapper()
 
+	// TODO: Change these os.Exit calls to T.Errorf. Currently unable to do so because T is not initialized until the first test.
+	// (https://github.com/gucumber/gucumber/issues/28)
 	BeforeAll(func() {
-		var err error
+		clusterName := wrappers.GetClusterName()
+
+		err := ecsWrapper.CreateCluster(&clusterName)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		err = terminateAllContainerInstances(ec2Wrapper, ecsWrapper, clusterName)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
 		taskDefnARN, err = ecsWrapper.RegisterSleep360TaskDefinition()
 		if err != nil {
-			T.Errorf(err.Error())
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		err = createInstanceProfile(iamWrapper)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		amiID, err := wrappers.GetLatestECSOptimizedAMIID()
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		keyPair := wrappers.GetKeyPairName()
+		numInstances := int64(numInstancesLaunched)
+		_, err = ec2Wrapper.RunInstance(&numInstances, &clusterName, &instanceProfileName, &keyPair, &amiID)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		err = wrappers.ValidateECSContainerInstance(ecsWrapper, clusterName)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
 		}
 	})
 
+	// TODO: Change these os.Exit calls to T.Errorf. Currently unable to do so because T is not initialized until the first test.
+	// (https://github.com/gucumber/gucumber/issues/28)
 	Before("@task|@stream-instances", func() {
-		clusterName, err := wrappers.GetClusterName()
+		clusterName := wrappers.GetClusterName()
+		err := stopAllTasks(ecsWrapper, clusterName)
 		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
-		err = stopAllTasks(ecsWrapper, clusterName)
-		if err != nil {
-			T.Errorf("Failed to stop all ECS tasks. Error: %s", err)
+			if T != nil {
+				T.Errorf(err.Error())
+				return
+			}
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
 		}
 	})
 
 	AfterAll(func() {
-		clusterName, err := wrappers.GetClusterName()
+		clusterName := wrappers.GetClusterName()
+
+		err := stopAllTasks(ecsWrapper, clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
 			return
 		}
-		err = stopAllTasks(ecsWrapper, clusterName)
-		if err != nil {
-			T.Errorf("Failed to stop all ECS tasks. Error: %s", err)
-			return
-		}
+
 		err = ecsWrapper.DeregisterTaskDefinition(taskDefnARN)
 		if err != nil {
-			T.Errorf("Failed to deregister task definition. Error: %s", err)
+			T.Errorf(err.Error())
+			return
+		}
+
+		err = terminateAllContainerInstances(ec2Wrapper, ecsWrapper, clusterName)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+
+		err = ecsWrapper.DeleteCluster(&clusterName)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+
+		err = deleteInstanceProfile(iamWrapper)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
 		}
 	})
 
@@ -84,11 +160,7 @@ func init() {
 	})
 
 	And(`^I stop the (\d+) task(?:|s) in the ECS cluster$`, func(numTasks int) {
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 		if len(EcsTaskList) != numTasks {
 			T.Errorf("Error memorizing tasks started using ECS client. ")
 			return
@@ -105,11 +177,7 @@ func init() {
 	When(`^I get task with the cluster name and task ARN$`, func() {
 		cssTaskList = nil
 
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 
 		time.Sleep(15 * time.Second)
 		if len(EcsTaskList) != 1 {
@@ -164,11 +232,7 @@ func startNTasks(numTasks int, startedBy string, ecsWrapper wrappers.ECSWrapper)
 	EcsTaskList = nil
 	cssTaskList = nil
 
-	clusterName, err := wrappers.GetClusterName()
-	if err != nil {
-		T.Errorf(err.Error())
-		return
-	}
+	clusterName := wrappers.GetClusterName()
 
 	for i := 0; i < numTasks; i++ {
 		ecsTask, err := ecsWrapper.StartTask(clusterName, taskDefinitionSleep300, startedBy)
@@ -178,4 +242,117 @@ func startNTasks(numTasks int, startedBy string, ecsWrapper wrappers.ECSWrapper)
 		}
 		EcsTaskList = append(EcsTaskList, ecsTask)
 	}
+}
+
+func createInstanceProfile(iamWrapper wrappers.IAMWrapper) error {
+	assumeRolePolicy := `{
+		"Version": "2012-10-17",
+		"Statement": [
+		{
+		"Effect": "Allow",
+		"Principal": {
+			"Service": "ec2.amazonaws.com"
+		},
+		"Action": "sts:AssumeRole"
+		}
+		]
+	}`
+
+	err := iamWrapper.GetRole(&roleName)
+	if err != nil {
+		if awsErr, ok := errors.Cause(err).(awserr.Error); ok && awsErr.Code() == "NoSuchEntity" {
+			err = iamWrapper.CreateRole(&roleName, &assumeRolePolicy)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	err = iamWrapper.GetInstanceProfile(&instanceProfileName)
+	if err != nil {
+		if awsErr, ok := errors.Cause(err).(awserr.Error); ok && awsErr.Code() == "NoSuchEntity" {
+			err = iamWrapper.CreateInstanceProfile(&instanceProfileName)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	err = iamWrapper.AttachRolePolicy(&policyARN, &roleName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.AddRoleToInstanceProfile(&roleName, &instanceProfileName)
+	if err != nil {
+		if awsErr, ok := errors.Cause(err).(awserr.Error); ok {
+			if awsErr.Code() != "EntityAlreadyExists" && awsErr.Code() != "LimitExceeded" {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deleteInstanceProfile(iamWrapper wrappers.IAMWrapper) error {
+	err := iamWrapper.DetachRolePolicy(&policyARN, &roleName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.RemoveRoleFromInstanceProfile(&roleName, &instanceProfileName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.DeleteRole(&roleName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.DeleteInstanceProfile(&instanceProfileName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func terminateAllContainerInstances(ec2Wrapper wrappers.EC2Wrapper, ecsWrapper wrappers.ECSWrapper, clusterName string) error {
+	instanceARNs, err := ecsWrapper.ListContainerInstances(clusterName)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to list container instances from cluster '%v'.", clusterName)
+	}
+
+	if len(instanceARNs) == 0 {
+		return nil
+	}
+
+	err = ecsWrapper.DeregisterContainerInstances(&clusterName, instanceARNs)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to deregister container instances '%v'.", instanceARNs)
+	}
+
+	ec2InstanceIDs := make([]*string, 0, len(instanceARNs))
+	for _, v := range instanceARNs {
+		containerInstance, err := ecsWrapper.DescribeContainerInstance(clusterName, *v)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to describe container instance '%v'.", v)
+		}
+		ec2InstanceIDs = append(ec2InstanceIDs, containerInstance.Ec2InstanceId)
+	}
+
+	err = ec2Wrapper.TerminateInstances(ec2InstanceIDs)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to terminate container instances '%v'.", ec2InstanceIDs)
+	}
+
+	return nil
 }

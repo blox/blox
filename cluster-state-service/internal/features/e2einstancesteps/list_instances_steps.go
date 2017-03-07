@@ -60,11 +60,7 @@ func init() {
 	})
 
 	When(`^I list instances with cluster filter set to the ECS cluster name$`, func() {
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 
 		cssInstances, err := cssWrapper.FilterInstancesByClusterName(clusterName)
 		if err != nil {

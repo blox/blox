@@ -42,11 +42,7 @@ func init() {
 		ecsContainerInstanceList = nil
 		cssContainerInstanceList = nil
 
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 
 		instanceARNs, err := ecsWrapper.ListContainerInstances(clusterName)
 		if err != nil {

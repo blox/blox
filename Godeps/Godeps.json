@@ -181,6 +181,11 @@
 			"Rev": "2d3b3bc3aae6a09a9b194aa6eb71326fcbe2e918"
 		},
 		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/iam",
+			"Comment": "v1.6.24-1-g2d3b3bc",
+			"Rev": "2d3b3bc3aae6a09a9b194aa6eb71326fcbe2e918"
+		},
+		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/kinesis",
 			"Comment": "v1.6.24-1-g2d3b3bc",
 			"Rev": "2d3b3bc3aae6a09a9b194aa6eb71326fcbe2e918"

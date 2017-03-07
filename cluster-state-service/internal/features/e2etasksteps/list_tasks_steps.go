@@ -70,11 +70,7 @@ func init() {
 
 	When(`^I list tasks with cluster filter set to the ECS cluster name$`, func() {
 		time.Sleep(15 * time.Second)
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 		cssTasks, err := cssWrapper.FilterTasksByCluster(clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
@@ -115,11 +111,7 @@ func init() {
 
 	When(`^I list tasks with filters set to (.+?) status and cluster name$`, func(status string) {
 		time.Sleep(15 * time.Second)
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 		cssTasks, err := cssWrapper.FilterTasksByStatusAndCluster(status, clusterName)
 		if err != nil {
 			T.Errorf(err.Error())
@@ -131,11 +123,7 @@ func init() {
 	})
 
 	And(`^all tasks in the list tasks response belong to the cluster and have status set to (.+?)$`, func(status string) {
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 		for _, t := range cssTaskList {
 			if strings.ToLower(*t.Entity.LastStatus) != strings.ToLower(status) {
 				T.Errorf("Task with ARN '%s' was expected to be '%s' but is '%s'", *t.Entity.TaskARN, status, *t.Entity.LastStatus)
@@ -189,11 +177,7 @@ func init() {
 
 	When(`^I list tasks in the ECS cluster with status (.+?) and startedBy someone filters$`, func(status string) {
 		time.Sleep(15 * time.Second)
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 		cssTasks, err := cssWrapper.ListTasksWithAllFilters(status,
 			clusterName, "someone")
 		if err != nil {
@@ -206,11 +190,7 @@ func init() {
 	})
 
 	And(`^all tasks in the list tasks response belong to the ECS cluster, are started by someone and have status set to (.+?)$`, func(status string) {
-		clusterName, err := wrappers.GetClusterName()
-		if err != nil {
-			T.Errorf(err.Error())
-			return
-		}
+		clusterName := wrappers.GetClusterName()
 		for _, t := range cssTaskList {
 			if t.Entity.StartedBy != "someone" {
 				T.Errorf("Task with ARN '%s' was expected to be started by '%s' not '%s'", *t.Entity.TaskARN, "someone", t.Entity.StartedBy)
