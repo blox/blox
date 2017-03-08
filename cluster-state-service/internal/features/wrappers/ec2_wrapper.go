@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	ec2InstanceLaunchRetrySleep = 1
+	ec2InstanceLaunchRetrySleepSecond = 2 * time.Second
 )
 
 type EC2Wrapper struct {
@@ -85,7 +85,7 @@ chmod +x /etc/cron.hourly/shutdowninstance`
 			success = true
 			break
 		}
-		time.Sleep(ec2InstanceLaunchRetrySleep * time.Second)
+		time.Sleep(ec2InstanceLaunchRetrySleepSecond)
 	}
 
 	if !success {

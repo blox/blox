@@ -73,10 +73,21 @@ func init() {
 	})
 
 	Then(`^the list instances response contains all the instances registered with the cluster$`, func() {
-		if len(ecsContainerInstanceList) != len(cssContainerInstanceList) {
-			T.Errorf("Unexpected number of instances in the filter instances response. ")
-			return
+		for _, ecsInstance := range ecsContainerInstanceList {
+			found := false
+			for _, cssInstance := range cssContainerInstanceList {
+				// Since the CSS retains INACTIVE instances till the reconciler re-runs, we only look at the ACTIVE instances.
+				if *cssInstance.Entity.Status == "ACTIVE" && *ecsInstance.ContainerInstanceArn == *cssInstance.Entity.ContainerInstanceARN {
+					found = true
+					break
+				}
+			}
+			if !found {
+				T.Errorf("Cannot find container instance %s in the list instance response.", *ecsInstance.ContainerInstanceArn)
+				return
+			}
 		}
+
 		for _, ecsInstance := range ecsContainerInstanceList {
 			err := ValidateListContainsInstance(ecsInstance, cssContainerInstanceList)
 			if err != nil {
