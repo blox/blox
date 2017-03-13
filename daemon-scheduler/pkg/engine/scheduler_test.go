@@ -21,9 +21,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	"github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
+	environmenttypes "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	mocks "github.com/blox/blox/daemon-scheduler/pkg/mocks"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -32,16 +33,16 @@ import (
 
 type SchedulerTestSuite struct {
 	suite.Suite
-	environmentSvc *mocks.MockEnvironment
-	deploymentSvc  *mocks.MockDeployment
-	css            *facade.MockClusterState
-	ecs            *mocks.MockECS
+	environmentService *mocks.MockEnvironmentService
+	deploymentService  *mocks.MockDeploymentService
+	css                *facade.MockClusterState
+	ecs                *mocks.MockECS
 }
 
 func (suite *SchedulerTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
-	suite.environmentSvc = mocks.NewMockEnvironment(mockCtrl)
-	suite.deploymentSvc = mocks.NewMockDeployment(mockCtrl)
+	suite.environmentService = mocks.NewMockEnvironmentService(mockCtrl)
+	suite.deploymentService = mocks.NewMockDeploymentService(mockCtrl)
 	suite.css = facade.NewMockClusterState(mockCtrl)
 	suite.ecs = mocks.NewMockECS(mockCtrl)
 }
@@ -54,7 +55,7 @@ func (suite *SchedulerTestSuite) TestRunInProgress() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.setInProgress(true)
 	scheduler.Start()
 	schedulerErrorEvent := (<-events).(SchedulerErrorEvent)
@@ -66,16 +67,16 @@ func (suite *SchedulerTestSuite) TestRunListEnvironmentsReturnsError() {
 	defer cancel()
 	var err error
 	err = errors.New("Error calling ListEnvironments")
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(nil, err)
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(nil, err)
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 	schedulerErrorEvent := (<-events).(SchedulerErrorEvent)
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
 
 	//next run of scheduler should occur after ticker and do the same thing
 	err = errors.New("Error calling ListEnvironments")
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(nil, err)
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(nil, err)
 	schedulerErrorEvent = (<-events).(SchedulerErrorEvent)
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
 }
@@ -84,14 +85,14 @@ func (suite *SchedulerTestSuite) TestRunGetCurrentDeploymentReturnsError() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 	err := errors.New("Error calling GetCurrentDeployment")
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name: "TestRunGetCurrentDeploymentReturnsError",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, err)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, err)
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 	schedulerErrorEvent := (<-events).(SchedulerErrorEvent)
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
@@ -100,14 +101,14 @@ func (suite *SchedulerTestSuite) TestRunGetCurrentDeploymentReturnsError() {
 func (suite *SchedulerTestSuite) TestRunGetCurrentDeploymentReturnsNil() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name: "TestRunGetCurrentDeploymentReturnsNil",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(nil, nil)
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 	schedulerEnvironmentEvent := (<-events).(SchedulerEnvironmentEvent)
 	assert.Equal(suite.T(), environment.Name, schedulerEnvironmentEvent.Environment.Name)
@@ -116,24 +117,24 @@ func (suite *SchedulerTestSuite) TestRunGetCurrentDeploymentReturnsNil() {
 func (suite *SchedulerTestSuite) TestRunListInstancesReturnsError() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunListInstancesReturnsError",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
+	environments := []environmenttypes.Environment{environment}
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	err := errors.New("Error getting instances from css")
 	suite.css.EXPECT().ListInstances(environment.Cluster).Return(nil, err)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 	schedulerErrorEvent := (<-events).(SchedulerErrorEvent)
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
@@ -143,19 +144,19 @@ func (suite *SchedulerTestSuite) TestRunListTasksReturnsError() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunListTasksReturnsError",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -172,7 +173,7 @@ func (suite *SchedulerTestSuite) TestRunListTasksReturnsError() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(nil, err)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 	schedulerErrorEvent := (<-events).(SchedulerErrorEvent)
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
@@ -182,19 +183,19 @@ func (suite *SchedulerTestSuite) TestRunListDeploymentsReturnsError() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunListDeploymentsReturnsError",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -219,10 +220,10 @@ func (suite *SchedulerTestSuite) TestRunListDeploymentsReturnsError() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	err := errors.New("Error getting deployments for environment")
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(nil, err)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(nil, err)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 	schedulerErrorEvent := (<-events).(SchedulerErrorEvent)
 	assert.Equal(suite.T(), err, errors.Cause(schedulerErrorEvent.Error))
@@ -232,19 +233,19 @@ func (suite *SchedulerTestSuite) TestRunAllInstancesDeployed() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunAllInstancesDeployed",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance1 := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -289,10 +290,10 @@ func (suite *SchedulerTestSuite) TestRunAllInstancesDeployed() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 
 	schedulerEnvironmentEvent := (<-events).(SchedulerEnvironmentEvent)
@@ -303,15 +304,15 @@ func (suite *SchedulerTestSuite) TestRunEnvironmentStateInProgress() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunEnvironmentStateInProgress",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	trackingInfo := make(map[string]time.Time)
 	previousState := make(map[string]environmentExecutionState)
 	previousState[environment.Name] = environmentExecutionState{
@@ -331,19 +332,19 @@ func (suite *SchedulerTestSuite) TestRunNewInstance() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunNewInstance",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance1 := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -408,10 +409,10 @@ func (suite *SchedulerTestSuite) TestRunNewInstance() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 
 	startDeploymentEvent := (<-events).(StartDeploymentEvent)
@@ -427,18 +428,18 @@ func (suite *SchedulerTestSuite) TestRunInstancesWithOldDeployments() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunInstancesWithOldDeployments",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance1 := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -488,10 +489,10 @@ func (suite *SchedulerTestSuite) TestRunInstancesWithOldDeployments() {
 	tasks := []*models.Task{task1, task2}
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	scheduler.Start()
 
 	stopTasksEvent := (<-events).(StopTasksEvent)
@@ -511,19 +512,19 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstance() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunTrackedInstance",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -541,12 +542,12 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstance() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.Entity.ContainerInstanceARN)).Times(0)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	trackingInfo := make(map[string]time.Time)
 	trackingInfo[aws.StringValue(instance.Entity.ContainerInstanceARN)] = time.Now().UTC()
 	previousState := make(map[string]environmentExecutionState)
@@ -566,19 +567,19 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceTTLExpired() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunTrackedInstanceTTLExpired",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -596,7 +597,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceTTLExpired() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	taskARNFromECS := []*string{aws.String("task-arn")}
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.Entity.ContainerInstanceARN)).Return(taskARNFromECS, nil)
@@ -614,7 +615,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceTTLExpired() {
 	suite.ecs.EXPECT().DescribeTasks(environment.Cluster, taskARNFromECS).Return(tasksFromECS, nil)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	trackingInfo := make(map[string]time.Time)
 	trackingInfo[aws.StringValue(instance.Entity.ContainerInstanceARN)] = time.Now().UTC().Add(-2 * trackingInfoTTL)
 	previousState := make(map[string]environmentExecutionState)
@@ -634,19 +635,19 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceDescribeTasksReturnsError
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunTrackedInstanceDescribeTasksReturnsError",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -664,7 +665,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceDescribeTasksReturnsError
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	taskARNFromECS := []*string{aws.String("task-arn")}
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.Entity.ContainerInstanceARN)).Return(taskARNFromECS, nil)
@@ -673,7 +674,7 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceDescribeTasksReturnsError
 	suite.ecs.EXPECT().DescribeTasks(environment.Cluster, taskARNFromECS).Return(nil, err)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	trackingInfo := make(map[string]time.Time)
 	trackingInfo[aws.StringValue(instance.Entity.ContainerInstanceARN)] = time.Now().UTC().Add(-2 * trackingInfoTTL)
 	previousState := make(map[string]environmentExecutionState)
@@ -692,19 +693,19 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsError() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunTrackedInstanceListTasksReturnsError",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -722,13 +723,13 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsError() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	err := errors.Errorf("Error from ecs.ListTasks")
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.Entity.ContainerInstanceARN)).Return(nil, err)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	trackingInfo := make(map[string]time.Time)
 	trackingInfo[aws.StringValue(instance.Entity.ContainerInstanceARN)] = time.Now().UTC().Add(-2 * trackingInfoTTL)
 	previousState := make(map[string]environmentExecutionState)
@@ -747,19 +748,19 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsEmpty() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*schedulerTickerDuration)
 	defer cancel()
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    "TestRunTrackedInstanceListTasksReturnsEmpty",
 		Cluster: "testCluster",
 	}
-	environments := []types.Environment{environment}
-	suite.environmentSvc.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	environments := []environmenttypes.Environment{environment}
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	currentDeployment := types.Deployment{
 		ID:     "dep-id",
 		Status: types.DeploymentInProgress,
 		Health: types.DeploymentHealthy,
 	}
-	suite.deploymentSvc.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
+	suite.deploymentService.EXPECT().GetCurrentDeployment(ctx, environment.Name).Return(&currentDeployment, nil)
 
 	instance := &models.ContainerInstance{
 		Metadata: &models.Metadata{EntityVersion: aws.String("123")},
@@ -777,13 +778,13 @@ func (suite *SchedulerTestSuite) TestRunTrackedInstanceListTasksReturnsEmpty() {
 	suite.css.EXPECT().ListTasks(environment.Cluster).Return(tasks, nil)
 
 	deployments := []types.Deployment{currentDeployment}
-	suite.deploymentSvc.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
+	suite.deploymentService.EXPECT().ListDeploymentsSortedReverseChronologically(ctx, environment.Name).Return(deployments, nil)
 
 	taskARNFromECS := []*string{}
 	suite.ecs.EXPECT().ListTasksByInstance(environment.Cluster, aws.StringValue(instance.Entity.ContainerInstanceARN)).Return(taskARNFromECS, nil)
 
 	events := make(chan Event)
-	scheduler := NewScheduler(ctx, events, suite.environmentSvc, suite.deploymentSvc, suite.css, suite.ecs)
+	scheduler := NewScheduler(ctx, events, suite.environmentService, suite.deploymentService, suite.css, suite.ecs)
 	trackingInfo := make(map[string]time.Time)
 	trackingInfo[aws.StringValue(instance.Entity.ContainerInstanceARN)] = time.Now().UTC().Add(-2 * trackingInfoTTL)
 	previousState := make(map[string]environmentExecutionState)

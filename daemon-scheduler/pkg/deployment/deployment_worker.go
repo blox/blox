@@ -18,6 +18,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecs"
+	"github.com/blox/blox/daemon-scheduler/pkg/environment"
+	deploymenttypes "github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
+	environmenttypes "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	log "github.com/cihub/seelog"
@@ -29,43 +32,43 @@ const (
 )
 
 type DeploymentWorker interface {
-	StartPendingDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
+	StartPendingDeployment(ctx context.Context, environmentName string) (*deploymenttypes.Deployment, error)
 	// UpdateInProgressDeployment checks for in-progress deployments and moves them to complete when
 	// the tasks started by the deployment have moved out of pending status
-	UpdateInProgressDeployment(ctx context.Context, environmentName string) (*types.Deployment, error)
+	UpdateInProgressDeployment(ctx context.Context, environmentName string) (*deploymenttypes.Deployment, error)
 }
 
 type deploymentWorker struct {
-	environment       Environment
-	environmentFacade types.EnvironmentFacade
-	deployment        Deployment
-	ecs               facade.ECS
-	css               facade.ClusterState
+	environmentService environment.EnvironmentService
+	environmentFacade  environment.EnvironmentFacade
+	deploymentService  DeploymentService
+	ecs                facade.ECS
+	css                facade.ClusterState
 }
 
 func NewDeploymentWorker(
-	environment Environment,
-	environmentFacade types.EnvironmentFacade,
-	deployment Deployment,
+	environmentService environment.EnvironmentService,
+	environmentFacade environment.EnvironmentFacade,
+	deploymentService DeploymentService,
 	ecs facade.ECS,
 	css facade.ClusterState) DeploymentWorker {
 	return deploymentWorker{
-		environment:       environment,
-		environmentFacade: environmentFacade,
-		deployment:        deployment,
-		ecs:               ecs,
-		css:               css,
+		environmentService: environmentService,
+		environmentFacade:  environmentFacade,
+		deploymentService:  deploymentService,
+		ecs:                ecs,
+		css:                css,
 	}
 }
 
 func (d deploymentWorker) StartPendingDeployment(ctx context.Context,
-	environmentName string) (*types.Deployment, error) {
+	environmentName string) (*deploymenttypes.Deployment, error) {
 
 	if environmentName == "" {
 		return nil, errors.New("Environment name is missing")
 	}
 
-	environment, err := d.environment.GetEnvironment(ctx, environmentName)
+	environment, err := d.environmentService.GetEnvironment(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding environment with name %s", environmentName)
 	}
@@ -79,7 +82,7 @@ func (d deploymentWorker) StartPendingDeployment(ctx context.Context,
 		return nil, err
 	}
 
-	startedDeployment, err := d.deployment.StartDeployment(ctx, environmentName, instances)
+	startedDeployment, err := d.deploymentService.StartDeployment(ctx, environmentName, instances)
 	if err != nil {
 		return nil, err
 	}
@@ -88,13 +91,13 @@ func (d deploymentWorker) StartPendingDeployment(ctx context.Context,
 }
 
 func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
-	environmentName string) (*types.Deployment, error) {
+	environmentName string) (*deploymenttypes.Deployment, error) {
 
 	if environmentName == "" {
 		return nil, errors.New("Environment name is missing")
 	}
 
-	deployment, err := d.deployment.GetInProgressDeployment(ctx, environmentName)
+	deployment, err := d.deploymentService.GetInProgressDeployment(ctx, environmentName)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +106,7 @@ func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
 		return nil, nil
 	}
 
-	environment, err := d.environment.GetEnvironment(ctx, environmentName)
+	environment, err := d.environmentService.GetEnvironment(ctx, environmentName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding environment with name %s", environmentName)
 	}
@@ -126,8 +129,8 @@ func (d deploymentWorker) UpdateInProgressDeployment(ctx context.Context,
 	return updatedDeployment, nil
 }
 
-func (d deploymentWorker) checkDeploymentTaskProgress(environment *types.Environment,
-	deployment *types.Deployment) (*ecs.DescribeTasksOutput, error) {
+func (d deploymentWorker) checkDeploymentTaskProgress(environment *environmenttypes.Environment,
+	deployment *deploymenttypes.Deployment) (*ecs.DescribeTasksOutput, error) {
 
 	if environment.Cluster == "" {
 		return nil, errors.New("Environment cluster should not be empty")
@@ -148,15 +151,15 @@ func (d deploymentWorker) checkDeploymentTaskProgress(environment *types.Environ
 }
 
 func (d deploymentWorker) updateDeployment(ctx context.Context,
-	environmentName string, deployment *types.Deployment,
-	resp *ecs.DescribeTasksOutput) (*types.Deployment, error) {
+	environmentName string, deployment *deploymenttypes.Deployment,
+	resp *ecs.DescribeTasksOutput) (*deploymenttypes.Deployment, error) {
 
 	updatedDeployment, err := d.updateDeploymentObject(deployment, resp)
 	if err != nil {
 		return nil, err
 	}
 
-	err = d.deployment.UpdateInProgressDeployment(ctx, environmentName, updatedDeployment)
+	err = d.deploymentService.UpdateInProgressDeployment(ctx, environmentName, updatedDeployment)
 
 	if err != nil {
 		if _, ok := errors.Cause(err).(types.UnexpectedDeploymentStatusError); ok {
@@ -171,8 +174,8 @@ func (d deploymentWorker) updateDeployment(ctx context.Context,
 	return updatedDeployment, nil
 }
 
-func (d deploymentWorker) updateDeploymentObject(deployment *types.Deployment,
-	resp *ecs.DescribeTasksOutput) (*types.Deployment, error) {
+func (d deploymentWorker) updateDeploymentObject(deployment *deploymenttypes.Deployment,
+	resp *ecs.DescribeTasksOutput) (*deploymenttypes.Deployment, error) {
 
 	if d.deploymentCompleted(resp.Tasks, resp.Failures) {
 		err := deployment.UpdateDeploymentToCompleted(resp.Failures)

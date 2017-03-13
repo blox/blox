@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
+	"github.com/blox/blox/daemon-scheduler/pkg/environment"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
@@ -29,33 +30,33 @@ const (
 )
 
 type dispatcher struct {
-	ctx              context.Context
-	environmentSvc   deployment.Environment
-	deploymentSvc    deployment.Deployment
-	ecs              facade.ECS
-	css              facade.ClusterState
-	deploymentWorker deployment.DeploymentWorker
-	input            <-chan Event
-	output           chan<- Event
+	ctx                context.Context
+	environmentService environment.EnvironmentService
+	deploymentService  deployment.DeploymentService
+	ecs                facade.ECS
+	css                facade.ClusterState
+	deploymentWorker   deployment.DeploymentWorker
+	input              <-chan Event
+	output             chan<- Event
 }
 
 func NewDispatcher(ctx context.Context,
-	environmentSvc deployment.Environment,
-	deploymentSvc deployment.Deployment,
+	environmentService environment.EnvironmentService,
+	deploymentService deployment.DeploymentService,
 	ecs facade.ECS,
 	css facade.ClusterState,
 	deploymentWorker deployment.DeploymentWorker,
 	input <-chan Event,
 	output chan<- Event) *dispatcher {
 	return &dispatcher{
-		ctx:              ctx,
-		environmentSvc:   environmentSvc,
-		deploymentSvc:    deploymentSvc,
-		ecs:              ecs,
-		css:              css,
-		deploymentWorker: deploymentWorker,
-		input:            input,
-		output:           output,
+		ctx:                ctx,
+		environmentService: environmentService,
+		deploymentService:  deploymentService,
+		ecs:                ecs,
+		css:                css,
+		deploymentWorker:   deploymentWorker,
+		input:              input,
+		output:             output,
 	}
 }
 
@@ -67,12 +68,12 @@ func (dispatcher *dispatcher) Start() {
 			case event := <-dispatcher.input:
 				go func(event Event) {
 					worker := worker{
-						environmentSvc:   dispatcher.environmentSvc,
-						deploymentSvc:    dispatcher.deploymentSvc,
-						deploymentWorker: dispatcher.deploymentWorker,
-						ecs:              dispatcher.ecs,
-						css:              dispatcher.css,
-						output:           dispatcher.output,
+						environmentService: dispatcher.environmentService,
+						deploymentService:  dispatcher.deploymentService,
+						deploymentWorker:   dispatcher.deploymentWorker,
+						ecs:                dispatcher.ecs,
+						css:                dispatcher.css,
+						output:             dispatcher.output,
 					}
 					err := worker.handleEvent(dispatcher.ctx, event)
 					if err != nil {
@@ -93,12 +94,12 @@ func (dispatcher *dispatcher) Start() {
 
 // Worker is actor which handles an event appropriately
 type worker struct {
-	environmentSvc   deployment.Environment
-	deploymentSvc    deployment.Deployment
-	deploymentWorker deployment.DeploymentWorker
-	ecs              facade.ECS
-	css              facade.ClusterState
-	output           chan<- Event
+	environmentService environment.EnvironmentService
+	deploymentService  deployment.DeploymentService
+	deploymentWorker   deployment.DeploymentWorker
+	ecs                facade.ECS
+	css                facade.ClusterState
+	output             chan<- Event
 }
 
 func (w *worker) handleEvent(ctx context.Context, event Event) error {
@@ -169,7 +170,7 @@ func (w *worker) handleStartDeploymentEvent(ctx context.Context, event Event) er
 		return errors.Errorf("Expected event with event-type %s to be of struct-type StartDeploymentEvent", event.GetType())
 	}
 
-	deployment, err := w.deploymentSvc.CreateSubDeployment(ctx, deploymentEvent.Environment.Name, deploymentEvent.Instances)
+	deployment, err := w.deploymentService.CreateSubDeployment(ctx, deploymentEvent.Environment.Name, deploymentEvent.Instances)
 	if err != nil {
 		return errors.Wrapf(err, "Error starting deployment using environment %s on %d instances",
 			deploymentEvent.Environment.Name, len(deploymentEvent.Instances))

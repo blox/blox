@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	mocks "github.com/blox/blox/daemon-scheduler/pkg/mocks"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -28,17 +28,17 @@ import (
 
 type MonitorTestSuite struct {
 	suite.Suite
-	ctx         context.Context
-	environment *mocks.MockEnvironment
-	monitor     Monitor
-	env1        *types.Environment
-	env2        *types.Environment
+	ctx                context.Context
+	environmentService *mocks.MockEnvironmentService
+	monitor            Monitor
+	env1               *types.Environment
+	env2               *types.Environment
 }
 
 func (suite *MonitorTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.ctx = context.Background()
-	suite.environment = mocks.NewMockEnvironment(mockCtrl)
+	suite.environmentService = mocks.NewMockEnvironmentService(mockCtrl)
 
 	var err error
 	suite.env1, err = types.NewEnvironment(environmentName1, taskDefinition, cluster1)
@@ -57,8 +57,8 @@ func (suite *MonitorTestSuite) TestInProgressListEnvironmentsFails() {
 	defer cancel()
 	events := make(chan Event)
 
-	monitor := NewMonitor(ctx, suite.environment, events)
-	suite.environment.EXPECT().ListEnvironments(ctx).Return(nil, errors.New("Could not retrieve environments"))
+	monitor := NewMonitor(ctx, suite.environmentService, events)
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(nil, errors.New("Could not retrieve environments"))
 
 	monitor.InProgressMonitorLoop(1 * time.Millisecond)
 	monitorErrorEvent := (<-events).(MonitorErrorEvent)
@@ -76,8 +76,8 @@ func (suite *MonitorTestSuite) TestInProgressListMultipleEnvironments() {
 		suite.env2.Name: *suite.env2,
 	}
 
-	monitor := NewMonitor(ctx, suite.environment, events)
-	suite.environment.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	monitor := NewMonitor(ctx, suite.environmentService, events)
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	monitor.InProgressMonitorLoop(1 * time.Millisecond)
 
@@ -99,8 +99,8 @@ func (suite *MonitorTestSuite) TestPendingListEnvironmentsFails() {
 	defer cancel()
 	events := make(chan Event)
 
-	monitor := NewMonitor(ctx, suite.environment, events)
-	suite.environment.EXPECT().ListEnvironments(ctx).Return(nil, errors.New("Could not retrieve environments"))
+	monitor := NewMonitor(ctx, suite.environmentService, events)
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(nil, errors.New("Could not retrieve environments"))
 
 	monitor.PendingMonitorLoop(1 * time.Millisecond)
 	monitorErrorEvent := (<-events).(MonitorErrorEvent)
@@ -118,8 +118,8 @@ func (suite *MonitorTestSuite) TestPendingListMultipleEnvironments() {
 		suite.env2.Name: *suite.env2,
 	}
 
-	monitor := NewMonitor(ctx, suite.environment, events)
-	suite.environment.EXPECT().ListEnvironments(ctx).Return(environments, nil)
+	monitor := NewMonitor(ctx, suite.environmentService, events)
+	suite.environmentService.EXPECT().ListEnvironments(ctx).Return(environments, nil)
 
 	monitor.PendingMonitorLoop(1 * time.Millisecond)
 

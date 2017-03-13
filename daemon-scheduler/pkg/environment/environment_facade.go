@@ -11,15 +11,16 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package types
+package environment
 
 import (
+	"github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/pkg/errors"
 )
 
 type EnvironmentFacade interface {
-	InstanceARNs(environment *Environment) ([]*string, error)
+	InstanceARNs(environment *types.Environment) ([]*string, error)
 }
 
 type environmentFacade struct {
@@ -36,7 +37,7 @@ func NewEnvironmentFacade(css facade.ClusterState) (EnvironmentFacade, error) {
 	}, nil
 }
 
-func (f environmentFacade) InstanceARNs(environment *Environment) ([]*string, error) {
+func (f environmentFacade) InstanceARNs(environment *types.Environment) ([]*string, error) {
 	if environment.Cluster == "" {
 		return nil, errors.New("Environment cluster name is required")
 	}

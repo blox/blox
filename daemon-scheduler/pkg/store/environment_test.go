@@ -17,9 +17,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/json"
 	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

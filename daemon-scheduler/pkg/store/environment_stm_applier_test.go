@@ -17,9 +17,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/json"
 	"github.com/blox/blox/daemon-scheduler/pkg/mocks"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/stretchr/testify/assert"
 )

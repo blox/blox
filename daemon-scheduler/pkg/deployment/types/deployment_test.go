@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	taskArn          = "arn:aws:ecs:us-east-1:12345678912:task/c024d145-093b-499a-9b14-5baf273f5835"
-	instanceArn      = "arn:aws:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597"
 	desiredTaskCount = 5
+	instanceArn      = "arn:aws:us-east-1:123456789123:container-instance/4b6d45ea-a4b4-4269-9d04-3af6ddfdc597"
+	taskDefinition   = "arn:aws:ecs:us-east-1:12345678912:task-definition/test"
 )
 
 type DeploymentTestSuite struct {

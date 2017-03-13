@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package types
+package environment
 
 import (
 	"errors"
@@ -19,6 +19,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	"github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +29,7 @@ import (
 type EnvironmentFacadeTestSuite struct {
 	suite.Suite
 	css               *facade.MockClusterState
-	environment       *Environment
+	environment       *types.Environment
 	environmentFacade EnvironmentFacade
 }
 
@@ -36,7 +37,7 @@ func (suite *EnvironmentFacadeTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	var err error
 	suite.css = facade.NewMockClusterState(mockCtrl)
-	suite.environment, err = NewEnvironment(environmentName, taskDefinition, cluster)
+	suite.environment, err = types.NewEnvironment(environmentName1, taskDefinition, cluster1)
 	assert.Nil(suite.T(), err)
 	suite.environmentFacade, err = NewEnvironmentFacade(suite.css)
 	assert.Nil(suite.T(), err)

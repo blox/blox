@@ -22,8 +22,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
+	"github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
+	"github.com/blox/blox/daemon-scheduler/pkg/environment"
+	environmenttypes "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	log "github.com/cihub/seelog"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -37,20 +39,20 @@ const (
 )
 
 type scheduler struct {
-	id             string
-	ctx            context.Context
-	environmentSvc deployment.Environment
-	deploymentSvc  deployment.Deployment
-	css            facade.ClusterState
-	ecs            facade.ECS
-	events         chan<- Event
-	executionState map[string]environmentExecutionState
-	inProgress     bool
-	inProgressLock sync.RWMutex
+	id                 string
+	ctx                context.Context
+	environmentService environment.EnvironmentService
+	deploymentService  deployment.DeploymentService
+	css                facade.ClusterState
+	ecs                facade.ECS
+	events             chan<- Event
+	executionState     map[string]environmentExecutionState
+	inProgress         bool
+	inProgressLock     sync.RWMutex
 }
 
 type environmentExecutionState struct {
-	environment    types.Environment
+	environment    environmenttypes.Environment
 	trackingInfo   map[string]time.Time
 	inProgress     bool
 	inProgressLock sync.RWMutex
@@ -70,18 +72,18 @@ type deployedTask struct {
 }
 
 // NewScheduler creates a scheduler instance with clean execution state. There should be only one instance of this running on a host.
-func NewScheduler(ctx context.Context, events chan<- Event, environmentSvc deployment.Environment,
-	deploymentSvc deployment.Deployment, css facade.ClusterState, ecs facade.ECS) *scheduler {
+func NewScheduler(ctx context.Context, events chan<- Event, environmentService environment.EnvironmentService,
+	deploymentService deployment.DeploymentService, css facade.ClusterState, ecs facade.ECS) *scheduler {
 	return &scheduler{
-		id:             uuid.NewRandom().String(),
-		ctx:            ctx,
-		environmentSvc: environmentSvc,
-		deploymentSvc:  deploymentSvc,
-		css:            css,
-		ecs:            ecs,
-		events:         events,
-		executionState: make(map[string]environmentExecutionState),
-		inProgress:     false,
+		id:                 uuid.NewRandom().String(),
+		ctx:                ctx,
+		environmentService: environmentService,
+		deploymentService:  deploymentService,
+		css:                css,
+		ecs:                ecs,
+		events:             events,
+		executionState:     make(map[string]environmentExecutionState),
+		inProgress:         false,
 	}
 }
 
@@ -129,7 +131,7 @@ func (s *scheduler) runOnceInternal() error {
 	s.setInProgress(true)
 	defer s.setInProgress(false)
 
-	environments, err := s.environmentSvc.ListEnvironments(s.ctx)
+	environments, err := s.environmentService.ListEnvironments(s.ctx)
 	if err != nil {
 		return errors.Wrapf(err, "Error getting environments", s.id)
 	}
@@ -235,8 +237,8 @@ func (s *scheduler) runForEnvironment(state *environmentExecutionState) error {
 	return nil
 }
 
-func (s *scheduler) getCurrentDeployment(environment *types.Environment) (*types.Deployment, error) {
-	deployment, err := s.deploymentSvc.GetCurrentDeployment(s.ctx, environment.Name)
+func (s *scheduler) getCurrentDeployment(environment *environmenttypes.Environment) (*types.Deployment, error) {
+	deployment, err := s.deploymentService.GetCurrentDeployment(s.ctx, environment.Name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error getting current deployment for cluster %s of environment", environment.Cluster)
 	}
@@ -400,7 +402,7 @@ func (s *scheduler) loadInstancesAlreadyDeployed(state *environmentExecutionStat
 		return result, err
 	}
 
-	deployments, err := s.deploymentSvc.ListDeploymentsSortedReverseChronologically(s.ctx, environment.Name)
+	deployments, err := s.deploymentService.ListDeploymentsSortedReverseChronologically(s.ctx, environment.Name)
 	if err != nil {
 		return result, errors.Wrapf(err, "Error calling ListDeployments with environment")
 

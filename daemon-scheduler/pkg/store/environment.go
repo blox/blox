@@ -16,9 +16,9 @@ package store
 import (
 	"context"
 
+	"github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/json"
 	storetypes "github.com/blox/blox/daemon-scheduler/pkg/store/types"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/pkg/errors"
 )
 
@@ -26,14 +26,14 @@ const (
 	environmentKeyPrefix = "ecs/environment/"
 )
 
-// EnvironmentStore defines methods to handle interations with the datastore related to environments
+// EnvironmentStore defines methods to handle interactions with the datastore related to environments
 type EnvironmentStore interface {
 	// PutEnvironment performs a transactional put. It retrieves the environment using the 'name', validates the environment
 	// based on the implementation of 'validateAndUpdateEnv' and updates the environment with the environment
 	// returned by 'validateAndUpdateEnv' all within a transaction.
 	PutEnvironment(ctx context.Context, name string, validateAndUpdateEnv storetypes.ValidateAndUpdateEnvironment) error
 
-	// GetEnvironment retrieves an enrironment by name
+	// GetEnvironment retrieves an environment by name
 	GetEnvironment(ctx context.Context, name string) (*types.Environment, error)
 
 	// DeleteEnvironment 'deletes' an environment by name

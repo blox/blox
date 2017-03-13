@@ -15,13 +15,14 @@ package v1
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
+	"github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
+	environmenttypes "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
 )
 
-func toEnvironmentModel(envType types.Environment) models.Environment {
+func toEnvironmentModel(envType environmenttypes.Environment) models.Environment {
 	health := models.HealthStatusHealthy
-	if envType.Health == types.EnvironmentUnhealthy {
+	if envType.Health == environmenttypes.EnvironmentUnhealthy {
 		health = models.HealthStatusUnhealthy
 	}
 	return models.Environment{

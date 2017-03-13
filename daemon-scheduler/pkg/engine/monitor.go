@@ -17,7 +17,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
+	"github.com/blox/blox/daemon-scheduler/pkg/environment"
 	log "github.com/cihub/seelog"
 	"github.com/pkg/errors"
 )
@@ -33,20 +33,20 @@ type Monitor interface {
 }
 
 type monitor struct {
-	ctx         context.Context
-	environment deployment.Environment
-	events      chan<- Event
+	ctx                context.Context
+	environmentService environment.EnvironmentService
+	events             chan<- Event
 }
 
 func NewMonitor(
 	ctx context.Context,
-	environment deployment.Environment,
+	environmentService environment.EnvironmentService,
 	events chan<- Event) Monitor {
 
 	return monitor{
-		ctx:         ctx,
-		environment: environment,
-		events:      events,
+		ctx:                ctx,
+		environmentService: environmentService,
+		events:             events,
 	}
 }
 
@@ -93,7 +93,7 @@ func (m monitor) PendingMonitorLoop(tickerDuration time.Duration) {
 }
 
 func (m monitor) runInProgressOnce() error {
-	environments, err := m.environment.ListEnvironments(m.ctx)
+	environments, err := m.environmentService.ListEnvironments(m.ctx)
 	if err != nil {
 		return errors.New("Could not retrieve environments while running the in-progress deployments monitor")
 	}
@@ -112,7 +112,7 @@ func (m monitor) runInProgressOnce() error {
 }
 
 func (m monitor) runPendingOnce() error {
-	environments, err := m.environment.ListEnvironments(m.ctx)
+	environments, err := m.environmentService.ListEnvironments(m.ctx)
 	if err != nil {
 		return errors.New("Could not retrieve environments while running the pending deployments monitor")
 	}

@@ -13,7 +13,10 @@
 
 package engine
 
-import "github.com/blox/blox/daemon-scheduler/pkg/types"
+import (
+	"github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
+	environmenttypes "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
+)
 
 type EventType string
 
@@ -40,7 +43,7 @@ type Event interface {
 // StartDeploymentEvent is message used to notify actors to perform a deployment using environment
 type StartDeploymentEvent struct {
 	Instances   []*string
-	Environment types.Environment
+	Environment environmenttypes.Environment
 }
 
 func (e StartDeploymentEvent) GetType() EventType {
@@ -51,7 +54,7 @@ func (e StartDeploymentEvent) GetType() EventType {
 type StopTasksEvent struct {
 	Cluster     string
 	Tasks       []string
-	Environment types.Environment
+	Environment environmenttypes.Environment
 }
 
 func (e StopTasksEvent) GetType() EventType {
@@ -61,7 +64,7 @@ func (e StopTasksEvent) GetType() EventType {
 // SchedulerErrorEvent is message used to notify of any execution errors from Scheduler
 type SchedulerErrorEvent struct {
 	Error       error
-	Environment types.Environment
+	Environment environmenttypes.Environment
 }
 
 func (e SchedulerErrorEvent) GetType() EventType {
@@ -70,7 +73,7 @@ func (e SchedulerErrorEvent) GetType() EventType {
 
 // SchedulerEnvironmentEvent is message used to notify of any execution errors from Scheduler
 type SchedulerEnvironmentEvent struct {
-	Environment types.Environment
+	Environment environmenttypes.Environment
 	Message     string
 }
 
@@ -124,7 +127,7 @@ func (e MonitorErrorEvent) GetType() EventType {
 }
 
 type UpdateInProgressDeploymentEvent struct {
-	Environment types.Environment
+	Environment environmenttypes.Environment
 }
 
 func (e UpdateInProgressDeploymentEvent) GetType() EventType {
@@ -132,7 +135,7 @@ func (e UpdateInProgressDeploymentEvent) GetType() EventType {
 }
 
 type StartPendingDeploymentEvent struct {
-	Environment types.Environment
+	Environment environmenttypes.Environment
 }
 
 func (e StartPendingDeploymentEvent) GetType() EventType {

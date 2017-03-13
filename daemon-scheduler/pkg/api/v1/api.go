@@ -21,8 +21,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
+	"github.com/blox/blox/daemon-scheduler/pkg/environment"
+	environmenttypes "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/validate"
 	"github.com/blox/blox/daemon-scheduler/swagger/v1/generated/models"
 	log "github.com/cihub/seelog"
@@ -47,17 +48,17 @@ var (
 )
 
 type API struct {
-	environment deployment.Environment
-	deployment  deployment.Deployment
-	ecs         facade.ECS
+	environmentService environment.EnvironmentService
+	deploymentService  deployment.DeploymentService
+	ecs                facade.ECS
 }
 
 // NewAPI initializes the API struct
-func NewAPI(e deployment.Environment, d deployment.Deployment, ecs facade.ECS) API {
+func NewAPI(e environment.EnvironmentService, d deployment.DeploymentService, ecs facade.ECS) API {
 	return API{
-		environment: e,
-		deployment:  d,
-		ecs:         ecs,
+		environmentService: e,
+		deploymentService:  d,
+		ecs:                ecs,
 	}
 }
 
@@ -91,7 +92,7 @@ func (api API) CreateEnvironment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	env, err := api.environment.CreateEnvironment(r.Context(), *createEnvReq.Name, *ecsTaskDefinition.TaskDefinitionArn, *ecsCluster.ClusterArn)
+	env, err := api.environmentService.CreateEnvironment(r.Context(), *createEnvReq.Name, *ecsTaskDefinition.TaskDefinitionArn, *ecsCluster.ClusterArn)
 	if err != nil {
 		handleBackendError(w, err)
 		return
@@ -110,7 +111,7 @@ func (api API) GetEnvironment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars[envNameKey]
 
-	env, err := api.environment.GetEnvironment(r.Context(), name)
+	env, err := api.environmentService.GetEnvironment(r.Context(), name)
 	if err != nil {
 		writeInternalServerError(w, err)
 		return
@@ -143,7 +144,7 @@ func (api API) ListEnvironments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var envs []types.Environment
+	var envs []environmenttypes.Environment
 	var err error
 
 	cluster := query.Get(clusterFilter)
@@ -152,9 +153,9 @@ func (api API) ListEnvironments(w http.ResponseWriter, r *http.Request) {
 			writeBadRequestError(w, invalidClusterError)
 			return
 		}
-		envs, err = api.environment.FilterEnvironments(r.Context(), clusterFilter, cluster)
+		envs, err = api.environmentService.FilterEnvironments(r.Context(), clusterFilter, cluster)
 	} else {
-		envs, err = api.environment.ListEnvironments(r.Context())
+		envs, err = api.environmentService.ListEnvironments(r.Context())
 	}
 
 	if err != nil {
@@ -183,7 +184,7 @@ func (api API) DeleteEnvironment(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars[envNameKey]
 
-	err := api.environment.DeleteEnvironment(r.Context(), name)
+	err := api.environmentService.DeleteEnvironment(r.Context(), name)
 	if err != nil {
 		handleBackendError(w, err)
 		return
@@ -198,7 +199,7 @@ func (api API) CreateDeployment(w http.ResponseWriter, r *http.Request) {
 	name := vars[envNameKey]
 	token := vars[deploymentToken]
 
-	d, err := api.deployment.CreateDeployment(r.Context(), name, token)
+	d, err := api.deploymentService.CreateDeployment(r.Context(), name, token)
 	if err != nil {
 		handleBackendError(w, err)
 		return
@@ -220,7 +221,7 @@ func (api API) GetDeployment(w http.ResponseWriter, r *http.Request) {
 	name := vars[envNameKey]
 	id := vars[deploymentIDKey]
 
-	d, err := api.deployment.GetDeployment(r.Context(), name, id)
+	d, err := api.deploymentService.GetDeployment(r.Context(), name, id)
 	if err != nil {
 		handleBackendError(w, err)
 		return
@@ -246,7 +247,7 @@ func (api API) ListDeployments(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars[envNameKey]
 
-	ds, err := api.deployment.ListDeploymentsSortedReverseChronologically(r.Context(), name)
+	ds, err := api.deploymentService.ListDeploymentsSortedReverseChronologically(r.Context(), name)
 	if err != nil {
 		handleBackendError(w, err)
 		return

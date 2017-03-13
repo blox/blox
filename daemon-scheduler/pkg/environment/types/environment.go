@@ -16,6 +16,7 @@ package types
 import (
 	"sort"
 
+	"github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 )
@@ -43,7 +44,7 @@ type Environment struct {
 	InProgressDeploymentID string
 
 	// deploymentID -> deployment
-	Deployments map[string]Deployment
+	Deployments map[string]types.Deployment
 }
 
 func NewEnvironment(name string, taskDefinition string, cluster string) (*Environment, error) {
@@ -65,12 +66,12 @@ func NewEnvironment(name string, taskDefinition string, cluster string) (*Enviro
 		DesiredTaskDefinition: taskDefinition,
 		Cluster:               cluster,
 		Health:                EnvironmentHealthy,
-		Deployments:           make(map[string]Deployment),
+		Deployments:           make(map[string]types.Deployment),
 	}, nil
 }
 
-func (e *Environment) AddPendingDeployment(d Deployment) error {
-	if d.Status != DeploymentPending {
+func (e *Environment) AddPendingDeployment(d types.Deployment) error {
+	if d.Status != types.DeploymentPending {
 		return errors.Errorf("Cannot add deployment %v to environment %v as a pending deployment because its status is %v and not pending",
 			d.ID, e.Name, d.Status)
 	}
@@ -97,7 +98,7 @@ func (e *Environment) UpdatePendingDeploymentToInProgress() error {
 	return nil
 }
 
-func (e *Environment) getPendingDeployment() (*Deployment, error) {
+func (e *Environment) getPendingDeployment() (*types.Deployment, error) {
 	if e.PendingDeploymentID == "" {
 		return nil, nil
 	}
@@ -108,7 +109,7 @@ func (e *Environment) getPendingDeployment() (*Deployment, error) {
 			e.PendingDeploymentID, e.Name)
 	}
 
-	if d.Status != DeploymentPending {
+	if d.Status != types.DeploymentPending {
 		return nil, errors.Errorf("Pending deployment %v in the environment %v is not in a pending status but %v",
 			d.ID, e.Name, d.Status)
 	}
@@ -116,7 +117,7 @@ func (e *Environment) getPendingDeployment() (*Deployment, error) {
 	return &d, nil
 }
 
-type timeOrderedDeployments []Deployment
+type timeOrderedDeployments []types.Deployment
 
 func (p timeOrderedDeployments) Len() int {
 	return len(p)
@@ -132,8 +133,8 @@ func (p timeOrderedDeployments) Swap(i, j int) {
 }
 
 // SortDeploymentsReverseChronologically returns deployments ordered reverse-chronologically: latest startTime first
-func (e *Environment) SortDeploymentsReverseChronologically() ([]Deployment, error) {
-	deployments := make([]Deployment, 0, len(e.Deployments))
+func (e *Environment) SortDeploymentsReverseChronologically() ([]types.Deployment, error) {
+	deployments := make([]types.Deployment, 0, len(e.Deployments))
 	for _, d := range e.Deployments {
 		deployments = append(deployments, d)
 	}

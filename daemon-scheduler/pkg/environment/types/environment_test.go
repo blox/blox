@@ -17,22 +17,29 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	cluster         = "arn:aws:ecs:us-east-1:123456789123:cluster/test"
+	environmentName = "environmentName"
+	taskDefinition  = "arn:aws:ecs:us-east-1:12345678912:task-definition/test"
+)
+
 type EnvironmentTestSuite struct {
 	suite.Suite
 	environment *Environment
-	deployment  *Deployment
+	deployment  *types.Deployment
 }
 
 func (suite *EnvironmentTestSuite) SetupTest() {
 	var err error
 	suite.environment, err = NewEnvironment(environmentName, taskDefinition, cluster)
 	assert.Nil(suite.T(), err, "Cannot initialize EnvironmentTestSuite")
-	suite.deployment, err = NewDeployment(taskDefinition, generateToken())
+	suite.deployment, err = types.NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
 }
 
@@ -69,10 +76,10 @@ func (suite *EnvironmentTestSuite) TestNewEnvironment() {
 }
 
 func (suite *EnvironmentTestSuite) TestSortDeploymentsReverseChronologically() {
-	deployment1, err := NewDeployment(taskDefinition, generateToken())
+	deployment1, err := types.NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
 
-	deployment2, err := NewDeployment(taskDefinition, generateToken())
+	deployment2, err := types.NewDeployment(taskDefinition, generateToken())
 	assert.Nil(suite.T(), err, "Unexpected error when creating deployment")
 	deployment2.StartTime = deployment1.StartTime.Add(time.Minute)
 
@@ -86,7 +93,7 @@ func (suite *EnvironmentTestSuite) TestSortDeploymentsReverseChronologically() {
 }
 
 func (suite *EnvironmentTestSuite) TestAddPendingDeploymentStatusNotPending() {
-	suite.deployment.Status = DeploymentInProgress
+	suite.deployment.Status = types.DeploymentInProgress
 
 	err := suite.environment.AddPendingDeployment(*suite.deployment)
 	assert.Error(suite.T(), err, "Expected an error when the deployment status is not pending")
@@ -116,7 +123,7 @@ func (suite *EnvironmentTestSuite) TestUpdatePendingDeploymentToInProgressPendin
 	err := suite.environment.AddPendingDeployment(*suite.deployment)
 	assert.Nil(suite.T(), err, "Unexpected error when adding a pending deployment")
 	d := suite.environment.Deployments[suite.deployment.ID]
-	d.Status = DeploymentCompleted
+	d.Status = types.DeploymentCompleted
 	suite.environment.Deployments[d.ID] = d
 
 	err = suite.environment.UpdatePendingDeploymentToInProgress()

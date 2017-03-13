@@ -20,9 +20,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/blox/blox/cluster-state-service/swagger/v1/generated/models"
+	"github.com/blox/blox/daemon-scheduler/pkg/deployment/types"
+	environmenttypes "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	mocks "github.com/blox/blox/daemon-scheduler/pkg/mocks"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
@@ -32,17 +33,17 @@ import (
 
 type DispatcherTestSuite struct {
 	suite.Suite
-	environmentSvc   *mocks.MockEnvironment
-	deploymentSvc    *mocks.MockDeployment
-	css              *facade.MockClusterState
-	ecs              *mocks.MockECS
-	deploymentWorker *mocks.MockDeploymentWorker
+	environmentService *mocks.MockEnvironmentService
+	deploymentService  *mocks.MockDeploymentService
+	css                *facade.MockClusterState
+	ecs                *mocks.MockECS
+	deploymentWorker   *mocks.MockDeploymentWorker
 }
 
 func (suite *DispatcherTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
-	suite.environmentSvc = mocks.NewMockEnvironment(mockCtrl)
-	suite.deploymentSvc = mocks.NewMockDeployment(mockCtrl)
+	suite.environmentService = mocks.NewMockEnvironmentService(mockCtrl)
+	suite.deploymentService = mocks.NewMockDeploymentService(mockCtrl)
 	suite.css = facade.NewMockClusterState(mockCtrl)
 	suite.ecs = mocks.NewMockECS(mockCtrl)
 	suite.deploymentWorker = mocks.NewMockDeploymentWorker(mockCtrl)
@@ -59,8 +60,8 @@ func (suite *DispatcherTestSuite) TestUnknownEvent() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
@@ -90,14 +91,14 @@ func (suite *DispatcherTestSuite) TestUpdateInProgressDeploymentEventReturnsErro
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
 	)
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    environmentName,
 		Cluster: clusterARN,
 	}
@@ -126,14 +127,14 @@ func (suite *DispatcherTestSuite) TestUpdateInProgressDeploymentEvent() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
 	)
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    environmentName,
 		Cluster: clusterARN,
 	}
@@ -157,14 +158,14 @@ func (suite *DispatcherTestSuite) TestStartPendingDeploymentEventReturnsError() 
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
 	)
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    environmentName,
 		Cluster: clusterARN,
 	}
@@ -189,14 +190,14 @@ func (suite *DispatcherTestSuite) TestStartPendingDeploymentEvent() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
 	)
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    environmentName,
 		Cluster: clusterARN,
 	}
@@ -223,14 +224,14 @@ func (suite *DispatcherTestSuite) TestStartDeploymentEventReturnsError() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
 	)
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    environmentName,
 		Cluster: clusterARN,
 	}
@@ -244,7 +245,7 @@ func (suite *DispatcherTestSuite) TestStartDeploymentEventReturnsError() {
 	}
 
 	err := errors.New("Error creating sub-deployment")
-	suite.deploymentSvc.EXPECT().
+	suite.deploymentService.EXPECT().
 		CreateSubDeployment(ctx, event.Environment.Name, event.Instances).
 		Return(nil, err)
 
@@ -262,14 +263,14 @@ func (suite *DispatcherTestSuite) TestStartDeploymentEvent() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
 	)
 
-	environment := types.Environment{
+	environment := environmenttypes.Environment{
 		Name:    environmentName,
 		Cluster: clusterARN,
 	}
@@ -285,7 +286,7 @@ func (suite *DispatcherTestSuite) TestStartDeploymentEvent() {
 	deployment := types.Deployment{
 		ID: uuid.NewRandom().String(),
 	}
-	suite.deploymentSvc.EXPECT().
+	suite.deploymentService.EXPECT().
 		CreateSubDeployment(ctx, event.Environment.Name, event.Instances).
 		Return(&deployment, nil).
 		Times(1)
@@ -304,8 +305,8 @@ func (suite *DispatcherTestSuite) TestStopTasksEventListTasksReturnsError() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
@@ -339,8 +340,8 @@ func (suite *DispatcherTestSuite) TestStopTasksEventECSStopTaskReturnsError() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,
@@ -383,8 +384,8 @@ func (suite *DispatcherTestSuite) TestStopTasksEvent() {
 	input := make(chan Event)
 	output := make(chan Event)
 	dispatcher := NewDispatcher(ctx,
-		suite.environmentSvc,
-		suite.deploymentSvc,
+		suite.environmentService,
+		suite.deploymentService,
 		suite.ecs, suite.css,
 		suite.deploymentWorker,
 		input, output,

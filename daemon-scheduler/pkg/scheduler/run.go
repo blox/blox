@@ -21,9 +21,9 @@ import (
 	"github.com/blox/blox/daemon-scheduler/pkg/config"
 	"github.com/blox/blox/daemon-scheduler/pkg/deployment"
 	"github.com/blox/blox/daemon-scheduler/pkg/engine"
+	"github.com/blox/blox/daemon-scheduler/pkg/environment"
 	"github.com/blox/blox/daemon-scheduler/pkg/facade"
 	"github.com/blox/blox/daemon-scheduler/pkg/store"
-	"github.com/blox/blox/daemon-scheduler/pkg/types"
 	log "github.com/cihub/seelog"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/pkg/errors"
@@ -91,33 +91,33 @@ func Run(schedulerBindAddr string, clusterStateServiceEndpoint string) error {
 		return err
 	}
 
-	environment, err := deployment.NewEnvironment(environmentStore)
+	environmentService, err := environment.NewEnvironmentService(environmentStore)
 	if err != nil {
-		log.Criticalf("Could not initialize environment: %+v", err)
+		log.Criticalf("Could not initialize environmentService: %+v", err)
 		return err
 	}
 
-	deploymentSvc := deployment.NewDeployment(environmentStore, css, ecs)
-	environmentFacade, err := types.NewEnvironmentFacade(css)
+	deploymentService := deployment.NewDeploymentService(environmentStore, css, ecs)
+	environmentFacade, err := environment.NewEnvironmentFacade(css)
 	if err != nil {
 		log.Criticalf("Could not initialize environmentFacade: %+v", err)
 		return err
 	}
-	deploymentWorker := deployment.NewDeploymentWorker(environment, environmentFacade, deploymentSvc, ecs, css)
+	deploymentWorker := deployment.NewDeploymentWorker(environmentService, environmentFacade, deploymentService, ecs, css)
 
 	ctx := context.Background()
 	input := make(chan engine.Event)
 	output := make(chan engine.Event)
-	dispatcher := engine.NewDispatcher(ctx, environment, deploymentSvc, ecs, css, deploymentWorker, input, output)
+	dispatcher := engine.NewDispatcher(ctx, environmentService, deploymentService, ecs, css, deploymentWorker, input, output)
 	dispatcher.Start()
-	scheduler := engine.NewScheduler(ctx, input, environment, deploymentSvc, css, ecs)
+	scheduler := engine.NewScheduler(ctx, input, environmentService, deploymentService, css, ecs)
 	scheduler.Start()
 
-	monitor := engine.NewMonitor(ctx, environment, input)
+	monitor := engine.NewMonitor(ctx, environmentService, input)
 	monitor.PendingMonitorLoop(engine.PendingMonitorTickerDuration)
 	monitor.InProgressMonitorLoop(engine.InProgressMonitorTickerDuration)
 
-	api := v1.NewAPI(environment, deploymentSvc, ecs)
+	api := v1.NewAPI(environmentService, deploymentService, ecs)
 
 	// start server
 	router := v1.NewRouter(api)

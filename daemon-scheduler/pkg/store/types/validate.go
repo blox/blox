@@ -13,7 +13,7 @@
 
 package types
 
-import "github.com/blox/blox/daemon-scheduler/pkg/types"
+import "github.com/blox/blox/daemon-scheduler/pkg/environment/types"
 
 // ValidateAndUpdateEnvironment - implementation should validate the environment
 // being passed into the function and return an updated environment based on the
