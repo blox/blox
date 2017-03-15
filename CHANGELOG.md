@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+### New features
+* Added transactions to the daemon-scheduler for all database writes. [#169](https://github.com/blox/blox/pull/169)
+* Automated the cluster-state-service e2e tests setup. [#178](https://github.com/blox/blox/pull/178)
+* Automated the daemon-scheduler e2e and integration tests setup. [#186](https://github.com/blox/blox/pull/186)
+
 ## 0.2.1
 
 ### Notable bug fixes
