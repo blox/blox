@@ -2,7 +2,7 @@
 [Blox] Deploy release - v$$blox_version$$
 
 ## Activity Details
-This activity is to: Release Blox version v$$blox_version$$ by merging the dev branch into the master branch on GitHub, and pushing new Blox images up to Docker Hub.
+This activity is to: Release Blox version v$$blox_version$$ by merging the release-$$blox_version$$ branch into the dev and master branches on GitHub, and pushing new Blox images up to Docker Hub.
 
 The purpose of this change is to: Release the latest features and bug fixes for Blox to allow consumers to start using the new functionality. For more details about the specific changes being released, refer to the $$blox_version$$ release notes [here](https://github.com/blox/blox/blob/dev/CHANGELOG.md).
 
@@ -71,6 +71,8 @@ Refer to the Validation Activities section for more details about each activity 
 - [ ] Ensure that the cluster-state-service end-to-end tests pass against the $$ecr_css_repo_uri$$:$$blox_version$$ image.
 - [ ] Ensure that the daemon-scheduler end-to-end tests pass against the $$ecr_ds_repo_uri$$:$$blox_version$$ image.
 - [ ] Ensure that the daemon-scheduler integration tests pass against the $$ecr_ds_repo_uri$$:$$blox_version$$ image.
+- [ ] Create a pull request from the release-$$blox_version$$ branch to the master branch in GitHub.
+- [ ] Ensure that the pull request from the release-$$blox_version$$ branch to the master branch in GitHub is approved.
 - [ ] Release activities:
 - [ ] Push the release-$$blox_version$$ branch up to the Github dev and master branches.
 - [ ] Publish the v$$blox_version$$ release in GitHub.
@@ -422,6 +424,7 @@ e2214884f981   bloxoss/cluster-state-service:$$blox_version$$   Up      <- Shoul
 
 ## Validation Checklist
 - [ ] Verify that the Blox GitHub release < https://github.com/blox/blox/releases/tag/v$$blox_version$$ > looks correct and points to the correct revision. You should see the git hash '$$github_hash$$' on this page.
+- [ ] Verify that the pull request from the release-$$blox_version$$ branch to the master branch in GitHub is closed.
 - [ ] Verify that doing a docker pull of all six tags works.
 - [ ] Verify that doing a docker run of all six tags shows the correct version and commit hash.
 - [ ] Verify that doing a Local Deployment of the v$$blox_version$$ tag shows the correct versions.
