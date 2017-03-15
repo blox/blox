@@ -199,3 +199,31 @@ func (ecsWrapper ECSWrapper) DescribeTasks(cluster *string, taskArns []*string) 
 
 	return resp.Tasks, nil
 }
+
+func (ecsWrapper ECSWrapper) DeregisterContainerInstances(clusterName *string, instanceARNs []*string) error {
+	for _, instanceARN := range instanceARNs {
+		err := ecsWrapper.deregisterContainerInstance(clusterName, instanceARN)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ecsWrapper ECSWrapper) deregisterContainerInstance(clusterName *string, instanceARN *string) error {
+	forceDeregister := true
+	in := ecs.DeregisterContainerInstanceInput{
+		Cluster:           clusterName,
+		ContainerInstance: instanceARN,
+		Force:             &forceDeregister,
+	}
+
+	_, err := ecsWrapper.client.DeregisterContainerInstance(&in)
+	if err != nil {
+		return errors.Wrapf(err, "Error deregistering container instance with ARN '%s' in cluster with name '%s'. ",
+			*instanceARN, *clusterName)
+	}
+
+	return nil
+}
+

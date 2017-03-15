@@ -29,6 +29,13 @@ import (
 	. "github.com/gucumber/gucumber"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+)
+
+var (
+	roleName            = "DSTestRole"
+	instanceProfileName = "DSTestInstance"
+	policyARN           = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 )
 
 const (
@@ -38,11 +45,18 @@ const (
 	invalidCluster                = "cluster/cluster"
 	badRequestHTTPResponse        = "400 Bad Request"
 	listEnvironmentsBadRequest    = "ListEnvironmentsBadRequest"
+
+	errorCode            	      = 1
+	launchConfigurationName	      = "DSASGLaunchConfiguration"
+	defaultASGClusterName 	      = "DSClusterASG"
+	defaultECSClusterName 	      = "DSTestCluster"
 )
 
 func init() {
 	asgWrapper := wrappers.NewAutoScalingWrapper()
 	ecsWrapper := wrappers.NewECSWrapper()
+	ec2Wrapper := wrappers.NewEC2Wrapper()
+	iamWrapper := wrappers.NewIAMWrapper()
 	edsWrapper := wrappers.NewEDSWrapper()
 	ctx := context.Background()
 
@@ -51,6 +65,120 @@ func init() {
 		T.Errorf("Error creating CSS client: %v", err)
 		return
 	}
+
+	// TODO: Change these os.Exit calls to T.Errorf. Currently unable to do so because T is not initialized until the first test.
+	// (https://github.com/gucumber/gucumber/issues/28)
+	BeforeAll(func() {
+		clusterName := wrappers.GetClusterName()
+
+		_, err := ecsWrapper.CreateCluster(clusterName)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		err = terminateAllContainerInstances(ec2Wrapper, ecsWrapper, clusterName)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		azs, err := ec2Wrapper.DescribeAvailabilityZones()
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(errorCode)
+		}
+
+		asg = wrappers.GetASGName()
+		if asg == defaultASGClusterName {
+			keyPair := wrappers.GetKeyPairName()
+
+			err = createInstanceProfile(iamWrapper)
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(errorCode)
+			}
+
+			amiID, err := wrappers.GetLatestECSOptimizedAMIID()
+			if err != nil {
+				fmt.Println(err.Error())
+				os.Exit(errorCode)
+			}
+
+			err = asgWrapper.CreateLaunchConfiguration(launchConfigurationName, clusterName, instanceProfileName, keyPair, amiID)
+			if err != nil {
+				if awsErr, ok := errors.Cause(err).(awserr.Error); !ok || awsErr.Code() != "AlreadyExists" {
+					fmt.Println(err.Error())
+					os.Exit(errorCode)
+				}
+			}
+
+			err = asgWrapper.CreateAutoScalingGroup(asg, launchConfigurationName, azs)
+			if err != nil {
+				if awsErr, ok := errors.Cause(err).(awserr.Error); !ok || awsErr.Code() != "AlreadyExists" {
+					fmt.Println(err.Error())
+					os.Exit(errorCode)
+				} else {
+					asgStatus, err := asgWrapper.GetAutoScalingGroupStatus(asg)
+					if err != nil {
+						fmt.Println(err.Error())
+						os.Exit(errorCode)
+					}
+					if asgStatus == "Delete in progress" {
+						fmt.Println("The current Autoscaling Group is in progress of deleting. Wait for the deletion to complete and restart the test.")
+						os.Exit(errorCode)
+					}
+				}
+			}
+		}
+	})
+
+	AfterAll(func() {
+		clusterName := wrappers.GetClusterName()
+
+		err := stopAllTasks(ecsWrapper, clusterName)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+
+		if wrappers.GetASGName() == defaultASGClusterName {
+			forceDelete := true
+			// With ForceDelete set to true, this will delete all instances attached to the Autoscaling group
+			err = asgWrapper.DeleteAutoScalingGroup(asg, forceDelete)
+			if err != nil {
+				T.Errorf(err.Error())
+				return
+			}
+
+			err = asgWrapper.DeleteLaunchConfiguration(launchConfigurationName)
+			if err != nil {
+				T.Errorf(err.Error())
+				return
+			}
+		} else {
+			err = terminateAllContainerInstances(ec2Wrapper, ecsWrapper, clusterName)
+			if err != nil {
+				T.Errorf(err.Error())
+				return
+			}
+		}
+
+		if wrappers.GetClusterName() == defaultECSClusterName {
+			_, err = ecsWrapper.DeleteCluster(clusterName)
+			if err != nil {
+				T.Errorf(err.Error())
+				return
+			}
+		}
+
+		err = deleteInstanceProfile(iamWrapper)
+		if err != nil {
+			T.Errorf(err.Error())
+			return
+		}
+
+	})
 
 	When(`^I make a Ping call$`, func() {
 		err = edsWrapper.Ping()
@@ -593,6 +721,133 @@ func init() {
 			return
 		}
 	})
+}
+
+func terminateAllContainerInstances(ec2Wrapper wrappers.EC2Wrapper, ecsWrapper wrappers.ECSWrapper, clusterName string) error {
+	instanceARNs, err := ecsWrapper.ListContainerInstances(clusterName)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to list container instances from cluster '%v'.", clusterName)
+	}
+
+	if len(instanceARNs) == 0 {
+		return nil
+	}
+
+	err = ecsWrapper.DeregisterContainerInstances(&clusterName, instanceARNs)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to deregister container instances '%v'.", instanceARNs)
+	}
+
+	ec2InstanceIDs := make([]*string, 0, len(instanceARNs))
+	for _, v := range instanceARNs {
+		containerInstance, err := ecsWrapper.DescribeContainerInstance(clusterName, *v)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to describe container instance '%v'.", v)
+		}
+		ec2InstanceIDs = append(ec2InstanceIDs, containerInstance.Ec2InstanceId)
+	}
+
+	err = ec2Wrapper.TerminateInstances(ec2InstanceIDs)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to terminate container instances '%v'.", ec2InstanceIDs)
+	}
+
+	return nil
+}
+
+func stopAllTasks(ecsWrapper wrappers.ECSWrapper, clusterName string) error {
+	taskARNList, err := ecsWrapper.ListTasks(clusterName, nil)
+	if err != nil {
+		return err
+	}
+	for _, t := range taskARNList {
+		err = ecsWrapper.StopTask(clusterName, *t)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func createInstanceProfile(iamWrapper wrappers.IAMWrapper) error {
+	assumeRolePolicy := `{
+		"Version": "2012-10-17",
+		"Statement": [
+		{
+		"Effect": "Allow",
+		"Principal": {
+			"Service": "ec2.amazonaws.com"
+		},
+		"Action": "sts:AssumeRole"
+		}
+		]
+	}`
+
+	err := iamWrapper.GetRole(&roleName)
+	if err != nil {
+		if awsErr, ok := errors.Cause(err).(awserr.Error); ok && awsErr.Code() == "NoSuchEntity" {
+			err = iamWrapper.CreateRole(&roleName, &assumeRolePolicy)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	err = iamWrapper.GetInstanceProfile(&instanceProfileName)
+	if err != nil {
+		if awsErr, ok := errors.Cause(err).(awserr.Error); ok && awsErr.Code() == "NoSuchEntity" {
+			err = iamWrapper.CreateInstanceProfile(&instanceProfileName)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	err = iamWrapper.AttachRolePolicy(&policyARN, &roleName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.AddRoleToInstanceProfile(&roleName, &instanceProfileName)
+	if err != nil {
+		if awsErr, ok := errors.Cause(err).(awserr.Error); ok {
+			if awsErr.Code() != "EntityAlreadyExists" && awsErr.Code() != "LimitExceeded" {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deleteInstanceProfile(iamWrapper wrappers.IAMWrapper) error {
+	err := iamWrapper.DetachRolePolicy(&policyARN, &roleName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.RemoveRoleFromInstanceProfile(&roleName, &instanceProfileName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.DeleteRole(&roleName)
+	if err != nil {
+		return err
+	}
+
+	err = iamWrapper.DeleteInstanceProfile(&instanceProfileName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func deleteEnvironment(environment string, edsWrapper wrappers.EDSWrapper) {
