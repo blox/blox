@@ -1,5 +1,52 @@
 # Daemon Scheduler
 
+<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Introduction](#introduction)
+- [What is a daemon scheduler?](#what-is-a-daemon-scheduler)
+- [Scope](#scope)
+- [User Experience](#user-experience)
+	- [Starting a Deployment](#starting-a-deployment)
+	- [Updating a deployment](#updating-a-deployment)
+	- [Rolling back a deployment](#rolling-back-a-deployment)
+	- [Stopping a deployment](#stopping-a-deployment)
+	- [Deleting an environment](#deleting-an-environment)
+	- [Getting deployment and environment state](#getting-deployment-and-environment-state)
+- [Design](#design)
+	- [Architecture](#architecture)
+	- [Service Descriptions](#service-descriptions)
+		- [Blox Frontend](#blox-frontend)
+		- [Data Service](#data-service)
+		- [State Service](#state-service)
+		- [Scheduling Manager Controller](#scheduling-manager-controller)
+		- [Scheduling Manager](#scheduling-manager)
+		- [Scheduler (currently part of the scheduling manager, can be split out later)](#scheduler-currently-part-of-the-scheduling-manager-can-be-split-out-later)
+	- [Service Design](#service-design)
+		- [Frontend](#frontend)
+			- [APIs](#apis)
+		- [Data Service](#data-service)
+			- [Data Model](#data-model)
+		- [Queries](#queries)
+		- [State Service](#state-service)
+		- [Scheduling Manager Controller](#scheduling-manager-controller)
+			- [Manager Creation](#manager-creation)
+			- [Monitoring and Lifecycle](#monitoring-and-lifecycle)
+			- [Infrastructure](#infrastructure)
+		- [Scheduling Manager](#scheduling-manager)
+			- [Pending Deployments](#pending-deployments)
+			- [In-Progress Deployments](#in-progress-deployments)
+			- [Monitoring State](#monitoring-state)
+			- [Deleting environments](#deleting-environments)
+- [Security](#security)
+	- [Key data flows](#key-data-flows)
+	- [Potential threats and mitigations](#potential-threats-and-mitigations)
+		- [Scheduler DoS](#scheduler-dos)
+	- [Malicious callers](#malicious-callers)
+	- [Data security](#data-security)
+	- [Network security](#network-security)
+
+<!-- /TOC -->
+
 ## Introduction
 This is a proposal for a managed open source daemon scheduler that will be part of the  ECS service. Customers will be able to use this scheduler the same way they use other AWS services: by making calls to the service using the AWS console, CLI/SDKs. Customers will also be able to see the code and will have visibility into architectural decisions and will have the option to modify the code to better fit their use case.
 
@@ -30,12 +77,12 @@ Out of scope for v1:
 *	healthchecks (including custom healthcheck scripts)
 
 ## User Experience
-Users interact with the scheduler by using **deployment** and **environment** APIs. An **environment** is an object that contains the configuration and metadata about deployments. An environment is what defines what type of scheduler will be running in a cluster (service, daemon, cron) and how it will be rolled out (deployment preferences). A **deployment** is what places tasks in the cluster. 
+Users interact with the scheduler by using **deployment** and **environment** APIs. An **environment** is an object that contains the configuration and metadata about deployments. An environment is what defines what type of scheduler will be running in a cluster (service, daemon, cron) and how it will be rolled out (deployment preferences). A **deployment** is what places tasks in the cluster.
 
 Modeling the APIs around deployments gives users the flexibility to start, stop, rollback and update deployments, and also control how they want their tasks to be updated and rolled back on instances during a deployment simply by providing deployment configuration. By keeping the APIs generic around deployments, we can add additional schedulers in the future but keep the interface and APIs consistent across scheduler types.
 
 ### Starting a Deployment
-To start deploying tasks, users need to create an environment. 
+To start deploying tasks, users need to create an environment.
 ```
 CreateEnvironmentResponse CreateEnvironment(CreateEnvironmentRequest)
 
@@ -247,7 +294,7 @@ The scheduler service contains the scheduling (choose where to launch) and deplo
 ### Service Design
 #### Frontend
 
-The blox scheduler will have its own frontend instead of being part of the ECS frontend. This is necessary for open sourcing the scheduler because the ECS frontend relies on internal only frameworks. 
+The blox scheduler will have its own frontend instead of being part of the ECS frontend. This is necessary for open sourcing the scheduler because the ECS frontend relies on internal only frameworks.
 
 Blox services (frontend, dataservice, scheduler, etc) will be either built on top of Lambda or ECS using an open source web service framework like Spring Boot. For authentication, authorization and throttling blox will use AWS API Gateway with Lambda integration.
 
@@ -434,7 +481,7 @@ if a new environment is created (listen to dynamodb stream)
            lastUpdatedTime is older than the expected heartbeat interval) {
 
             create a new manager record with environmentName and
-                new managerId and status=unregistered 
+                new managerId and status=unregistered
         }
 
         if manager record put successful
