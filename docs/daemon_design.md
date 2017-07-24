@@ -18,7 +18,6 @@
 		- [Blox Frontend](#blox-frontend)
 		- [Data Service](#data-service)
 		- [State Service](#state-service)
-		- [Scheduling Manager Controller](#scheduling-manager-controller)
 		- [Scheduling Manager](#scheduling-manager)
 		- [Scheduler (currently part of the scheduling manager, can be split out later)](#scheduler-currently-part-of-the-scheduling-manager-can-be-split-out-later)
 	- [Service Design](#service-design)
@@ -28,10 +27,6 @@
 			- [Data Model](#data-model)
 		- [Queries](#queries)
 		- [State Service](#state-service)
-		- [Scheduling Manager Controller](#scheduling-manager-controller)
-			- [Manager Creation](#manager-creation)
-			- [Monitoring and Lifecycle](#monitoring-and-lifecycle)
-			- [Infrastructure](#infrastructure)
 		- [Scheduling Manager](#scheduling-manager)
 			- [Pending Deployments](#pending-deployments)
 			- [In-Progress Deployments](#in-progress-deployments)
@@ -44,6 +39,12 @@
 	- [Malicious callers](#malicious-callers)
 	- [Data security](#data-security)
 	- [Network security](#network-security)
+- [Appendix](#appendix)
+	- [Scheduler Running on ECS](#scheduler-running-on-ecs)
+		- [Scheduling Manager Controller](#scheduling-manager-controller)
+			- [Manager Creation](#manager-creation)
+			- [Monitoring and Lifecycle](#monitoring-and-lifecycle)
+			- [Infrastructure](#infrastructure)
 
 <!-- /TOC -->
 
@@ -270,9 +271,6 @@ The data service acts as the interface to the deployment and environment data. C
 #### State Service
 The state service creates and stores a copy of the cluster (instance and task) state in ECS. This allows the schedulers to read from a local copy and avoid having to poll ECS for state. This is eventually consistent data.
 
-#### Scheduling Manager Controller
-The controller is responsible for scheduling manager creation and lifecycle management.
-
 #### Scheduling Manager
 The scheduling manager handles deployments and ensures that the environment is up to date. It handles
 
@@ -443,156 +441,18 @@ Another option to look into is whether we can get a snapshot of current state fr
 
 We will be storing all state in the state service and not just data about the tasks started by blox. This means that not all tasks will have environment and deployment data associated with them so this information cannot be part of the keys. Unfortunately, that means that we won't be able to filter on that data and getting tasks for an environment or deployment will need to be performed by the business logic after all tasks for the cluster are retrieved.
 
-#### Scheduling Manager Controller
-The controller handles the creation and lifecycle of scheduling managers. This might become unnecessary if we build everything on top of Lambda.
-
-##### Manager Creation
-
-The managers need to handle a large number of environments and deployments. One instance of a manager can only handle so many environments before it starts falling behind. We need a strategy for splitting up environments between managers.
-
-One option is to assign x number of environments per scheduling manager and create new scheduling managers if the number of environments grows. We will need to define the order in which the environments are handled by the manager and ensure that one customer doesn't adversely affect another by having a large number of deployments. We will also need to handle creating new scheduling managers, cleaning up inactive environments and reshuffling the remaining environments between managers to avoid running managers at low utilization.
-
-Another option is assigning only one environment per manager. Every time a new environment is created, we spin up a new scheduling manager. Every time an environment is deleted, the scheduling manager responsible for the environment is shut down. Each scheduling manager can then subscribe to state service's dynamodb stream for clusters belonging to the customer who owns the environment.
-
-We will move forward with the second option, *one scheduling manager per environment*, to make scaling and cleanup of managers simpler, and ensure that customers do not affect each other.
-
-The controller will be responsible for creating a scheduling manager for every new environment, making sure that the scheduling manager is alive and healthy, and restarting it if it dies. The controller will keep track of manager health by expecting regular heartbeats from the scheduling manager. If heartbeats are not received, the manager will be restarted.
-
-```
-Table: Scheduling_Managers
-Key: EnvironmentName
-SortKey: ManagerId
-```
-
-```
-Starting a manager
-
-if a new environment is created (listen to dynamodb stream)
-    create manager workflow {
-
-        if cluster does not exist for the environment customer
-            cluster creation workflow {
-                create an autoscaling group
-                create cluster
-                wait for instances in the cluster to become available
-            }
-
-        if (less than desired number of managers exist for the environment OR
-           lastUpdatedTime is older than the expected heartbeat interval) {
-
-            create a new manager record with environmentName and
-                new managerId and status=unregistered
-        }
-
-        if manager record put successful
-            scheduling manager creation workflow {
-                start a manager task in the customer cluster
-                autoscale the cluster if needed
-                describe task until ready
-
-                if task cannot be started
-                    update environment with status launch_failed
-                else if task is running
-                    update environment to launched
-            }
-    }
-```
-
-If the controller instance dies in the middle of starting a manager, we need to be able to pick up the work where it was left off and continue. To achieve this we need to save state after each operation so the next worker knows where the work was interrupted, i.e. a workflow. We will use AWS Stepfunctions to create a workflow: state handling and retries will be handled by the stepfunctions service.
-
-##### Monitoring and Lifecycle
-
-We might get into situations where there are multiple managers running for an environment, for example, if a manager cannot send a heartbeat but is still processing deployments. The managers will "lock" the deployment when they pick it up for processing by updating the environment record to "being-processed" using dynamodb conditional writes to avoid race conditions. This will ensure that even if there are multiple managers running for an environment, they don't do duplicate work. The manager might die before releasing the lock. We will need a monitor to go through all deployments and release the lock if it's been held for too long. We also need a monitor to sweep for duplicate managers and clean them up.
-
-```
-Remove stale locks for deployments
-
-scan through all deployments
-if deployment in-progress and locked and lastUpdatedTime < acceptable interval
-    remove lock
-    (it's possible that tasks are in-flight being started on ECS => need idempotent start task)
-```
-
-```
-Clean up stale managers
-
-scan through all managers
-if duplicate managers for environment
-    shut down one manager
-    (TBD: how do we know it's not performing work and how do we ensure that the task is shut
-    down before we update the state?)
-```
-
-```
-Unregister a manager
-
-if unregister heartbeat received, that means the environment is being deleted
-  remove scheduling manager record from ddb
-```
-
-```
-Monitor for late heartbeats
-
-scan through all managers
-if lastUpdatedTime < heartbeat interval (account for clock skew)
-    start another instance of the manager
-```
-
-Monitoring tasks should be performed by only one controller at a time to avoid consuming lots of dynamodb read capacity, as we are going to be scanning through all items in the tables.
-
-We can use primary/failover architecture: assign a primary instance that always performs this task and fail over to replicas in case of a primary failure. This disadvantages of this option are:
-1.	we will need to handle failover logic
-2.	the monitoring job might exceed the allotted time for the job and/or overlap with the next scheduled job and
-3.	if the primary fails in the middle of the job, the managers won't be restarted until the next scheduled event when the remaining work will be picked up
-
-Instead of setting up primary/failover hosts, we can utilize scheduled cloudwatch events to start the monitoring tasks by making an API call. This removes the need for failover logic and distributes the work among instances from one job to another.
-
-If the jobs overlap at some point because they're taking longer than the job start frequency, they will not interfere with each other since the conditional writes to dynamodb ensure that only one writer is able to update the field.
-
-If the job is not completed by a host, the rest of the work will be picked up the next time the job is run.
-
-##### Infrastructure
-
-This section describes where the managers are going to be launched by the controller.
-
-The controller will launch managers in the manager account using ECS. The managers are not running any customer code so it's not a security risk to run managers for different customers on the same instance. However, there is a limit on the number of instances per cluster. To be able to scale indefinitely, at some point we will have to create a new cluster.
-
-One option is to create a few clusters and randomly assign mangers to clusters. We will need to monitor cluster utilization and create new clusters if the existing ones are running out of space. However, if there is a problem with a cluster, it will affect a large number of managers and customers.
-
-Another option is to create a new cluster for each customer.  
-
-![Controller Diagram](images/controller_diagram.png)
-
-Pros:
-* This makes the boundary and the blast radius of a potential problem with a cluster smaller, affecting one customer instead of many.
-* Allows us to scale "by default": meaning always scale instead of only when clusters are full.
-
-Cons:
-* In the first option one customer might have managers spread across different clusters in which case not all of their workloads will be affected if one cluster is down.
-* Cluster per customer option means that we will be underutilizing capacity since a customer might not have enough managers to fully utilize all instances in the cluster.
-
-Customers do not have to have only one cluster. We can create new clusters if the customer is large enough or even have a cluster per environment.
-
-We should start with one cluster per customer to enable easy scaling and small blast radius. We will start the customer cluster with one instance per manager (so one initial instance) and autoscale the cluster when running out of resources and unable to launch new managers. Later we will implement cleanup of instances that are not being utilized for a long time.
-
-We need to estimate how long the cluster launch will take and whether we need warmpools.
-
-If we want to spread managers across accounts, the launching logic in the controller will need additional load balancing information between accounts to make a decision which account to launch managers in.
-
 #### Scheduling Manager
-
-When the scheduling manager starts, it registers with the scheduling manager controller. Then it performs healthchecks to verify that it can pull from the dynamodb streams for its environment. The scheduling manager sends regular heartbeats to the controller.
 
 Typically, the scheduler decides which instances to launch tasks on. Currently all placing and monitoring logic will live in the scheduling manager. We can split it out into 2 services when we implement a service scheduler.
 
 The scheduling manager is responsible for:
 *	handling new deployments, updates, rollbacks and stopping deployments
+  * processing the DynamoDB stream of new deployment records
   * monitoring the deployment table for pending deployments and starting them
   * monitoring the deployment table for in-progress deployments and updating state
   * monitoring the deployment table for stop deployments and initiating stopping the in-progress deployment
 *	updating environment state: healthy/unhealthy, etc
-*	monitoring new instances and starting tasks on them
-*	monitoring task health and relaunching them if they die
+*	monitoring cluster state: looking for new instances and starting tasks on them and checking task health and relaunching them if they die
 *	cleaning up tasks on instances removed from the cluster
 
 The scheduling manager will poll for deployments in the environment it's responsible for. Deployments will be handled as workflows. If the deployment is not being processed (is not "locked" and the state is not set to deploying), the manager will kick off a workflow to pick up the new or partial deployment, set it to DEPLOYING, check current state of the tasks that are supposed to be started with that deployment, and continue launching those tasks. However, because we get eventually consistent information from ECS, the manager might not know that tasks have been started on certain instances and the state has just not been updated yet and start new tasks. We should not allow this because there should only ever be one daemon task per environment running on an instance.
@@ -730,3 +590,147 @@ Since the various components of this service communicate with each other over a 
 - or manipulate network traffic, including man-in-the-middle/person-in-the-middle attacks.
 
 We'll mitigate these threats by using the Official AWS SDK to interact with AWS Services, and by securing communication between other components using HTTPS/TLS 1.2 with mutual certificate validation.
+
+
+## Appendix
+### Scheduler Running on ECS
+
+If we run the scheduler on ECS we need a mechanism to launch and scale managers. It would be possible to run the managers as an ECS service but it would be nice to avoid a circular dependency of the service scheduler running on the service scheduler and the challenges that presents especially during bootstrapping. To address this concern we have a scheduling manager controller service that is responsible for scheduling manager creation and lifecycle management.
+
+![Architectural Diagram](images/diagram.png)
+
+#### Scheduling Manager Controller
+The controller handles the creation and lifecycle of scheduling managers.
+
+##### Manager Creation
+
+The managers need to handle a large number of environments and deployments. One instance of a manager can only handle so many environments before it starts falling behind. We need a strategy for splitting up environments between managers.
+
+One option is to assign x number of environments per scheduling manager and create new scheduling managers if the number of environments grows. We will need to define the order in which the environments are handled by the manager and ensure that one customer doesn't adversely affect another by having a large number of deployments. We will also need to handle creating new scheduling managers, cleaning up inactive environments and reshuffling the remaining environments between managers to avoid running managers at low utilization.
+
+Another option is assigning only one environment per manager. Every time a new environment is created, we spin up a new scheduling manager. Every time an environment is deleted, the scheduling manager responsible for the environment is shut down. Each scheduling manager can then subscribe to state service's dynamodb stream for clusters belonging to the customer who owns the environment.
+
+We will move forward with the second option, *one scheduling manager per environment*, to make scaling and cleanup of managers simpler, and ensure that customers do not affect each other.
+
+The controller will be responsible for creating a scheduling manager for every new environment, making sure that the scheduling manager is alive and healthy, and restarting it if it dies. The controller will keep track of manager health by expecting regular heartbeats from the scheduling manager. If heartbeats are not received, the manager will be restarted.
+
+```
+Table: Scheduling_Managers
+Key: EnvironmentName
+SortKey: ManagerId
+```
+
+```
+Starting a manager
+
+if a new environment is created (listen to dynamodb stream)
+    create manager workflow {
+
+        if cluster does not exist for the environment customer
+            cluster creation workflow {
+                create an autoscaling group
+                create cluster
+                wait for instances in the cluster to become available
+            }
+
+        if (less than desired number of managers exist for the environment OR
+           lastUpdatedTime is older than the expected heartbeat interval) {
+
+            create a new manager record with environmentName and
+                new managerId and status=unregistered
+        }
+
+        if manager record put successful
+            scheduling manager creation workflow {
+                start a manager task in the customer cluster
+                autoscale the cluster if needed
+                describe task until ready
+
+                if task cannot be started
+                    update environment with status launch_failed
+                else if task is running
+                    update environment to launched
+            }
+    }
+```
+
+If the controller instance dies in the middle of starting a manager, we need to be able to pick up the work where it was left off and continue. To achieve this we need to save state after each operation so the next worker knows where the work was interrupted, i.e. a workflow. We will use AWS Stepfunctions to create a workflow: state handling and retries will be handled by the stepfunctions service.
+
+##### Monitoring and Lifecycle
+
+We might get into situations where there are multiple managers running for an environment, for example, if a manager cannot send a heartbeat but is still processing deployments. The managers will "lock" the deployment when they pick it up for processing by updating the environment record to "being-processed" using dynamodb conditional writes to avoid race conditions. This will ensure that even if there are multiple managers running for an environment, they don't do duplicate work. The manager might die before releasing the lock. We will need a monitor to go through all deployments and release the lock if it's been held for too long. We also need a monitor to sweep for duplicate managers and clean them up.
+
+```
+Remove stale locks for deployments
+
+scan through all deployments
+if deployment in-progress and locked and lastUpdatedTime < acceptable interval
+    remove lock
+    (it's possible that tasks are in-flight being started on ECS => need idempotent start task)
+```
+
+```
+Clean up stale managers
+
+scan through all managers
+if duplicate managers for environment
+    shut down one manager
+    (TBD: how do we know it's not performing work and how do we ensure that the task is shut
+    down before we update the state?)
+```
+
+```
+Unregister a manager
+
+if unregister heartbeat received, that means the environment is being deleted
+  remove scheduling manager record from ddb
+```
+
+```
+Monitor for late heartbeats
+
+scan through all managers
+if lastUpdatedTime < heartbeat interval (account for clock skew)
+    start another instance of the manager
+```
+
+Monitoring tasks should be performed by only one controller at a time to avoid consuming lots of dynamodb read capacity, as we are going to be scanning through all items in the tables.
+
+We can use primary/failover architecture: assign a primary instance that always performs this task and fail over to replicas in case of a primary failure. This disadvantages of this option are:
+1.	we will need to handle failover logic
+2.	the monitoring job might exceed the allotted time for the job and/or overlap with the next scheduled job and
+3.	if the primary fails in the middle of the job, the managers won't be restarted until the next scheduled event when the remaining work will be picked up
+
+Instead of setting up primary/failover hosts, we can utilize scheduled cloudwatch events to start the monitoring tasks by making an API call. This removes the need for failover logic and distributes the work among instances from one job to another.
+
+If the jobs overlap at some point because they're taking longer than the job start frequency, they will not interfere with each other since the conditional writes to dynamodb ensure that only one writer is able to update the field.
+
+If the job is not completed by a host, the rest of the work will be picked up the next time the job is run.
+
+##### Infrastructure
+
+This section describes where the managers are going to be launched by the controller.
+
+The controller will launch managers in the manager account using ECS. The managers are not running any customer code so it's not a security risk to run managers for different customers on the same instance. However, there is a limit on the number of instances per cluster. To be able to scale indefinitely, at some point we will have to create a new cluster.
+
+One option is to create a few clusters and randomly assign mangers to clusters. We will need to monitor cluster utilization and create new clusters if the existing ones are running out of space. However, if there is a problem with a cluster, it will affect a large number of managers and customers.
+
+Another option is to create a new cluster for each customer.  
+
+![Controller Diagram](images/controller_diagram.png)
+
+Pros:
+* This makes the boundary and the blast radius of a potential problem with a cluster smaller, affecting one customer instead of many.
+* Allows us to scale "by default": meaning always scale instead of only when clusters are full.
+
+Cons:
+* In the first option one customer might have managers spread across different clusters in which case not all of their workloads will be affected if one cluster is down.
+* Cluster per customer option means that we will be underutilizing capacity since a customer might not have enough managers to fully utilize all instances in the cluster.
+
+Customers do not have to have only one cluster. We can create new clusters if the customer is large enough or even have a cluster per environment.
+
+We should start with one cluster per customer to enable easy scaling and small blast radius. We will start the customer cluster with one instance per manager (so one initial instance) and autoscale the cluster when running out of resources and unable to launch new managers. Later we will implement cleanup of instances that are not being utilized for a long time.
+
+We need to estimate how long the cluster launch will take and whether we need warmpools.
+
+If we want to spread managers across accounts, the launching logic in the controller will need additional load balancing information between accounts to make a decision which account to launch managers in.
