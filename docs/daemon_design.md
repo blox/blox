@@ -30,8 +30,12 @@
 		- [Scheduling Manager](#scheduling-manager)
 			- [Pending Deployments](#pending-deployments)
 			- [In-Progress Deployments](#in-progress-deployments)
-			- [Monitoring State](#monitoring-state)
-			- [Deleting environments](#deleting-environments)
+			- [State Reconciliation](#state-reconciliation)
+- [Availability](#availability)
+	- [StepFunctions](#stepfunctions)
+	- [DynamoDB](#dynamodb)
+	- [Cloudwatch Events](#cloudwatch-events)
+	- [Lambda](#lambda)
 - [Security](#security)
 	- [Key data flows](#key-data-flows)
 	- [Potential threats and mitigations](#potential-threats-and-mitigations)
@@ -39,12 +43,13 @@
 	- [Malicious callers](#malicious-callers)
 	- [Data security](#data-security)
 	- [Network security](#network-security)
-- [Appendix](#appendix)
+- [Infrastructure](#infrastructure)
+	- [Scheduler Running on Lambda (current)](#scheduler-running-on-lambda-current)
 	- [Scheduler Running on ECS](#scheduler-running-on-ecs)
 		- [Scheduling Manager Controller](#scheduling-manager-controller)
 			- [Manager Creation](#manager-creation)
 			- [Monitoring and Lifecycle](#monitoring-and-lifecycle)
-			- [Infrastructure](#infrastructure)
+			- [Controller Infrastructure](#controller-infrastructure)
 
 <!-- /TOC -->
 
@@ -136,9 +141,11 @@ StartDeploymentRequest {
 
 ```
 
+![Starting a deployment](images/StartingDeploymentSeq.png)
+
 ### Updating a deployment
 
-The deployment configuration can be updated with **UpdateEnvironment**. All fields except TaskDefinition are optional and if not provided will remain the same. This will not kick off a new deployment until the user makes a **StartDeployment** call. If there is a pending deployment, that deployment will be canceled. If there are in-progress deployments, the new deployment will stay in pending state until the in-progress deployment is completed. Alternatively, forceDeployment can be set to true in startDeployment which will stop the in-progress deployment and start a new deployment replacing the inconsistent current state with the new desired state.
+The deployment configuration can be updated with **UpdateEnvironment**. All fields except TaskDefinition are optional and if not provided will remain the same. This will not kick off a new deployment until the user makes a **StartDeployment** call. If there is a pending deployment, that deployment will be canceled. If there are in-progress deployments, the new deployment will stay in pending state until the in-progress deployment is completed.
 
 If the cluster or instances are modified, tasks are started on the new instances matching the constraints and tasks on instances that don't match anymore are terminated.
 ```
@@ -157,7 +164,6 @@ StartDeploymentResponse StartDeployment(StartDeploymentRequest)
 StartDeploymentRequest {
     EnvironmentName: string
     EnvironmentVersion: uuid
-    ForceDeployment: boolean
 }
 
 InstanceGroup {
@@ -165,6 +171,8 @@ InstanceGroup {
     Attributes: list of string (optional)
 }
 ```
+
+![Updating a deployment](images/UpdatingDeploymentSeq.png)
 
 ### Rolling back a deployment
 Rolling back a deployment will start a new deployment with the previous deployment configuration. Users can also pass in an environmentversion to rollback to. Rollback will use minHealthyPercent from the deployment configuration to perform the deployment.
@@ -258,7 +266,7 @@ ListDeploymentsResponse {
 
 ## Design
 ### Architecture
-![Architectural Diagram](images/diagram.png)
+![Architectural Diagram](images/architecture_diagram_lambda.png)
 
 ### Service Descriptions
 
@@ -292,20 +300,16 @@ The scheduler service contains the scheduling (choose where to launch) and deplo
 ### Service Design
 #### Frontend
 
-The blox scheduler will have its own frontend instead of being part of the ECS frontend. This is necessary for open sourcing the scheduler because the ECS frontend relies on internal only frameworks.
-
-Blox services (frontend, dataservice, scheduler, etc) will be either built on top of Lambda or ECS using an open source web service framework like Spring Boot. For authentication, authorization and throttling blox will use AWS API Gateway with Lambda integration.
-
-We will use swagger to define the API schema.
+The blox scheduler will have its own frontend instead of being part of the ECS frontend. This is necessary for open sourcing the scheduler because the ECS frontend relies on internal only frameworks. For authentication, authorization and throttling blox will use AWS API Gateway with Lambda integration. We will use swagger to define the API schema.
 
 ##### APIs
-**CreateEnvironment** creates an environment object in the data service. The environment is created in an inactive state which means that the state monitors (new instance monitor and task health monitor) are not enabled until a deployment is kicked off for the first time or the environment is updated to be active.
+**CreateEnvironment** creates an environment object in the data service. The environment is created in an inactive state which means that no monitor-deployments (which are deployments created automatically by the manager monitors when a new instance joins the cluster or a task failure happens) are created until a user-created deployment is kicked off or the environment is updated to be active.
 
 An alternative is to kick off a deployment any time an environment is created or updated, effectively removing the need for a **startDeployment** API. The advantages of this approach are one less API to call but the disadvantages are less control: the user cannot see the diff of changes before making them, the user cannot create an environment without kicking off a deployment and they cannot update an environment while a deployment is in progress because that deployment will be stopped and a new one will be started. One might argue that there is no reason for a user to update an environment unless they want to create a new deployment. While true, AWS APIs conventionally don't have a lot of side effects and err on the side of more control. It also might be confusing to have a **stopDeployment** API but not have a **startDeployment** one.
 
-All deployments created with the APIs are marked as user-initiated. When a new instance joins or a task needs to be restarted, the scheduling manager treats these events as deployments as well but they are marked as a different type.
+All deployments created with the APIs are marked as user-created. When a new instance joins or a task needs to be restarted the deployment is marked as monitor-created.
 
-**StartDeployment** creates a deployment object in the data service. Deployments are created in pending state. If there is an existing user-initiated pending deployment, that deployment is set to canceled.
+**StartDeployment** creates a deployment object in the data service. Deployments are created in pending state. If there is an existing user-created pending deployment, that deployment is set to canceled.
 
 **RollbackDeployment** retrieves the corresponding deployment details and creates a new pending deployment with those details.
 
@@ -376,7 +380,7 @@ All the Get/List APIs interact with the data service to retrieve and return obje
         EndTime: timestamp
 
     DeploymentType (need to come up with better names)
-        User-initiated
+        User-created
         Autoscaling (new instance?)
         Health-repair
 
@@ -393,7 +397,8 @@ The scheduling manager and controller will need to query the data in the followi
 *	get all environments that contain cluster or attributes
 *	get all environments by status
 *	get all environments by health
-*	get deployments by environment name and deployment status (pending, etc)
+* get all deployments by status
+*	get deployments by environment name
 *	get deployment by deployment id
 
 DynamoDB supports querying by primary key and additional filtering by sort key. There can, however, only be one sort key. (It's possible to add local and global indices but that consumes more capacity.) Because we need to query by a few different attributes it seems inevitable the we will need to scan through items to filter after the items are retrieved.
@@ -416,6 +421,7 @@ The daemon scheduler needs the following from ECS:
 *	get instances in the cluster that have certain attributes
 *	get tasks started by deployment
 *	get running tasks for an environment
+* get failed tasks
 
 Ideally, we'd use the ECS event stream to get notified when new instances join the cluster and when task health changes. However,
 
@@ -455,89 +461,135 @@ The scheduling manager is responsible for:
 *	monitoring cluster state: looking for new instances and starting tasks on them and checking task health and relaunching them if they die
 *	cleaning up tasks on instances removed from the cluster
 
-The scheduling manager will poll for deployments in the environment it's responsible for. Deployments will be handled as workflows. If the deployment is not being processed (is not "locked" and the state is not set to deploying), the manager will kick off a workflow to pick up the new or partial deployment, set it to DEPLOYING, check current state of the tasks that are supposed to be started with that deployment, and continue launching those tasks. However, because we get eventually consistent information from ECS, the manager might not know that tasks have been started on certain instances and the state has just not been updated yet and start new tasks. We should not allow this because there should only ever be one daemon task per environment running on an instance.
+The manager will consist of the following parts:
 
-We need idempotent task support from ECS. This would help when 2 managers attempt to start daemon tasks for the same deployment, or if the manager dies in the middle of a deployment and another one picks up the incomplete job but the tasks were kicked off by the first manager before it died. It would also be really helpful when performing updates to ensure that no 2 identical daemon tasks ever exist on the same instance.
+* dynamoDB stream processor
+* deployment workflows
+ * start deployment
+ * update deployment state
+* deployment monitors monitoring deployment records in the dataservice
+ * pending deployments
+*  in-progress deployments
+* cluster state reconciliation
+ * reconciling environment state with cluster state: are there any new instances or failed tasks
+
+The manager will handle deployments as workflows using AWS StepFunctions. The manager will receive a record from DynamoDB streams notifying it of changes to the deployments table. If there is a new deployment request, a new workflow will be kicked off to handle it. The deployment workflow will verify the deployment state from the dataservice. If there is a deployment in progress when a new deployment is started, the deployment workflow will stop.
+
+The manager will be monitoring the data service (using scheduled cloudwatch events + lambda) for pending and in-progress deployments periodically and invoking a workflow to either start a new deployment (in case of pending deployments) or update the deployment state (in case of in-progress deployments).
+
+The manager will also have a workflow to reconcile state between state service and data service: for each environment it will check the state service for new instances and create a deployment in the data service (monitor-created deployment) to start a task on the new instances. This  workflow will also look for failed tasks and create deployments to restart them.
 
 ##### Pending Deployments
-We will use DynamoDB streams to kick off pending deployments, rollbacks and stop deployments to minimize processing time. In case of pending deployments, if there is an in-progress deployment and the pending deployment does not specify a forceDeployment option, we can't kick off the pending deployment right away and have to wait for the in-progress deployment to complete. We will have monitors that poll the deployments table to pick it up later.
+
+![Manager Starting a Deployment](images/ManagerProcessingDeployments.png)
+
+
+![Manager Starting a Deployment](images/ManagerMonitor.png)
 
 There are 3 possible states when a deployment is started:
-*	there is an existing pending deployment (there won't be any user-initiated pending deployments because when a new pending deployment is created by the user, the existing pending deployment is canceled. However, there might be pending deployments created by monitors)
-*	there is an in-progress deployment (user-initiated or monitor)
+*	there is an existing pending deployment (there won't be any user-created pending deployments because when a new pending deployment is created by the user, the existing pending deployment is canceled. However, there might be pending deployments created by monitors)
+*	there is an in-progress deployment (user-created or monitor-created)
 *	there are no deployments
 
 ```
-monitor pending deployments
-  if forceDeployment is false
-        verify there is no in-progress deployment in the environment
-        otherwise break
-    else
-        stop the in-progress deployment
-    if there are pending deployments
-        cancel pending deployments
+pending deployment workflow (started either by DynamoDB stream processor or manager pending deployments monitor)
+  get pending deployments from dataservice (there should only be one user-created but can be many monitor-created)
+  if none, return
 
-    move to in-progress
+  check for in-progress deployments in the environment (see note below)
+  if no in-progress
+    conditional update deployment from pending to in-progress
     update environment desired state
 
-    get all currently running tasks for the environment
-    if no currently running tasks
-        get instances corresponding to the deployment config
-        start tasks on those instances
-    else
-        while the update is not complete
-            calculate how many tasks can be replaced (100% - minHealthyPercent)
-            kill those tasks and replace them with new ones
-            (TBD how to perform updates if instance group has been updated)
-
-    update state
+    calculate which instances need to have tasks started on them (batching up monitor-created new instance deployments)
+    (TODO: handle updates. We need to replace tasks with new versions. How do we break it up?)
+    start tasks on these instances in batches (batch size = ECS limit)
+    update environment instances
 ```
+
+Note: TODO: how do we handle no transaction support: in-progress deployments can be started after we check for them? When moving the deployment from pending to in-progress we can set an in-progress deployment field on the environment if one doesn't exist. If the environment in-progress was successfully set, then the deployment is moved to an in-progress state and the workflow continues. However, we also need to ensure that the deployment state hasn't changed to canceled or another pending deployment hasn't canceled the current one. If so, we reset the environment in-progress field to null and stop the workflow. An alternative is to use a [DynamoDB transaction library](https://github.com/awslabs/dynamodb-transactions)
+(TODO: how do we handle stop in-progress deployments? Check from the deployment workflow periodically and cancel it?)
+
+There is no way to guarantee that the same task won't be started twice on the same instance because of call failures, eventual consistency, etc. So while it shouldn't be a problem most of the time and we can improve our chances of not starting the same task on the instance by listing tasks before starting them, we cannot guarantee that there will only ever be one daemon task on the instance. To be able to guarantee this we need "idempotent" task support from ECS, i.e. if this task has been started on this instance, do not start it again.
 
 ##### In-Progress Deployments
 ```
-for each daemon environment
-    for in-progress deployment (there should be 0 or 1)
-        get-tasks-by-started-by current deployment
-        update deployment with new task status
-        if all tasks are RUNNING
-            update current and failed task fields
-            update deployment to completed
-            update environment fields
-        if there are failed tasks (do tasks just stay in pending or fail?)
-            update current and failed task fields
-            update deployment to unhealthy
-            update environment fields
+for each in-progress deployment
+  invoke workflow
+    verify that the environment instances have the correct tasks running (TODO: listTasks can be filtered by task family. does that specify task version as well?)
+    verify that the tasks started by the latest deployment are in RUNNING state
+      get-tasks-by-started-by current deployment
+      update deployment with new task status
+      if all tasks are RUNNING
+        update current and failed task fields
+        update deployment to completed
+      if there are failed tasks (TODO: do tasks just stay in pending or fail?)
+        update current and failed task fields
+        update deployment to unhealthy
+      if deployment is taking longer than timeout periodically
+        set deployment to TIMED_OUT
 ```
 
 Once all the expected tasks have successfully started, the deployment state will be updated from in-progress to completed. If the scheduler is unsuccessful in starting tasks on all matching instances, the deployment status will be set to unhealthy. For now, we will not attempt to repair unhealthy deployments.
 
-##### Monitoring State
-The scheduling manager subscribes to the state service dynamodb stream that publishes a new event every time there's a cluster state change to monitor instance and task events.
+##### State Reconciliation
+The state service will receive updates to cluster state and task health from ECS by listening to the event stream and polling ECS to reconcile data periodically in case events were dropped somewhere. The scheduling manager needs to ensure that changes to the cluster state are acted upon: that tasks are started on new instances that match any environment instances (so if an environment specifies a cluster and a new instance is added to the cluster or the new instance matches has the attribute that the environment wants to deploy to) and that a failed task is restarted.
+
+TODO: we should prototype and benchmark how long it takes for a failed task to reschedule or for a new instance to get a task. If it takes unacceptably long to start a task on cluster state change, we can rely on DynamoDB streams from the state service for faster response times. If start task times are acceptable with just polling we don't need to add the additional component of DynamoDB streams with associated potential failures because we need to perform reconciliation anyway in case we drop stream records or there's a failure in processing them.
+
+The following workflows will be invoked from a lambda function started by scheduled cloudwatch events.
 
 ```
-if a new instance
-    find all daemon environments that contain the cluster of the instance
-    for each of those environments
-      if there are no pending user-initiated deployments
-        create a pending deployment of type newInstance and task definition corresponding to desired task definition on the environment
+for each environment
+  invoke workflow
+    get environment instances
+    get instances from state services matching the environment cluster + attributes
+    if there are instances that match the environment criteria but are not currently part of the environment
+      create a deployment to start tasks on those instances
+    if there are extra instances in the environment
+      create a deployment to stop tasks on those instances (TODO: how do we define deployments to stop tasks?)
 ```
 
-Desired state on the environment is only changed when pending deployments are kicked off. Users cannot modify desired state without starting a deployment. The only time desired task definition differs from current task definition is if there is a deployment in progress.
-
 ```
-if a failed task
-    find the deployment that started the task (task.started_by contains deployment id)
-    for each of those environments
-        create a pending deployment of type failed_task and task definition corresponding to the deployment task definition
+for each failed task in the state service
+  invoke workflow
+    if any environment cluster matches the failed task cluster (TODO: what information do we have from failed task? instance?)
+      create a deployment to restart task on that instance
 ```
 
-##### Deleting environments
-```
-monitor environments to be deleted
-   stop all deployments (the only in-progress deployments should be started by the scheduling manager)
-   stop all running tasks
-   delete the environment
-```
+## Availability
+
+### StepFunctions
+
+StepFunction workflows are invoked in the following situations:
+
+* pending deployments for each environment received from DynamoDB streams
+* pending deployments for each environment retrieved by CW Events + Lambda monitor
+* in-progress deployments for each environment retrieved by CW Events + Lambda monitor
+* new instance reconciliation for each environment
+* failed task restart for each environment
+
+StepFunctions have a limit of 1,000,000 open executions. This might become a problem when the number of environments grows. Especially for workflows being started from Lambda functions that start workflows for every environment, if the number of workflow executions exceeds the limit, the processing of deployments will be blocked until the number of active workflow executions falls below the limit. Also depending on the number of environments, if all environments are processed in the same Lambda function, the chances of failure and exceeding the execution time limit become higher. To make the blast radius smaller in the case of a failure, we can decrease the scan batch size. DynamoDB allows us to pass a start key into the scan request so if that batch fails for any reason, only that particular batch of records needs to be retried. (TODO: do we need to consider looking at different customer environments in different Lambda functions to ensure one customer's numerous environments do not affect others?)
+
+If StepFunctions is unavailable, all deployment actions will stop. (TODO: what happens if StepFunctions goes down in the middle of an execution? Does it save state and recover or is the execution lost at that point?)
+
+If there is an exception reported from one of the StepFunction states the entire execution will fail. If there are exceptions in the Lambda functions, the workflow definition can contain retry states. If the max number of retries is reached, the workflow fails or redirected to the catch field.
+
+TODO: how do we handle lambda and StepFunctions versioning?
+
+### DynamoDB
+
+If DynamoDB is having availability issues, customer calls to create, update, delete environments and deployments will fail. State service will not be able to save cluster state received from the ECS event stream or polling. State service will recover when DynamoDB comes back up, by reconciling state from ECS. The manager reconciliation workflow will update in-progress deployments, however attempted customer calls will not be queued up and will have to be retried in case by the time DynamoDB comes up the attempted deployments are not applicable anymore.
+
+### Cloudwatch Events
+
+If Cloudwatch Events is unavailable, none of the monitoring functionality will work. The deployments started from the monitors (pending and state reconciliation deployments) will not be kicked off until Cloudwatch Events recovers. In-progress deployment state will not be updated. When Cloudwatch Events recovers no manual action will be required as it will start monitoring the dataservice and state service state again.
+
+We will also miss ECS events because they are processed through Cloudwatch Events. These events will not be recovered but state will be reconciled by polling ECS that happens in the state service periodically.
+
+### Lambda
+
+See [Lambda Infrastructure Design](https://github.com/blox/blox/blob/dev/docs/daemon_infrastructure.md)
 
 ## Security
 ### Key data flows
@@ -592,7 +644,11 @@ Since the various components of this service communicate with each other over a 
 We'll mitigate these threats by using the Official AWS SDK to interact with AWS Services, and by securing communication between other components using HTTPS/TLS 1.2 with mutual certificate validation.
 
 
-## Appendix
+## Infrastructure
+### Scheduler Running on Lambda (current)
+
+[Lambda Infrastructure Design](https://github.com/blox/blox/blob/dev/docs/daemon_infrastructure.md)
+
 ### Scheduler Running on ECS
 
 If we run the scheduler on ECS we need a mechanism to launch and scale managers. It would be possible to run the managers as an ECS service but it would be nice to avoid a circular dependency of the service scheduler running on the service scheduler and the challenges that presents especially during bootstrapping. To address this concern we have a scheduling manager controller service that is responsible for scheduling manager creation and lifecycle management.
@@ -707,7 +763,7 @@ If the jobs overlap at some point because they're taking longer than the job sta
 
 If the job is not completed by a host, the rest of the work will be picked up the next time the job is run.
 
-##### Infrastructure
+##### Controller Infrastructure
 
 This section describes where the managers are going to be launched by the controller.
 

@@ -1,0 +1,25 @@
+title Updating a Deployment
+
+Customer -> FE: update environment
+activate FE
+FE -> DataService: update environment
+activate DataService
+DataService -> DynamoDB: update environment
+activate DynamoDB
+DynamoDB --> DataService: environment
+deactivate DynamoDB
+DataService --> FE: environment
+deactivate DataService
+deactivate FE
+Customer -> FE: start deployment
+activate FE
+FE -> DataService: start deployment
+activate DataService
+DataService -> DynamoDB: start deployment
+activate DynamoDB
+DynamoDB -> DDB Streams: new deployment record
+DDB Streams -> SchedulingManager: process deployment changes
+DynamoDB --> DataService: deployment
+deactivate DynamoDB
+DataService --> FE: deployment
+deactivate DataService

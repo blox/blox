@@ -1,0 +1,22 @@
+title Manager Deployment Monitor
+
+
+SchedulingManager -> DataService: monitor deployment changes
+activate SchedulingManager
+activate DataService
+DataService --> SchedulingManager: deployment state
+deactivate DataService
+
+SchedulingManager -> SchedulingManager: process state change
+SchedulingManager -> DataService: update deployment state
+activate DataService
+DataService --> SchedulingManager: deployment state
+deactivate DataService
+SchedulingManager -> StateService: get current state
+activate StateService
+StateService --> SchedulingManager: cluster state
+deactivate StateService
+SchedulingManager -> ECS: start tasks
+activate ECS
+ECS --> SchedulingManager: pending tasks
+deactivate ECS
