@@ -19,7 +19,7 @@ The daemon-scheduler API:
 
 ### Building the daemon-scheduler
 
-The daemon-scheduler depends on golang and go-swagger. Install and configure [golang](https://golang.org/doc/). For more information about installing go-swagger, see the [go-swagger documentation](https://github.com/go-swagger/go-swagger).
+The daemon-scheduler depends on golang and go-swagger. Install and configure [golang](https://golang.org/doc/). For more information about installing go-swagger, see the [go-swagger documentation](https://github.com/go-swagger/go-swagger). Also, make sure to clone this repo into your appropriate [$GOPATH](https://golang.org/doc/code.html#GOPATH) directory.
 
 ```
 $ git clone https://github.com/blox/blox.git blox/blox
