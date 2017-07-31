@@ -8,7 +8,7 @@ If you would like to make a significant change, it's a good idea to first open a
 Development takes place against the dev branch of this repository and pull requests should be opened against that branch.
 
 ### Testing
-Any contributions should pass all tests.
+Any contributions should pass all tests. You can run all tests by running `gradle check` from the project root.
 
 ### Licensing
 Blox is released under an Apache 2.0 license. Any code that you submit will be released under that license.

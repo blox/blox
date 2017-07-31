@@ -1,0 +1,3 @@
+description "Lambda-backed API Gateway API for the Blox Frontend API"
+
+apply plugin: 'java'

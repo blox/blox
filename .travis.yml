@@ -1,1 +1,13 @@
+# Travis auto-detects build.gradle, and configures an appropriate build step (`gradle check`):
+# (see https://docs.travis-ci.com/user/languages/java/#Projects-Using-Gradle)
 language: java
+
+# Avoid updating the cache after every build:
+# (see https://docs.travis-ci.com/user/languages/java/#Caching)
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/

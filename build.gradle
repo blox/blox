@@ -1,0 +1,3 @@
+group 'com.amazonaws.blox'
+version '0.1-SNAPSHOT'
+description "Blox: Open Source schedulers for Amazon ECS"

@@ -1,0 +1,3 @@
+description "Custom build logic for building Blox"
+
+apply plugin: 'java'

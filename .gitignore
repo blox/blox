@@ -1,0 +1,9 @@
+*/out/
+*.swp
+.idea/
+*.iml
+**/.gradle/
+**/.idea/
+**/build/
+**/out/
+/frontend-client/gradle*
