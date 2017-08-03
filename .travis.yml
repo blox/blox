@@ -1,10 +1,1 @@
-language: go
-go_import_path: github.com/blox/blox
-go:
-  - 1.7
-install:
-  - cd ${TRAVIS_BUILD_DIR}/cluster-state-service && make get-deps
-  - cd ${TRAVIS_BUILD_DIR}/daemon-scheduler && make get-deps
-script:
-  - cd ${TRAVIS_BUILD_DIR}/cluster-state-service && make
-  - cd ${TRAVIS_BUILD_DIR}/daemon-scheduler && make
+language: java

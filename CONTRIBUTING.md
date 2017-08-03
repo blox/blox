@@ -9,7 +9,6 @@ Development takes place against the dev branch of this repository and pull reque
 
 ### Testing
 Any contributions should pass all tests.
-You may run all tests by running `make` inside cluster-state-service and daemon-scheduler (requires go, go-swagger to be installed). If you have golang installed, you may run `make get-deps` to install dependencies.
 
 ### Licensing
 Blox is released under an Apache 2.0 license. Any code that you submit will be released under that license.
