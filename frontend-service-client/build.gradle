@@ -1,3 +1,27 @@
-description "Auto-generated client for the Blox Frontend API"
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+    }
+}
 
 apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+group = 'com.amazonaws.blox'
+project.version = '0.1-SNAPSHOT'
+project.description = 'Client package for Blox'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile "com.amazonaws:aws-java-sdk-opensdk:1.11.168"
+}
+
