@@ -1,0 +1,39 @@
+---
+swagger: "2.0"
+info:
+  description: "Blox frontend"
+  version: "v2017-07-11"
+  title: "ecs-blox-frontend"
+paths:
+  /environments/{name}:
+    get:
+      summary: "Describe Environment by name"
+      description: ""
+      operationId: "describeEnvironment"
+      consumes:
+      - "*/*"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "name"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Environment"
+      x-amazon-apigateway-integration:
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
+definitions:
+  Environment:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+x-generated-at: "2017-08-03T18:27:27.203Z"

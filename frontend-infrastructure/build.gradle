@@ -1,1 +1,134 @@
+import com.amazonaws.blox.tasks.PostProcessCloudformation
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
 description "AWS Cloudformation templates and deployment scripts for the Blox Frontend API"
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'io.swagger:swagger-models:+'
+    }
+}
+
+ext {
+    templateFile = file("cloudformation/template.yml")
+    processedTemplateFile = file("${buildDir}/template.json")
+    outputTemplateFile = file("${buildDir}/template.output.json")
+
+    stackOutputsFile = file("${buildDir}/${stackName}-${awsProfile}.outputs.json")
+}
+
+def outputOf(taskPath) {
+    tasks.getByPath(taskPath).outputs.files.singleFile
+}
+
+task createBucket(type: Exec) {
+    group "deployment"
+    description "Create the S3 bucket used to store Cloudformation/Lambda resources for deployment"
+
+    commandLine aws("s3", "mb", "s3://${s3BucketName}")
+}
+
+task postprocessCloudformationTemplate(type: PostProcessCloudformation, dependsOn: [":frontend-service:swagger", ":frontend-service:packageLambda"]) {
+    group "deployment"
+    description "Postprocess the Cloudformation template to insert Swagger/Lambda references."
+
+    apiName "FrontendApi"
+    handlerName "FrontendHandler"
+
+    swaggerFile outputOf(":frontend-service:swagger")
+    lambdaZipFile outputOf(":frontend-service:packageLambda")
+
+    templateFile project.templateFile
+    outputTemplateFile project.processedTemplateFile
+}
+
+task packageCloudformationResources(type: Exec) {
+    group "deployment"
+    description "Use the Cloudformation package command to upload the deployment bundle to S3."
+
+    inputs.files tasks.getByPath(":frontend-service:packageLambda"), postprocessCloudformationTemplate
+    outputs.file outputTemplateFile
+
+    commandLine aws("cloudformation", "package",
+            "--template-file", processedTemplateFile,
+            "--output-template-file", outputTemplateFile,
+            "--s3-bucket", s3BucketName)
+}
+
+
+task deploy(dependsOn: packageCloudformationResources) {
+    group "deployment"
+    description "Deploy the Cloudformation package defined by an output template file"
+
+    inputs.files tasks.getByPath(":frontend-service:packageLambda"), packageCloudformationResources
+    outputs.file stackOutputsFile
+
+    doLast {
+
+        def error = new ByteArrayOutputStream()
+        def result = exec {
+            commandLine aws("cloudformation", "deploy",
+                    "--template-file", outputTemplateFile,
+                    "--stack-name", stackName,
+                    "--parameter-overrides", "StageName=${stageName}",
+                    "--capabilities", "CAPABILITY_IAM")
+
+            errorOutput error
+            ignoreExitValue true
+        }
+
+        // HACK: The `deploy` command returns a nonzero status if the stack is
+        // up to date.  We can remove this once
+        // https://github.com/awslabs/serverless-application-model/issues/71 is
+        // fixed.
+        if(!error.toString().contains("No changes to deploy")) {
+            result.assertNormalExitValue()
+        }
+
+        // In order to make this task incremental, we store the stack outputs
+        // from deploying the stack as a file. That way tasks that depend on
+        // this one (such as downloadSdk) don't have to do a redeploy unless
+        // there's actual code changes.
+        def output = new ByteArrayOutputStream()
+        exec {
+            commandLine aws("cloudformation", "describe-stacks",
+                    "--stack-name", stackName,
+                    "--query", "Stacks[0].Outputs[*].{Key:OutputKey,Value:OutputValue}",
+                    "--output", "json")
+            standardOutput output
+        }
+
+        def stackOutputs = new JsonSlurper()
+                .parseText(output.toString())
+                .collectEntries { [(it.Key): (it.Value)] }
+
+        stackOutputsFile.write(JsonOutput.toJson(stackOutputs))
+    }
+}
+
+task deleteStack(type: Exec) {
+    group "debug"
+    description "Delete the entire cloudformation stack for the frontend"
+
+    commandLine aws("cloudformation", "delete-stack", "--stack-name", stackName)
+
+    doLast {
+        stackOutputsFile.delete()
+    }
+}
+
+task describeStackEvents(type: Exec) {
+    group "debug"
+    description "Show a table of the events for the cloudformation stack for debugging"
+
+    commandLine aws("cloudformation", "describe-stack-events",
+            "--stack-name", stackName,
+            "--query", "StackEvents[*].{Time:Timestamp,Type:ResourceType,Status:ResourceStatus,Reason:ResourceStatusReason}",
+            "--output", "table")
+}

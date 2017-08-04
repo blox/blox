@@ -1,6 +1,8 @@
 # Travis auto-detects build.gradle, and configures an appropriate build step (`gradle check`):
 # (see https://docs.travis-ci.com/user/languages/java/#Projects-Using-Gradle)
 language: java
+jdk:
+  - oraclejdk8
 
 # Avoid updating the cache after every build:
 # (see https://docs.travis-ci.com/user/languages/java/#Caching)

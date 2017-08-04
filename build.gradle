@@ -1,3 +1,103 @@
+import groovy.json.JsonSlurper
+
 group 'com.amazonaws.blox'
 version '0.1-SNAPSHOT'
 description "Blox: Open Source schedulers for Amazon ECS"
+
+buildscript {
+    repositories {
+        maven { url 'https://plugins.gradle.org/m2/' }
+    }
+
+    dependencies {
+        classpath 'com.diffplug.gradle.spotless:spotless:2.4.1'
+    }
+}
+
+def unformattedProjects = [
+        'frontend-infrastructure',
+        'frontend-service-client'
+]
+
+allprojects {
+    apply plugin: 'com.diffplug.gradle.spotless'
+}
+
+configure(subprojects.findAll { !unformattedProjects.contains(it.name) }) {
+    spotless {
+        java {
+            googleJavaFormat()
+            licenseHeaderFile rootProject.file('licenses/license-header.java')
+        }
+    }
+}
+
+ext {
+    // This can be overridden by specifying -PawsProfile=my-other-profile
+    // on the Gradle command line:
+    awsProfile = project.hasProperty("awsProfile") ? project.awsProfile : "default"
+    println("Profile: ${awsProfile}")
+
+    awsCli = "/usr/local/bin/aws"
+    awsRegion = "us-west-2"
+    awsPrefix = System.getenv("USER")
+
+    stackName = "${awsPrefix}-blox-frontend-${awsRegion}"
+    s3BucketName = "${stackName}-${awsProfile}"
+    stageName = "Beta"
+
+    sdkZip = file("${buildDir}/java-sdk-${version}.zip")
+}
+
+def aws(... args) {
+    return [awsCli, "--profile", awsProfile, "--region", awsRegion, *args]
+}
+
+task downloadClient() {
+    group "codegen"
+    description "Download a new version of the SDK for the currently deployed stack."
+
+    def deployTask = tasks.getByPath(":frontend-infrastructure:deploy")
+
+    inputs.file deployTask
+    outputs.file sdkZip
+
+    doLast {
+        sdkZip.parentFile.mkdirs()
+
+        def stackOutputs = new JsonSlurper().parse(deployTask.outputs.files.singleFile)
+
+        def parameters = [
+                "service.name=Blox",
+                "java.package-name=com.amazonaws.blox",
+                "java.build-system=gradle",
+                "java.group-id=${project.group}",
+                "java.artifact-id=frontend-service-client",
+                "java.artifact-version=${project.version}",
+        ].join(",")
+
+        exec {
+            commandLine aws("apigateway", "get-sdk",
+                    "--rest-api-id", stackOutputs.ApiId,
+                    "--stage-name", stageName,
+                    "--sdk-type", "java",
+                    "--parameters", parameters,
+                    sdkZip)
+        }
+    }
+}
+
+task updateClient(type: Copy, dependsOn: downloadClient) {
+    group "codegen"
+    description "Unpack the client for the currently deployed stack into the blox-client subproject."
+
+    ext.tmpDir = file("${buildDir}/tmp/sdk")
+
+    from zipTree(sdkZip)
+    into tmpDir
+
+    doLast {
+        file("frontend-service-client").deleteDir()
+        file("${tmpDir}/generated-code").renameTo(file("frontend-service-client"))
+    }
+}

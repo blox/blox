@@ -1,3 +1,75 @@
-description "Lambda-backed API Gateway API for the Blox Frontend API"
+import com.amazonaws.blox.tasks.GenerateSwaggerModel
+import io.swagger.models.Info
+
+import com.amazonaws.blox.swagger.ApiGatewayExtensionsFilter
+import com.amazonaws.blox.swagger.SwaggerFilter
+
+description "Lambda-backed API Gateway API for the Blox Frontend Service"
 
 apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'io.swagger:swagger-models:+'
+    }
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    // basic Lambda handler support
+    compile 'com.amazonaws:aws-lambda-java-core:1.+'
+    compile 'com.amazonaws:aws-lambda-java-log4j:1.+'
+
+    // lambda+spring integration
+    compile 'com.amazonaws.serverless:aws-serverless-java-container-spring:0.4+'
+
+    // extra swagger annotations for defining API properties in code
+    compile 'io.swagger:swagger-annotations:1.+'
+
+    compileOnly 'org.projectlombok:lombok:1.16.16'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+task swagger(type: GenerateSwaggerModel, dependsOn: classes) {
+    group "build"
+    description "Generate a swagger.yml definition from the Resource classes in this application"
+
+    scanClasspath = project.sourceSets.main.runtimeClasspath
+
+    apiClasses.add 'com.amazonaws.blox.frontend.controllers.EnvironmentController'
+
+    swaggerFile file("api/swagger.yml")
+
+    filters.add({ swagger ->
+        swagger.info(new Info()
+                .title("ecs-blox-frontend")
+                .version("v2017-07-11")
+                .description("Blox frontend"))
+    } as SwaggerFilter)
+
+    filters.add(new ApiGatewayExtensionsFilter("arn:aws:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${FrontendHandler.Arn}/invocations"))
+}
+
+task packageLambda(type: Zip, dependsOn: classes) {
+    group "build"
+    description "Create a Lambda deployment package with this package's code and all required libraries"
+
+    from compileJava
+    from processResources
+
+    into('lib') {
+        from configurations.runtime
+    }
+}

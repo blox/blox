@@ -7,6 +7,9 @@ If you would like to make a significant change, it's a good idea to first open a
 ### Making the request
 Development takes place against the dev branch of this repository and pull requests should be opened against that branch.
 
+### Code Style
+This project follows the [Google Java Styleguide](https://google.github.io/styleguide/javaguide.html), and this style is enforced as part of the `check` task. We recommend you install [the `google-java-format` plugin for your IDE](https://github.com/google/google-java-format), or use the `gradle spotlessApply` task to format code before checking in.
+
 ### Testing
 Any contributions should pass all tests. You can run all tests by running `gradle check` from the project root.
 

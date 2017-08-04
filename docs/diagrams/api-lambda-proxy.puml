@@ -1,0 +1,48 @@
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Helvetica
+
+actor user as "User"
+boundary api as "AWS API GW\n endpoint"
+participant ars as "AuthRuntimeService"
+participant lambda as "AWS Lambda"
+participant handler as "LambdaHandler.java"
+participant framework as "Java Servlet implementation\n(spring-mvc, JAX-RS, etc)"
+control controller as "FrontendController.java"
+
+user -> api: GET /environment/fooenv
+
+api -> ars: authorize()
+api <-- ars: allow
+api -> api: throttle()
+api -> lambda: invoke(arn:FrontendHandler)
+note left of lambda
+request: {
+    "path": "/environment/fooenv"
+    ...
+}
+end note
+
+lambda -> handler: handleRequest(\n  <<AwsProxyRequest>>\n)
+handler -> framework: service(\n  <<HttpServletRequest\n     path="/environment/fooenv">>\n)
+framework -> framework: routing and unmarshaling magic
+framework -> controller: describeEnvironment("fooenv")
+
+note over controller
+ (actually service request)
+end note
+framework <-- controller: <<Environment name="fooenv">>
+handler <-- framework: <<HttpServletResponse\n  body="{name:foo}" status=200>>
+lambda <-- handler: <<AwsProxyResponse\n  body="{name:foo}" status=200>>
+api <-- lambda: success
+note right of api
+response: {
+   "body": "{name:foo}"
+   "status": 200
+}
+end note
+user <-- api: HTTP 200 OK
+note right of user
+{name:foo}
+end note
+@enduml

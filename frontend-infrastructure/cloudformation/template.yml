@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  StageName:
+    Description: Name of the API Gateway Stage to deploy to.
+    Type: String
+    Default: Beta
+
+Resources:
+  # Use a single lambda function to handle all requests to the Frontend API
+  FrontendHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: java8
+      CodeUri: "" # will be dynamically replaced
+      Handler: com.amazonaws.blox.frontend.LambdaHandler
+      MemorySize: 512
+      Timeout: 15
+      Events:
+        FrontendApi:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: FrontendApi
+            Path: /{proxy+}
+            Method: ANY
+
+  # This seems to be necessary because we're using AWS_PROXY integration, but not declaring only a
+  # single route in our swagger
+  FrontendHandlerPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:invokeFunction'
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Ref: FrontendHandler
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${FrontendApi}/*/*/*
+
+  FrontendApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName:
+        Ref: StageName
+      DefinitionBody: {} # will be dynamically replaced
+
+Outputs:
+  ApiId:
+    Description: ID of Frontend API
+    Value:
+      Ref: FrontendApi
+  ApiUrl:
+    Description: URL of Frontend API endpoint
+    Value:
+      Fn::Sub: https://${FrontendApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}
