@@ -1,4 +1,4 @@
-﻿# Frequently Asked Questions
+# Frequently Asked Questions
 
 ##### What is a Blox scheduler?
 Blox schedulers are responsible for making the decision of “what” to run and “when” to run a container or set of containers based on a customers specification of tasks and services. The scheduling decision may be based on: task or service health, event response, schedule, or other custom business logic. The Blox scheduler is enabled to take advantage of the Amazon ECS task placement options, such as: availability spread, binpacking, attribute-based placement etc.  
@@ -26,3 +26,6 @@ The code for v0.3 lives in the v0.3 branch. See [pull request](https://github.co
 
 ##### How can I extend Blox for my specific scheduling needs?   
 We encourage contributions to Blox both in the form of features requests (see [Issues](https://github.com/blox/blox/issues)) and pull requests. All projects under Blox are released under Apache 2.0 and contributions are accepted under individual Apache Contributor Agreements.
+
+##### What is the status of the Blox 0.3.0 release?
+Blox v0.3.0 is now deprecated. If you are actively using v0.3.0, please [email us](mailto:ecs-blox-team@amazon.com) to work out a migration plan. If you have a critical issue in v0.3.0, please open a [new issue](https://github.com/blox/blox/issues/new). We are currently working on and prioritizing the new v1.0 release that incorporates the feedback we received from customers using v0.3.0 pre-release. For more details on the Blox v1.0 release, see [here](https://github.com/blox/blox/blob/dev/docs/daemon_design.md)
