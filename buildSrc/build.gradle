@@ -12,7 +12,13 @@ dependencies {
     compile gradleApi()
     compile localGroovy()
 
-    compile 'com.github.kongchen:swagger-maven-plugin:+'
+    compile('com.github.kongchen:swagger-maven-plugin:+') {
+        // The version of handlebars that the plugin depends on has a
+        // transitive dependency on a version of antlr that's incompatible
+        // with JDK 8. It's not actually used, but it causes annoying warning
+        // messages.
+        exclude group: 'com.github.jknack', module: 'handlebars'
+    }
 
     compileOnly 'org.projectlombok:lombok:1.16.16'
 
