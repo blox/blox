@@ -1,4 +1,4 @@
-description 'Shared POJOs and interfaces for the Blox DataService'
+description 'Blox DataService Client'
 
 apply plugin: 'java'
 
@@ -8,4 +8,6 @@ repositories {
 
 dependencies {
     compileOnly 'org.projectlombok:lombok:1.16.18'
+
+    compile project(":data-service-model")
 }
