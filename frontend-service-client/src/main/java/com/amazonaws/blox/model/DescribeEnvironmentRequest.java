@@ -6,13 +6,16 @@ package com.amazonaws.blox.model;
 import java.io.Serializable;
 import javax.annotation.Generated;
 
+import com.amazonaws.auth.RequestSigner;
+import com.amazonaws.opensdk.protect.auth.RequestSignerAware;
+
 /**
  * 
  * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/joufu8ief9-v2017-07-11/DescribeEnvironment" target="_top">AWS
  *      API Documentation</a>
  */
 @Generated("com.amazonaws:aws-java-sdk-code-generator")
-public class DescribeEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest implements Serializable, Cloneable {
+public class DescribeEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest implements Serializable, Cloneable, RequestSignerAware {
 
     private String name;
 
@@ -88,6 +91,11 @@ public class DescribeEnvironmentRequest extends com.amazonaws.opensdk.BaseReques
     @Override
     public DescribeEnvironmentRequest clone() {
         return (DescribeEnvironmentRequest) super.clone();
+    }
+
+    @Override
+    public Class<? extends RequestSigner> signerType() {
+        return com.amazonaws.opensdk.protect.auth.IamRequestSigner.class;
     }
 
     /**

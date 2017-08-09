@@ -93,6 +93,15 @@ client.shutdown();
 // Client is now unusable
 ```
 
+## Authorization
+### AWS Identity and Access Management (IAM) authentication
+The service client natively supports AWS_IAM authentication using AWS credentials. To configure the AWS credentials used by the client, use the `iamCredentials` fluent setter.
+```java
+Blox client = Blox.builder()
+    .iamCredentials(new ProfileCredentialsProvider("personal"))
+    .build();
+```
+The `iamCredentials` method takes an instance of [AWSCredentialsProvider](http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html). There are several implementations of AWSCredentialsProvider available and you can also implement your own.
 
 ## Making requests
 After a client is configured and created, you can make a request to the service. A method on the client interface (`Blox`) is created for all actions (resource + method) in your API.

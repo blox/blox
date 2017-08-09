@@ -25,4 +25,5 @@ task testEndToEnd(type: Test) {
 
     dependsOn deployTask
     systemProperty 'blox.tests.stackoutputs', deployTask.outputs.files.singleFile
+    systemProperty 'blox.tests.awsProfile', awsProfile
 }

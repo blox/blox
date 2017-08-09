@@ -67,6 +67,14 @@ Clients clean up their resources when garbage collected but if you want to expli
 client.shutdown();
 // Client is now unusable
 </code></pre>
+<h2>Authorization</h2>
+<h3>AWS Identity and Access Management (IAM) authentication</h3>
+<p>The service client natively supports AWS_IAM authentication using AWS credentials. To configure the AWS credentials used by the client, use the <code>iamCredentials</code> fluent setter.</p>
+<pre><code class="language-java">Blox client = Blox.builder()
+    .iamCredentials(new ProfileCredentialsProvider(&quot;personal&quot;))
+    .build();
+</code></pre>
+<p>The <code>iamCredentials</code> method takes an instance of <a href="http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/AWSCredentialsProvider.html">AWSCredentialsProvider</a>. There are several implementations of AWSCredentialsProvider available and you can also implement your own.</p>
 <h2>Making requests</h2>
 <p>After a client is configured and created, you can make a request to the service. A method on the client interface (<code>Blox</code>) is created for all actions (resource + method) in your API.</p>
 <p>For each API method, classes are generated that represent the request and response of that API. The request class has setters for any path parameters, query parameters, headers, and payload model that are defined in the API. The response class exposes getters for any modeled headers and for the modeled payload.</p>

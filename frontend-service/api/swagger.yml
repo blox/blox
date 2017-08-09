@@ -24,16 +24,24 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Environment"
+      security:
+      - defaultAuthorization: []
       x-amazon-apigateway-integration:
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
         type: "aws_proxy"
         uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
+securityDefinitions:
+  defaultAuthorization:
+    type: "apiKey"
+    name: "Authorization"
+    in: "header"
+    x-amazon-apigateway-authtype: "awsSigv4"
 definitions:
   Environment:
     type: "object"
     properties:
       name:
         type: "string"
-x-generated-at: "2017-08-03T18:27:27.203Z"
+x-generated-at: "2017-08-09T21:11:30.642Z"

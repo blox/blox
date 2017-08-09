@@ -1,3 +1,4 @@
+import com.amazonaws.blox.swagger.ApiGatewaySecurityFilter
 import com.amazonaws.blox.tasks.GenerateSwaggerModel
 import io.swagger.models.Info
 
@@ -58,6 +59,7 @@ task swagger(type: GenerateSwaggerModel, dependsOn: classes) {
     } as SwaggerFilter)
 
     filters.add(new ApiGatewayExtensionsFilter("arn:aws:apigateway:\${AWS::Region}:lambda:path/2015-03-31/functions/\${FrontendHandler.Arn}/invocations"))
+    filters.add(new ApiGatewaySecurityFilter())
 }
 
 task packageLambda(type: Zip, dependsOn: classes) {
