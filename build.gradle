@@ -1,4 +1,6 @@
 import groovy.json.JsonSlurper
+import groovy.transform.Canonical
+import groovy.transform.Memoized
 
 group 'com.amazonaws.blox'
 version '0.1-SNAPSHOT'
@@ -40,25 +42,86 @@ wrapper {
     distributionType = 'all'
 }
 
+class BloxStack {
+    @Canonical
+    class BloxProperty {
+        String name
+        String getPropertyName() { "blox.${name}" }
+        String description
+        Closure<String> defaultValue
+
+        String toString() {
+            isOverridden() ? BloxStack.this.project[propertyName] : defaultValue()
+        }
+
+        boolean isOverridden() {
+            BloxStack.this.project.hasProperty(propertyName)
+        }
+
+        String toDescription() {
+            "${description.padRight(25)} ${"(${propertyName})".padLeft(15)}: ${this} ${isOverridden() ? "" : "(default)"}"
+        }
+    }
+
+    Project project
+    String currentUser = System.getenv("USER")
+
+    BloxStack(Project project) {
+        this.project = project
+    }
+
+    def name = new BloxProperty("name", "Default resource name", { "blox-${prefix}-${region}"})
+
+    // TODO Changing the stage name requires regenerating the client, since the stage name is
+    //      hard-coded there. We should contribute the ability to configure this to the
+    //      SDK codegen project.
+    def stage = new BloxProperty("stage", "API Gateway stage", { "alpha" })
+    def prefix = new BloxProperty("prefix", "Stack prefix", { "${currentUser}-${stage}" })
+    def region = new BloxProperty("region", "AWS Region", { "us-west-2" })
+
+    def profile = new BloxProperty("profile", "AWS Credential Profile", { name })
+
+    def cfnStack = new BloxProperty("cfnStack", "Cloudformation stack name", { name })
+    def s3Bucket = new BloxProperty("s3Bucket", "Deployment S3 bucket name", { name })
+
+    String toPrettyString(int indent) {
+        def props = [name, stage, prefix, region, profile, cfnStack, s3Bucket]
+        return props.collect { "${' ' * indent}${it.toDescription()}" }.join("\n")
+    }
+}
+
+
 ext {
-    // This can be overridden by specifying -PawsProfile=my-other-profile
-    // on the Gradle command line:
-    awsProfile = project.hasProperty("awsProfile") ? project.awsProfile : "default"
-    println("Profile: ${awsProfile}")
+    stack = new BloxStack(project)
 
-    awsCli = "/usr/local/bin/aws"
-    awsRegion = "us-west-2"
-    awsPrefix = System.getenv("USER")
-
-    stackName = "${awsPrefix}-blox-frontend-${awsRegion}"
-    s3BucketName = "${stackName}-${awsProfile}"
-    stageName = "Beta"
+    awsCommand = "aws"
 
     sdkZip = file("${buildDir}/java-sdk-${version}.zip")
 }
 
+task showStackConfig() {
+    group "help"
+    description "Display the names of AWS resources used for deployment"
+
+    doLast {
+        println "Blox deployment stack configuration:"
+        println()
+        println(stack.toPrettyString(2))
+
+        println()
+        println "To customize these values, modify ~/.gradle/gradle.properties to override the property listed."
+
+        println()
+        println "AWS CLI configuration for profile ${stack.profile}:"
+        exec {
+            commandLine aws("configure", "list")
+        }
+
+    }
+}
+
 def aws(... args) {
-    return [awsCli, "--profile", awsProfile, "--region", awsRegion, *args]
+    return [awsCommand, "--profile", stack.profile, "--region", stack.region, *args]
 }
 
 task downloadClient() {
@@ -87,7 +150,7 @@ task downloadClient() {
         exec {
             commandLine aws("apigateway", "get-sdk",
                     "--rest-api-id", stackOutputs.ApiId,
-                    "--stage-name", stageName,
+                    "--stage-name", stack.stage,
                     "--sdk-type", "java",
                     "--parameters", parameters,
                     sdkZip)
