@@ -24,6 +24,6 @@ task testEndToEnd(type: Test) {
     def deployTask = tasks.getByPath(":frontend-infrastructure:deploy")
 
     dependsOn deployTask
-    systemProperty 'blox.tests.stackoutputs', deployTask.outputs.files.singleFile
     systemProperty 'blox.tests.awsProfile', awsProfile
+    systemProperty 'blox.tests.apiUrl', deployTask.project.stackOutputs.apiUrl
 }

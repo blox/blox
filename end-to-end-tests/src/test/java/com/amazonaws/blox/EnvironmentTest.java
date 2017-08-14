@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 public class EnvironmentTest {
-  private static final String stackOutputsFile = System.getProperty("blox.tests.stackoutputs");
+  private static final String apiUrl = System.getProperty("blox.tests.apiUrl");
   private static final String awsProfile = System.getProperty("blox.tests.awsProfile");
 
   @Rule public final ExpectedException thrown = ExpectedException.none();
@@ -43,11 +43,8 @@ public class EnvironmentTest {
 
   private static String endpoint() {
     try {
-      JsonNode tree = new ObjectMapper(new JsonFactory()).readTree(new File(stackOutputsFile));
-      String urlString = tree.get("ApiUrl").asText();
-
       // The generated client doesn't like the stage name in the endpoint, so strip it out:
-      URL url = new URL(urlString);
+      URL url = new URL(apiUrl);
       return new URL(url.getProtocol(), url.getHost(), url.getPort(), "/").toString();
     } catch (Exception e) {
       throw new RuntimeException(e);
