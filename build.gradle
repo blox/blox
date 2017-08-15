@@ -32,6 +32,14 @@ configure(subprojects.findAll { !unformattedProjects.contains(it.name) }) {
     }
 }
 
+wrapper {
+    gradleVersion = '4.0.2'
+
+    // The 'all' distribution includes files that allow IntelliJ to provide
+    // additional context information in build.gradle files:
+    distributionType = 'all'
+}
+
 ext {
     // This can be overridden by specifying -PawsProfile=my-other-profile
     // on the Gradle command line:
