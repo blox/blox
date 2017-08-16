@@ -1,6 +1,5 @@
 import groovy.json.JsonSlurper
 import groovy.transform.Canonical
-import groovy.transform.Memoized
 
 group 'com.amazonaws.blox'
 version '0.1-SNAPSHOT'
