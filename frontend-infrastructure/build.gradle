@@ -10,7 +10,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'io.swagger:swagger-models:+'
+        classpath "io.swagger:swagger-models:${swaggerVersion}"
     }
 }
 

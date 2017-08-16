@@ -17,7 +17,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'io.swagger:swagger-models:+'
+        classpath "io.swagger:swagger-models:${swaggerVersion}"
     }
 }
 
@@ -34,7 +34,7 @@ dependencies {
     compile 'com.amazonaws.serverless:aws-serverless-java-container-spring:0.4+'
 
     // extra swagger annotations for defining API properties in code
-    compile 'io.swagger:swagger-annotations:1.+'
+    compile "io.swagger:swagger-annotations:${swaggerVersion}"
 
     compileOnly 'org.projectlombok:lombok:1.16.18'
 

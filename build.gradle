@@ -97,6 +97,8 @@ ext {
     awsCommand = "aws"
 
     sdkZip = file("${buildDir}/java-sdk-${version}.zip")
+
+    swaggerVersion = "1.5.16"
 }
 
 task showStackConfig() {
