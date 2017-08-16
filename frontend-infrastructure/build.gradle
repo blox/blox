@@ -58,10 +58,6 @@ ext {
     stackOutputs = new StackOutputs(file("${buildDir}/${stack.name}.outputs.json"))
 }
 
-def outputOf(taskPath) {
-    tasks.getByPath(taskPath).outputs.files.singleFile
-}
-
 task createBucket(type: Exec) {
     group "deployment"
     description "Create the S3 bucket used to store Cloudformation/Lambda resources for deployment"
@@ -69,25 +65,23 @@ task createBucket(type: Exec) {
     commandLine aws("s3", "mb", "s3://${stack.s3Bucket}")
 }
 
-task postprocessCloudformationTemplate(type: PostProcessCloudformation, dependsOn: [":frontend-service:swagger", ":frontend-service:packageLambda"]) {
+task postprocessCloudformationTemplate(type: PostProcessCloudformation) {
     group "deployment"
     description "Postprocess the Cloudformation template to insert Swagger/Lambda references."
 
-    apiName "FrontendApi"
-    handlerName "FrontendHandler"
-
-    swaggerFile outputOf(":frontend-service:swagger")
-    lambdaZipFile outputOf(":frontend-service:packageLambda")
-
     templateFile project.templateFile
     outputTemplateFile project.processedTemplateFile
+
+    api "FrontendApi", files(tasks.getByPath(":frontend-service:swagger"))
+
+    lambdaFunction "FrontendHandler", files(tasks.getByPath(":frontend-service:packageLambda"))
 }
 
 task packageCloudformationResources(type: Exec) {
     group "deployment"
     description "Use the Cloudformation package command to upload the deployment bundle to S3."
 
-    inputs.files tasks.getByPath(":frontend-service:packageLambda"), postprocessCloudformationTemplate
+    inputs.files postprocessCloudformationTemplate
     outputs.file outputTemplateFile
 
     commandLine aws("cloudformation", "package",
@@ -97,11 +91,11 @@ task packageCloudformationResources(type: Exec) {
 }
 
 
-task deploy(dependsOn: packageCloudformationResources) {
+task deploy {
     group "deployment"
     description "Deploy the Cloudformation package defined by an output template file"
 
-    inputs.files tasks.getByPath(":frontend-service:packageLambda"), packageCloudformationResources
+    inputs.files packageCloudformationResources
     outputs.file stackOutputs.file
 
     doLast {
