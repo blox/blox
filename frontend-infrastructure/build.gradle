@@ -14,12 +14,48 @@ buildscript {
     }
 }
 
+class StackOutputs {
+    File file
+    def outputs = null
+
+    StackOutputs(File file) { this.file = file }
+
+    String getApiUrl() { getOutputs()?.ApiUrl }
+
+    String getApiId() { getOutputs()?.ApiId }
+
+    def getOutputs() {
+        if (outputs == null) { read() }
+
+        return outputs
+    }
+
+    def setOutputs(value) {
+        outputs = value
+        write()
+    }
+
+    private void read() {
+        if (file.exists()) {
+            outputs = new JsonSlurper().parse(file)
+        }
+    }
+
+    private void write() {
+        file.write(JsonOutput.toJson(outputs))
+    }
+
+    void delete() {
+        if (file.exists()) { file.delete() }
+    }
+}
+
 ext {
     templateFile = file("cloudformation/template.yml")
     processedTemplateFile = file("${buildDir}/template.json")
     outputTemplateFile = file("${buildDir}/template.output.json")
 
-    stackOutputsFile = file("${buildDir}/${stackName}-${awsProfile}.outputs.json")
+    stackOutputs = new StackOutputs(file("${buildDir}/${stack.name}.outputs.json"))
 }
 
 def outputOf(taskPath) {
@@ -30,7 +66,7 @@ task createBucket(type: Exec) {
     group "deployment"
     description "Create the S3 bucket used to store Cloudformation/Lambda resources for deployment"
 
-    commandLine aws("s3", "mb", "s3://${s3BucketName}")
+    commandLine aws("s3", "mb", "s3://${stack.s3Bucket}")
 }
 
 task postprocessCloudformationTemplate(type: PostProcessCloudformation, dependsOn: [":frontend-service:swagger", ":frontend-service:packageLambda"]) {
@@ -57,7 +93,7 @@ task packageCloudformationResources(type: Exec) {
     commandLine aws("cloudformation", "package",
             "--template-file", processedTemplateFile,
             "--output-template-file", outputTemplateFile,
-            "--s3-bucket", s3BucketName)
+            "--s3-bucket", stack.s3Bucket)
 }
 
 
@@ -66,16 +102,15 @@ task deploy(dependsOn: packageCloudformationResources) {
     description "Deploy the Cloudformation package defined by an output template file"
 
     inputs.files tasks.getByPath(":frontend-service:packageLambda"), packageCloudformationResources
-    outputs.file stackOutputsFile
+    outputs.file stackOutputs.file
 
     doLast {
-
         def error = new ByteArrayOutputStream()
         def result = exec {
             commandLine aws("cloudformation", "deploy",
                     "--template-file", outputTemplateFile,
-                    "--stack-name", stackName,
-                    "--parameter-overrides", "StageName=${stageName}",
+                    "--stack-name", stack.cfnStack,
+                    "--parameter-overrides", "StageName=${stack.stage}",
                     "--capabilities", "CAPABILITY_IAM")
 
             errorOutput error
@@ -97,17 +132,24 @@ task deploy(dependsOn: packageCloudformationResources) {
         def output = new ByteArrayOutputStream()
         exec {
             commandLine aws("cloudformation", "describe-stacks",
-                    "--stack-name", stackName,
+                    "--stack-name", stack.cfnStack,
                     "--query", "Stacks[0].Outputs[*].{Key:OutputKey,Value:OutputValue}",
                     "--output", "json")
             standardOutput output
         }
 
-        def stackOutputs = new JsonSlurper()
+        stackOutputs.outputs = new JsonSlurper()
                 .parseText(output.toString())
                 .collectEntries { [(it.Key): (it.Value)] }
+    }
+}
 
-        stackOutputsFile.write(JsonOutput.toJson(stackOutputs))
+task showDeployedApi() {
+    group "help"
+    description "Show details about the currently deployed stack"
+
+    doLast {
+        println "API URL: ${stackOutputs.apiUrl ?: "Not Deployed"}"
     }
 }
 
@@ -115,10 +157,10 @@ task deleteStack(type: Exec) {
     group "debug"
     description "Delete the entire cloudformation stack for the frontend"
 
-    commandLine aws("cloudformation", "delete-stack", "--stack-name", stackName)
+    commandLine aws("cloudformation", "delete-stack", "--stack-name", stack.cfnStack)
 
     doLast {
-        stackOutputsFile.delete()
+        stackOutputs.delete()
     }
 }
 
@@ -127,7 +169,7 @@ task describeStackEvents(type: Exec) {
     description "Show a table of the events for the cloudformation stack for debugging"
 
     commandLine aws("cloudformation", "describe-stack-events",
-            "--stack-name", stackName,
+            "--stack-name", stack.cfnStack,
             "--query", "StackEvents[*].{Time:Timestamp,Type:ResourceType,Status:ResourceStatus,Reason:ResourceStatusReason}",
             "--output", "table")
 }
