@@ -26,7 +26,41 @@ To run the full unit test suite, run:
 This will run the same tests that we run in the Travis CI build.
 
 ### Deploying
-To deploy a personal stack:
+First, take a look at what Blox will put in your personal stack by running the
+`showStackConfig` task:
+
+```
+$ ./gradlew showStackConfig
+
+> Task :showStackConfig
+Blox deployment stack configuration:
+
+  Default resource name         (blox.name): blox-buys-alpha-us-west-2 (default)
+  API Gateway stage            (blox.stage): alpha (default)
+  Stack prefix                (blox.prefix): buys-alpha (default)
+  AWS Region                  (blox.region): us-west-2 (default)
+  AWS Credential Profile     (blox.profile): blox-buys-alpha-us-west-2 (default)
+  Cloudformation stack name (blox.cfnStack): blox-buys-alpha-us-west-2 (default)
+  Deployment S3 bucket name (blox.s3Bucket): blox-buys-alpha-us-west-2 (default)
+
+To customize these values, modify ~/.gradle/gradle.properties to override the property listed.
+
+AWS CLI configuration for profile blox-buys-alpha-us-west-2:
+
+The config profile (blox-buys-alpha-us-west-2) could not be found
+```
+
+If you wish to customize any of these values, you can do so by overriding the
+property in parentheses using [any of the supported ways to override Gradle
+properties](https://docs.gradle.org/current/userguide/build_environment.html#sec:gradle_properties_and_system_properties).
+The easiest way is to override it for your user in `~/.gradle/gradle.properties`:
+
+```
+blox.profile=default
+blox.region=us-east-1
+```
+
+Next, in order to deploy your personal stack:
 - install the [official AWS CLI](https://aws.amazon.com/cli/)
 - create an IAM user with the following permissions:
 
@@ -49,7 +83,14 @@ To deploy a personal stack:
     ```
 
   These permissions are pretty broad, so we recommend you use a separate, test account.
-- configure the `default` profile with the AWS credentials for the user you created above
+
+- configure the AWS Credential Profile shown in the `showStackOutput` task with
+  the AWS credentials for the user you created above:
+  
+    ```
+    aws configure --profile buys-blox-alpha-us-west-2
+    ```
+
 - create an S3 bucket where all resources (code, cloudformation templates, etc) to be deployed will be stored:
 
     ```
@@ -68,6 +109,7 @@ Once you have a stack deployed, you can test it with:
 ```
 ./gradlew testEndToEnd
 ```
+
 
 ### Contact
 
