@@ -35,19 +35,19 @@ $ ./gradlew showStackConfig
 > Task :showStackConfig
 Blox deployment stack configuration:
 
-  Default resource name         (blox.name): blox-buys-alpha-us-west-2 (default)
+  Default resource name         (blox.name): blox-<username>-alpha-us-west-2 (default)
   API Gateway stage            (blox.stage): alpha (default)
-  Stack prefix                (blox.prefix): buys-alpha (default)
+  Stack prefix                (blox.prefix): <username>-alpha (default)
   AWS Region                  (blox.region): us-west-2 (default)
-  AWS Credential Profile     (blox.profile): blox-buys-alpha-us-west-2 (default)
-  Cloudformation stack name (blox.cfnStack): blox-buys-alpha-us-west-2 (default)
-  Deployment S3 bucket name (blox.s3Bucket): blox-buys-alpha-us-west-2 (default)
+  AWS Credential Profile     (blox.profile): blox-<username>-alpha-us-west-2 (default)
+  Cloudformation stack name (blox.cfnStack): blox-<username>-alpha-us-west-2 (default)
+  Deployment S3 bucket name (blox.s3Bucket): blox-<username>-alpha-us-west-2 (default)
 
 To customize these values, modify ~/.gradle/gradle.properties to override the property listed.
 
-AWS CLI configuration for profile blox-buys-alpha-us-west-2:
+AWS CLI configuration for profile blox-<username>-alpha-us-west-2:
 
-The config profile (blox-buys-alpha-us-west-2) could not be found
+The config profile (blox-<username>-alpha-us-west-2) could not be found
 ```
 
 If you wish to customize any of these values, you can do so by overriding the
@@ -88,7 +88,7 @@ Next, in order to deploy your personal stack:
   the AWS credentials for the user you created above:
   
     ```
-    aws configure --profile buys-blox-alpha-us-west-2
+    aws configure --profile <username>-blox-alpha-us-west-2
     ```
 
 - create an S3 bucket where all resources (code, cloudformation templates, etc) to be deployed will be stored:
