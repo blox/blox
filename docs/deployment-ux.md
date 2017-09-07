@@ -13,7 +13,7 @@ The following are typical use cases for Deployments:
     it by calling startDeployment. A new Environment revision is created
     and the Deployment manages moving the Tasks from the old revision to
     the new one at a controlled rate.
--   Rollback to an earlier Enviornment revision if the current state of
+-   Rollback to an earlier Environment revision if the current state of
     the Environment is not stable. Each rollback updates the revision of
     the environment (it does not simply revert the environment
     revision).
@@ -21,13 +21,13 @@ The following are typical use cases for Deployments:
     more load.
 -   Pause the Deployment to apply multiple fixes to its Environment and
     then resume it to start a new deployment.
--   Use the status of the Deployment as an indicator that a rollout has
-    become stuck.
+-   Use the status of the Environment as an indicator that a deployment
+    has become stuck.
 
 Creating and deploying an Environment
 -------------------------------------
 
-In order to create a deployment, you first have to create and
+In order to create a deployment, you first have to create an
 environment that declares what should be running, where, and how the
 deployment should be controlled.
 
@@ -157,7 +157,7 @@ SomeEnvironment/Prod:1    Undeploying  0         5         5            5
 SomeEnvironment/Prod:2    Deploying    5         0         0            0        
 ```
 
-Once the deployment reaches a stead state, the old revision is marked
+Once the deployment reaches a steady state, the old revision is marked
 Inactive, and the new revision is marked Active:
 
 ``` {.shell}
