@@ -230,14 +230,18 @@ SomeEnvironment/Prod:1    Inactive     0         0
 SomeEnvironment/Prod:2    Active       6         6
 ```
 
-### Daemon update semantics
 
-Daemon deployments have two update methods, with different availability
+### Daemon deployments
+
+There are some deployment peculiarities specific to Daemon Environments.
+
+#### Deployment strategies
+Daemon deployments have two update strategies, with different availability
 impacts
 
 1.  Terminate before replace
 
-    If you're using this deployment method, then Blox will kill
+    If you're using this deployment strategy, then Blox will kill
     `(100 - MinHealthyPercent)%` of tasks, and only launch new tasks to
     replace as they are successfully terminated. This will ensure that
     there's never more than one version of the Task running at the same
@@ -294,7 +298,7 @@ impacts
 
 2.  Terminate after replace
 
-    If you're using this deployment method, then Blox will launch
+    If you're using this deployment strategy, then Blox will launch
     `MaxOver` tasks on as many instances, and only kill old tasks once
     the new task is confirmed to be running. This will ensure that
     there's never less than one Task running at the same time on the
@@ -351,6 +355,33 @@ impacts
     SomeEnvironment/Prod:1    Inactive     0         0
     SomeEnvironment/Prod:2    Active       5         5
     ```
+
+#### Changes to cluster membership while a deployment is ongoing
+
+For larger clusters, or clusters that are backed by Autoscaling Groups, the available instances in the cluster might change (sometimes dramatically). Since the total number of available instances determines the desired end-state of the Environment, these state changes could affect the ability of an Environment to make progress while honoring its deployment constraints.
+
+The behaviour we're aiming for is to minimize the number of instances that are not running the Daemon task at all at any given point in time. If a configurable number of instances are without the correct version of a Daemon task for a configurable amount of time, the deployment will enter the `Failing` state and emit an alarm. However, it will continue to try and make progress.
+
+- If a deployment fails to start a task on a particular host (e.g. because the task definition is faulty, or the Task fails to start up in a nondeterministic way), priority will be given to restarting that task, rather than continuing to replace existing tasks.
+- If a Daemon task terminates abnormally during a deployment on an instance that is not currently having its task replace, priority will be given to replacing that task over starting to terminate tasks on other instances.
+- If new instances join the cluster while an environment is deploying, running the daemon task on those instances will be given priority over replacing existing instances of the daemon. The new instances will be visible only as a change in the `DESIRED` column for the `Deploying` environment revision:
+
+  ```
+  $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+  REVISION                  STATUS       DESIRED   CURRENT
+  SomeEnvironment/Prod:1    Undeploying  0         3
+  SomeEnvironment/Prod:2    Deploying    5         2
+  ```
+
+  New instances matching the Instance Group join the cluster:
+
+  ```
+  REVISION                  STATUS       DESIRED   CURRENT
+  SomeEnvironment/Prod:1    Undeploying  0         3
+  SomeEnvironment/Prod:2    Deploying    10        8
+  ```
+
+- If instances in a cluster are terminated while a deployment is ongoing... (TODO: then what? Do we care?)
 
 Rollback to an earlier revision
 -------------------------------
