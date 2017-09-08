@@ -393,15 +393,27 @@ Rollback deployments may have different deployment configurations to allow for q
 Pause ongoing deployments
 -------------------------
 
-Let's say halfway through a deployment, we realize that we made a
-mistake. Rolling back is one option, but might introduce more churn than
-we can handle. For this case, we can pause all deployments until we can
-fix the environment and deploy the right active revision.
+In some scenarios, it may be dangerous to continue running or terminating tasks in a cluster. For example, there might be some problem with the underlying cluster that causes new tasks to fail, or some external dependency being unavailable might make it impossible for tasks to start/stop cleanly.
 
-Open questions:
+For these cases, all actions taken in an Environment can be suspended using the `freeze-environment` command:
 
--   Should we support a separate resume operation, or will we only
-    resume once a new deployment is kicked off?
+```
+$ aws ecs freeze-environment --environment-name SomeEnvironment/Prod
+$ aws ecs describe-environment --environment-name SomeEnvironment/Prod --table
+ENVIRONMENT               STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod      Suspended    6         3
+```
+
+Once it is safe for the Environment to take action again, it can be resumed using the `thaw-environment` command:
+
+```
+$ aws ecs thaw-environment --environment-name SomeEnvironment/Prod
+$ aws ecs describe-environment --environment-name SomeEnvironment/Prod --table
+ENVIRONMENT               STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod      Deploying    6         3
+```
+
+Note that suspending an environment doesn't prevent you from starting a new deployment; however, in order for any deployments to progress, the Environment must be resumed first.
 
 Detect stuck deployments
 ------------------------
@@ -430,3 +442,9 @@ SomeEnvironment/Prod:3    Active       6         6
 ```
 
 The reason this alternative was discarded, was that we valued the ease with which users can see what's deployed in terms of what they actually requested. Since the rollback revisions were never explicitly created by a human, it's not super clear that they're identical to the older revisions they replace.
+
+### Implicitly resume Environment on deployment
+
+We considered automatically resuming an environment when a new `deploy-environment` or `rollback-environment` command is issued. This would prevent customers from getting stuck because they forgot to resume their Environment.
+
+The reason that this alternative was discarded. However, this means that automated deployment systems could inadvertently cause an environment to be resumed while it is not actually safe to do so.
