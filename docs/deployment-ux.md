@@ -418,6 +418,27 @@ Note that suspending an environment doesn't prevent you from starting a new depl
 Detect stuck deployments
 ------------------------
 
+In some cases, it might be impossible for an environment to make progress towards making a new Environment revision `Active`. For example, if a Daemon Environment is trying to launch a new copy of a Daemon task in replace-before-terminate mode, it could fail to do so because the instance does not have enough free resources.
+
+
+In this case, the environment will enter into the `Stuck` (come up with a better name) state:
+
+```
+$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:2    Undeploying  0         3
+SomeEnvironment/Prod:3    Stuck        6         3
+```
+
+Once an Environment has been in this state for a user-configurable amount of time, it will enter into the `Failing` (come up with a better name) state, and optionally emit a CloudWatch Event that you can alarm on:
+
+```
+$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:2    Stuck        0         3
+SomeEnvironment/Prod:3    Failing      6         3
+```
+
 Alternatives considered
 -----------------------
 This section documents alternative paths we considered, but discarded, and why.
