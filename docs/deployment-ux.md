@@ -499,4 +499,4 @@ The reason this alternative was discarded, was that we valued the ease with whic
 
 We considered automatically resuming an environment when a new `deploy-environment` or `rollback-environment` command is issued. This would prevent customers from getting stuck because they forgot to resume their Environment.
 
-The reason that this alternative was discarded. However, this means that automated deployment systems could inadvertently cause an environment to be resumed while it is not actually safe to do so.
+The reason that this alternative was discarded is that automated deployment systems could inadvertently cause an environment to be resumed while it is not actually safe to do so. However, we could consider achieving the same thing by including a `--force` flag or similar on the `deploy-environment`/`rollback-environment` commands.
