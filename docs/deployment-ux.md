@@ -145,6 +145,8 @@ $ aws ecs deploy-environment --environment-name SomeEnvironment/Prod --environme
 { "DeploymentId": "SomeEnvironment/Prod:2@2017090611472301" }
 ```
 
+(Note that specifying a revision older than the latest `Active` revision is not supported; the only way to deploy an older revision than that is to use the `rollback-environment` command. This prevents inadvertently rolling back changes.)
+
 This will mark the revision as Deploying, and start launching tasks to
 meet the deployment configuration's constraints. In the case of a Daemon
 environment, the desired target is to have one copy of the task for
@@ -349,8 +351,7 @@ impacts
 Rollback to an earlier revision
 -------------------------------
 
-Let's say that revision 2 is actually broken, and we need to roll back
-to revision 1:
+Let's say that revision 2 introduced an Environment change that is actually broken, and we need to roll back to revision 1:
 
 ``` {.shell}
 $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
@@ -359,39 +360,31 @@ SomeEnvironment/Prod:1    Inactive     0         0         0            0
 SomeEnvironment/Prod:2    Active       5         5         5            5        
 ```
 
-**Option 1**: Allow specifying earlier revisions to deploy. That
-revision becomes active again, and we deactivate the other revisions.
+
+In order to do a prompt rollback to an earlier revision, we can use the `rollback-environment` command. The specified revision becomes active again, and we deactivate the bad revision. The bad revision will enter the `Reverted` state once it is done `Reverting`.
 
 ``` {.shell}
 $ aws ecs deploy-environment --environment-name SomeEnvironment/Prod --environment-revision 1
 { "DeploymentId": "SomeEnvironment/Prod:1@2017090611472301" }
+
 $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE
-SomeEnvironment/Prod:1    Deploying    0         5         5            5        
-SomeEnvironment/Prod:2    Undeploying  6         0         0            0        
+SomeEnvironment/Prod:1    Deploying    5         0         0            0
+SomeEnvironment/Prod:2    Reverting    0         5         5            5
+
 $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE
-SomeEnvironment/Prod:1    Active       5         5         5            5        
-SomeEnvironment/Prod:2    Reverted     0         0         0            0        
+SomeEnvironment/Prod:1    Active       5         5         5            5
+SomeEnvironment/Prod:2    Reverted     0         0         0            0
 ```
 
-**Option 2**: Rollback copies the earlier revision to a new revision,
-and deploys that. The old revision remains inactive, and is not reused.
+### In-progress deployments
 
-``` {.shell}
-$ aws ecs deploy-environment --environment-name SomeEnvironment/Prod --environment-revision 1
-{ "DeploymentId": "SomeEnvironment/Prod:3@2017090611472301" }
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
-REVISION                  STATUS       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE
-SomeEnvironment/Prod:1    Inactive     0         0         0            0        
-SomeEnvironment/Prod:2    Undeploying  6         6         6            6        
-SomeEnvironment/Prod:3    Deploying    0         0         0            0        
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
-REVISION                  STATUS       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE
-SomeEnvironment/Prod:1    Inactive     0         0         0            0        
-SomeEnvironment/Prod:2    Inactive     0         0         0            0        
-SomeEnvironment/Prod:3    Active       6         6         6            6        
-```
+Note that even though the above example shows a revision that's already `Active`, even a `Deploying` revision could still be rolled back. You could even specify a rollback revision that's older than the one that is currently `Undeploying`; in this case, both the `Deploying` and `Undeploying` revisions will be reverted.
+
+### Rollback deployment configuration
+
+Rollback deployments may have different deployment configurations to allow for quicker recovery, or to avoid getting stuck due to breached deployment constraints such as `MinHealhtyPercent`.
 
 Pause ongoing deployments
 -------------------------
@@ -408,3 +401,28 @@ Open questions:
 
 Detect stuck deployments
 ------------------------
+
+Alternatives considered
+-----------------------
+This section documents alternative paths we considered, but discarded, and why.
+
+### Rollbacks create new revisions
+
+An alternative approach considered for handling rollbacks is to have rollback copy the earlier revision to a new revision, and deploy that. The old revision remains inactive, and is not reused.
+
+```
+$ aws ecs deploy-environment --environment-name SomeEnvironment/Prod --environment-revision 1
+{ "DeploymentId": "SomeEnvironment/Prod:3@2017090611472301" }
+$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE
+SomeEnvironment/Prod:1    Inactive     0         0         0            0
+SomeEnvironment/Prod:2    Undeploying  6         6         6            6
+SomeEnvironment/Prod:3    Deploying    0         0         0            0
+$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE
+SomeEnvironment/Prod:1    Inactive     0         0         0            0
+SomeEnvironment/Prod:2    Inactive     0         0         0            0
+SomeEnvironment/Prod:3    Active       6         6         6            6
+```
+
+The reason this alternative was discarded, was that we valued the ease with which users can see what's deployed in terms of what they actually requested. Since the rollback revisions were never explicitly created by a human, it's not super clear that they're identical to the older revisions they replace.
