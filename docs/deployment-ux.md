@@ -24,6 +24,10 @@ The following are typical use cases for Deployments:
 -   Use the status of the Environment as an indicator that a deployment
     has become stuck.
 
+UI Conventions
+--------------
+- **Showing `Inactive` revisions:** For all the output examples below, we're including environment revisions in the `Inactive` state by specifying the `--all` flag to `describe-environment-status`. Without this flag, only revisions that are not in `Inactive` will be shown.
+
 Creating and deploying an Environment
 -------------------------------------
 
@@ -50,7 +54,7 @@ At this point, nothing has actually happened to your cluster. You can
 see this by showing your environment's status:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS     DESIRED   CURRENT
 SomeEnvironment/Prod:1    Created    0         0
 ```
@@ -71,7 +75,7 @@ MinHealthyPercent is ignored, since we're starting from a situation that
 already breaches MinHealthyPercent
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS          DESIRED   CURRENT
 SomeEnvironment/Prod:1    Deploying       5         0
 ```
@@ -79,13 +83,13 @@ SomeEnvironment/Prod:1    Deploying       5         0
 As the deployment progresses:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS          DESIRED   CURRENT
 SomeEnvironment/Prod:1    Deploying       5         0
 ```
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS          DESIRED   CURRENT
 SomeEnvironment/Prod:1    Deploying       5         3
 ```
@@ -93,7 +97,7 @@ SomeEnvironment/Prod:1    Deploying       5         3
 Failure:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS          DESIRED   CURRENT
 SomeEnvironment/Prod:1    Stuck           5         4
 ```
@@ -101,7 +105,7 @@ SomeEnvironment/Prod:1    Stuck           5         4
 Success:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS          DESIRED   CURRENT
 SomeEnvironment/Prod:1    Active          5         5
 ```
@@ -131,7 +135,7 @@ At this point, nothing has actually happened to your cluster. You can
 see this by showing your environment's status:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS     DESIRED   CURRENT
 SomeEnvironment/Prod:1    Active     5         5
 SomeEnvironment/Prod:2    Created    0         0
@@ -153,7 +157,7 @@ environment, the desired target is to have one copy of the task for
 every instance in the target Instance Group:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Undeploying  0         5
 SomeEnvironment/Prod:2    Deploying    5         0
@@ -163,7 +167,7 @@ Once the deployment reaches a steady state, the old revision is marked
 Inactive, and the new revision is marked Active:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Inactive     0         0
 SomeEnvironment/Prod:2    Active       5         5
@@ -184,7 +188,7 @@ At this point, nothing has actually happened to your cluster. You can
 see this by showing your environment's status:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS     DESIRED   CURRENT
 SomeEnvironment/Prod:1    Active     5         5
 SomeEnvironment/Prod:2    Created    0         0
@@ -206,7 +210,7 @@ instance group is now different because it was changed, that's reflected
 in the DESIRED column for the new revision:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Undeploying  0         5
 SomeEnvironment/Prod:2    Deploying    6         0
@@ -220,7 +224,7 @@ Once the deployment reaches a steady state, the old revision is marked
 Inactive, and the new revision is marked Active:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Inactive     0         0
 SomeEnvironment/Prod:2    Active       6         6
@@ -245,7 +249,7 @@ impacts
     After deployment starts:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         5
     SomeEnvironment/Prod:2    Deploying    5         0
@@ -254,7 +258,7 @@ impacts
     First task in old revision is terminated:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         4
     SomeEnvironment/Prod:2    Deploying    5         0
@@ -263,7 +267,7 @@ impacts
     First task in new revision is launched:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         4
     SomeEnvironment/Prod:2    Deploying    5         1
@@ -273,7 +277,7 @@ impacts
     revision is left:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         0
     SomeEnvironment/Prod:2    Deploying    5         4
@@ -282,7 +286,7 @@ impacts
     The final task is launched and the new revision becomes active:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Inactive     0         0
     SomeEnvironment/Prod:2    Active       5         5
@@ -303,7 +307,7 @@ impacts
     After deployment starts:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         5
     SomeEnvironment/Prod:2    Deploying    5         0
@@ -313,7 +317,7 @@ impacts
     running everywhere:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         5
     SomeEnvironment/Prod:2    Deploying    5         1
@@ -322,7 +326,7 @@ impacts
     First task in old revision is terminated:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         4
     SomeEnvironment/Prod:2    Deploying    5         1
@@ -332,7 +336,7 @@ impacts
     the old revision is left:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Undeploying  0         1
     SomeEnvironment/Prod:2    Deploying    5         5
@@ -342,7 +346,7 @@ impacts
     terminated:
 
     ``` {.shell}
-    $ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
     REVISION                  STATUS       DESIRED   CURRENT
     SomeEnvironment/Prod:1    Inactive     0         0
     SomeEnvironment/Prod:2    Active       5         5
@@ -354,7 +358,7 @@ Rollback to an earlier revision
 Let's say that revision 2 introduced an Environment change that is actually broken, and we need to roll back to revision 1:
 
 ``` {.shell}
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Inactive     0         0
 SomeEnvironment/Prod:2    Active       5         5
@@ -367,12 +371,12 @@ In order to do a prompt rollback to an earlier revision, we can use the `rollbac
 $ aws ecs deploy-environment --environment-name SomeEnvironment/Prod --environment-revision 1
 { "DeploymentId": "SomeEnvironment/Prod:1@2017090611472301" }
 
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Deploying    5         0
 SomeEnvironment/Prod:2    Reverting    0         5
 
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Active       5         5
 SomeEnvironment/Prod:2    Reverted     0         0
@@ -413,12 +417,12 @@ An alternative approach considered for handling rollbacks is to have rollback co
 ```
 $ aws ecs deploy-environment --environment-name SomeEnvironment/Prod --environment-revision 1
 { "DeploymentId": "SomeEnvironment/Prod:3@2017090611472301" }
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Inactive     0         0
 SomeEnvironment/Prod:2    Undeploying  6         6
 SomeEnvironment/Prod:3    Deploying    0         0
-$ aws ecs describe-environment-status --environment-name SomeEnvironment/Prod --table
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
 REVISION                  STATUS       DESIRED   CURRENT
 SomeEnvironment/Prod:1    Inactive     0         0
 SomeEnvironment/Prod:2    Inactive     0         0
