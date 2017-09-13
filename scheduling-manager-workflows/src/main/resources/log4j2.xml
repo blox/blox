@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO" packages="com.amazonaws.services.lambda.runtime.log4j2">
+<Appenders>
+  <Console name="Console" target="SYSTEM_OUT">
+    <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %C - %msg%n"/>
+  </Console>
+  <Lambda name="LambdaAppender">
+    <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %X{AWSRequestId} %-5p %c{1}:%L - %m%n"/>
+  </Lambda>
+</Appenders>
+<Loggers>
+  <Root level="DEBUG">
+    <AppenderRef ref="Console" />
+  </Root>
+  <Logger name="com.amazonaws.blox" level="debug" additivity="false">
+    <AppenderRef ref="LambdaAppender" />
+  </Logger>
+</Loggers>
+</Configuration>

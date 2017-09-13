@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+
+  GetDeploymentDataLambdaAlias:
+    Type: "AWS::Lambda::Alias"
+    Properties:
+      FunctionName: !Ref DeploymentWorkflowLambdaHandler
+      FunctionVersion: $LATEST
+      Name: GetDeploymentData
+
+  GetStateDataLambdaAlias:
+      Type: "AWS::Lambda::Alias"
+      Properties:
+        FunctionName: !Ref DeploymentWorkflowLambdaHandler
+        FunctionVersion: $LATEST
+        Name: GetStateData
+
+  DeploymentWorkflowLambdaHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+       Handler: com.amazonaws.blox.schedulingmanager.deployment.handler.MainLambdaHandler
+       Runtime: java8
+       CodeUri: ../build/distributions/scheduling-manager-workflows.zip
+       Timeout: 60
+       MemorySize: 256
+       Policies:
+       - Version: '2012-10-17' # Policy Document
+         Statement:
+           - Effect: Allow
+             Action:
+               - dynamodb:GetItem
+               - dynamodb:PutItem
+               - dynamodb:UpdateItem
+               - dynamodb:Query
+             Resource: !Sub
+               'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Deployments'
+
+  DeploymentWorkflow:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      DefinitionString:
+        !Sub
+          - |-
+            {
+              "StartAt": "GetDeploymentData",
+              "States": {
+                "GetDeploymentData": {
+                  "Type": "Task",
+                  "Resource": "${GetDeploymentDataLambdaAlias}",
+                  "Next": "GetStateData"
+                },
+                "GetStateData": {
+                  "Type" : "Task",
+                  "Resource": "${GetStateDataLambdaAlias}",
+                  "End": true
+                }
+              }
+            }
+          - DeploymentWorkflowLambdaArn: !GetAtt [ DeploymentWorkflowLambdaHandler, Arn ]
+      RoleArn: !GetAtt [ StatesExecutionRole, Arn ]
+
+  StatesExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: "*"
