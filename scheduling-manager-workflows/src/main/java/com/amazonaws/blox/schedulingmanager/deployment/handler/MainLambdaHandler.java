@@ -28,12 +28,12 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 @Slf4j
 public class MainLambdaHandler implements RequestStreamHandler {
 
+  private static final ApplicationContext applicationContext =
+      new AnnotationConfigApplicationContext(DeploymentWorkflowApplication.class);
+
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
       throws IOException {
-
-    final ApplicationContext applicationContext =
-        new AnnotationConfigApplicationContext(DeploymentWorkflowApplication.class);
 
     final String lambdaAlias = getLambdaAlias(context.getInvokedFunctionArn());
 

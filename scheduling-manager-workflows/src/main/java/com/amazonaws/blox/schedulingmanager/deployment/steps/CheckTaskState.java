@@ -15,8 +15,7 @@
 package com.amazonaws.blox.schedulingmanager.deployment.steps;
 
 import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentData;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.StateData;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.types.TaskState;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,23 +25,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
-public class GetStateData implements StepHandler {
+public class CheckTaskState implements StepHandler {
 
   private Encoder encoder;
 
   @Override
   public void handleRequest(InputStream input, OutputStream output, Context context)
       throws IOException {
-    log.debug("getStateData lambda");
 
-    final DeploymentData deploymentData = encoder.decode(input, DeploymentData.class);
+    log.debug("check task state lambda");
 
-    log.debug(
-        "deployment data deployment id {} and clustername {}",
-        deploymentData.deploymentId,
-        deploymentData.clusterName);
+    final TaskState taskState = TaskState.builder().status("RUNNING").build();
 
-    final StateData stateData = StateData.builder().clusterName(deploymentData.clusterName).build();
-    encoder.encode(output, stateData);
+    encoder.encode(output, taskState);
   }
 }

@@ -16,8 +16,11 @@ package com.amazonaws.blox.schedulingmanager.deployment;
 
 import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.deployment.handler.Router;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.CheckTaskState;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.GetDeploymentData;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.GetStateData;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.StartDeployment;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.StartTask;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.StepHandler;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClient;
@@ -66,6 +69,9 @@ public class DeploymentWorkflowApplication {
     final Map<String, StepHandler> handlers = new HashMap<String, StepHandler>();
     handlers.put("GetDeploymentData", getDeploymentData());
     handlers.put("GetStateData", getStateData());
+    handlers.put("StartDeployment", startDeployment());
+    handlers.put("StartTask", startTask());
+    handlers.put("CheckTaskState", checkTaskState());
     return handlers;
   }
 
@@ -77,5 +83,20 @@ public class DeploymentWorkflowApplication {
   @Bean
   public GetStateData getStateData() {
     return new GetStateData(encoder());
+  }
+
+  @Bean
+  public StartDeployment startDeployment() {
+    return new StartDeployment(encoder(), stepFunctionsClient());
+  }
+
+  @Bean
+  public StartTask startTask() {
+    return new StartTask(encoder(), ecsClient());
+  }
+
+  @Bean
+  public CheckTaskState checkTaskState() {
+    return new CheckTaskState(encoder());
   }
 }

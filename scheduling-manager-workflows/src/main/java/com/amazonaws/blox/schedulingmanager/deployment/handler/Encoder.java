@@ -19,17 +19,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @AllArgsConstructor
 public class Encoder {
 
   private ObjectMapper mapper;
 
   public <T> T decode(InputStream input, Class<T> clazz) throws IOException {
-    return mapper.readValue(input, clazz);
+    try {
+      return mapper.readValue(input, clazz);
+    } catch (final IOException e) {
+      log.error("Could not parse input into the expected class {}", clazz.getName());
+      throw e;
+    }
   }
 
   public <T> void encode(OutputStream output, T value) throws IOException {
     mapper.writeValue(output, value);
+  }
+
+  public <T> String encode(T value) throws IOException {
+    return mapper.writeValueAsString(value);
   }
 }

@@ -37,6 +37,7 @@ public class GetDeploymentData implements StepHandler {
     log.debug("getDeploymentData lambda");
 
     final DeploymentInput deploymentInput = encoder.decode(input, DeploymentInput.class);
+
     log.debug(
         "deployment input name {} and account {}",
         deploymentInput.getName(),

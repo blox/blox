@@ -15,8 +15,10 @@
 package com.amazonaws.blox.schedulingmanager.deployment.steps;
 
 import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentData;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.StateData;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.types.TaskData;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.types.TaskWorkflowInput;
+import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.model.StartTaskRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,23 +28,28 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
-public class GetStateData implements StepHandler {
+public class StartTask implements StepHandler {
 
   private Encoder encoder;
+  private AmazonECS ecs;
 
   @Override
   public void handleRequest(InputStream input, OutputStream output, Context context)
       throws IOException {
-    log.debug("getStateData lambda");
 
-    final DeploymentData deploymentData = encoder.decode(input, DeploymentData.class);
+    log.debug("start task lambda");
 
-    log.debug(
-        "deployment data deployment id {} and clustername {}",
-        deploymentData.deploymentId,
-        deploymentData.clusterName);
+    final TaskWorkflowInput taskWorkflowInput = encoder.decode(input, TaskWorkflowInput.class);
 
-    final StateData stateData = StateData.builder().clusterName(deploymentData.clusterName).build();
-    encoder.encode(output, stateData);
+    final StartTaskRequest startTaskRequest =
+        new StartTaskRequest().withTaskDefinition(taskWorkflowInput.getTaskDefinition());
+
+    //TODO: actually start a task. for now just test that this step gets invoked
+    log.debug("Starting ECS task");
+
+    final TaskData taskData =
+        TaskData.builder().taskDefinition(taskWorkflowInput.getTaskDefinition()).build();
+
+    encoder.encode(output, taskData);
   }
 }
