@@ -27,6 +27,10 @@ The following are typical use cases for Deployments:
 UI Conventions
 --------------
 - **Showing `Inactive` revisions:** For all the output examples below, we're including environment revisions in the `Inactive` state by specifying the `--all` flag to `describe-environment-status`. Without this flag, only revisions that are not in `Inactive` will be shown.
+- For all the cluster state visualizations below, the legend is:
+
+  | :large_blue_circle: pending | :white_check_mark: running | :red_circle: terminating | :no_entry: terminated |
+  |:----------------------------|:---------------------------|:-------------------------|:----------------------|
 
 Creating and deploying an Environment
 -------------------------------------
@@ -230,158 +234,224 @@ SomeEnvironment/Prod:1    Inactive     0         0
 SomeEnvironment/Prod:2    Active       6         6
 ```
 
+### Daemon Environments
+Daemon Environments behave slightly differently from Service Environments (TBD). Daemon tasks typically provide instance-wide capabilities such as metrics/logging or network overlay, that the other tasks on the instance all depend upon. Any amount of time that the task is not present on the instance, could potentially result in downtime for the other tasks on the instance.
 
-### Daemon deployments
+Because of this, at any time during the life of a Daemon environment, Blox will prioritize:
+- minimizing the number of instances that are not running the Daemon task at all
+- minimizing the number of instances that are not running the version of the Daemon task that they should be
 
-There are some deployment peculiarities specific to Daemon Environments.
+Since tasks sometimes fail, and cluster instance membership changes over time, it is expected that there will often be some window of time where the requirements above cannot be met. In particular, for larger clusters, or clusters that are backed by Autoscaling Groups, the available instances in the cluster might change frequently (and sometimes dramatically).
 
-#### Deployment strategies
-Daemon deployments have two update strategies, with different availability
-impacts
-
-1.  Terminate before replace
-
-    If you're using this deployment strategy, then Blox will kill
-    `(100 - MinHealthyPercent)%` of tasks, and only launch new tasks to
-    replace as they are successfully terminated. This will ensure that
-    there's never more than one version of the Task running at the same
-    time on the same host, but may result in some downtime for the
-    daemon. This is a good fit for daemons that would fail if there is
-    more than one running per instance, and that can tolerate short
-    periods of unavailability.
-
-    After deployment starts:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         5
-    SomeEnvironment/Prod:2    Deploying    5         0
-    ```
-
-    First task in old revision is terminated:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         4
-    SomeEnvironment/Prod:2    Deploying    5         0
-    ```
-
-    First task in new revision is launched:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         4
-    SomeEnvironment/Prod:2    Deploying    5         1
-    ```
-
-    Deployment progresses in a similar fashion until none of the old
-    revision is left:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         0
-    SomeEnvironment/Prod:2    Deploying    5         4
-    ```
-
-    The final task is launched and the new revision becomes active:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Inactive     0         0
-    SomeEnvironment/Prod:2    Active       5         5
-    ```
-
-2.  Terminate after replace
-
-    If you're using this deployment strategy, then Blox will launch
-    `MaxOver` tasks on as many instances, and only kill old tasks once
-    the new task is confirmed to be running. This will ensure that
-    there's never less than one Task running at the same time on the
-    same Instance, but will result in two copies of the Task running on
-    at most MaxSurge instances at any given time. This is a good fit for
-    daemons that must always have at least one instance running, and
-    that don't care if another instance of the daemon is running on the
-    same host.
-
-    After deployment starts:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         5
-    SomeEnvironment/Prod:2    Deploying    5         0
-    ```
-
-    First task in new revision is launched, old revision is still
-    running everywhere:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         5
-    SomeEnvironment/Prod:2    Deploying    5         1
-    ```
-
-    First task in old revision is terminated:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         4
-    SomeEnvironment/Prod:2    Deploying    5         1
-    ```
-
-    Deployment progresses in a similar fashion until the last task of
-    the old revision is left:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Undeploying  0         1
-    SomeEnvironment/Prod:2    Deploying    5         5
-    ```
-
-    Deployment completes once the final task in the old revision is
-    terminated:
-
-    ```
-    $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-    REVISION                  STATUS       DESIRED   CURRENT
-    SomeEnvironment/Prod:1    Inactive     0         0
-    SomeEnvironment/Prod:2    Active       5         5
-    ```
-
-#### Changes to cluster membership while a deployment is ongoing
-
-For larger clusters, or clusters that are backed by Autoscaling Groups, the available instances in the cluster might change (sometimes dramatically). Since the total number of available instances determines the desired end-state of the Environment, these state changes could affect the ability of an Environment to make progress while honoring its deployment constraints.
-
-The behaviour we're aiming for is to minimize the number of instances that are not running the Daemon task at all at any given point in time. If a configurable number of instances are without the correct version of a Daemon task for a configurable amount of time, the deployment will enter the `Failing` state and emit an alarm. However, it will continue to try and make progress.
+The goal then is to bound the size of the window where a instance is not running the Daemon environment, and to provide alarms on when this upper bound is breached. If a configurable number of instances are without the correct version of a Daemon task for a configurable amount of time, the environment revision will enter the `Failing` state and emit an alarm. However, it will continue to try and make progress.
 
 - If a deployment fails to start a task on a particular host (e.g. because the task definition is faulty, or the Task fails to start up in a nondeterministic way), priority will be given to restarting that task, rather than continuing to replace existing tasks.
-- If a Daemon task terminates abnormally during a deployment on an instance that is not currently having its task replace, priority will be given to replacing that task over starting to terminate tasks on other instances.
-- If new instances join the cluster while an environment is deploying, running the daemon task on those instances will be given priority over replacing existing instances of the daemon. The new instances will be visible only as a change in the `DESIRED` column for the `Deploying` environment revision:
+- If a Daemon task terminates abnormally during a deployment on an instance that is not currently having its task replaced, priority will be given to replacing that task over starting to terminate tasks on other instances.
+- If new hosts join a cluster, new Daemon tasks will launch on them promptly (without waiting for the evaluation of deployment constraints or for other workflows to finish)
 
-  ```
-  $ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
-  REVISION                  STATUS       DESIRED   CURRENT
-  SomeEnvironment/Prod:1    Undeploying  0         3
-  SomeEnvironment/Prod:2    Deploying    5         2
-  ```
+Daemon deployments have two update strategies, with different availability impacts:
 
-  New instances matching the Instance Group join the cluster:
+#### Terminate before replace
 
-  ```
-  REVISION                  STATUS       DESIRED   CURRENT
-  SomeEnvironment/Prod:1    Undeploying  0         3
-  SomeEnvironment/Prod:2    Deploying    10        8
-  ```
+If you're using this deployment strategy, then Blox will kill
+`(100 - MinHealthyPercent)%` of tasks, and only launch new tasks to
+replace as they are successfully terminated. This will ensure that
+there's never more than one version of the Task running at the same
+time on the same host, but may result in some downtime for the
+daemon. This is a good fit for daemons that would fail if there is
+more than one running per instance, and that can tolerate short
+periods of unavailability.
 
-- If instances in a cluster are terminated while a deployment is ongoing... (TODO: then what? Do we care?)
+##### Example 1: Steady State
+
+Let's consider a Daemon update with `MinHealthyPercent = 60`, which completes without:
+- any changes in cluster membership (i.e. no instances join or leave the cluster)
+- any tasks failing to start up
+- any existing tasks terminating abnormally
+
+This is what the overall deployment progress would look like while inspecting the cluster:
+
+| T  | Event                  | i<sub>1</sub>                                            | i<sub>2</sub>                                            | i<sub>3</sub>                                            | i<sub>4</sub>                                            | i<sub>5</sub>                                             |
+|:---|:-----------------------|:---------------------------------------------------------|:---------------------------------------------------------|:---------------------------------------------------------|:---------------------------------------------------------|:----------------------------------------------------------|
+| 0  | Deployment Starts      | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                           |
+| 1  | Terminate 1, 2         | :red_circle:<sub>v1</sub>                                | :red_circle:<sub>v1</sub>                                | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                           |
+| 2  | Terminated 1; start 1  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :red_circle:<sub>v1</sub>                                | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                           |
+| 3  | Terminated 2; start 2  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                           |
+| 4  | Running 1; Terminate 3 | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :red_circle:<sub>v1</sub>                                | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub>                           |
+| 5  | Running 2; Terminate 4 | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :red_circle:<sub>v1</sub>                                | :red_circle:<sub>v1</sub>                                | :white_check_mark:<sub>v1</sub>                           |
+| 6  | Terminated 3; start 3  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :red_circle:<sub>v1</sub>                                | :white_check_mark:<sub>v1</sub>                           |
+| 7  | Terminated 4; start 4  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub>                           |
+| 8  | Running 3; Terminate 5 | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :red_circle:<sub>v1</sub>                                 |
+| 9  | Running 4              | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :red_circle:<sub>v1</sub>                                 |
+| 10 | Terminated 5; start 5  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub>  :large_blue_circle:<sub>v2</sub> |
+| 11 | Running 5              | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>  |
+
+At *T=0*, the only visible effect of the deployment is updated Desired counts in the status display:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  3         5
+SomeEnvironment/Prod:2    Deploying    0         0
+```
+
+At *T=1*, two tasks in the old revision get terminated, and replaced with two pending tasks:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  3         3
+SomeEnvironment/Prod:2    Deploying    2         0
+```
+
+At *T=4*, one of the tasks finish terminating, and it's replaced by a new task, so we terminate another old task:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  2         3
+SomeEnvironment/Prod:2    Deploying    3         1
+```
+
+Deployment progresses in a similar fashion until none of the old revision is left at *T=10*:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  0         0
+SomeEnvironment/Prod:2    Deploying    5         4
+```
+
+The final task is launched at *T=11* and the new revision becomes active:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Inactive     0         0
+SomeEnvironment/Prod:2    Active       5         5
+```
+
+##### Example 2: Scale up
+
+If new instances join the cluster while an environment is deploying, running the daemon task on those instances will be given priority over replacing existing instances of the daemon. The new instances will be visible only as a change in the `DESIRED` column for the `Deploying` environment revision.
+
+For example, suppose we add 4 new instances at T=3 from the previous example:
+
+| T | Event; actions                 | i<sub>1</sub>                                            | i<sub>2</sub>                                            | i<sub>3</sub>                                            | i<sub>4</sub>                   | i<sub>5</sub>                   | i<sub>6</sub>                    | i<sub>7</sub>                    | i<sub>8</sub>                    |
+|:--|:-------------------------------|:---------------------------------------------------------|:---------------------------------------------------------|:---------------------------------------------------------|:--------------------------------|:--------------------------------|:---------------------------------|:---------------------------------|:---------------------------------|
+| 3 | Terminated 2; start 2, 6, 7, 8 | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v1</sub> | :large_blue_circle:<sub>v2</sub> | :large_blue_circle:<sub>v2</sub> | :large_blue_circle:<sub>v2</sub> |
+| 4 | Running 1                      | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v1</sub> | :large_blue_circle:<sub>v2</sub> | :large_blue_circle:<sub>v2</sub> | :large_blue_circle:<sub>v2</sub> |
+| 5 | Running 2                      | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v1</sub> | :large_blue_circle:<sub>v2</sub> | :large_blue_circle:<sub>v2</sub> | :large_blue_circle:<sub>v2</sub> |
+| 6 | Running 6                      | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v1</sub>                          | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v2</sub>  | :large_blue_circle:<sub>v2</sub> | :large_blue_circle:<sub>v2</sub> |
+| 7 | Running 7; terminate 3         | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :red_circle:<sub>v1</sub>                                | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v2</sub>  | :large_blue_circle:<sub>v2</sub> |
+| 8 | Terminated 3; start 3          | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v2</sub>  | :large_blue_circle:<sub>v2</sub> |
+| 9 | Running 8; terminate 4         | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :red_circle:<sub>v1</sub>       | :white_check_mark:<sub>v1</sub> | :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v2</sub>  |
+| 9 | Running 3; terminate 5         | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :no_entry:<sub>v1</sub> :white_check_mark:<sub>v2</sub>  | :red_circle:<sub>v1</sub>       | :red_circle:<sub>v1</sub>       | :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v2</sub>  | :white_check_mark:<sub>v2</sub>  |
+
+At T=3, the new tasks are launched immediately because the new hosts are not running a daemon instance:
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  3         3
+SomeEnvironment/Prod:2    Deploying    5         0
+```
+
+At T=4, the flow diverges from the happy path. Since the 3 new tasks have not come up yet, the environment is now at `HealthyPercent < 60`. This prevents new tasks from being terminated:
+
+```
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  3        3
+SomeEnvironment/Prod:2    Deploying    5        1
+```
+
+As the new tasks come up, by T=7, enough new tasks are running to start terminating old tasks again:
+
+```
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  2        3
+SomeEnvironment/Prod:2    Deploying    5        4
+```
+
+From T=9 onwards, the flow looks the same as the happy path again.
+
+#### Terminate after replace
+
+If you're using this deployment strategy, then Blox will launch `MaxOver` tasks on as many instances, and only kill old tasks once the new task is confirmed to be running. This will ensure that there's never less than one Task running at the same time on the same Instance, but will result in two copies of the Task running on at most `MaxOver` instances at any given time. This is a good fit for daemons that must always have at least one instance running, and that don't care if another instance of the daemon is running on the same host.
+
+##### Example 1: Steady state
+
+Let's consider a Daemon update with `MaxOver = 2`, which completes without:
+- any changes in cluster membership (i.e. no instances join or leave the cluster)
+- any tasks failing to start up
+- any existing tasks terminating abnormally
+
+| T | Event                           | i<sub>1</sub>                                                    | i<sub>2</sub>                                                     | i<sub>3</sub>                                                     | i<sub>4</sub>                                                     | i<sub>5</sub>                                                     |
+|:--|:--------------------------------|:-----------------------------------------------------------------|:------------------------------------------------------------------|:------------------------------------------------------------------|:------------------------------------------------------------------|:------------------------------------------------------------------|
+| 0 | Deployment Starts               | :white_check_mark:<sub>v1</sub>                                  | :white_check_mark:<sub>v1</sub>                                   | :white_check_mark:<sub>v1</sub>                                   | :white_check_mark:<sub>v1</sub>                                   | :white_check_mark:<sub>v1</sub>                                   |
+| 1 | Start 1, 2                      | :white_check_mark:<sub>v1</sub> :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub>  :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub>                                   | :white_check_mark:<sub>v1</sub>                                   | :white_check_mark:<sub>v1</sub>                                   |
+| 2 | Running 1; Terminate 1, Start 3 | :red_circle:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>       | :white_check_mark:<sub>v1</sub>  :large_blue_circle:<sub>v2</sub> | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark:<sub>v1</sub>                                   | :white_check_mark:<sub>v1</sub>                                   |
+| 3 | Running 2; Terminate 2, Start 4 | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>         | :red_circle:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>        | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark:<sub>v1</sub>                                   |
+| 4 | Running 3; Terminate 3, Start 5 | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>         | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>          | :red_circle:<sub>v1</sub> :white_check_mark: <sub>v2</sub>        | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> |
+| 5 | Running 4; Terminate 4          | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>         | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :red_circle:<sub>v1</sub> :white_check_mark: <sub>v2</sub>        | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> |
+| 6 | Running 5; Terminate 5          | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>         | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :red_circle:<sub>v1</sub> :white_check_mark: <sub>v2</sub>        |
+| 7 | Deployment Completes            | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>         | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          |
+
+After the deployment starts at T=1, the only visible difference is that there are now 2 desired tasks for revision 2:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  5         5
+SomeEnvironment/Prod:2    Deploying    2         0
+```
+
+At  T=2, the first of the new tasks are running, and so the first task in the old revision is terminated and another task is started in the new revision:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  4         5
+SomeEnvironment/Prod:2    Deploying    3         1
+```
+
+Deployment progresses in a similar fashion until the last task of the old revision is left at T=5:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  0         1
+SomeEnvironment/Prod:2    Deploying    5         4
+```
+
+Deployment completes once the final task in the old revision is terminated at T=6 when the final task in the new revision comes up:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Inactive     0         0
+SomeEnvironment/Prod:2    Active       5         5
+```
+
+##### Example 2: Scale up
+
+For this example, suppose we add a new instance at T=3 from the previous example:
+
+| T | Event                           | i<sub>1</sub>                                            | i<sub>2</sub>                                              | i<sub>3</sub>                                                     | i<sub>4</sub>                                                     | i<sub>5</sub>                                                     | i<sub>6</sub>                     |
+|:--|:--------------------------------|:---------------------------------------------------------|:-----------------------------------------------------------|:------------------------------------------------------------------|:------------------------------------------------------------------|:------------------------------------------------------------------|:----------------------------------|
+| 3 | Running 2; Terminate 2, Start 4 | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub> | :red_circle:<sub>v1</sub>  :white_check_mark:<sub>v2</sub> | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark:<sub>v1</sub>                                   | :large_blue_circle: <sub>v2</sub> |
+| 4 | Running 3; Terminate 3, Start 5 | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub> | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>   | :red_circle:<sub>v1</sub> :white_check_mark: <sub>v2</sub>        | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark: <sub>v2</sub>  |
+| 5 | Running 4; Terminate 4          | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub> | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>   | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :red_circle:<sub>v1</sub> :white_check_mark: <sub>v2</sub>        | :white_check_mark:<sub>v1</sub> :large_blue_circle: <sub>v2</sub> | :white_check_mark: <sub>v2</sub>  |
+| 6 | Running 5; Terminate 5          | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub> | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>   | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :red_circle:<sub>v1</sub> :white_check_mark: <sub>v2</sub>        | :white_check_mark: <sub>v2</sub>  |
+| 7 | Deployment Completes            | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub> | :no_entry:<sub>v1</sub>  :white_check_mark:<sub>v2</sub>   | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :no_entry:<sub>v1</sub> :white_check_mark: <sub>v2</sub>          | :white_check_mark: <sub>v2</sub>  |
+
+Since this deployment method doesn't have a `MinHealthyPercent` setting, and the `MaxOver` threshold is not breached, the deployment can continue as normal, even though a new, empty instance has joined the cluster. It will still promptly schedule an instance to be run on the new instance. The new instances will be visible only as a change in the `DESIRED` column for the `Deploying` environment revision at T=3:
+
+```
+$ aws ecs describe-environment-status --all --environment-name SomeEnvironment/Prod --table
+REVISION                  STATUS       DESIRED   CURRENT
+SomeEnvironment/Prod:1    Undeploying  3         4
+SomeEnvironment/Prod:2    Deploying    5         2
+```
 
 Rollback to an earlier revision
 -------------------------------
@@ -500,3 +570,8 @@ The reason this alternative was discarded, was that we valued the ease with whic
 We considered automatically resuming an environment when a new `deploy-environment` or `rollback-environment` command is issued. This would prevent customers from getting stuck because they forgot to resume their Environment.
 
 The reason that this alternative was discarded is that automated deployment systems could inadvertently cause an environment to be resumed while it is not actually safe to do so. However, we could consider achieving the same thing by including a `--force` flag or similar on the `deploy-environment`/`rollback-environment` commands.
+
+### Don't prioritize placing tasks on new instances
+
+We considered not prioritizing placing tasks on new instances. However, this would result in actually decreasing the cluster's `HealthyPercent` from T=4-13, until we finally place new tasks on the new instances after all existing workflows are done.
+
