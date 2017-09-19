@@ -12,20 +12,23 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment.steps.types;
+package com.amazonaws.blox.schedulingmanager.task.steps.types;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import java.util.List;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
 @JsonDeserialize(builder = TaskData.TaskDataBuilder.class)
 @Builder
-@Value
+@Data
 public class TaskData {
 
   private final String cluster;
-  private final String taskDefinition;
+  private final List<String> tasks;
+  private final String ecsRole;
+  private String status;
 
   @JsonPOJOBuilder(withPrefix = "")
   public static final class TaskDataBuilder {}

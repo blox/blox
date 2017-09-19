@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment.steps.types;
+package com.amazonaws.blox.schedulingmanager.task.steps.types;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
@@ -29,7 +29,7 @@ public class TaskWorkflowInput {
   private final String taskDefinition;
   private final String group;
   private final String startedBy;
-  private final String taskRole;
+  private final String ecsRole;
 
   @JsonPOJOBuilder(withPrefix = "")
   public static final class TaskWorkflowInputBuilder {}

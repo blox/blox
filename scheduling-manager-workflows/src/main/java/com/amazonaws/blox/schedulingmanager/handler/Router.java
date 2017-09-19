@@ -12,10 +12,9 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment.handler;
+package com.amazonaws.blox.schedulingmanager.handler;
 
-import com.amazonaws.blox.schedulingmanager.deployment.exception.HandlerNotFoundException;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.StepHandler;
+import com.amazonaws.blox.schedulingmanager.exception.HandlerNotFoundException;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

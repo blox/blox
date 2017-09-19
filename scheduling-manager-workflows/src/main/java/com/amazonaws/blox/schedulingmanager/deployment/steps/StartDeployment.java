@@ -15,9 +15,10 @@
 package com.amazonaws.blox.schedulingmanager.deployment.steps;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
+import com.amazonaws.blox.schedulingmanager.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.types.StateData;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.TaskWorkflowInput;
+import com.amazonaws.blox.schedulingmanager.task.steps.types.TaskWorkflowInput;
+import com.amazonaws.blox.schedulingmanager.handler.StepHandler;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Component;
 public class StartDeployment implements StepHandler {
 
   private static final String START_TASK_WF_ARN_ENV_VAR = "START_TASK_WF_ARN";
+  private static final String START_TASK_WF_PREFIX = "StartTaskWorkflow";
 
   private Encoder encoder;
   private AWSStepFunctions stepFunctions;
@@ -47,21 +49,26 @@ public class StartDeployment implements StepHandler {
     final StateData stateData = encoder.decode(input, StateData.class);
 
     final TaskWorkflowInput taskWorkflowInput =
-        TaskWorkflowInput.builder().taskDefinition("taskDef").build();
+        TaskWorkflowInput.builder()
+            .taskDefinition("sleep")
+            .cluster("daemon")
+            .containerInstance("91553038-abde-4b0c-b1b0-112a4d23caaf")
+            .ecsRole(stateData.getEcsRole())
+            .build();
 
     final String taskWorkflowInputJson = encoder.encode(taskWorkflowInput);
 
     //TODO: spawn workflows for each task
-    //TODO: don't hardcode the statemachine arn or replace accountid/region
+    final String workflowName = START_TASK_WF_PREFIX + UUID.randomUUID().toString();
     final StartExecutionRequest startExecutionRequest =
         new StartExecutionRequest()
             .withStateMachineArn(System.getenv(START_TASK_WF_ARN_ENV_VAR))
             .withInput(taskWorkflowInputJson)
-            .withName("StartTaskWorkflow" + UUID.randomUUID().toString());
+            .withName(workflowName);
     try {
       stepFunctions.startExecution(startExecutionRequest);
     } catch (final AmazonClientException e) {
-      log.error("StartTask workflow failed to start", e);
+      log.error("StartTask workflow {} failed to start", workflowName, e);
       throw e;
     }
   }

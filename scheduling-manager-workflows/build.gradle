@@ -27,6 +27,7 @@ dependencies {
     compile (
             'com.amazonaws:aws-java-sdk-ecs',
             'com.amazonaws:aws-java-sdk-stepfunctions',
+            'com.amazonaws:aws-java-sdk-sts',
 
             'com.amazonaws:aws-lambda-java-core:1.1.0',
             'com.amazonaws:aws-lambda-java-events:1.3.0',

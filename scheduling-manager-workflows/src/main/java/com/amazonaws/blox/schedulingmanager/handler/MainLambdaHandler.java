@@ -12,10 +12,9 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment.handler;
+package com.amazonaws.blox.schedulingmanager.handler;
 
-import com.amazonaws.blox.schedulingmanager.deployment.DeploymentWorkflowApplication;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.StepHandler;
+import com.amazonaws.blox.schedulingmanager.WorkflowApplication;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.IOException;
@@ -29,7 +28,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 public class MainLambdaHandler implements RequestStreamHandler {
 
   private static final ApplicationContext applicationContext =
-      new AnnotationConfigApplicationContext(DeploymentWorkflowApplication.class);
+      new AnnotationConfigApplicationContext(WorkflowApplication.class);
 
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)

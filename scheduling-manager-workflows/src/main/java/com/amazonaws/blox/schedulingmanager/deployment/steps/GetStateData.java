@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.schedulingmanager.deployment.steps;
 
-import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
+import com.amazonaws.blox.schedulingmanager.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentData;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.types.StateData;
+import com.amazonaws.blox.schedulingmanager.handler.StepHandler;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,10 +40,14 @@ public class GetStateData implements StepHandler {
 
     log.debug(
         "deployment data deployment id {} and clustername {}",
-        deploymentData.deploymentId,
-        deploymentData.clusterName);
+        deploymentData.getDeploymentId(),
+        deploymentData.getClusterName());
 
-    final StateData stateData = StateData.builder().clusterName(deploymentData.clusterName).build();
+    final StateData stateData =
+        StateData.builder()
+            .clusterName(deploymentData.getClusterName())
+            .ecsRole(deploymentData.getEcsRole())
+            .build();
     encoder.encode(output, stateData);
   }
 }

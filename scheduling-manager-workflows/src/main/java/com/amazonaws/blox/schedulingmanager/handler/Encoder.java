@@ -12,11 +12,9 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment.steps;
+package com.amazonaws.blox.schedulingmanager.handler;
 
-import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.TaskState;
-import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,18 +23,24 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
-public class CheckTaskState implements StepHandler {
+public class Encoder {
 
-  private Encoder encoder;
+  private ObjectMapper mapper;
 
-  @Override
-  public void handleRequest(InputStream input, OutputStream output, Context context)
-      throws IOException {
+  public <T> T decode(InputStream input, Class<T> clazz) throws IOException {
+    try {
+      return mapper.readValue(input, clazz);
+    } catch (final IOException e) {
+      log.error("Could not parse input into the expected class {}", clazz.getName());
+      throw e;
+    }
+  }
 
-    log.debug("check task state lambda");
+  public <T> void encode(OutputStream output, T value) throws IOException {
+    mapper.writeValue(output, value);
+  }
 
-    final TaskState taskState = TaskState.builder().status("RUNNING").build();
-
-    encoder.encode(output, taskState);
+  public <T> String encode(T value) throws IOException {
+    return mapper.writeValueAsString(value);
   }
 }

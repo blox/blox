@@ -12,18 +12,19 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment;
+package com.amazonaws.blox.schedulingmanager;
 
-import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
-import com.amazonaws.blox.schedulingmanager.deployment.handler.Router;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.CheckTaskState;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.GetDeploymentData;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.GetStateData;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.StartDeployment;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.StartTask;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.StepHandler;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.blox.schedulingmanager.handler.Encoder;
+import com.amazonaws.blox.schedulingmanager.handler.Router;
+import com.amazonaws.blox.schedulingmanager.handler.StepHandler;
+import com.amazonaws.blox.schedulingmanager.task.steps.CheckTaskState;
+import com.amazonaws.blox.schedulingmanager.task.steps.StartTask;
+import com.amazonaws.blox.schedulingmanager.wrapper.ECSWrapperFactory;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,16 +34,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class DeploymentWorkflowApplication {
-
-  @Bean
-  public AmazonECS ecsClient() {
-    return AmazonECSClient.builder().build();
-  }
+public class WorkflowApplication {
 
   @Bean
   public AWSStepFunctions stepFunctionsClient() {
     return AWSStepFunctionsClient.builder().build();
+  }
+
+  @Bean
+  public AWSSecurityTokenService stsClient() {
+    return AWSSecurityTokenServiceClient.builder().build();
+  }
+
+  @Bean
+  public ECSWrapperFactory ecsWrapperFactory() {
+    return new ECSWrapperFactory(stsClient());
   }
 
   @Bean
@@ -92,11 +98,11 @@ public class DeploymentWorkflowApplication {
 
   @Bean
   public StartTask startTask() {
-    return new StartTask(encoder(), ecsClient());
+    return new StartTask(encoder(), ecsWrapperFactory());
   }
 
   @Bean
   public CheckTaskState checkTaskState() {
-    return new CheckTaskState(encoder());
+    return new CheckTaskState(encoder(), ecsWrapperFactory());
   }
 }

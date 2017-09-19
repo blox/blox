@@ -19,13 +19,13 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.Builder;
 import lombok.Value;
 
-@JsonDeserialize(builder = DeploymentInput.DeploymentInputBuilder.class)
+@JsonDeserialize(builder = DeploymentWorkflowInput.DeploymentWorkflowInputBuilder.class)
 @Builder
 @Value
-public class DeploymentInput {
+public class DeploymentWorkflowInput {
   private final String name;
   private final String account;
 
   @JsonPOJOBuilder(withPrefix = "")
-  public static final class DeploymentInputBuilder {}
+  public static final class DeploymentWorkflowInputBuilder {}
 }

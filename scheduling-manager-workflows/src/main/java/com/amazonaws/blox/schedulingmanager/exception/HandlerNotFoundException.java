@@ -12,16 +12,12 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment.steps;
+package com.amazonaws.blox.schedulingmanager.exception;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+/** Defined as a RuntimeException for now so we can use the predefined Lambda interfaces. */
+public class HandlerNotFoundException extends RuntimeException {
 
-/** The functions that will be handling the workflow steps should implement this interface. */
-public interface StepHandler {
-
-  void handleRequest(InputStream input, OutputStream outputStream, Context context)
-      throws IOException;
+  public HandlerNotFoundException(String message) {
+    super(message);
+  }
 }

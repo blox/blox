@@ -12,11 +12,11 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.schedulingmanager.deployment.handler;
+package com.amazonaws.blox.schedulingmanager.handler;
 
 import static org.junit.Assert.assertEquals;
 
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentInput;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentWorkflowInput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -37,14 +37,15 @@ public class EncoderTest {
 
   @Test
   public void testDecode() throws IOException {
-    final DeploymentInput deploymentInput =
-        DeploymentInput.builder().account("1234").name("name1").build();
+    final DeploymentWorkflowInput deploymentWorkflowInput =
+        DeploymentWorkflowInput.builder().account("1234").name("name1").build();
 
-    final String inputJson = mapper.writeValueAsString(deploymentInput);
+    final String inputJson = mapper.writeValueAsString(deploymentWorkflowInput);
     final InputStream inputStream = new ByteArrayInputStream(inputJson.getBytes());
 
-    final DeploymentInput result = encoder.decode(inputStream, DeploymentInput.class);
-    assertEquals(result.getAccount(), deploymentInput.getAccount());
-    assertEquals(result.getName(), deploymentInput.getName());
+    final DeploymentWorkflowInput result =
+        encoder.decode(inputStream, DeploymentWorkflowInput.class);
+    assertEquals(result.getAccount(), deploymentWorkflowInput.getAccount());
+    assertEquals(result.getName(), deploymentWorkflowInput.getName());
   }
 }

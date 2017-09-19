@@ -24,6 +24,7 @@ import lombok.Value;
 @Value
 public class StateData {
   private final String clusterName;
+  private final String ecsRole;
 
   @JsonPOJOBuilder(withPrefix = "")
   public static final class StateDataBuilder {}

@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.schedulingmanager.deployment.steps;
 
-import com.amazonaws.blox.schedulingmanager.deployment.handler.Encoder;
+import com.amazonaws.blox.schedulingmanager.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentData;
-import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentInput;
+import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentWorkflowInput;
+import com.amazonaws.blox.schedulingmanager.handler.StepHandler;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,17 +37,20 @@ public class GetDeploymentData implements StepHandler {
       throws IOException {
     log.debug("getDeploymentData lambda");
 
-    final DeploymentInput deploymentInput = encoder.decode(input, DeploymentInput.class);
+    final DeploymentWorkflowInput deploymentWorkflowInput =
+        encoder.decode(input, DeploymentWorkflowInput.class);
 
     log.debug(
         "deployment input name {} and account {}",
-        deploymentInput.getName(),
-        deploymentInput.getAccount());
+        deploymentWorkflowInput.getName(),
+        deploymentWorkflowInput.getAccount());
 
+    //TODO: retrieve from deployment table
     final DeploymentData deploymentData =
         DeploymentData.builder()
             .deploymentId(UUID.randomUUID().toString())
             .clusterName("cluster1")
+            .ecsRole("arn:aws:iam::159403520677:role/DeploymentWfEcsRole")
             .build();
 
     encoder.encode(output, deploymentData);
