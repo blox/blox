@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+
+  ProcessDeploymentRecords:
+    Type: AWS::Serverless::Function
+    Properties:
+       Handler: com.amazonaws.blox.schedulingmanager.stream.processor.StreamProcessorHandler
+       Runtime: java8
+       CodeUri: ../build/distributions/scheduling-manager.zip
+       Timeout: 60
+       MemorySize: 256
+       Policies:
+       - Version: '2012-10-17' # Policy Document
+         Statement:
+           - Effect: Allow
+             Action:
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+             Resource: !Sub
+               'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Deployments/stream/*'
+           - Effect: Allow
+             Action:
+               - logs:CreateLogGroup
+               - logs:CreateLogStream
+               - logs:PutLogEvents
+             Resource: !Sub
+               'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+       Events:
+         DeploymentRecordEvent:
+           Type: DynamoDB
+           Properties:
+             Stream: !Sub
+               arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Deployments/stream/2017-08-23T00:09:35.158
+             StartingPosition: TRIM_HORIZON
+             BatchSize: 10

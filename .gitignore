@@ -7,4 +7,4 @@
 **/build/
 **/out/
 /frontend-client/gradle*
-scheduling-manager-workflows/templates/output.yml
+**/templates/output.yml
