@@ -22,7 +22,7 @@ import lombok.NonNull;
 
 public interface WrapperFactory<T> {
 
-  T getWrapper(AWSCredentialsProvider credentials);
+  T getWrapperForRole(String roleArn, String roleSessionName);
 
   default AWSCredentialsProvider getCredentialsProvider(
       @NonNull final AWSSecurityTokenService stsClient,

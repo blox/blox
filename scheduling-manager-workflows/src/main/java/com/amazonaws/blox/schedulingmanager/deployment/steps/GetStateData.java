@@ -14,40 +14,50 @@
  */
 package com.amazonaws.blox.schedulingmanager.deployment.steps;
 
-import com.amazonaws.blox.schedulingmanager.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.types.DeploymentData;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.types.StateData;
+import com.amazonaws.blox.schedulingmanager.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.handler.StepHandler;
+import com.amazonaws.blox.schedulingmanager.wrapper.ECSWrapper;
+import com.amazonaws.blox.schedulingmanager.wrapper.ECSWrapperFactory;
+import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
 public class GetStateData implements StepHandler {
 
-  private Encoder encoder;
+  private static final String ROLE_SESSION_NAME_PREFIX = "stateData";
+
+  @NonNull private Encoder encoder;
+  @NonNull private ECSWrapperFactory ecsWrapperFactory;
 
   @Override
   public void handleRequest(InputStream input, OutputStream output, Context context)
       throws IOException {
-    log.debug("getStateData lambda");
 
     final DeploymentData deploymentData = encoder.decode(input, DeploymentData.class);
 
-    log.debug(
-        "deployment data deployment id {} and clustername {}",
-        deploymentData.getDeploymentId(),
-        deploymentData.getClusterName());
+    final ECSWrapper ecsWrapper =
+        ecsWrapperFactory.getWrapperForRole(deploymentData.getEcsRole(), ROLE_SESSION_NAME_PREFIX);
+
+    final ListContainerInstancesResult listContainerInstancesResult =
+        ecsWrapper.listInstances(deploymentData.getCluster());
 
     final StateData stateData =
         StateData.builder()
-            .clusterName(deploymentData.getClusterName())
+            .cluster(deploymentData.getCluster())
+            .instances(listContainerInstancesResult.getContainerInstanceArns())
+            .task(deploymentData.getTask())
             .ecsRole(deploymentData.getEcsRole())
             .build();
+
     encoder.encode(output, stateData);
   }
 }

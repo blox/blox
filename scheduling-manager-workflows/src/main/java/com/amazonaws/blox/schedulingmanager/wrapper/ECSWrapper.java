@@ -18,6 +18,8 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.DescribeTasksRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksResult;
+import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
+import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import com.amazonaws.services.ecs.model.StartTaskRequest;
 import com.amazonaws.services.ecs.model.StartTaskResult;
 import java.util.List;
@@ -33,7 +35,6 @@ public class ECSWrapper {
 
   public StartTaskResult startTask(
       final String taskDefinition, final String containerInstance, final String cluster) {
-
     final StartTaskRequest startTaskRequest =
         new StartTaskRequest()
             .withTaskDefinition(taskDefinition)
@@ -54,7 +55,6 @@ public class ECSWrapper {
   }
 
   public DescribeTasksResult describeTasks(final List<String> tasks, final String cluster) {
-
     final DescribeTasksRequest describeTasksRequest =
         new DescribeTasksRequest().withTasks(tasks).withCluster(cluster);
 
@@ -66,6 +66,18 @@ public class ECSWrapper {
           describeTasksRequest.getTasks(),
           describeTasksRequest.getCluster(),
           e);
+      throw e;
+    }
+  }
+
+  public ListContainerInstancesResult listInstances(final String cluster) {
+    final ListContainerInstancesRequest listContainerInstancesRequest =
+        new ListContainerInstancesRequest().withCluster(cluster);
+
+    try {
+      return ecs.listContainerInstances(listContainerInstancesRequest);
+    } catch (final AmazonClientException e) {
+      log.error("Could not list instances in cluster {}", cluster);
       throw e;
     }
   }

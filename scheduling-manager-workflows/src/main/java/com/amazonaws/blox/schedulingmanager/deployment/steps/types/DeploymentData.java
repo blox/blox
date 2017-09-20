@@ -24,7 +24,8 @@ import lombok.Value;
 @Value
 public class DeploymentData {
   private final String deploymentId;
-  private final String clusterName;
+  private final String cluster;
+  private final String task;
   private final String ecsRole;
 
   @JsonPOJOBuilder(withPrefix = "")

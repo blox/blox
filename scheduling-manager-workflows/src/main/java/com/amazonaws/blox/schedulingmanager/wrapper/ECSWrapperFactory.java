@@ -14,7 +14,6 @@
  */
 package com.amazonaws.blox.schedulingmanager.wrapper;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import lombok.AllArgsConstructor;
@@ -25,12 +24,10 @@ public class ECSWrapperFactory implements WrapperFactory<ECSWrapper> {
 
   @NonNull private AWSSecurityTokenService stsClient;
 
-  public ECSWrapper getWrapper(final AWSCredentialsProvider credentialsProvider) {
-    return new ECSWrapper(AmazonECSClient.builder().withCredentials(credentialsProvider).build());
-  }
-
-  public AWSCredentialsProvider getCredentialsProvider(
-      final String roleArn, final String roleSessionName) {
-    return WrapperFactory.super.getCredentialsProvider(stsClient, roleArn, roleSessionName);
+  public ECSWrapper getWrapperForRole(final String roleArn, final String roleSessionName) {
+    return new ECSWrapper(
+        AmazonECSClient.builder()
+            .withCredentials(getCredentialsProvider(stsClient, roleArn, roleSessionName))
+            .build());
   }
 }

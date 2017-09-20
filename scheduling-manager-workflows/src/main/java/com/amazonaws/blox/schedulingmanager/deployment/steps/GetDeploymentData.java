@@ -35,7 +35,6 @@ public class GetDeploymentData implements StepHandler {
   @Override
   public void handleRequest(InputStream input, OutputStream output, Context context)
       throws IOException {
-    log.debug("getDeploymentData lambda");
 
     final DeploymentWorkflowInput deploymentWorkflowInput =
         encoder.decode(input, DeploymentWorkflowInput.class);
@@ -49,7 +48,8 @@ public class GetDeploymentData implements StepHandler {
     final DeploymentData deploymentData =
         DeploymentData.builder()
             .deploymentId(UUID.randomUUID().toString())
-            .clusterName("cluster1")
+            .cluster("daemon")
+            .task("sleep")
             .ecsRole("arn:aws:iam::159403520677:role/DeploymentWfEcsRole")
             .build();
 

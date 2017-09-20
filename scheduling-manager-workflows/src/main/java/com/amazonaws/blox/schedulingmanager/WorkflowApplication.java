@@ -23,6 +23,7 @@ import com.amazonaws.blox.schedulingmanager.handler.StepHandler;
 import com.amazonaws.blox.schedulingmanager.task.steps.CheckTaskState;
 import com.amazonaws.blox.schedulingmanager.task.steps.StartTask;
 import com.amazonaws.blox.schedulingmanager.wrapper.ECSWrapperFactory;
+import com.amazonaws.blox.schedulingmanager.wrapper.StepFunctionsWrapper;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
@@ -49,6 +50,11 @@ public class WorkflowApplication {
   @Bean
   public ECSWrapperFactory ecsWrapperFactory() {
     return new ECSWrapperFactory(stsClient());
+  }
+
+  @Bean
+  public StepFunctionsWrapper stepFunctionsWrapper() {
+    return new StepFunctionsWrapper(stepFunctionsClient());
   }
 
   @Bean
@@ -88,12 +94,12 @@ public class WorkflowApplication {
 
   @Bean
   public GetStateData getStateData() {
-    return new GetStateData(encoder());
+    return new GetStateData(encoder(), ecsWrapperFactory());
   }
 
   @Bean
   public StartDeployment startDeployment() {
-    return new StartDeployment(encoder(), stepFunctionsClient());
+    return new StartDeployment(encoder(), stepFunctionsWrapper());
   }
 
   @Bean

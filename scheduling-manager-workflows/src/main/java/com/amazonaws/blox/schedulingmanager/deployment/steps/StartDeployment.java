@@ -14,14 +14,12 @@
  */
 package com.amazonaws.blox.schedulingmanager.deployment.steps;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.blox.schedulingmanager.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.deployment.steps.types.StateData;
-import com.amazonaws.blox.schedulingmanager.task.steps.types.TaskWorkflowInput;
+import com.amazonaws.blox.schedulingmanager.handler.Encoder;
 import com.amazonaws.blox.schedulingmanager.handler.StepHandler;
+import com.amazonaws.blox.schedulingmanager.task.steps.types.TaskWorkflowInput;
+import com.amazonaws.blox.schedulingmanager.wrapper.StepFunctionsWrapper;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.stepfunctions.AWSStepFunctions;
-import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,37 +37,29 @@ public class StartDeployment implements StepHandler {
   private static final String START_TASK_WF_PREFIX = "StartTaskWorkflow";
 
   private Encoder encoder;
-  private AWSStepFunctions stepFunctions;
+  private StepFunctionsWrapper stepFunctionsWrapper;
 
   @Override
   public void handleRequest(InputStream input, OutputStream output, Context context)
       throws IOException {
-    log.debug("startDeployment lambda");
 
     final StateData stateData = encoder.decode(input, StateData.class);
 
-    final TaskWorkflowInput taskWorkflowInput =
-        TaskWorkflowInput.builder()
-            .taskDefinition("sleep")
-            .cluster("daemon")
-            .containerInstance("91553038-abde-4b0c-b1b0-112a4d23caaf")
-            .ecsRole(stateData.getEcsRole())
-            .build();
+    for (final String containerInstance : stateData.getInstances()) {
 
-    final String taskWorkflowInputJson = encoder.encode(taskWorkflowInput);
+      final TaskWorkflowInput taskWorkflowInput =
+          TaskWorkflowInput.builder()
+              .taskDefinition(stateData.getTask())
+              .cluster(stateData.getCluster())
+              .containerInstance(containerInstance)
+              .ecsRole(stateData.getEcsRole())
+              .build();
 
-    //TODO: spawn workflows for each task
-    final String workflowName = START_TASK_WF_PREFIX + UUID.randomUUID().toString();
-    final StartExecutionRequest startExecutionRequest =
-        new StartExecutionRequest()
-            .withStateMachineArn(System.getenv(START_TASK_WF_ARN_ENV_VAR))
-            .withInput(taskWorkflowInputJson)
-            .withName(workflowName);
-    try {
-      stepFunctions.startExecution(startExecutionRequest);
-    } catch (final AmazonClientException e) {
-      log.error("StartTask workflow {} failed to start", workflowName, e);
-      throw e;
+      final String taskWorkflowInputJson = encoder.encode(taskWorkflowInput);
+      final String stateMachineArn = System.getenv(START_TASK_WF_ARN_ENV_VAR);
+      final String workflowName = START_TASK_WF_PREFIX + UUID.randomUUID().toString();
+
+      stepFunctionsWrapper.startExecution(stateMachineArn, workflowName, taskWorkflowInputJson);
     }
   }
 }

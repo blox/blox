@@ -51,7 +51,7 @@ Resources:
              - 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${StartTaskWorkflowName}'
              - StartTaskWorkflowName: !GetAtt [ StartTaskWorkflow, Name ]
        Policies:
-         - Version: '2012-10-17' # Policy Document
+         - Version: '2012-10-17'
            Statement:
              - Effect: Allow
                Action:
@@ -61,7 +61,7 @@ Resources:
                  - dynamodb:Query
                Resource: !Sub
                  'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Deployments'
-         - Version: '2012-10-17' # Policy Document
+         - Version: '2012-10-17'
            Statement:
              - Effect: Allow
                Action:
@@ -69,6 +69,12 @@ Resources:
                Resource: !Sub
                  - 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${StartTaskWorkflowName}'
                  - StartTaskWorkflowName: !GetAtt [ StartTaskWorkflow, Name ]
+         - Version: '2012-10-17'
+           Statement:
+             - Effect: Allow
+               Action:
+                 - sts:AssumeRole
+               Resource: "*"
 
   TaskWorkflowLambdaHandler:
     Type: AWS::Serverless::Function

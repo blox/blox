@@ -47,9 +47,8 @@ public class StartTask implements StepHandler {
 
     //assume customer provided role to start ecs tasks in their account
     final ECSWrapper ecsWrapper =
-        ecsWrapperFactory.getWrapper(
-            ecsWrapperFactory.getCredentialsProvider(
-                taskWorkflowInput.getEcsRole(), ROLE_SESSION_NAME_PREFIX));
+        ecsWrapperFactory.getWrapperForRole(
+            taskWorkflowInput.getEcsRole(), ROLE_SESSION_NAME_PREFIX);
 
     final StartTaskResult startTaskResult =
         ecsWrapper.startTask(

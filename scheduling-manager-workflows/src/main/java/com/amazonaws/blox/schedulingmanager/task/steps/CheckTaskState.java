@@ -44,9 +44,7 @@ public class CheckTaskState implements StepHandler {
     final TaskData taskData = encoder.decode(input, TaskData.class);
 
     final ECSWrapper ecsWrapper =
-        ecsWrapperFactory.getWrapper(
-            ecsWrapperFactory.getCredentialsProvider(
-                taskData.getEcsRole(), ROLE_SESSION_NAME_PREFIX));
+        ecsWrapperFactory.getWrapperForRole(taskData.getEcsRole(), ROLE_SESSION_NAME_PREFIX);
 
     final DescribeTasksResult describeTasksResult =
         ecsWrapper.describeTasks(taskData.getTasks(), taskData.getCluster());

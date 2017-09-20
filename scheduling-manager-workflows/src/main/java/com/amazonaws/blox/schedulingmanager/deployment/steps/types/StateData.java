@@ -16,6 +16,7 @@ package com.amazonaws.blox.schedulingmanager.deployment.steps.types;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -23,7 +24,9 @@ import lombok.Value;
 @Builder
 @Value
 public class StateData {
-  private final String clusterName;
+  private final String cluster;
+  private final List<String> instances;
+  private final String task;
   private final String ecsRole;
 
   @JsonPOJOBuilder(withPrefix = "")
