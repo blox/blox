@@ -352,6 +352,36 @@ If you're using this deployment strategy, then Blox will kill `(100 - MinHealthy
 
 If you're using this deployment strategy, then Blox will launch `(100 + MaxOverPercent)% * TOTAL` `Task`s on as many `ContainerInstance`s, and only kill old `Task`s once the new `Task` is healthy. This will ensure that there's never less than one `Task` running at the same time on the same `ContainerInstance`, but will result in two copies of the `Task` running on at most `MaxOver` `ContainerInstance`s at any given time. This is a good fit for daemons that must always have at least one copy of the `Task` running, and that don't care if another copy of the `Task` is running on the same `ContainerInstance`.
 
+### Deleting an Environment
+Once an `Environment` is no longer needed, it can be deleted using the `delete-environment` command:
+
+```
+$ aws ecs delete-environment --name SomeEnvironment/Prod
+```
+
+Deleting an `Environment` will not make any changes to cluster state by default, it will only stop taking deployment actions. This means that any `Task`s that were running at the time of deletion will still be running.
+
+If we want to also terminate any running tasks in the environment, we can specify the `--terminate-tasks` option:
+
+```
+$ aws ecs delete-environment --name SomeEnvironment/Prod --terminate-tasks
+```
+
+This will place the environment into the `Deleting` state, as all revisions that still have tasks running are undeployed:
+
+```
+$ aws ecs describe-environment-status --short --environment-name SomeEnvironment/Prod --table
+ENVIRONMENT               TARGET REVISION  STATUS     OUTDATED  DESIRED   HEALTHY  TOTAL
+SomeEnvironment/Prod      3                Deleting   5         0         5        0
+```
+
+Either way, once it is successfully deleted, the environment will still be visible in the `Deleted` state for 24-48 hours after deletion:
+
+```
+$ aws ecs describe-environment-status --short --environment-name SomeEnvironment/Prod --table
+ENVIRONMENT               TARGET REVISION  STATUS     OUTDATED  DESIRED   HEALTHY  TOTAL
+SomeEnvironment/Prod      3                Deleted    0         0         0        0
+```
 
 ## Appendix A: Detailed deployment examples
 
@@ -551,7 +581,7 @@ SomeEnvironment/Prod:1    Undeploying  3         4
 SomeEnvironment/Prod:2    Deploying    5         2
 ```
 
-Appendix A: Alternatives considered
+Appendix B: Alternatives considered
 -----------------------------------
 This section documents alternative paths we considered, but discarded, and why.
 
