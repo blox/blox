@@ -83,6 +83,9 @@ Out of scope for v1:
 *	healthchecks (including custom healthcheck scripts)
 
 ## User Experience
+
+> TODO: We're currently refining this user experience in [this issue](https://github.com/blox/blox/pull/252)
+
 Users interact with the scheduler by using **deployment** and **environment** APIs. An **environment** is an object that contains the configuration and metadata about deployments. An environment is what defines what type of scheduler will be running in a cluster (service, daemon, cron) and how it will be rolled out (deployment preferences). A **deployment** is what places tasks in the cluster.
 
 Modeling the APIs around deployments gives users the flexibility to start, stop, rollback and update deployments, and also control how they want their tasks to be updated and rolled back on instances during a deployment simply by providing deployment configuration. By keeping the APIs generic around deployments, we can add additional schedulers in the future but keep the interface and APIs consistent across scheduler types.
@@ -303,6 +306,9 @@ The scheduler service contains the scheduling (choose where to launch) and deplo
 The blox scheduler will have its own frontend instead of being part of the ECS frontend. This is necessary for open sourcing the scheduler because the ECS frontend relies on internal only frameworks. For authentication, authorization and throttling blox will use AWS API Gateway with Lambda integration. We will use swagger to define the API schema.
 
 ##### APIs
+
+> TODO: We're currently defining the exact user experience for these APIs in [this issue](https://github.com/blox/blox/pull/252).
+
 **CreateEnvironment** creates an environment object in the data service. The environment is created in an inactive state which means that no monitor-deployments (which are deployments created automatically by the manager monitors when a new instance joins the cluster or a task failure happens) are created until a user-created deployment is kicked off or the environment is updated to be active.
 
 An alternative is to kick off a deployment any time an environment is created or updated, effectively removing the need for a **startDeployment** API. The advantages of this approach are one less API to call but the disadvantages are less control: the user cannot see the diff of changes before making them, the user cannot create an environment without kicking off a deployment and they cannot update an environment while a deployment is in progress because that deployment will be stopped and a new one will be started. One might argue that there is no reason for a user to update an environment unless they want to create a new deployment. While true, AWS APIs conventionally don't have a lot of side effects and err on the side of more control. It also might be confusing to have a **stopDeployment** API but not have a **startDeployment** one.
@@ -416,6 +422,8 @@ Environment name is prepended by accountId to make environment names unique per 
 It's tempting to use status as the index in the deployments table since we'll be retrieving deployments by status most frequently. However, keys cannot be updated so if we use status as the sort key, every time we update the status we will need to delete it and recreate item. As the number of deployments in the environment grows scanning the results filtered by environment is going to become expensive. If that becomes an issue in the future, we can move completed deployments to their own key/table.
 
 #### State Service
+> TODO: We're currently exploring different options for dealing with cluster state in [this issue](https://github.com/blox/blox/issues/238).
+
 The daemon scheduler needs the following from ECS:
 *	get instances in the cluster
 *	get instances in the cluster that have certain attributes
@@ -479,6 +487,7 @@ The manager will be monitoring the data service (using scheduled cloudwatch even
 
 The manager will also have a workflow to reconcile state between state service and data service: for each environment it will check the state service for new instances and create a deployment in the data service (monitor-created deployment) to start a task on the new instances. This  workflow will also look for failed tasks and create deployments to restart them.
 
+For more details on the approaches evaluated for the scheduling manager, see [this issue](https://github.com/blox/blox/issues/258)
 ##### Pending Deployments
 
 ![Manager Starting a Deployment](images/ManagerProcessingDeployments.png)
