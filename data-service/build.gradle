@@ -1,3 +1,47 @@
+plugins {
+    id "java"
+    id 'net.ltgt.apt' version '0.11'
+    id "io.spring.dependency-management" version "1.0.3.RELEASE"
+}
+
 description "Implementation of the Blox DataService"
 
-apply plugin: 'java'
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.180'
+    }
+    dependencies {
+        dependencySet(group: 'org.slf4j', version: '1.7.+') {
+            entry 'slf4j-api'
+        }
+    }
+}
+
+dependencies {
+    compile project(":data-service-model")
+
+    compile(
+            'com.amazonaws:aws-java-sdk-dynamodb',
+            'com.amazonaws:aws-lambda-java-log4j2:1.0.+',
+
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.8.+',
+            'org.apache.commons:commons-lang3:3.6',
+
+            'org.projectlombok:lombok:1.16.18',
+
+            'org.slf4j:slf4j-api'
+    )
+
+    testCompile(
+            'junit:junit:4.12',
+            'org.mockito:mockito-core:1.+',
+            'org.slf4j:slf4j-api',
+            'org.slf4j:jcl-over-slf4j'
+    )
+
+    apt 'org.projectlombok:lombok:1.16.18'
+}

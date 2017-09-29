@@ -8,3 +8,4 @@
 **/out/
 /frontend-client/gradle*
 **/templates/output.yml
+**/logs/
