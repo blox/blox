@@ -44,7 +44,7 @@ InstanceGroup:
   Query: "attribute:stack == prod"
 Deployment:
   Type: Daemon
-  Method: "TerminateAfterReplace" # (or "ReplaceAfterTerminate")
+  Method: "ReplaceThenTerminate" # (or "TerminateThenReplace")
   Configuration:
     MinHealthyPercent: 80
     MaxOverPercent: 25
@@ -71,7 +71,7 @@ The meanings of each section are:
     - `DESIRED`: The number of tasks that the current stage of the deployment will try to have running
     - `HEALTHY`: The number of healthy tasks across all `EnvironmentRevision`s.
     - `TOTAL`: The target number of tasks that should belong to this `EnvironmentRevision` when it's `Active`.
-- `REVISION`: The `EnvironmentRevision`s of the `Environment we're inspecting. If `--all` is specified it will list all revisions for the `Environment`, otherwise only revisions that are not `Inactive` will be shown.
+- `REVISION`: The `EnvironmentRevision`s of the `Environment` we're inspecting. If `--all` is specified it will list all revisions for the `Environment`, otherwise only revisions that are not `Inactive` will be shown.
     - `STATUS`: The current status of the `EnvironmentRevision`; one of `Active`, `Inactive`, `Deploying`, `Undeploying`, `Reverting` or `Reverted`.
     - `DESIRED`: The number of tasks that the scheduler will attempt to maintain for this revision, at this point in time.
     - `HEALTHY`: The number of tasks in this revision that are healthy.
@@ -175,7 +175,7 @@ SomeEnvironment/Prod:2    Active       5         5        5
 
 #### Updating the `InstanceGroup`
 
-> TODO: Thinking about this more, I'm not sure if versioning the `InstanceGroup` along with the `EnvironmentRevision` is the right thing here. In particular, I'm not sure if it might be surprising that a rollback deployment will also change which instances form part of an environment.
+> TODO: Thinking about this more, I'm not sure if versioning the `InstanceGroup` along with the `EnvironmentRevision` is the right thing here. In particular, I'm not sure if it might be surprising that a rollback deployment will also change which instances form part of an environment. One way we could circumvent the weirdness is by going back to creating new `EnvironmentRevision`s for rollbacks, and only rolling back the `TaskDefinition` part (see Appendix of Alternatives Considered).
 
 If we want to change the target group of `ContainerInstances` that the `Environment` should run on, we can modify the `InstanceGroup` of the `Environment`. For example, to modify the `Environment` from the previous example to also run on `ContainerInstance`s with the attribute `stack=gamma`, run:
 
@@ -394,9 +394,9 @@ Here are some examples that illustrate what exactly will occur in a cluster when
 
 > TODO: This entire section needs rework to take into account some changes to `MinHealthyPercent` handling.
 
-### Example 1: Steady State
+### Example 1: TerminateThenReplace; Steady State
 
-Let's consider a Daemon update with `MinHealthyPercent = 60`, which completes without:
+Let's consider a Daemon `Environment` update with `Method = TerminateThenReplace, MinHealthyPercent = 60`, which completes without:
 - any changes in cluster membership (i.e. no `ContainerInstance`s join or leave the cluster)
 - any `Task`s failing to start up
 - any existing `Task`s terminating abnormally
@@ -605,6 +605,8 @@ SomeEnvironment/Prod:3    Active       6         6
 ```
 
 The reason this alternative was discarded, was that we valued the ease with which users can see what's deployed in terms of what they actually requested. Since the rollback `EnvironmentRevision`s were never explicitly created by a human, it's not super clear that they're identical to the older `EnvironmentRevision`s they replace.
+
+Potential reasons to reconsider this, would be if we want to only roll back some part of the `Environment`, e.g. only the `TaskDefinition`, and not the `InstanceGroup`.
 
 ### Implicitly resume `Environment` on deployment
 
