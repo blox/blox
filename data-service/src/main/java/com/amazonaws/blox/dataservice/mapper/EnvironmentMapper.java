@@ -12,23 +12,19 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservice.model;
+package com.amazonaws.blox.dataservice.mapper;
 
-import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Data
-@Builder
-// required for builder
-@AllArgsConstructor
-// required for mapstruct
-@NoArgsConstructor
-public class InstanceGroup {
+@Mapper
+public interface EnvironmentMapper {
 
-  @NonNull private String cluster;
-  private Set<Attribute> attributes;
+  @Mapping(source = "instanceGroup.cluster", target = "cluster")
+  EnvironmentDDBRecord toEnvironmentDDBRecord(Environment environment);
+
+  @Mapping(source = "cluster", target = "instanceGroup.cluster")
+  Environment toEnvironment(EnvironmentDDBRecord environmentDDBRecord);
 }

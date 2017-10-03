@@ -12,23 +12,20 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservice.model;
+package com.amazonaws.blox.dataservice.arn;
 
-import java.util.Set;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.Value;
 
-@Data
 @Builder
-// required for builder
-@AllArgsConstructor
-// required for mapstruct
-@NoArgsConstructor
-public class InstanceGroup {
+@Value
+public class EnvironmentArnGenerator {
 
-  @NonNull private String cluster;
-  private Set<Attribute> attributes;
+  private static final CharSequence DELIMITER = "_";
+
+  public static String generateEnvironmentArn(
+      final String environmentName, final String accountId) {
+    //TODO: turn into arn
+    return String.join(DELIMITER, accountId, environmentName);
+  }
 }

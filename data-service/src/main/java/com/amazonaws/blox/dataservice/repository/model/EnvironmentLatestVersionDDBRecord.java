@@ -17,7 +17,6 @@ package com.amazonaws.blox.dataservice.repository.model;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,7 +36,6 @@ public class EnvironmentLatestVersionDDBRecord {
   public static final String ENVIRONMENT_VERSION_RANGE_KEY = "environmentVersion";
 
   @DynamoDBHashKey(attributeName = ENVIRONMENT_ID_HASH_KEY)
-  @DynamoDBTypeConverted(converter = EnvironmentId.Converter.class)
   private String environmentId;
 
   @DynamoDBRangeKey(attributeName = ENVIRONMENT_VERSION_RANGE_KEY)

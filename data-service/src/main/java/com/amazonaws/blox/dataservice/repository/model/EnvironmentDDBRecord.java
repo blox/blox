@@ -46,22 +46,16 @@ public class EnvironmentDDBRecord {
   public static final String ENVIRONMENT_CLUSTER_INDEX_HASH_KEY = "cluster";
 
   public static EnvironmentDDBRecord withKeys(
-      final String environmentName,
-      final String accountId,
-      final String environmentVersion,
-      final String cluster) {
+      final String environmentId, final String environmentVersion) {
 
     return EnvironmentDDBRecord.builder()
-        .environmentId(
-            EnvironmentId.builder().accountId(accountId).environmentName(environmentName).build())
+        .environmentId(environmentId)
         .environmentVersion(environmentVersion)
-        .cluster(cluster)
         .build();
   }
 
   @DynamoDBHashKey(attributeName = ENVIRONMENT_ID_HASH_KEY)
-  @DynamoDBTypeConverted(converter = EnvironmentId.Converter.class)
-  private EnvironmentId environmentId;
+  private String environmentId;
 
   @DynamoDBRangeKey(attributeName = ENVIRONMENT_VERSION_RANGE_KEY)
   private String environmentVersion;
@@ -83,7 +77,8 @@ public class EnvironmentDDBRecord {
   private String role;
   //encoded name:value
   private Set<String> attributes;
-  private String taskDefinitionArn;
+  private String taskDefinition;
+  private String environmentName;
 
   @DynamoDBTypeConvertedEnum private EnvironmentType type;
 

@@ -12,23 +12,16 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservice.model;
+package com.amazonaws.blox.dataservice.repository;
 
-import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import com.amazonaws.blox.dataservice.exception.StorageException;
+import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
 
-@Data
-@Builder
-// required for builder
-@AllArgsConstructor
-// required for mapstruct
-@NoArgsConstructor
-public class InstanceGroup {
+public interface EnvironmentRepository {
 
-  @NonNull private String cluster;
-  private Set<Attribute> attributes;
+  Environment createEnvironment(Environment environment) throws StorageException;
+
+  Environment getEnvironment(String environmentId, String environmentVersion)
+      throws StorageException, EnvironmentNotFoundException;
 }

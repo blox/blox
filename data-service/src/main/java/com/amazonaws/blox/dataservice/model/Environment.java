@@ -15,19 +15,25 @@
 package com.amazonaws.blox.dataservice.model;
 
 import java.time.Instant;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 @Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class Environment {
 
-  @NonNull private String accountId;
+  @NonNull private String environmentId;
   @NonNull private String environmentName;
   private String environmentVersion;
-  private String taskDefinitionArn;
-  private String roleArn;
+  private String taskDefinition;
+  private String role;
   private InstanceGroup instanceGroup;
   private EnvironmentType type;
   private EnvironmentStatus status;

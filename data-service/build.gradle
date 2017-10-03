@@ -15,10 +15,27 @@ dependencyManagement {
         mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.180'
     }
     dependencies {
+        dependencySet(group: 'org.springframework', version: '4.3.10.RELEASE') {
+            entry 'spring-core'
+            entry 'spring-beans'
+            entry 'spring-context'
+            entry 'spring-test'
+        }
         dependencySet(group: 'org.slf4j', version: '1.7.+') {
             entry 'slf4j-api'
+            entry 'jcl-over-slf4j'
+        }
+        dependencySet(group: 'org.mapstruct', version: '1.2.0.CR2') {
+            entry 'mapstruct-jdk8'
+            entry 'mapstruct-processor'
         }
     }
+}
+
+compileJava {
+    options.compilerArgs = [
+            '-Amapstruct.defaultComponentModel=spring'
+    ]
 }
 
 dependencies {
@@ -33,15 +50,22 @@ dependencies {
 
             'org.projectlombok:lombok:1.16.18',
 
+            'org.mapstruct:mapstruct-jdk8',
+
+            'org.springframework:spring-core',
+            'org.springframework:spring-beans',
+            'org.springframework:spring-context',
+
             'org.slf4j:slf4j-api'
     )
 
     testCompile(
             'junit:junit:4.12',
-            'org.mockito:mockito-core:1.+',
+            'org.mockito:mockito-core:2.10.+',
             'org.slf4j:slf4j-api',
             'org.slf4j:jcl-over-slf4j'
     )
 
+    apt 'org.mapstruct:mapstruct-processor'
     apt 'org.projectlombok:lombok:1.16.18'
 }
