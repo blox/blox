@@ -15,10 +15,16 @@
 package com.amazonaws.blox.dataserviceclient.v1.client;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.CreateEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.CreateEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.StartDeploymentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.StartDeploymentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
 import lombok.AllArgsConstructor;
 
 /**
@@ -35,6 +41,22 @@ public class DataServiceLambdaClient implements DataService {
 
   @Override
   public StartDeploymentResponse startDeployment(final StartDeploymentRequest request) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ListClustersResponse listClusters(ListClustersRequest request) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevision(
+      DescribeTargetEnvironmentRevisionRequest request) {
     throw new UnsupportedOperationException();
   }
 }

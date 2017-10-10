@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.model;
+package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import lombok.Builder;
 import lombok.NonNull;
@@ -20,13 +20,11 @@ import lombok.Value;
 
 @Value
 @Builder
-public class CreateEnvironmentRequest {
+public class StartDeploymentResponse {
 
-  @NonNull private String name;
+  @NonNull private final String deploymentId;
 
-  @NonNull private String taskDefinition;
+  @NonNull private final String environmentName;
 
-  @NonNull private String roleArn;
-
-  @NonNull private InstanceGroup instanceGroup;
+  @NonNull private final String environmentVersion;
 }
