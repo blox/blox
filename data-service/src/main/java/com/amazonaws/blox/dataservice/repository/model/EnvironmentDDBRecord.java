@@ -18,7 +18,6 @@ import com.amazonaws.blox.dataservice.model.EnvironmentHealth;
 import com.amazonaws.blox.dataservice.model.EnvironmentStatus;
 import com.amazonaws.blox.dataservice.model.EnvironmentType;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
@@ -42,8 +41,6 @@ public class EnvironmentDDBRecord {
 
   public static final String ENVIRONMENT_ID_HASH_KEY = "environmentId";
   public static final String ENVIRONMENT_VERSION_RANGE_KEY = "environmentVersion";
-  public static final String ENVIRONMENT_CLUSTER_GSI_NAME = "environment-cluster-index";
-  public static final String ENVIRONMENT_CLUSTER_INDEX_HASH_KEY = "cluster";
 
   public static EnvironmentDDBRecord withKeys(
       final String environmentId, final String environmentVersion) {
@@ -60,12 +57,6 @@ public class EnvironmentDDBRecord {
   @DynamoDBRangeKey(attributeName = ENVIRONMENT_VERSION_RANGE_KEY)
   private String environmentVersion;
 
-  @DynamoDBIndexHashKey(
-    attributeName = ENVIRONMENT_CLUSTER_INDEX_HASH_KEY,
-    globalSecondaryIndexName = ENVIRONMENT_CLUSTER_GSI_NAME
-  )
-  private String cluster;
-
   @DynamoDBVersionAttribute private Long recordVersion;
 
   @DynamoDBTypeConverted(converter = InstantDDBConverter.class)
@@ -77,6 +68,7 @@ public class EnvironmentDDBRecord {
   private String role;
   //encoded name:value
   private Set<String> attributes;
+  private String cluster;
   private String taskDefinition;
   private String environmentName;
 

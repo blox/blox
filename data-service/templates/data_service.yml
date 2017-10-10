@@ -12,25 +12,11 @@ Resources:
          AttributeType: S
        - AttributeName: environmentVersion
          AttributeType: S
-       - AttributeName: cluster
-         AttributeType: S
      KeySchema:
        - AttributeName: "environmentId"
          KeyType: HASH
        - AttributeName: "environmentVersion"
          KeyType: RANGE
-     GlobalSecondaryIndexes:
-       -
-         IndexName: "environment-cluster-index"
-         KeySchema:
-           -
-             AttributeName: "cluster"
-             KeyType: "HASH"
-         Projection:
-           ProjectionType: "KEYS_ONLY"
-         ProvisionedThroughput:
-           ReadCapacityUnits: 15
-           WriteCapacityUnits: 15
      ProvisionedThroughput:
        ReadCapacityUnits: 15
        WriteCapacityUnits: 15
@@ -39,17 +25,28 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
      #TODO: change ddb table names to have region prefix passed in as a resource
-     TableName: EnvironmentsLatestVersion
-     AttributeDefinitions:
-       - AttributeName: environmentId
-         AttributeType: S
-       - AttributeName: environmentVersion
-         AttributeType: S
-     KeySchema:
-       - AttributeName: "environmentId"
-         KeyType: HASH
-       - AttributeName: "environmentVersion"
-         KeyType: RANGE
-     ProvisionedThroughput:
-       ReadCapacityUnits: 15
-       WriteCapacityUnits: 15
+      TableName: EnvironmentTargetVersion
+      AttributeDefinitions:
+        - AttributeName: environmentId
+          AttributeType: S
+        - AttributeName: cluster
+          AttributeType: S
+      KeySchema:
+        - AttributeName: "environmentId"
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 15
+        WriteCapacityUnits: 15
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "environment-cluster-index"
+          KeySchema:
+            -
+              AttributeName: "cluster"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 15
+            WriteCapacityUnits: 15
+

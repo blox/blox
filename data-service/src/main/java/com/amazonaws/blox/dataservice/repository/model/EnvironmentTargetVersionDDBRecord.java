@@ -15,7 +15,7 @@
 package com.amazonaws.blox.dataservice.repository.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
 import lombok.AllArgsConstructor;
@@ -23,23 +23,27 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@DynamoDBTable(tableName = "EnvironmentLatestVersion")
+@DynamoDBTable(tableName = "EnvironmentTargetVersion")
 @Data
 @Builder
 //Required for builder because an empty constructor exists
 @AllArgsConstructor
 //Required for dynamodbmapper
 @NoArgsConstructor
-public class EnvironmentLatestVersionDDBRecord {
+public class EnvironmentTargetVersionDDBRecord {
 
   public static final String ENVIRONMENT_ID_HASH_KEY = "environmentId";
-  public static final String ENVIRONMENT_VERSION_RANGE_KEY = "environmentVersion";
+  public static final String ENVIRONMENT_CLUSTER_GSI_NAME = "environment-cluster-index";
+  public static final String ENVIRONMENT_CLUSTER_INDEX_HASH_KEY = "cluster";
 
   @DynamoDBHashKey(attributeName = ENVIRONMENT_ID_HASH_KEY)
   private String environmentId;
 
-  @DynamoDBRangeKey(attributeName = ENVIRONMENT_VERSION_RANGE_KEY)
-  private String environmentVersion;
+  @DynamoDBIndexHashKey(
+    attributeName = ENVIRONMENT_CLUSTER_INDEX_HASH_KEY,
+    globalSecondaryIndexName = ENVIRONMENT_CLUSTER_GSI_NAME
+  )
+  private String cluster;
 
   @DynamoDBVersionAttribute private Long recordVersion;
 }
