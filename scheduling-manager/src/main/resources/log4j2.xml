@@ -6,6 +6,9 @@
   </Lambda>
 </Appenders>
 <Loggers>
+  <Root level="warn">
+    <AppenderRef ref="LambdaAppender" />
+  </Root>
   <Logger name="com.amazonaws.blox" level="debug" additivity="false">
     <AppenderRef ref="LambdaAppender" />
   </Logger>
