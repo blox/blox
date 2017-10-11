@@ -1,0 +1,13 @@
+{
+  "version": "0",
+  "id": "b502e063-441d-4ac6-9c51-24dda76a6b4d",
+  "detail-type": "Scheduled Event",
+  "source": "aws.events",
+  "account": "390815470484",
+  "time": "2017-10-03T21:13:14Z",
+  "region": "us-west-2",
+  "resources": [
+    "arn:aws:events:us-west-2:390815470484:rule/scheduling-manager-ReconcilerTrigger-ONCGS8O0D3X3"
+  ],
+  "detail": {}
+}
