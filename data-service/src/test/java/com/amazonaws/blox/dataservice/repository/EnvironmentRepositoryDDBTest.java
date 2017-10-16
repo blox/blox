@@ -31,6 +31,7 @@ import com.amazonaws.blox.dataservice.model.EnvironmentStatus;
 import com.amazonaws.blox.dataservice.model.EnvironmentType;
 import com.amazonaws.blox.dataservice.model.InstanceGroup;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import java.time.Instant;
@@ -109,12 +110,14 @@ public class EnvironmentRepositoryDDBTest {
   }
 
   @Test(expected = NullPointerException.class)
-  public void createEnvironmentNullEnvironment() throws StorageException {
+  public void createEnvironmentNullEnvironment()
+      throws StorageException, EnvironmentExistsException {
     environmentRepositoryDDB.createEnvironment(null);
   }
 
   @Test(expected = StorageException.class)
-  public void createEnvironmentStorageException() throws StorageException {
+  public void createEnvironmentStorageException()
+      throws StorageException, EnvironmentExistsException {
     doThrow(new AmazonServiceException(""))
         .when(dynamoDBMapper)
         .save(isA(EnvironmentDDBRecord.class));
@@ -122,7 +125,7 @@ public class EnvironmentRepositoryDDBTest {
   }
 
   @Test
-  public void createEnvironment() throws StorageException {
+  public void createEnvironment() throws StorageException, EnvironmentExistsException {
     doNothing().when(dynamoDBMapper).save(isA(EnvironmentDDBRecord.class));
 
     final Environment createdEnvironment = environmentRepositoryDDB.createEnvironment(environment);
@@ -179,17 +182,6 @@ public class EnvironmentRepositoryDDBTest {
         .when(dynamoDBMapper)
         .load(isA(EnvironmentDDBRecord.class));
     environmentRepositoryDDB.getEnvironment(ENVIRONMENT_ID, ENVIRONMENT_VERSION);
-  }
-
-  @Test(expected = EnvironmentNotFoundException.class)
-  public void geEnvironmentEnvironmentNotFoundException()
-      throws StorageException, EnvironmentNotFoundException {
-    when(dynamoDBMapper.load(
-            EnvironmentDDBRecord.withKeys(
-                environment.getEnvironmentId(), environment.getEnvironmentVersion())))
-        .thenReturn(null);
-    environmentRepositoryDDB.getEnvironment(
-        environment.getEnvironmentId(), environment.getEnvironmentVersion());
   }
 
   @Test

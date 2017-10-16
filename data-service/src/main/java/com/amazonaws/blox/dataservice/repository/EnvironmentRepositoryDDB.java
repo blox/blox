@@ -18,9 +18,16 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.blox.dataservice.exception.StorageException;
 import com.amazonaws.blox.dataservice.mapper.EnvironmentMapper;
 import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentTargetVersionDDBRecord;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.stereotype.Component;
@@ -35,25 +42,32 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
 
   @Override
   public Environment createEnvironment(@NonNull final Environment environment)
-      throws StorageException {
+      throws EnvironmentExistsException, StorageException {
     final EnvironmentDDBRecord environmentDDBRecord =
         environmentMapper.toEnvironmentDDBRecord(environment);
 
     try {
       dynamoDBMapper.save(environmentDDBRecord);
+    } catch (final ConditionalCheckFailedException e) {
+      throw new EnvironmentExistsException(
+          String.format(
+              "Environment with id %s and version %s already exists",
+              environment.getEnvironmentId(), environment.getEnvironmentVersion()));
+
     } catch (final AmazonServiceException e) {
       throw new StorageException(
           String.format(
               "Could not save record with environment id %s", environment.getEnvironmentId()),
           e);
     }
+
     return environmentMapper.toEnvironment(environmentDDBRecord);
   }
 
   @Override
   public Environment getEnvironment(
       @NonNull final String environmentId, @NonNull final String environmentVersion)
-      throws StorageException, EnvironmentNotFoundException {
+      throws StorageException {
 
     final EnvironmentDDBRecord environmentDDBRecord;
     try {
@@ -66,14 +80,86 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
               environmentId, environmentVersion),
           e);
     }
-
-    if (environmentDDBRecord == null) {
-      throw new EnvironmentNotFoundException(
-          String.format(
-              "Could not find environment with id %s and version %s",
-              environmentId, environmentVersion));
-    }
-
     return environmentMapper.toEnvironment(environmentDDBRecord);
+  }
+
+  @Override
+  public EnvironmentVersion createEnvironmentTargetVersion(
+      final EnvironmentVersion environmentVersion)
+      throws StorageException, EnvironmentExistsException {
+
+    final EnvironmentTargetVersionDDBRecord environmentTargetVersionDDBRecord =
+        environmentMapper.toEnvironmentTargetVersionDDBRecord(environmentVersion);
+
+    try {
+      dynamoDBMapper.save(environmentTargetVersionDDBRecord);
+    } catch (final ConditionalCheckFailedException e) {
+      throw new EnvironmentExistsException(
+          String.format(
+              "Environment with id %s and version %s already exists",
+              environmentVersion.getEnvironmentId(), environmentVersion.getEnvironmentVersion()));
+
+    } catch (final AmazonServiceException e) {
+      throw new StorageException(
+          String.format(
+              "Could not save record with environment id %s",
+              environmentVersion.getEnvironmentId()),
+          e);
+    }
+    return environmentMapper.toEnvironmentVersion(environmentTargetVersionDDBRecord);
+  }
+
+  @Override
+  public EnvironmentVersion getEnvironmentTargetVersion(String environmentId)
+      throws StorageException {
+
+    final EnvironmentTargetVersionDDBRecord environmentTargetVersionDDBRecord;
+    try {
+      environmentTargetVersionDDBRecord =
+          dynamoDBMapper.load(EnvironmentTargetVersionDDBRecord.withHashKey(environmentId));
+    } catch (final AmazonServiceException e) {
+      throw new StorageException(
+          String.format("Could not load record with environment id %s", environmentId), e);
+    }
+    return environmentMapper.toEnvironmentVersion(environmentTargetVersionDDBRecord);
+  }
+
+  @Override
+  public List<String> listClusters() throws StorageException {
+    try {
+      final DynamoDBScanExpression scanExpression =
+          new DynamoDBScanExpression()
+              .withIndexName(EnvironmentTargetVersionDDBRecord.ENVIRONMENT_CLUSTER_GSI_NAME)
+              .withConsistentRead(false);
+
+      List<EnvironmentTargetVersionDDBRecord> scanResult =
+          dynamoDBMapper.scan(
+              EnvironmentTargetVersionDDBRecord.class, new DynamoDBScanExpression());
+      //TODO: integration test that covers pagination.
+      return scanResult.stream().map(e -> e.getCluster()).distinct().collect(Collectors.toList());
+    } catch (final AmazonServiceException e) {
+      throw new StorageException("Could not scan environment target versions");
+    }
+  }
+
+  @Override
+  public List<String> listEnvironmentIdsByCluster(@NonNull final String cluster)
+      throws StorageException {
+    final DynamoDBQueryExpression<EnvironmentTargetVersionDDBRecord> queryExpression =
+        new DynamoDBQueryExpression<EnvironmentTargetVersionDDBRecord>()
+            .withIndexName(EnvironmentTargetVersionDDBRecord.ENVIRONMENT_CLUSTER_GSI_NAME)
+            .withConsistentRead(false)
+            .withHashKeyValues(EnvironmentTargetVersionDDBRecord.withGSIHashKey(cluster));
+
+    try {
+      //TODO: integration test that covers pagination.
+      List<EnvironmentTargetVersionDDBRecord> queryResult =
+          dynamoDBMapper.query(EnvironmentTargetVersionDDBRecord.class, queryExpression);
+
+      return queryResult.stream().map(e -> e.getEnvironmentId()).collect(Collectors.toList());
+    } catch (final AmazonServiceException e) {
+      throw new StorageException(
+          String.format("Could not query environment target versions for cluster %s", cluster), e);
+    }
   }
 }

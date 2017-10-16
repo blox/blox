@@ -63,9 +63,42 @@ dependencies {
             'junit:junit:4.12',
             'org.mockito:mockito-core:2.10.+',
             'org.slf4j:slf4j-api',
-            'org.slf4j:jcl-over-slf4j'
+            'org.slf4j:jcl-over-slf4j',
+            'org.springframework:spring-test'
     )
 
     apt 'org.mapstruct:mapstruct-processor'
     apt 'org.projectlombok:lombok:1.16.18'
+}
+
+sourceSets {
+    integTest {
+        java.srcDir file('src/integTest/java')
+        resources.srcDir file('src/integTest/resources')
+    }
+}
+
+dependencies {
+    integTestCompile sourceSets.main.output
+    integTestCompile sourceSets.test.output
+
+    integTestCompile configurations.compile
+    integTestCompile configurations.testCompile
+
+    integTestRuntime configurations.runtime
+    integTestRuntime configurations.testRuntime
+}
+
+task integTests(type: Test, dependsOn: build) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = 'Runs the integration tests.'
+
+    maxHeapSize = '1024m'
+
+    testClassesDirs = sourceSets.integTest.output.classesDirs
+    classpath = sourceSets.integTest.runtimeClasspath
+}
+
+test {
+    exclude '**/*IntegTest'
 }

@@ -16,10 +16,17 @@ package com.amazonaws.blox.dataservice.handler;
 
 import com.amazonaws.blox.dataservice.exception.StorageException;
 import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.model.EnvironmentHealth;
+import com.amazonaws.blox.dataservice.model.EnvironmentStatus;
+import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservice.repository.EnvironmentRepository;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.stereotype.Component;
@@ -30,26 +37,112 @@ public class EnvironmentHandler {
 
   @NonNull private EnvironmentRepository environmentRepository;
 
-  public Environment createEnvironment(final String environmentName, final String accountId)
-      throws EnvironmentExistsException, StorageException {
-    return null;
+  //TODO: createEnvRequest only contains some fields that are set on the env object
+  //The object is precreated in the API layer to avoid passing in and adding/removing parameters in the method definition
+  public Environment createEnvironment(final Environment environment)
+      throws EnvironmentExistsException, ServiceException {
+
+    try {
+      environment.setEnvironmentVersion(UUID.randomUUID().toString());
+      environment.setCreatedTime(Instant.now());
+      environment.setHealth(EnvironmentHealth.Healthy);
+      environment.setStatus(EnvironmentStatus.Inactive);
+
+      return environmentRepository.createEnvironment(environment);
+    } catch (final StorageException e) {
+      throw new ServiceException(
+          String.format(
+              "Exception occurred when creating environment with id %s and version %s",
+              environment.getEnvironmentId(), environment.getEnvironmentVersion()),
+          e);
+    }
   }
 
-  public Environment describeEnvironment(final String environmentId) {
-    return null;
+  public EnvironmentVersion createEnvironmentTargetVersion(
+      final String environmentId, final String environmentVersion)
+      throws EnvironmentNotFoundException, EnvironmentExistsException, ServiceException {
+
+    try {
+      final Environment environment =
+          environmentRepository.getEnvironment(environmentId, environmentVersion);
+
+      if (environment == null) {
+        throw new EnvironmentNotFoundException(
+            String.format(
+                "Environment with id %s and version %s does not exist",
+                environment.getEnvironmentId(), environment.getEnvironmentVersion()));
+      }
+
+      return environmentRepository.createEnvironmentTargetVersion(
+          EnvironmentVersion.builder()
+              .environmentId(environment.getEnvironmentId())
+              .environmentVersion(environment.getEnvironmentVersion())
+              .cluster(environment.getInstanceGroup().getCluster())
+              .build());
+    } catch (final StorageException e) {
+      throw new ServiceException(
+          String.format(
+              "Exception occurred when creating environment target version with id %s and version %s",
+              environmentId, environmentVersion),
+          e);
+    }
+  }
+
+  public EnvironmentVersion describeEnvironmentTargetVersion(final String environmentId)
+      throws EnvironmentVersionNotFoundException, ServiceException {
+    try {
+      final EnvironmentVersion environmentVersion =
+          environmentRepository.getEnvironmentTargetVersion(environmentId);
+
+      if (environmentVersion == null) {
+        throw new EnvironmentVersionNotFoundException(
+            String.format("Could not find environment with id %s", environmentId));
+      }
+
+      return environmentVersion;
+    } catch (final StorageException e) {
+      throw new ServiceException(
+          String.format("Exception occurred when getting environment with id %s", environmentId),
+          e);
+    }
   }
 
   public Environment describeEnvironment(
-      final String environmentId, final String environmentVersion) {
-    return null;
+      final String environmentId, final String environmentVersion)
+      throws EnvironmentNotFoundException, ServiceException {
+    try {
+      final Environment environment =
+          environmentRepository.getEnvironment(environmentId, environmentVersion);
+
+      if (environment == null) {
+        throw new EnvironmentNotFoundException(
+            String.format("Could not find environment with id %s", environmentId));
+      }
+
+      return environment;
+    } catch (final StorageException e) {
+      throw new ServiceException(
+          String.format(
+              "Exception occurred when getting environment with id %s and version %s",
+              environmentId, environmentVersion),
+          e);
+    }
   }
 
-  public List<String> listClustersWithEnvironments() {
-    return null;
+  public List<String> listEnvironmentsWithCluster(final String cluster) throws ServiceException {
+    try {
+      return environmentRepository.listEnvironmentIdsByCluster(cluster);
+    } catch (final StorageException e) {
+      throw new ServiceException(
+          String.format("Exception occurred when listing clusters with clusterArn %s", cluster), e);
+    }
   }
 
-  public Environment getLatestEnvironmentVersion(final String environmentId)
-      throws EnvironmentNotFoundException, StorageException {
-    return null;
+  public List<String> listClusters() throws ServiceException {
+    try {
+      return environmentRepository.listClusters();
+    } catch (final StorageException e) {
+      throw new ServiceException(String.format("Exception occurred when listing all clusters"), e);
+    }
   }
 }

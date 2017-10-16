@@ -12,15 +12,23 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.exception;
+package com.amazonaws.blox.dataservice.model;
 
-public class ServiceException extends Exception {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-  public ServiceException(String message) {
-    super(message);
-  }
+@Data
+@Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
+public class EnvironmentVersion {
 
-  public ServiceException(String message, Exception e) {
-    super(message, e);
-  }
+  @NonNull private String environmentId;
+  @NonNull private String environmentVersion;
+  @NonNull private String cluster;
 }

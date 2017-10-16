@@ -15,7 +15,9 @@
 package com.amazonaws.blox.dataservice.mapper;
 
 import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentTargetVersionDDBRecord;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -23,8 +25,20 @@ import org.mapstruct.Mapping;
 public interface EnvironmentMapper {
 
   @Mapping(source = "instanceGroup.cluster", target = "cluster")
+  // TODO: Map attributes
+  @Mapping(target = "attributes", ignore = true)
+  @Mapping(target = "recordVersion", ignore = true)
   EnvironmentDDBRecord toEnvironmentDDBRecord(Environment environment);
 
   @Mapping(source = "cluster", target = "instanceGroup.cluster")
+  //TODO: add to record
+  @Mapping(target = "deploymentConfiguration", ignore = true)
   Environment toEnvironment(EnvironmentDDBRecord environmentDDBRecord);
+
+  @Mapping(target = "recordVersion", ignore = true)
+  EnvironmentTargetVersionDDBRecord toEnvironmentTargetVersionDDBRecord(
+      EnvironmentVersion environmentVersion);
+
+  EnvironmentVersion toEnvironmentVersion(
+      EnvironmentTargetVersionDDBRecord environmentTargetVersionDDBRecord);
 }

@@ -36,6 +36,14 @@ public class EnvironmentTargetVersionDDBRecord {
   public static final String ENVIRONMENT_CLUSTER_GSI_NAME = "environment-cluster-index";
   public static final String ENVIRONMENT_CLUSTER_INDEX_HASH_KEY = "cluster";
 
+  public static EnvironmentTargetVersionDDBRecord withHashKey(final String environmentId) {
+    return EnvironmentTargetVersionDDBRecord.builder().environmentId(environmentId).build();
+  }
+
+  public static EnvironmentTargetVersionDDBRecord withGSIHashKey(final String cluster) {
+    return EnvironmentTargetVersionDDBRecord.builder().cluster(cluster).build();
+  }
+
   @DynamoDBHashKey(attributeName = ENVIRONMENT_ID_HASH_KEY)
   private String environmentId;
 
@@ -46,4 +54,6 @@ public class EnvironmentTargetVersionDDBRecord {
   private String cluster;
 
   @DynamoDBVersionAttribute private Long recordVersion;
+
+  private String environmentVersion;
 }
