@@ -12,7 +12,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.180'
+        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.215'
     }
     dependencies {
         dependencySet(group: 'org.springframework', version: '4.3.10.RELEASE') {
@@ -61,6 +61,7 @@ dependencies {
 
     testCompile(
             'junit:junit:4.12',
+            'org.hamcrest:hamcrest-junit:2.+',
             'org.mockito:mockito-core:2.10.+',
             'org.slf4j:slf4j-api',
             'org.slf4j:jcl-over-slf4j',

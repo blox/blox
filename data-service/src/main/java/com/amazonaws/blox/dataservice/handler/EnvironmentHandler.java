@@ -38,8 +38,7 @@ public class EnvironmentHandler {
   @NonNull private EnvironmentRepository environmentRepository;
 
   //TODO: createEnvRequest only contains some fields that are set on the env object
-  //The object is precreated in the API layer to avoid passing in and adding/removing parameters in the method definition
-  public Environment createEnvironment(final Environment environment)
+  public Environment createEnvironment(@NonNull final Environment environment)
       throws EnvironmentExistsException, ServiceException {
 
     try {
@@ -59,7 +58,7 @@ public class EnvironmentHandler {
   }
 
   public EnvironmentVersion createEnvironmentTargetVersion(
-      final String environmentId, final String environmentVersion)
+      @NonNull final String environmentId, @NonNull final String environmentVersion)
       throws EnvironmentNotFoundException, EnvironmentExistsException, ServiceException {
 
     try {
@@ -70,7 +69,7 @@ public class EnvironmentHandler {
         throw new EnvironmentNotFoundException(
             String.format(
                 "Environment with id %s and version %s does not exist",
-                environment.getEnvironmentId(), environment.getEnvironmentVersion()));
+                environmentId, environmentVersion));
       }
 
       return environmentRepository.createEnvironmentTargetVersion(
@@ -88,7 +87,7 @@ public class EnvironmentHandler {
     }
   }
 
-  public EnvironmentVersion describeEnvironmentTargetVersion(final String environmentId)
+  public EnvironmentVersion describeEnvironmentTargetVersion(@NonNull final String environmentId)
       throws EnvironmentVersionNotFoundException, ServiceException {
     try {
       final EnvironmentVersion environmentVersion =
@@ -108,7 +107,7 @@ public class EnvironmentHandler {
   }
 
   public Environment describeEnvironment(
-      final String environmentId, final String environmentVersion)
+      @NonNull final String environmentId, @NonNull final String environmentVersion)
       throws EnvironmentNotFoundException, ServiceException {
     try {
       final Environment environment =
@@ -129,7 +128,8 @@ public class EnvironmentHandler {
     }
   }
 
-  public List<String> listEnvironmentsWithCluster(final String cluster) throws ServiceException {
+  public List<String> listEnvironmentsWithCluster(@NonNull final String cluster)
+      throws ServiceException {
     try {
       return environmentRepository.listEnvironmentIdsByCluster(cluster);
     } catch (final StorageException e) {

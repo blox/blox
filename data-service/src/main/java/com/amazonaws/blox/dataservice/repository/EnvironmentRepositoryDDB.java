@@ -85,7 +85,7 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
 
   @Override
   public EnvironmentVersion createEnvironmentTargetVersion(
-      final EnvironmentVersion environmentVersion)
+      @NonNull final EnvironmentVersion environmentVersion)
       throws StorageException, EnvironmentExistsException {
 
     final EnvironmentTargetVersionDDBRecord environmentTargetVersionDDBRecord =
@@ -110,7 +110,7 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
   }
 
   @Override
-  public EnvironmentVersion getEnvironmentTargetVersion(String environmentId)
+  public EnvironmentVersion getEnvironmentTargetVersion(@NonNull final String environmentId)
       throws StorageException {
 
     final EnvironmentTargetVersionDDBRecord environmentTargetVersionDDBRecord;
@@ -133,8 +133,7 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
               .withConsistentRead(false);
 
       List<EnvironmentTargetVersionDDBRecord> scanResult =
-          dynamoDBMapper.scan(
-              EnvironmentTargetVersionDDBRecord.class, new DynamoDBScanExpression());
+          dynamoDBMapper.scan(EnvironmentTargetVersionDDBRecord.class, scanExpression);
       //TODO: integration test that covers pagination.
       return scanResult.stream().map(e -> e.getCluster()).distinct().collect(Collectors.toList());
     } catch (final AmazonServiceException e) {

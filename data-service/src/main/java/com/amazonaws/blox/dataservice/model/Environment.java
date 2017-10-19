@@ -31,11 +31,12 @@ public class Environment {
 
   @NonNull private String environmentId;
   @NonNull private String environmentName;
+  @NonNull private String taskDefinition;
+  @NonNull private String role;
+  @NonNull private InstanceGroup instanceGroup;
+  @NonNull private EnvironmentType type;
+
   private String environmentVersion;
-  private String taskDefinition;
-  private String role;
-  private InstanceGroup instanceGroup;
-  private EnvironmentType type;
   private EnvironmentStatus status;
   private EnvironmentHealth health;
   //TODO: add to ddb record
