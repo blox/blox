@@ -1,6 +1,66 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Resources:
+  Scheduler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.amazonaws.blox.scheduling.scheduler.SchedulerEntrypoint
+      Runtime: java8
+      CodeUri: ../build/distributions/scheduling-manager.zip
+      Timeout: 60
+      MemorySize: 512
+      Tracing: PassThrough
+      Policies:
+        - AWSXrayWriteOnlyAccess
+
+  Manager:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.amazonaws.blox.scheduling.manager.ManagerEntrypoint
+      Runtime: java8
+      CodeUri: ../build/distributions/scheduling-manager.zip
+      Timeout: 60
+      MemorySize: 512
+      Tracing: PassThrough
+      Policies:
+        - AWSLambdaFullAccess
+      Environment:
+        Variables:
+          scheduler_function_name: !Ref Scheduler
+
+  Reconciler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.amazonaws.blox.scheduling.reconciler.ReconcilerEntrypoint
+      Runtime: java8
+      CodeUri: ../build/distributions/scheduling-manager.zip
+      Timeout: 60
+      MemorySize: 512
+      Tracing: Active
+      Policies:
+        - AWSLambdaFullAccess
+      Environment:
+        Variables:
+          manager_function_name: !Ref Manager
+
+  ReconcilerTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Periodic trigger for Scheduler Reconciliation
+      ScheduleExpression: "rate(1 minute)"
+      Targets:
+        - Id: !Ref Reconciler
+          Arn:
+            Fn::GetAtt: [Reconciler, Arn]
+
+  ReconcilerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Reconciler
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt: [ReconcilerTrigger, Arn]
 
   ProcessDeploymentRecords:
     Type: AWS::Serverless::Function

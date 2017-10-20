@@ -12,19 +12,13 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.model;
+package com.amazonaws.blox.scheduling.manager;
 
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Value;
+import com.amazonaws.blox.lambda.SpringLambdaHandler;
 
-@Value
-@Builder
-public class StartDeploymentResponse {
+public class ManagerEntrypoint extends SpringLambdaHandler<ManagerApplication> {
 
-  @NonNull private final String deploymentId;
-
-  @NonNull private final String environmentName;
-
-  @NonNull private final String environmentVersion;
+  public ManagerEntrypoint() {
+    super(ManagerApplication.class);
+  }
 }

@@ -20,10 +20,16 @@ import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFou
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionOutdatedException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
-import com.amazonaws.blox.dataservicemodel.v1.model.CreateEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.CreateEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.StartDeploymentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.StartDeploymentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
 
 public interface DataService {
 
@@ -35,4 +41,16 @@ public interface DataService {
   StartDeploymentResponse startDeployment(StartDeploymentRequest request)
       throws EnvironmentNotFoundException, EnvironmentVersionNotFoundException,
           EnvironmentVersionOutdatedException, InvalidParameterException, ServiceException;
+
+  /** Lists all environments that target a given cluster */
+  ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request);
+
+  /** Lists all clusters managed by blox */
+  ListClustersResponse listClusters(ListClustersRequest request);
+
+  /**
+   * Describes the revision of the given EnvironmentVersion that is the current deployment Target.
+   */
+  DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevision(
+      DescribeTargetEnvironmentRevisionRequest request);
 }

@@ -12,25 +12,12 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.model;
+package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
-import lombok.Builder;
-import lombok.NonNull;
+import java.util.List;
 import lombok.Value;
 
 @Value
-@Builder
-public class CreateEnvironmentResponse {
-
-  @NonNull private String environmentVersion;
-
-  @NonNull private String id;
-
-  @NonNull private String name;
-
-  @NonNull private String taskDefinition;
-
-  @NonNull private String roleArn;
-
-  @NonNull private InstanceGroup instanceGroup;
+public class ListEnvironmentsResponse {
+  private final List<String> environmentIds;
 }
