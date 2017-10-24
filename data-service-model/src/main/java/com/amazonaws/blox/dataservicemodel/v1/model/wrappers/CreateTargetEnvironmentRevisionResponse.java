@@ -14,22 +14,20 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
-import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 
-@Value
+@Data
 @Builder
-public class CreateEnvironmentRequest {
-
-  @NonNull private String environmentName;
-  @NonNull private String accountId;
-  @NonNull private String taskDefinition;
-  @NonNull private String role;
-  @NonNull private InstanceGroup instanceGroup;
-  @NonNull private EnvironmentType environmentType;
-  private DeploymentConfiguration deploymentConfiguration;
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
+public class CreateTargetEnvironmentRevisionResponse {
+  @NonNull private String environmentVersion;
+  @NonNull private String environmentId;
+  @NonNull private String cluster;
 }

@@ -14,17 +14,21 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Value;
-
 import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-@Value
 @Builder
+@Data
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class InstanceGroup {
 
-  @NonNull private String clusterArn;
-
+  @NonNull private String cluster;
   private Set<Attribute> attributes;
 }

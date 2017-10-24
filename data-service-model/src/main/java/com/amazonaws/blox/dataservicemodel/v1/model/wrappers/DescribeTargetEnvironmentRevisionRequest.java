@@ -14,10 +14,12 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
+import lombok.Builder;
+import lombok.NonNull;
 import lombok.Value;
 
 @Value
+@Builder
 public class DescribeTargetEnvironmentRevisionRequest {
-
-  private final String environmentId;
+  @NonNull private final String environmentId;
 }

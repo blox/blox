@@ -12,10 +12,16 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.model;
+package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
-public enum DeploymentType {
-  // TODO Temporary deployment type for steel thread, remove once Daemon is implemented:
-  SingleTask,
-  Daemon
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
+
+@Value
+@Builder
+public class DescribeEnvironmentRequest {
+
+  @NonNull private final String environmentId;
+  @NonNull private final String environmentVersion;
 }

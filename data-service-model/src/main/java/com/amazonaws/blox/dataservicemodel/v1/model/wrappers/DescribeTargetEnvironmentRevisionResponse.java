@@ -14,10 +14,20 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentVersion;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-@Value
+@Data
+@Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class DescribeTargetEnvironmentRevisionResponse {
-  private final EnvironmentVersion environmentVersion;
+  @NonNull private String environmentVersion;
+  @NonNull private String environmentId;
+  @NonNull private String cluster;
 }

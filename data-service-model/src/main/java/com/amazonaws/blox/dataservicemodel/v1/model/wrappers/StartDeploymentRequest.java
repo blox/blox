@@ -23,6 +23,5 @@ import lombok.Value;
 public class StartDeploymentRequest {
 
   @NonNull private final String environmentName;
-
   @NonNull private final String environmentVersion;
 }

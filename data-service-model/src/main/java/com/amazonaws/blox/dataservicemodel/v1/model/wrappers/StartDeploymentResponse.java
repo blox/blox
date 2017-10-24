@@ -14,17 +14,21 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 
-@Value
+@Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class StartDeploymentResponse {
 
-  @NonNull private final String deploymentId;
-
-  @NonNull private final String environmentName;
-
-  @NonNull private final String environmentVersion;
+  @NonNull private String deploymentId;
+  @NonNull private String environmentName;
+  @NonNull private String environmentVersion;
 }

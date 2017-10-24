@@ -14,20 +14,6 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-
-@Data
-@Builder
-// required for builder
-@AllArgsConstructor
-//required for mapstruct
-@NoArgsConstructor
-public class Attribute {
-
-  @NonNull private String name;
-  @NonNull private String value;
+public enum EnvironmentHealth {
+  Healthy
 }

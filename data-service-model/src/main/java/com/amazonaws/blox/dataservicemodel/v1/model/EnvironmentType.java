@@ -14,15 +14,8 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
-import lombok.Builder;
-import lombok.Value;
-
-@Value
-@Builder
-public class EnvironmentVersion {
-  private final String environmentId;
-  private final String environmentVersion;
-  private final String taskDefinition;
-  private final DeploymentType deploymentType;
-  private final DeploymentConfiguration deploymentConfiguration;
+public enum EnvironmentType {
+  // TODO Temporary deployment type for steel thread, remove once Daemon is implemented:
+  SingleTask,
+  Daemon
 }

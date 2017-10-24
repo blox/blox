@@ -14,16 +14,12 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
-import java.util.Map;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
-public class DeploymentConfiguration {
-  private final int minimumHealthyPercent;
-
-  // TODO: This is just to support arbitrary deployment configuration properties
-  //       We could alternatively use polymorphic types.
-  private final Map<String, String> constraints;
-}
+// required for builder
+@AllArgsConstructor
+public class DeploymentConfiguration {}

@@ -15,9 +15,18 @@
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import java.util.List;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-@Value
+@Data
+@Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class ListEnvironmentsResponse {
-  private final List<String> environmentIds;
+  @NonNull private List<String> environmentIds;
 }

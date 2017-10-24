@@ -14,4 +14,9 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class ListClustersRequest {}
