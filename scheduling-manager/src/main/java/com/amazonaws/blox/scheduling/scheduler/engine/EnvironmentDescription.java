@@ -14,10 +14,15 @@
  */
 package com.amazonaws.blox.scheduling.scheduler.engine;
 
-import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
-import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
-public interface Scheduler {
+@Builder
+@Value
+/** The minimum set of Environment data needed for a Scheduler to make scheduling decisions */
+public class EnvironmentDescription {
 
-  List<SchedulingAction> schedule(ClusterSnapshot snapshot, EnvironmentDescription environment);
+  public final String environmentId;
+  public final String environmentVersion;
+  public final String taskDefinitionArn;
 }

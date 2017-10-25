@@ -15,9 +15,11 @@
 package com.amazonaws.blox.scheduling.scheduler;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentVersion;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription;
 import com.amazonaws.blox.scheduling.scheduler.engine.Scheduler;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulingAction;
@@ -29,6 +31,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.ecs.ECSAsyncClient;
@@ -41,18 +44,33 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
   private final ECSAsyncClient ecs;
   private final SchedulerFactory schedulerFactory;
 
+  @SneakyThrows
   @Override
   public SchedulerOutput handleRequest(SchedulerInput input, Context context) {
     log.debug("Request: {}", input);
 
-    DescribeTargetEnvironmentRevisionResponse r =
+    DescribeTargetEnvironmentRevisionResponse targetEnvironmentRevision =
         data.describeTargetEnvironmentRevision(
-            new DescribeTargetEnvironmentRevisionRequest(input.getEnvironmentId()));
-    EnvironmentVersion revision = r.getEnvironmentVersion();
+            DescribeTargetEnvironmentRevisionRequest.builder()
+                .environmentId(input.getEnvironmentId())
+                .build());
+    DescribeEnvironmentResponse environment =
+        data.describeEnvironment(
+            DescribeEnvironmentRequest.builder()
+                .environmentId(targetEnvironmentRevision.getEnvironmentId())
+                .environmentVersion(targetEnvironmentRevision.getEnvironmentVersion())
+                .build());
 
-    Scheduler s = schedulerFactory.schedulerFor(revision.getDeploymentType());
+    EnvironmentDescription environmentDescription =
+        EnvironmentDescription.builder()
+            .environmentId(environment.getEnvironmentId())
+            .environmentVersion(environment.getEnvironmentVersion())
+            .taskDefinitionArn(environment.getTaskDefinition())
+            .build();
 
-    List<SchedulingAction> actions = s.schedule(input.getSnapshot(), revision);
+    Scheduler s = schedulerFactory.schedulerFor(environment.getType());
+
+    List<SchedulingAction> actions = s.schedule(input.getSnapshot(), environmentDescription);
 
     List<Boolean> outcomes =
         actions.stream().map(a -> a.execute(ecs)).collect(CompletableFutures.joinList()).join();
@@ -67,5 +85,6 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
         input.getEnvironmentId(),
         outcomeCounts.getOrDefault(false, 0L),
         outcomeCounts.getOrDefault(true, 0L));
+    //TODO: handle exceptions. captured in the lambda exception handling issue
   }
 }

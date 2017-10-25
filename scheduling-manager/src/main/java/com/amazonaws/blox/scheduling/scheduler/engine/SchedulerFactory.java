@@ -14,12 +14,12 @@
  */
 package com.amazonaws.blox.scheduling.scheduler.engine;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentType;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 
 public class SchedulerFactory {
 
-  public Scheduler schedulerFor(DeploymentType deploymentType) {
-    switch (deploymentType) {
+  public Scheduler schedulerFor(EnvironmentType type) {
+    switch (type) {
       case SingleTask:
         return new SingleTaskScheduler();
       default:

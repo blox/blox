@@ -21,65 +21,51 @@ import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFou
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionOutdatedException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentHealth;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentStatus;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
+import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
-import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentType;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.Instant;
+import java.util.Collections;
 import lombok.Builder;
 
-@Builder
 /**
- * Temporary fake data service for load-testing in Lambda
+ * Temporary fake data service for testing without DataService in Lambda
  *
  * <p>TODO: Move to end to end/load tests, or replace with fixture data
  */
+@Builder
 public class FakeDataService implements DataService {
-  public static final List<String> GREEK =
-      Arrays.asList(
-          "Alpha",
-          "Beta",
-          "Gamma",
-          "Delta",
-          "Epsilon",
-          "Zeta",
-          "Eta",
-          "Theta",
-          "Iota",
-          "Kappa",
-          "Lambda",
-          "Mu",
-          "Nu",
-          "Xi",
-          "Omicron",
-          "Pi",
-          "Rho",
-          "Sigma",
-          "Tau",
-          "Upsilon",
-          "Phi",
-          "Chi",
-          "Psi",
-          "Omega",
-          "Ultra" /* not greek, but need 25 things */);
-  public static final List<String> THING = Arrays.asList("Blaster", "Boomer", "Slapper", "Zapper");
-  @Builder.Default private int clusters = 100;
-  @Builder.Default private int environmentsPerCluster = 10;
+  @Builder.Default private String clusterArn = "default";
+  @Builder.Default private String taskDefinition = "sleep:1";
+  @Builder.Default private String environmentId = "TestEnvironment";
 
   @Override
   public CreateEnvironmentResponse createEnvironment(CreateEnvironmentRequest request)
       throws EnvironmentExistsException, InvalidParameterException, ServiceException {
+    return null;
+  }
+
+  @Override
+  public CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevision(
+      CreateTargetEnvironmentRevisionRequest request)
+      throws EnvironmentExistsException, EnvironmentNotFoundException, InvalidParameterException,
+          ServiceException {
     return null;
   }
 
@@ -92,33 +78,39 @@ public class FakeDataService implements DataService {
 
   @Override
   public ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request) {
-    return new ListEnvironmentsResponse(
-        names("EnvironmentFor" + request.getClusterArn())
-            .stream()
-            .limit(environmentsPerCluster)
-            .collect(Collectors.toList()));
+    return new ListEnvironmentsResponse(Collections.singletonList(environmentId));
   }
 
   @Override
   public ListClustersResponse listClusters(ListClustersRequest request) {
-    return new ListClustersResponse(
-        names("Cluster").stream().limit(clusters).collect(Collectors.toList()));
+    return new ListClustersResponse(Collections.singletonList(clusterArn));
   }
 
   @Override
   public DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevision(
       DescribeTargetEnvironmentRevisionRequest request) {
-    return new DescribeTargetEnvironmentRevisionResponse(
-        EnvironmentVersion.builder()
-            .deploymentType(DeploymentType.SingleTask)
-            .deploymentConfiguration(DeploymentConfiguration.builder().build())
-            .build());
+    return DescribeTargetEnvironmentRevisionResponse.builder()
+        .environmentId(request.getEnvironmentId())
+        .environmentVersion("1")
+        .cluster(clusterArn)
+        .build();
   }
 
-  private List<String> names(String suffix) {
-    return GREEK
-        .stream()
-        .flatMap(g -> THING.stream().map(t -> g + t + suffix))
-        .collect(Collectors.toList());
+  @Override
+  public DescribeEnvironmentResponse describeEnvironment(DescribeEnvironmentRequest request)
+      throws EnvironmentNotFoundException, InvalidParameterException, ServiceException {
+    return DescribeEnvironmentResponse.builder()
+        .environmentId(request.getEnvironmentId())
+        .environmentVersion("1")
+        .environmentName(request.getEnvironmentId())
+        .taskDefinition(taskDefinition)
+        .role("")
+        .status(EnvironmentStatus.Active)
+        .health(EnvironmentHealth.Healthy)
+        .createdTime(Instant.now())
+        .instanceGroup(InstanceGroup.builder().cluster(clusterArn).build())
+        .type(EnvironmentType.SingleTask)
+        .deploymentConfiguration(DeploymentConfiguration.builder().build())
+        .build();
   }
 }

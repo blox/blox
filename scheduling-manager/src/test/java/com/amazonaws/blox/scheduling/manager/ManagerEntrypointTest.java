@@ -51,7 +51,7 @@ public class ManagerEntrypointTest extends LambdaHandlerTestCase {
   public static class TestConfig {
 
     @Bean
-    public DataService dataService() {
+    public DataService dataService() throws Exception {
       return when(mock(DataService.class).listEnvironments(any()))
           .thenReturn(new ListEnvironmentsResponse(Collections.singletonList("SomeEnvironment")))
           .getMock();

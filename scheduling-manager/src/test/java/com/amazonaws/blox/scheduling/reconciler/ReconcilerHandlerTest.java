@@ -43,7 +43,7 @@ public class ReconcilerHandlerTest {
   @Mock private LambdaFunction<ManagerInput, ManagerOutput> manager;
 
   @Test
-  public void invokesManagerAsynchronouslyForAllClusters() {
+  public void invokesManagerAsynchronouslyForAllClusters() throws Exception {
     when(data.listClusters(any()))
         .thenReturn(new ListClustersResponse(Arrays.asList(FIRST_CLUSTER_ARN, SECOND_CLUSTER_ARN)));
 

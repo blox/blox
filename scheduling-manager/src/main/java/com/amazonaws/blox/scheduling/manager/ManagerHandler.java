@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -41,9 +42,11 @@ public class ManagerHandler implements RequestHandler<ManagerInput, ManagerOutpu
   private final LambdaFunction<SchedulerInput, SchedulerOutput> scheduler;
 
   @Override
+  @SneakyThrows // TODO add checked exception handling
   public ManagerOutput handleRequest(ManagerInput input, Context context) {
     ListEnvironmentsResponse r =
-        data.listEnvironments(new ListEnvironmentsRequest(input.getClusterArn()));
+        data.listEnvironments(
+            ListEnvironmentsRequest.builder().cluster(input.getClusterArn()).build());
     List<String> environments = r.getEnvironmentIds();
 
     ClusterSnapshot state = ecs.snapshotState(input.getClusterArn());

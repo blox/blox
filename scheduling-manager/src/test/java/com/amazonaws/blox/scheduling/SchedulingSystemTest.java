@@ -23,13 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentType;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentVersion;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.lambda.TestLambdaFunction;
 import com.amazonaws.blox.scheduling.manager.ManagerHandler;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;
@@ -43,7 +36,6 @@ import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot.ContainerInstance;
 import com.amazonaws.blox.scheduling.state.ECSState;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
@@ -58,14 +50,19 @@ import software.amazon.awssdk.services.ecs.model.StartTaskResponse;
 public class SchedulingSystemTest {
 
   private static final String CLUSTER_ARN = "arn:::::cluster1";
-  private static final String ENVIRONMENT_ARN = "arn:::::environment1";
   private static final String INSTANCE_ARN = "arn:::::instance1";
+  private static final String ENVIRONMENT_ID = "arn:::::env1";
   private static final String TASKDEF_ARN = "arn:::::task:1";
 
   private final ClusterSnapshot snapshot =
       new ClusterSnapshot(CLUSTER_ARN, Collections.emptyMap(), new HashMap<>());
 
-  private final DataService dataService = mock(DataService.class);
+  private final DataService dataService =
+      FakeDataService.builder()
+          .clusterArn(CLUSTER_ARN)
+          .environmentId(ENVIRONMENT_ID)
+          .taskDefinition(TASKDEF_ARN)
+          .build();
 
   private final ECSState ecsState = mock(ECSState.class);
   private final ECSAsyncClient ecs = mock(ECSAsyncClient.class);
@@ -82,22 +79,7 @@ public class SchedulingSystemTest {
 
   @Test
   public void runSingleReconciliation() {
-    when(dataService.listClusters(any()))
-        .thenReturn(new ListClustersResponse(Arrays.asList(CLUSTER_ARN)));
-
-    when(ecsState.snapshotState(CLUSTER_ARN)).thenReturn(snapshot).getMock();
-
-    when(dataService.listEnvironments(new ListEnvironmentsRequest(CLUSTER_ARN)))
-        .thenReturn(new ListEnvironmentsResponse(Arrays.asList(ENVIRONMENT_ARN)));
-
-    when(dataService.describeTargetEnvironmentRevision(
-            new DescribeTargetEnvironmentRevisionRequest(ENVIRONMENT_ARN)))
-        .thenReturn(
-            new DescribeTargetEnvironmentRevisionResponse(
-                EnvironmentVersion.builder()
-                    .deploymentType(DeploymentType.SingleTask)
-                    .taskDefinition(TASKDEF_ARN)
-                    .build()));
+    when(ecsState.snapshotState(CLUSTER_ARN)).thenReturn(snapshot);
 
     when(ecs.startTask(any()))
         .thenReturn(

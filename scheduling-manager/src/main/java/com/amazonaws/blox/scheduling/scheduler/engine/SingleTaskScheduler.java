@@ -14,7 +14,6 @@
  */
 package com.amazonaws.blox.scheduling.scheduler.engine;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentVersion;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot.ContainerInstance;
 import java.util.Arrays;
@@ -29,11 +28,13 @@ import java.util.Map.Entry;
 public class SingleTaskScheduler implements Scheduler {
 
   @Override
-  public List<SchedulingAction> schedule(ClusterSnapshot snapshot, EnvironmentVersion environment) {
+  public List<SchedulingAction> schedule(
+      ClusterSnapshot snapshot, EnvironmentDescription environment) {
     // Only run a Task on the first ContainerInstance in the snapshot:
     for (Entry<String, ContainerInstance> entry : snapshot.getInstances().entrySet()) {
       return Arrays.asList(
-          new StartTask(snapshot.getClusterArn(), entry.getKey(), environment.getTaskDefinition()));
+          new StartTask(
+              snapshot.getClusterArn(), entry.getKey(), environment.getTaskDefinitionArn()));
     }
     return Collections.emptyList();
   }

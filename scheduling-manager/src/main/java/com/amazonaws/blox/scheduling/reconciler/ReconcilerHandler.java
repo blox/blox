@@ -26,6 +26,7 @@ import com.spotify.futures.CompletableFutures;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -37,9 +38,10 @@ public class ReconcilerHandler implements RequestHandler<CloudWatchEvent<Map>, V
   final LambdaFunction<ManagerInput, ManagerOutput> stateFunction;
 
   @Override
+  @SneakyThrows // TODO add checked exception handling
   public Void handleRequest(CloudWatchEvent<Map> input, Context context) {
-    ListClustersResponse r = dataService.listClusters(new ListClustersRequest());
-    List<String> clusters = r.getClusterArns();
+    ListClustersResponse r = dataService.listClusters(ListClustersRequest.builder().build());
+    List<String> clusters = r.getClusters();
 
     clusters
         .stream()

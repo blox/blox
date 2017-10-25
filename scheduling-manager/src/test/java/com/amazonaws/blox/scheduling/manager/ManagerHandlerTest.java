@@ -49,8 +49,9 @@ public class ManagerHandlerTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void invokesSchedulerForAllEnvironments() {
-    when(dataService.listEnvironments(new ListEnvironmentsRequest(CLUSTER_ARN)))
+  public void invokesSchedulerForAllEnvironments() throws Exception {
+    when(dataService.listEnvironments(
+            ListEnvironmentsRequest.builder().cluster(CLUSTER_ARN).build()))
         .thenReturn(
             new ListEnvironmentsResponse(
                 Arrays.asList(FIRST_ENVIRONMENT_ARN, SECOND_ENVIRONMENT_ARN)));
