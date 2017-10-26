@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
-public enum EnvironmentHealth {
-  Healthy
+public class EnvironmentHealth {
+
+  public static final String HEALTHY = "Healthy";
 }

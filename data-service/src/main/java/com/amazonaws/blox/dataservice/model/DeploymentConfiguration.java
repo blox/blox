@@ -14,4 +14,12 @@
  */
 package com.amazonaws.blox.dataservice.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+// required for builder
+@AllArgsConstructor
 public class DeploymentConfiguration {}

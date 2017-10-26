@@ -14,20 +14,31 @@
  */
 package com.amazonaws.blox.dataservice.environment;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.amazonaws.blox.dataservice.Application;
-import com.amazonaws.blox.dataservice.exception.StorageException;
-import com.amazonaws.blox.dataservice.handler.EnvironmentHandler;
-import com.amazonaws.blox.dataservice.model.Environment;
-import com.amazonaws.blox.dataservice.model.EnvironmentType;
-import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
-import com.amazonaws.blox.dataservice.model.InstanceGroup;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
+import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,129 +55,210 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class EnvironmentIntegTest {
 
   private static final String ENVIRONMENT_NAME_PREFIX = "test";
+  private static final String ACCOUNT_ID = "12345678912";
+  private static final String TASK_DEFINITION_ARN =
+      "arn:aws:ecs:us-east-1:" + ACCOUNT_ID + ":task-definition/sleep";
+  private static final String ROLE_ARN = "arn:aws:iam::" + ACCOUNT_ID + ":role/testRole";
+  private static final String CLUSTER_ARN_PREFIX =
+      "arn:aws:ecs:us-east-1:" + ACCOUNT_ID + ":cluster/";
 
-  @Autowired private EnvironmentHandler environmentHandler;
+  @Autowired private DataService dataService;
 
   @Test
   public void createAndDescribeEnvironment()
-      throws StorageException, ServiceException, EnvironmentExistsException,
+      throws InvalidParameterException, ServiceException, EnvironmentExistsException,
           EnvironmentNotFoundException {
-    final String environmentName = ENVIRONMENT_NAME_PREFIX + UUID.randomUUID().toString();
 
-    Environment environment = environmentObject(environmentName);
-    environmentHandler.createEnvironment(environment);
-    Environment describeResult =
-        environmentHandler.describeEnvironment(
-            environment.getEnvironmentId(), environment.getEnvironmentVersion());
+    CreateEnvironmentResponse createEnvironmentResponse = createEnvironment();
 
-    assertEquals(environment, describeResult);
+    DescribeEnvironmentRequest describeEnvironmentRequest =
+        DescribeEnvironmentRequest.builder()
+            .environmentId(createEnvironmentResponse.getEnvironmentId())
+            .environmentVersion(createEnvironmentResponse.getEnvironmentVersion())
+            .build();
+
+    DescribeEnvironmentResponse describeEnvironmentResponse =
+        dataService.describeEnvironment(describeEnvironmentRequest);
+
+    assertEquals(
+        createEnvironmentResponse.getEnvironmentId(),
+        describeEnvironmentResponse.getEnvironmentId());
+    assertEquals(
+        createEnvironmentResponse.getEnvironmentName(),
+        describeEnvironmentResponse.getEnvironmentName());
+    assertEquals(
+        createEnvironmentResponse.getEnvironmentVersion(),
+        describeEnvironmentResponse.getEnvironmentVersion());
+    assertEquals(
+        createEnvironmentResponse.getInstanceGroup().getCluster(),
+        describeEnvironmentResponse.getInstanceGroup().getCluster());
+    assertEquals(createEnvironmentResponse.getRole(), describeEnvironmentResponse.getRole());
+    assertEquals(
+        createEnvironmentResponse.getTaskDefinition(),
+        describeEnvironmentResponse.getTaskDefinition());
   }
 
   @Test
   public void createAndDescribeEnvironmentTargetVersion()
-      throws StorageException, ServiceException, EnvironmentExistsException,
-          EnvironmentVersionNotFoundException, EnvironmentNotFoundException,
-          EnvironmentNotFoundException {
+      throws InvalidParameterException, ServiceException, EnvironmentExistsException,
+          EnvironmentVersionNotFoundException, EnvironmentNotFoundException {
 
-    final String environmentName = ENVIRONMENT_NAME_PREFIX + UUID.randomUUID().toString();
-    Environment environment = environmentObject(environmentName);
-    environmentHandler.createEnvironment(environment);
-    environmentHandler.createEnvironmentTargetVersion(
-        environment.getEnvironmentId(), environment.getEnvironmentVersion());
-    EnvironmentVersion describeResult =
-        environmentHandler.describeEnvironmentTargetVersion(environment.getEnvironmentId());
+    CreateEnvironmentResponse createEnvironmentResponse = createEnvironment();
+    CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevisionResponse =
+        dataService.createTargetEnvironmentRevision(
+            CreateTargetEnvironmentRevisionRequest.builder()
+                .environmentId(createEnvironmentResponse.getEnvironmentId())
+                .environmentVersion(createEnvironmentResponse.getEnvironmentVersion())
+                .build());
 
-    assertEquals(environment.getEnvironmentId(), describeResult.getEnvironmentId());
-    assertEquals(environment.getEnvironmentVersion(), describeResult.getEnvironmentVersion());
-    assertEquals(environment.getInstanceGroup().getCluster(), describeResult.getCluster());
+    DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevisionResponse =
+        dataService.describeTargetEnvironmentRevision(
+            DescribeTargetEnvironmentRevisionRequest.builder()
+                .environmentId(createTargetEnvironmentRevisionResponse.getEnvironmentId())
+                .build());
+
+    assertEquals(
+        createTargetEnvironmentRevisionResponse.getEnvironmentId(),
+        describeTargetEnvironmentRevisionResponse.getEnvironmentId());
+    assertEquals(
+        createTargetEnvironmentRevisionResponse.getEnvironmentVersion(),
+        describeTargetEnvironmentRevisionResponse.getEnvironmentVersion());
+    assertEquals(
+        createTargetEnvironmentRevisionResponse.getCluster(),
+        describeTargetEnvironmentRevisionResponse.getCluster());
   }
 
   @Test
   public void listAllClusters()
       throws ServiceException, EnvironmentExistsException, EnvironmentVersionNotFoundException,
-          EnvironmentNotFoundException {
-    final String environmentName = ENVIRONMENT_NAME_PREFIX + UUID.randomUUID().toString();
-    Environment environment = environmentObject(environmentName);
-    environmentHandler.createEnvironment(environment);
-    environmentHandler.createEnvironmentTargetVersion(
-        environment.getEnvironmentId(), environment.getEnvironmentVersion());
+          EnvironmentNotFoundException, InvalidParameterException {
+
+    CreateEnvironmentResponse createEnvironmentResponse = createEnvironment();
+    dataService.createTargetEnvironmentRevision(
+        CreateTargetEnvironmentRevisionRequest.builder()
+            .environmentId(createEnvironmentResponse.getEnvironmentId())
+            .environmentVersion(createEnvironmentResponse.getEnvironmentVersion())
+            .build());
 
     // same cluster
-    final Environment environment1 = environment;
-    environment1.setEnvironmentId(UUID.randomUUID().toString());
-    environmentHandler.createEnvironment(environment1);
-    environmentHandler.createEnvironmentTargetVersion(
-        environment1.getEnvironmentId(), environment1.getEnvironmentVersion());
+    CreateEnvironmentResponse sameClusterCreateEnvironmentResponse =
+        createEnvironment(createEnvironmentResponse.getInstanceGroup().getCluster());
+    dataService.createTargetEnvironmentRevision(
+        CreateTargetEnvironmentRevisionRequest.builder()
+            .environmentId(sameClusterCreateEnvironmentResponse.getEnvironmentId())
+            .environmentVersion(sameClusterCreateEnvironmentResponse.getEnvironmentVersion())
+            .build());
 
     // different cluster
-    final Environment environment2 = environment;
-    environment2.setEnvironmentId(UUID.randomUUID().toString());
-    environment2.setInstanceGroup(
-        InstanceGroup.builder().cluster("cluster" + UUID.randomUUID()).build());
-    environmentHandler.createEnvironment(environment2);
-    environmentHandler.createEnvironmentTargetVersion(
-        environment2.getEnvironmentId(), environment2.getEnvironmentVersion());
+    CreateEnvironmentResponse differentClusterCreateEnvironmentResponse = createEnvironment();
+    dataService.createTargetEnvironmentRevision(
+        CreateTargetEnvironmentRevisionRequest.builder()
+            .environmentId(differentClusterCreateEnvironmentResponse.getEnvironmentId())
+            .environmentVersion(differentClusterCreateEnvironmentResponse.getEnvironmentVersion())
+            .build());
 
-    List<String> clusters = environmentHandler.listClusters();
-    assertTrue(clusters.size() >= 2);
-    Set<String> clusterSet = new HashSet<>(clusters);
-    assertTrue(clusterSet.contains(environment1.getInstanceGroup().getCluster()));
-    assertTrue(clusterSet.contains(environment2.getInstanceGroup().getCluster()));
+    ListClustersResponse listClustersResponse =
+        dataService.listClusters(ListClustersRequest.builder().build());
+
+    assertTrue(listClustersResponse.getClusters().size() >= 2);
+
+    assertThat(
+        listClustersResponse.getClusters(),
+        hasItems(
+            sameClusterCreateEnvironmentResponse.getInstanceGroup().getCluster(),
+            differentClusterCreateEnvironmentResponse.getInstanceGroup().getCluster()));
   }
 
   @Test
   public void listEnvironmentsWithCluster()
       throws ServiceException, EnvironmentExistsException, EnvironmentNotFoundException,
-          EnvironmentVersionNotFoundException {
-    List<String> environmentIds = environmentHandler.listEnvironmentsWithCluster("nonexistent");
+          EnvironmentVersionNotFoundException, InvalidParameterException {
+
+    List<String> environmentIds =
+        dataService
+            .listEnvironments(
+                ListEnvironmentsRequest.builder()
+                    .cluster(CLUSTER_ARN_PREFIX + "nonexistent")
+                    .build())
+            .getEnvironmentIds();
     assertTrue(environmentIds.isEmpty());
 
     // one environment
-    Environment environment =
-        environmentObject(ENVIRONMENT_NAME_PREFIX + UUID.randomUUID().toString());
-    final String clusterWithOneEnvironment = "cluster" + UUID.randomUUID().toString();
-    environment.getInstanceGroup().setCluster(clusterWithOneEnvironment);
-    environmentHandler.createEnvironment(environment);
-    environmentHandler.createEnvironmentTargetVersion(
-        environment.getEnvironmentId(), environment.getEnvironmentVersion());
+    CreateEnvironmentResponse createEnvironmentResponse = createEnvironment();
+    CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevisionResponse =
+        dataService.createTargetEnvironmentRevision(
+            CreateTargetEnvironmentRevisionRequest.builder()
+                .environmentId(createEnvironmentResponse.getEnvironmentId())
+                .environmentVersion(createEnvironmentResponse.getEnvironmentVersion())
+                .build());
 
-    environmentIds = environmentHandler.listEnvironmentsWithCluster(clusterWithOneEnvironment);
+    environmentIds =
+        dataService
+            .listEnvironments(
+                ListEnvironmentsRequest.builder()
+                    .cluster(createTargetEnvironmentRevisionResponse.getCluster())
+                    .build())
+            .getEnvironmentIds();
     assertTrue(environmentIds.size() == 1);
-    assertEquals(environment.getEnvironmentId(), environmentIds.get(0));
+    assertEquals(createTargetEnvironmentRevisionResponse.getEnvironmentId(), environmentIds.get(0));
 
-    // two environments on same cluster
-    final String clusterWithTwoEnvironments = "cluster" + UUID.randomUUID().toString();
-    Environment environmentOne = environment;
-    environmentOne.setEnvironmentId(UUID.randomUUID().toString());
-    environmentOne.getInstanceGroup().setCluster(clusterWithTwoEnvironments);
-    environmentHandler.createEnvironment(environmentOne);
-    environmentHandler.createEnvironmentTargetVersion(
-        environmentOne.getEnvironmentId(), environmentOne.getEnvironmentVersion());
+    // two environments on the same cluster
+    final String clusterWithTwoEnvironments = CLUSTER_ARN_PREFIX + UUID.randomUUID().toString();
 
-    Environment environmentTwo = environment;
-    environmentTwo.setEnvironmentId(UUID.randomUUID().toString());
-    environmentTwo.getInstanceGroup().setCluster(clusterWithTwoEnvironments);
-    environmentHandler.createEnvironment(environmentTwo);
-    environmentHandler.createEnvironmentTargetVersion(
-        environmentTwo.getEnvironmentId(), environmentTwo.getEnvironmentVersion());
+    CreateEnvironmentResponse createEnvironmentOnTheSameClusterOneResponse =
+        createEnvironment(clusterWithTwoEnvironments);
+    dataService.createTargetEnvironmentRevision(
+        CreateTargetEnvironmentRevisionRequest.builder()
+            .environmentId(createEnvironmentOnTheSameClusterOneResponse.getEnvironmentId())
+            .environmentVersion(
+                createEnvironmentOnTheSameClusterOneResponse.getEnvironmentVersion())
+            .build());
 
-    environmentIds = environmentHandler.listEnvironmentsWithCluster(clusterWithTwoEnvironments);
+    CreateEnvironmentResponse createEnvironmentOnTheSameClusterTwoResponse =
+        createEnvironment(clusterWithTwoEnvironments);
+    dataService.createTargetEnvironmentRevision(
+        CreateTargetEnvironmentRevisionRequest.builder()
+            .environmentId(createEnvironmentOnTheSameClusterTwoResponse.getEnvironmentId())
+            .environmentVersion(
+                createEnvironmentOnTheSameClusterTwoResponse.getEnvironmentVersion())
+            .build());
+
+    environmentIds =
+        dataService
+            .listEnvironments(
+                ListEnvironmentsRequest.builder().cluster(clusterWithTwoEnvironments).build())
+            .getEnvironmentIds();
     assertTrue(environmentIds.size() == 2);
     Set<String> environmentIdSet = new HashSet<>(environmentIds);
-    assertTrue(environmentIdSet.contains(environmentOne.getEnvironmentId()));
-    assertTrue(environmentIdSet.contains(environmentTwo.getEnvironmentId()));
+    assertTrue(
+        environmentIdSet.contains(createEnvironmentOnTheSameClusterOneResponse.getEnvironmentId()));
+    assertTrue(
+        environmentIdSet.contains(createEnvironmentOnTheSameClusterTwoResponse.getEnvironmentId()));
   }
 
-  private Environment environmentObject(final String environmentName) {
-    return Environment.builder()
+  private CreateEnvironmentRequest createEnvironmentRequest(
+      final String environmentName, final String cluster) {
+    return CreateEnvironmentRequest.builder()
         .environmentName(environmentName)
-        .environmentId(environmentName + "1234")
-        .environmentVersion(UUID.randomUUID().toString())
-        .type(EnvironmentType.Daemon)
-        .instanceGroup(
-            InstanceGroup.builder().cluster("cluster" + UUID.randomUUID().toString()).build())
-        .role("role1")
-        .taskDefinition("task1")
+        .accountId(ACCOUNT_ID)
+        .environmentType(EnvironmentType.Daemon)
+        .instanceGroup(InstanceGroup.builder().cluster(cluster).build())
+        .role(ROLE_ARN)
+        .taskDefinition(TASK_DEFINITION_ARN)
         .build();
+  }
+
+  private CreateEnvironmentResponse createEnvironment()
+      throws EnvironmentExistsException, InvalidParameterException, ServiceException {
+    return createEnvironment(CLUSTER_ARN_PREFIX + UUID.randomUUID().toString());
+  }
+
+  private CreateEnvironmentResponse createEnvironment(final String cluster)
+      throws EnvironmentExistsException, InvalidParameterException, ServiceException {
+    final String environmentName = ENVIRONMENT_NAME_PREFIX + UUID.randomUUID().toString();
+
+    CreateEnvironmentRequest createEnvironmentRequest =
+        createEnvironmentRequest(environmentName, cluster);
+    return dataService.createEnvironment(createEnvironmentRequest);
   }
 }

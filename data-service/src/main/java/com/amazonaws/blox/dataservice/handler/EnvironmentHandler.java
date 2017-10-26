@@ -134,7 +134,7 @@ public class EnvironmentHandler {
       return environmentRepository.listEnvironmentIdsByCluster(cluster);
     } catch (final StorageException e) {
       throw new ServiceException(
-          String.format("Exception occurred when listing clusters with clusterArn %s", cluster), e);
+          String.format("Exception occurred when listing clusters with cluster %s", cluster), e);
     }
   }
 

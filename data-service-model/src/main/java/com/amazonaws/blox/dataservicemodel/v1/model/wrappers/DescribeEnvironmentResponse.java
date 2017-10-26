@@ -15,8 +15,6 @@
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentHealth;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentStatus;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import java.time.Instant;
@@ -41,8 +39,8 @@ public class DescribeEnvironmentResponse {
   @NonNull private InstanceGroup instanceGroup;
   @NonNull private EnvironmentType type;
   @NonNull private String environmentVersion;
-  @NonNull private EnvironmentStatus status;
-  @NonNull private EnvironmentHealth health;
+  @NonNull private String status;
+  @NonNull private String health;
   @NonNull private Instant createdTime;
   private DeploymentConfiguration deploymentConfiguration;
   private Instant lastUpdatedTime;

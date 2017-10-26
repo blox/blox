@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Resources:
 
-  DynamoDBTable:
+  EnvironmentsTable:
     Type: AWS::DynamoDB::Table
     Properties:
      #TODO: change ddb table names to have region prefix passed in as a resource
@@ -21,7 +21,7 @@ Resources:
        ReadCapacityUnits: 15
        WriteCapacityUnits: 15
 
-  DynamoDBTable:
+  EnvironmentTargetVersionTable:
     Type: AWS::DynamoDB::Table
     Properties:
      #TODO: change ddb table names to have region prefix passed in as a resource

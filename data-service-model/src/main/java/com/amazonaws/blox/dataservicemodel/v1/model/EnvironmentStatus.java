@@ -14,7 +14,8 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
-public enum EnvironmentStatus {
-  Active,
-  Inactive
+public class EnvironmentStatus {
+
+  public static final String ACTIVE = "Active";
+  public static final String INACTIVE = "Inactive";
 }

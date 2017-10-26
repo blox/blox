@@ -76,6 +76,7 @@ sourceSets {
     integTest {
         java.srcDir file('src/integTest/java')
         resources.srcDir file('src/integTest/resources')
+        runtimeClasspath += main.output + test.output
     }
 }
 
@@ -97,7 +98,6 @@ task integTests(type: Test, dependsOn: build) {
     maxHeapSize = '1024m'
 
     testClassesDirs = sourceSets.integTest.output.classesDirs
-    classpath = sourceSets.integTest.runtimeClasspath
 }
 
 test {

@@ -16,6 +16,7 @@ package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -37,4 +38,7 @@ public class CreateEnvironmentResponse {
   @NonNull private String role;
   @NonNull private InstanceGroup instanceGroup;
   @NonNull private EnvironmentType environmentType;
+  @NonNull private Instant createdTime;
+  @NonNull private String environmentHealth;
+  @NonNull private String environmentStatus;
 }

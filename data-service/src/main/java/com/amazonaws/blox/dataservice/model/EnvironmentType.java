@@ -15,5 +15,6 @@
 package com.amazonaws.blox.dataservice.model;
 
 public enum EnvironmentType {
+  SingleTask,
   Daemon
 }

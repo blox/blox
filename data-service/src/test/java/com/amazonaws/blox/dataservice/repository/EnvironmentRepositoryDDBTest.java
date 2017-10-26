@@ -69,8 +69,9 @@ public class EnvironmentRepositoryDDBTest {
       EnvironmentArnGenerator.generateEnvironmentArn(
           ENVIRONMENT_NAME + UUID.randomUUID().toString(), ACCOUNT_ID);
   private static final String ENVIRONMENT_VERSION = UUID.randomUUID().toString();
-  private static final String TASK_DEF = "sleep";
-  private static final String ROLE = "roleArn";
+  private static final String TASK_DEF_ARN =
+      "arn:aws:ecs:us-east-1:" + ACCOUNT_ID + ":task-definition/sleep";
+  private static final String ROLE_ARN = "arn:aws:iam::" + ACCOUNT_ID + ":role/testRole";
   private static final String CLUSTER_ARN_PREFIX =
       "arn:aws:ecs:us-east-1:" + ACCOUNT_ID + ":cluster/";
   private static final String CLUSTER = CLUSTER_ARN_PREFIX + UUID.randomUUID().toString();
@@ -111,8 +112,8 @@ public class EnvironmentRepositoryDDBTest {
             .environmentId(
                 EnvironmentArnGenerator.generateEnvironmentArn(ACCOUNT_ID, ENVIRONMENT_NAME))
             .environmentVersion(UUID.randomUUID().toString())
-            .taskDefinition(TASK_DEF)
-            .role(ROLE)
+            .taskDefinition(TASK_DEF_ARN)
+            .role(ROLE_ARN)
             .instanceGroup(InstanceGroup.builder().cluster(CLUSTER).build())
             .type(EnvironmentType.Daemon)
             .status(EnvironmentStatus.Inactive)
