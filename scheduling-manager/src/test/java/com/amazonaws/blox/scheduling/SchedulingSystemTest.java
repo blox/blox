@@ -36,8 +36,8 @@ import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot.ContainerInstance;
 import com.amazonaws.blox.scheduling.state.ECSState;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.log4j.Log4j2;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class SchedulingSystemTest {
   private static final String TASKDEF_ARN = "arn:::::task:1";
 
   private final ClusterSnapshot snapshot =
-      new ClusterSnapshot(CLUSTER_ARN, Collections.emptyMap(), new HashMap<>());
+      new ClusterSnapshot(CLUSTER_ARN, Collections.emptyList(), new ArrayList<>());
 
   private final DataService dataService =
       FakeDataService.builder()
@@ -85,7 +85,7 @@ public class SchedulingSystemTest {
         .thenReturn(
             CompletableFuture.completedFuture(StartTaskResponse.builder().failures().build()));
 
-    snapshot.getInstances().put(INSTANCE_ARN, new ContainerInstance(INSTANCE_ARN));
+    snapshot.getInstances().add(ContainerInstance.builder().arn(INSTANCE_ARN).build());
 
     ReconcilerHandler recon = new ReconcilerHandler(dataService, managerClient);
     recon.handleRequest(new CloudWatchEvent<>(), null);
@@ -98,5 +98,6 @@ public class SchedulingSystemTest {
     assertThat(request.cluster(), equalTo(CLUSTER_ARN));
     assertThat(request.containerInstances(), hasItem(INSTANCE_ARN));
     assertThat(request.taskDefinition(), equalTo(TASKDEF_ARN));
+    assertThat(request.group(), equalTo(ENVIRONMENT_ID));
   }
 }

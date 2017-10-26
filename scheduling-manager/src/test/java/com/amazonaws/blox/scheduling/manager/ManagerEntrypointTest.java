@@ -63,8 +63,8 @@ public class ManagerEntrypointTest extends LambdaHandlerTestCase {
           .thenReturn(
               new ClusterSnapshot(
                   "arn:aws:ecs:us-east-1:1234:cluster/default",
-                  Collections.emptyMap(),
-                  Collections.emptyMap()))
+                  Collections.emptyList(),
+                  Collections.emptyList()))
           .getMock();
     }
 

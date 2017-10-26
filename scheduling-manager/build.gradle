@@ -49,11 +49,19 @@ dependencies {
     )
 
     testCompile(
+            'software.amazon.awssdk:cloudformation',
+
             'org.springframework:spring-test',
-            'org.mockito:mockito-core:2.+',
+            'org.mockito:mockito-core:2.8+',
             'org.hamcrest:hamcrest-junit:2.+',
             'junit:junit:4.12'
     )
+}
+
+test {
+    useJUnit {
+        excludeCategories 'com.amazonaws.blox.testcategories.IntegrationTest'
+    }
 }
 
 task buildZip(type: Zip) {

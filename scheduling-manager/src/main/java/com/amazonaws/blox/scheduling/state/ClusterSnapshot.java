@@ -14,26 +14,49 @@
  */
 package com.amazonaws.blox.scheduling.state;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
 
 @Data
 public class ClusterSnapshot {
   private final String clusterArn;
-  private final Map<String, Task> tasks;
-  private final Map<String, ContainerInstance> instances;
+  private final List<Task> tasks;
+  private final List<ContainerInstance> instances;
 
   @Value
+  @Builder
   public static class Task {
     private final String arn;
     private final String containerInstanceArn;
     private final String taskDefinitionArn;
     private final String status;
+    private final String group;
+    private final String startedBy;
+
+    public static Task from(software.amazon.awssdk.services.ecs.model.Task t) {
+      return builder()
+          .arn(t.taskArn())
+          .containerInstanceArn(t.containerInstanceArn())
+          .taskDefinitionArn(t.taskDefinitionArn())
+          .status(t.desiredStatus())
+          .group(t.group())
+          .startedBy(t.startedBy())
+          .build();
+    }
   }
 
   @Value
+  @Builder
   public static class ContainerInstance {
     private final String arn;
+
+    public static ContainerInstance from(
+        software.amazon.awssdk.services.ecs.model.ContainerInstance i) {
+      return builder().arn(i.containerInstanceArn()).build();
+    }
   }
 }

@@ -56,7 +56,7 @@ public class SchedulerHandlerTest {
   @Test
   public void invokesSchedulerCoreForDeploymentMethod() {
     ClusterSnapshot snapshot =
-        new ClusterSnapshot(CLUSTER_ARN, Collections.emptyMap(), Collections.emptyMap());
+        new ClusterSnapshot(CLUSTER_ARN, Collections.emptyList(), Collections.emptyList());
 
     SchedulingAction succesfulAction = e -> CompletableFuture.completedFuture(true);
     SchedulingAction failedAction = e -> CompletableFuture.completedFuture(false);

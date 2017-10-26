@@ -19,14 +19,18 @@ import com.amazonaws.blox.lambda.AwsSdkV2LambdaFunction;
 import com.amazonaws.blox.scheduling.SchedulingApplication;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerInput;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerOutput;
-import com.amazonaws.blox.scheduling.state.ECSStateClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
 @Configuration
-@ComponentScan("com.amazonaws.blox.scheduling.manager")
+@ComponentScan({
+  "com.amazonaws.blox.scheduling.manager",
+  "com.amazonaws.blox.scheduling.state",
+})
 public class ManagerApplication extends SchedulingApplication {
 
   // Wired in through environment variable in CloudFormation template
@@ -34,13 +38,9 @@ public class ManagerApplication extends SchedulingApplication {
   String schedulerFunctionName;
 
   @Bean
-  public LambdaFunction<SchedulerInput, SchedulerOutput> scheduler() {
+  public LambdaFunction<SchedulerInput, SchedulerOutput> scheduler(
+      LambdaAsyncClient lambda, ObjectMapper mapper) {
     return new AwsSdkV2LambdaFunction<>(
-        lambdaClient(), mapper(), SchedulerOutput.class, schedulerFunctionName);
-  }
-
-  @Bean
-  public ECSStateClient ecsState() {
-    return new ECSStateClient();
+        lambda, mapper, SchedulerOutput.class, schedulerFunctionName);
   }
 }

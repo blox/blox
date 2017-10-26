@@ -18,24 +18,48 @@ import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot.ContainerInstance;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
 
 /**
  * Temporary scheduler implementation that just starts a single task on the first instance in the
  * snapshot.
+ *
+ * <p>TODO Remove this, it's only a demo scheduler
  */
 public class SingleTaskScheduler implements Scheduler {
 
   @Override
   public List<SchedulingAction> schedule(
       ClusterSnapshot snapshot, EnvironmentDescription environment) {
-    // Only run a Task on the first ContainerInstance in the snapshot:
-    for (Entry<String, ContainerInstance> entry : snapshot.getInstances().entrySet()) {
+    // Naively only run a Task on the first ContainerInstance in the snapshot:
+    ContainerInstance instance =
+        snapshot
+            .getInstances()
+            .stream()
+            .sorted(Comparator.comparing(ContainerInstance::getArn))
+            .findFirst()
+            .get();
+
+    boolean hasTaskAlready =
+        snapshot
+            .getTasks()
+            .stream()
+            .anyMatch(
+                task ->
+                    task.getContainerInstanceArn().equals(instance.getArn())
+                        && task.getGroup().equals(environment.getEnvironmentId()));
+
+    if (!hasTaskAlready) {
       return Arrays.asList(
-          new StartTask(
-              snapshot.getClusterArn(), entry.getKey(), environment.getTaskDefinitionArn()));
+          StartTask.builder()
+              .clusterArn(snapshot.getClusterArn())
+              .taskDefinitionArn(environment.getTaskDefinitionArn())
+              .group(environment.getEnvironmentId())
+              .containerInstanceArn(instance.getArn())
+              .build());
+    } else {
+      return Collections.emptyList();
     }
-    return Collections.emptyList();
   }
 }

@@ -14,19 +14,26 @@
  */
 package com.amazonaws.blox.scheduling.state;
 
-import java.util.Collections;
-import lombok.SneakyThrows;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+import software.amazon.awssdk.services.ecs.ECSAsyncClient;
 
-/**
- * Temporary fake implementation of ECS State client that just takes time and returns an empty
- * cluster.
- */
+@Component
+@Profile("!test")
+@RequiredArgsConstructor
 public class ECSStateClient implements ECSState {
+  private final ECSAsyncClient ecs;
 
   @Override
-  @SneakyThrows
   public ClusterSnapshot snapshotState(String clusterArn) {
-    Thread.sleep(5000); // this will take a while
-    return new ClusterSnapshot(clusterArn, Collections.emptyMap(), Collections.emptyMap());
+    CompletableFuture<List<ClusterSnapshot.Task>> tasks =
+        new TaskLister(ecs, clusterArn).describe();
+    CompletableFuture<List<ClusterSnapshot.ContainerInstance>> instances =
+        new ContainerInstanceLister(ecs, clusterArn).describe();
+
+    return new ClusterSnapshot(clusterArn, tasks.join(), instances.join());
   }
 }

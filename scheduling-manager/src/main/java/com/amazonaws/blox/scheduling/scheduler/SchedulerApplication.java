@@ -23,14 +23,4 @@ import software.amazon.awssdk.services.ecs.ECSAsyncClient;
 
 @Configuration
 @ComponentScan("com.amazonaws.blox.scheduling.scheduler")
-public class SchedulerApplication extends SchedulingApplication {
-  @Bean
-  public ECSAsyncClient ecs() {
-    return ECSAsyncClient.builder().build();
-  }
-
-  @Bean
-  public SchedulerFactory schedulerFactory() {
-    return new SchedulerFactory();
-  }
-}
+public class SchedulerApplication extends SchedulingApplication {}

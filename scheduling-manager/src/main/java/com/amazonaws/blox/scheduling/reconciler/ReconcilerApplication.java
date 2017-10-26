@@ -19,10 +19,12 @@ import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.SchedulingApplication;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;
 import com.amazonaws.blox.scheduling.manager.ManagerOutput;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
 @Configuration
 @ComponentScan("com.amazonaws.blox.scheduling.reconciler")
@@ -33,8 +35,8 @@ public class ReconcilerApplication extends SchedulingApplication {
   String managerFunctionName;
 
   @Bean
-  public LambdaFunction<ManagerInput, ManagerOutput> manager() {
-    return new AwsSdkV2LambdaFunction<>(
-        lambdaClient(), mapper(), ManagerOutput.class, managerFunctionName);
+  public LambdaFunction<ManagerInput, ManagerOutput> manager(
+      LambdaAsyncClient lambda, ObjectMapper mapper) {
+    return new AwsSdkV2LambdaFunction<>(lambda, mapper, ManagerOutput.class, managerFunctionName);
   }
 }

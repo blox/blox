@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import software.amazon.awssdk.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.services.ecs.ECSAsyncClient;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
 /** Common beans required by all Scheduling lambda functions. */
@@ -53,6 +54,12 @@ public abstract class SchedulingApplication {
             .build();
 
     return LambdaAsyncClient.builder().overrideConfiguration(configuration).build();
+  }
+
+  @Bean
+  @Profile("!test")
+  public ECSAsyncClient ecs() {
+    return ECSAsyncClient.builder().build();
   }
 
   @Bean

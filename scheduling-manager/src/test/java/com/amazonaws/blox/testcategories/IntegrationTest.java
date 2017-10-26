@@ -12,20 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.scheduling.scheduler.engine;
+package com.amazonaws.blox.testcategories;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
-import org.springframework.stereotype.Component;
-
-@Component
-public class SchedulerFactory {
-
-  public Scheduler schedulerFor(EnvironmentType type) {
-    switch (type) {
-      case SingleTask:
-        return new SingleTaskScheduler();
-      default:
-        throw new RuntimeException("Deployment method not supported");
-    }
-  }
-}
+/** JUnit category for integration tests */
+public interface IntegrationTest {}
