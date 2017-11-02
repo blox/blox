@@ -86,9 +86,9 @@ Next, in order to deploy your personal stack:
 
 - configure the AWS Credential Profile shown in the `showStackOutput` task with
   the AWS credentials for the user you created above:
-  
+
     ```
-    aws configure --profile <username>-blox-alpha-us-west-2
+    aws configure --profile blox-<username>-alpha-us-west-2
     ```
 
 - create an S3 bucket where all resources (code, cloudformation templates, etc) to be deployed will be stored:
