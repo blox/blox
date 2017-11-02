@@ -40,6 +40,8 @@ compileJava {
 
 dependencies {
     compile project(":data-service-model")
+    compile project(":lambda-spring")
+    compile project(":json-rpc-lambda-server")
 
     compile(
             'com.amazonaws:aws-java-sdk-dynamodb',
@@ -102,4 +104,36 @@ task integTests(type: Test, dependsOn: build) {
 
 test {
     exclude '**/*IntegTest'
+}
+
+task packageLambda(type: Zip, dependsOn: classes) {
+    group "build"
+    description "Create a Lambda deployment package with this package's code and all required libraries"
+
+    from compileJava
+    from processResources
+
+    into('lib') {
+        from configurations.runtime
+    }
+}
+
+task deploy {
+    inputs.file packageLambda
+
+    doLast {
+        exec {
+            commandLine aws("cloudformation", "package",
+                    "--template-file", "templates/data_service.yml",
+                    "--output-template-file", "templates/data_service.output.yml",
+                    "--s3-bucket", stack.s3Bucket)
+        }
+
+        exec {
+            commandLine aws("cloudformation", "deploy",
+                    "--template-file", "templates/data_service.output.yml",
+                    "--stack-name", "data-service",
+                    "--capabilities", "CAPABILITY_IAM")
+        }
+    }
 }

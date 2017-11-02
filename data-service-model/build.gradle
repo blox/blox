@@ -7,5 +7,8 @@ repositories {
 }
 
 dependencies {
+    // Needed for serialization of JDK8's Instant data type
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:+'
+
     compileOnly 'org.projectlombok:lombok:1.16.18'
 }

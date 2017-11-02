@@ -19,11 +19,9 @@ import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-@Log4j2
 public abstract class SpringLambdaHandler<APP> implements RequestStreamHandler {
 
   private final ApplicationContext applicationContext;

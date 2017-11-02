@@ -1,0 +1,15 @@
+group 'com.amazonaws.blox'
+version '0.1-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "com.github.briandilley.jsonrpc4j:jsonrpc4j:+"
+    compile 'com.amazonaws:aws-lambda-java-core:1.+'
+}

@@ -7,5 +7,5 @@
 **/build/
 **/out/
 /frontend-client/gradle*
-**/templates/output.yml
+**/templates/*.output.yml
 **/logs/

@@ -15,6 +15,8 @@
 package com.amazonaws.blox.scheduling;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.serialization.DataServiceMapperFactory;
+import com.amazonaws.blox.jsonrpc.JsonRpcLambdaClient;
 import com.amazonaws.blox.lambda.JacksonRequestStreamHandler;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -30,19 +32,23 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 public abstract class SchedulingApplication {
 
   static {
-    // HACK: Disable IPv6 for the current JVM, since the Netty `epoll` driver fails in a Lambda function if IPv6 is enabled.
+    // HACK: Disable IPv6 for the current JVM, since the Netty `epoll` driver fails in a Lambda
+    // function if IPv6 is enabled.
     // Remove after https://github.com/aws/aws-sdk-java-v2/issues/193 is fixed.
     System.setProperty("java.net.preferIPv4Stack", "true");
-  }
-
-  @Bean
-  public <IN, OUT> RequestStreamHandler streamHandler(RequestHandler<IN, OUT> innerHandler) {
-    return new JacksonRequestStreamHandler<>(mapper(), innerHandler);
   }
 
   /** The X-Ray Trace ID provided by the Lambda runtime environment. */
   @Value("${_X_AMZN_TRACE_ID}")
   public String traceId;
+
+  @Value("${data_service_function_name}")
+  public String dataServiceFunctionName;
+
+  @Bean
+  public <IN, OUT> RequestStreamHandler streamHandler(RequestHandler<IN, OUT> innerHandler) {
+    return new JacksonRequestStreamHandler<>(mapper(), innerHandler);
+  }
 
   @Bean
   @Profile("!test")
@@ -68,7 +74,10 @@ public abstract class SchedulingApplication {
   }
 
   @Bean
-  public DataService dataService() {
-    return FakeDataService.builder().build();
+  @Profile("!test")
+  public DataService dataService(LambdaAsyncClient lambda) {
+    return new JsonRpcLambdaClient(
+            DataServiceMapperFactory.newMapper(), lambda, dataServiceFunctionName)
+        .newProxy(DataService.class);
   }
 }

@@ -14,7 +14,9 @@
  */
 package com.amazonaws.blox.dataservice;
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.serialization.DataServiceMapperFactory;
+import com.amazonaws.blox.jsonrpc.JsonRpcLambdaHandler;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
@@ -26,12 +28,10 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan("com.amazonaws.blox.dataservice")
 public class Application {
 
-  //TODO: remove profile
-  private static final String CREDENTIALS_PROFILE_NAME = "daemon_prototype";
-
   @Bean
-  public ProfileCredentialsProvider profileCredentialsProvider() {
-    return new ProfileCredentialsProvider(CREDENTIALS_PROFILE_NAME);
+  public JsonRpcLambdaHandler<DataService> serviceHandler(DataService service) {
+    return new JsonRpcLambdaHandler<>(
+        DataServiceMapperFactory.newMapper(), DataService.class, service);
   }
 
   @Bean
@@ -41,6 +41,6 @@ public class Application {
 
   @Bean
   public AmazonDynamoDB dynamoDBClient() {
-    return AmazonDynamoDBClient.builder().withCredentials(profileCredentialsProvider()).build();
+    return AmazonDynamoDBClient.builder().build();
   }
 }

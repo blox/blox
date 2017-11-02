@@ -11,9 +11,13 @@ Resources:
       MemorySize: 512
       Tracing: PassThrough
       Policies:
+        - AWSLambdaFullAccess # For calling DataService
         - AWSXrayWriteOnlyAccess
         # TODO: Temporary, we should be relying on assumeRole to get access to ECS.
         - AmazonEC2ContainerServiceFullAccess
+      Environment:
+        Variables:
+          data_service_function_name: !ImportValue DataServiceHandler
   Manager:
     Type: AWS::Serverless::Function
     Properties:
@@ -25,11 +29,13 @@ Resources:
       Tracing: PassThrough
       Policies:
         - AWSLambdaFullAccess
+        - AWSXrayWriteOnlyAccess
         # TODO: Temporary, we should be relying on assumeRole to get access to ECS.
         - AmazonEC2ContainerServiceFullAccess
       Environment:
         Variables:
           scheduler_function_name: !Ref Scheduler
+          data_service_function_name: !ImportValue DataServiceHandler
 
   Reconciler:
     Type: AWS::Serverless::Function
@@ -42,9 +48,11 @@ Resources:
       Tracing: Active
       Policies:
         - AWSLambdaFullAccess
+        - AWSXrayWriteOnlyAccess
       Environment:
         Variables:
           manager_function_name: !Ref Manager
+          data_service_function_name: !ImportValue DataServiceHandler
 
   ReconcilerTrigger:
     Type: AWS::Events::Rule

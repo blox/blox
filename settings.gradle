@@ -11,3 +11,7 @@ include 'data-service'
 include 'end-to-end-tests'
 include 'scheduling-manager'
 include 'scheduling-manager-workflows'
+include 'json-rpc-lambda-server'
+include 'json-rpc-lambda-client'
+include 'lambda-spring'
+
