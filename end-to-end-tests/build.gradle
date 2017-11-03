@@ -10,20 +10,52 @@ repositories {
 }
 
 dependencies {
-    testCompile "log4j:log4j:+"
-    testCompile project(":frontend-service-client")
+    compile project(":frontend-service-client")
+    compile project(":data-service-model")
+    compile project(":json-rpc-lambda-client")
+
+    compile "log4j:log4j:+"
+    compile "software.amazon.awssdk:ecs:2.0.0-preview-4"
+    compile "software.amazon.awssdk:dynamodb:2.0.0-preview-4"
+    compile "software.amazon.awssdk:cloudformation:2.0.0-preview-4"
+    compile "org.projectlombok:lombok:1.16.18"
+
+    testCompile "org.assertj:assertj-core:3.8.0"
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
 test { onlyIf { false } }
 
-task testEndToEnd(type: Test) {
+task deploy {
+    description "Deploy a simple ECS cluster that can be used for integration testing"
+    doLast {
+        exec {
+            commandLine aws("cloudformation", "package",
+                    "--template-file", "templates/test_cluster.yml",
+                    "--output-template-file", "templates/test_cluster.output.yml",
+                    "--s3-bucket", stack.s3Bucket)
+        }
+
+        exec {
+            commandLine aws("cloudformation", "deploy",
+                    "--template-file", "templates/test_cluster.output.yml",
+                    "--stack-name", "blox-test-cluster",
+                    "--capabilities", "CAPABILITY_IAM")
+        }
+    }
+}
+
+task testEndToEnd(type: Test, dependsOn: rootProject.task("deploy")) {
     group "verification"
     description "Run end to end integration tests"
 
     def deployTask = tasks.getByPath(":frontend-infrastructure:deploy")
-
     dependsOn deployTask
+    dependsOn << ":deploy"
+    dependsOn << ":data-service:deploy"
+    dependsOn << ":scheduling-manager:deploy"
+
     systemProperty 'blox.tests.awsProfile', stack.profile.toString()
     systemProperty 'blox.tests.apiUrl', deployTask.project.stackOutputs.apiUrl
 }
+

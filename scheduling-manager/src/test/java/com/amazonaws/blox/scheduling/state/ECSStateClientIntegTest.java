@@ -35,7 +35,7 @@ import software.amazon.awssdk.services.ecs.ECSAsyncClient;
 @Category(IntegrationTest.class)
 public class ECSStateClientIntegTest {
 
-  private static final String STACK_NAME = "blox-integ-tests";
+  private static final String STACK_NAME = "blox-test-cluster";
   public static String cluster;
   public static int expectedInstances = 0;
   public static int expectedTasks = 0;
