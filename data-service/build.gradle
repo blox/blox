@@ -1,5 +1,20 @@
+buildscript {
+    repositories {
+        maven {
+            url "http://repo.bodar.com"
+        }
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.commercehub:gradle-cucumber-jvm-plugin:0.8"
+    }
+}
+
 plugins {
     id "java"
+    id 'com.commercehub.cucumber-jvm' version '0.7'
     id 'net.ltgt.apt' version '0.11'
     id "io.spring.dependency-management" version "1.0.3.RELEASE"
 }
@@ -38,6 +53,37 @@ compileJava {
     ]
 }
 
+sourceSets {
+    integTest {
+        java.srcDir file('src/integTest/java')
+        resources.srcDir file('src/integTest/resources')
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+task integTests(type: Test, dependsOn: build) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = 'Runs the integration tests.'
+
+    maxHeapSize = '1024m'
+
+    testClassesDirs = sourceSets.integTest.output.classesDirs
+}
+
+test {
+    exclude '**/*IntegTest'
+}
+
+addCucumberSuite 'cucumberTest'
+
+cucumber {
+    maxParallelForks = 3
+}
+
+cucumberTest {
+    tags = ["~@ignore"]
+}
+
 dependencies {
     compile project(":data-service-model")
     compile project(":lambda-spring")
@@ -70,41 +116,30 @@ dependencies {
             'org.springframework:spring-test'
     )
 
+    integTestCompile(
+            sourceSets.main.output,
+            sourceSets.test.output,
+            configurations.compile,
+            configurations.testCompile
+    )
+
+    integTestRuntime(
+            configurations.runtime,
+            configurations.testRuntime
+    )
+
+    cucumberTestCompile(
+            'info.cukes:cucumber-java8:1.2.5',
+            'info.cukes:cucumber-spring:1.2.5',
+            // To use JUnit assertions in the step definitions:
+            'junit:junit:4.12',
+            'org.springframework:spring-test'
+    )
+
     apt 'org.mapstruct:mapstruct-processor'
     apt 'org.projectlombok:lombok:1.16.18'
 }
 
-sourceSets {
-    integTest {
-        java.srcDir file('src/integTest/java')
-        resources.srcDir file('src/integTest/resources')
-        runtimeClasspath += main.output + test.output
-    }
-}
-
-dependencies {
-    integTestCompile sourceSets.main.output
-    integTestCompile sourceSets.test.output
-
-    integTestCompile configurations.compile
-    integTestCompile configurations.testCompile
-
-    integTestRuntime configurations.runtime
-    integTestRuntime configurations.testRuntime
-}
-
-task integTests(type: Test, dependsOn: build) {
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    description = 'Runs the integration tests.'
-
-    maxHeapSize = '1024m'
-
-    testClassesDirs = sourceSets.integTest.output.classesDirs
-}
-
-test {
-    exclude '**/*IntegTest'
-}
 
 task packageLambda(type: Zip, dependsOn: classes) {
     group "build"
