@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.integ;
+package steps.helpers;
 
 import java.util.Collections;
 import java.util.Map;
@@ -30,7 +30,6 @@ import software.amazon.awssdk.services.cloudformation.model.Stack;
 /**
  * Read-only CloudFormation wrapper to easily retrieve stack outputs from all stacks in an account.
  */
-//TODO: remove duplicate when end-to-end tests are moved to cucumber
 @RequiredArgsConstructor
 public class CloudFormationStacks {
   private final CloudFormationClient cloudformation;
@@ -59,7 +58,7 @@ public class CloudFormationStacks {
   }
 
   @Value
-  static class CfnStack {
+  public static class CfnStack {
     private final String name;
     private final Map<String, String> parameters;
     private final Map<String, String> outputs;

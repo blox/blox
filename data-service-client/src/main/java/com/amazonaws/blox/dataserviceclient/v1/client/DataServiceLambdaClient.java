@@ -15,76 +15,19 @@
 package com.amazonaws.blox.dataserviceclient.v1.client;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionOutdatedException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.serialization.DataServiceMapperFactory;
+import com.amazonaws.blox.jsonrpc.JsonRpcLambdaClient;
+import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
-/**
- * AWS Lambda client for the DataService. The DataService requests are implemented by invoking a
- * Lambda function.
- */
-public class DataServiceLambdaClient implements DataService {
+/** AWS DataService Lambda client using JSONRPC for routing. */
+public class DataServiceLambdaClient {
 
-  @Override
-  public CreateEnvironmentResponse createEnvironment(CreateEnvironmentRequest request)
-      throws EnvironmentExistsException, InvalidParameterException, ServiceException {
-    throw new UnsupportedOperationException();
-  }
+  public static DataService dataService(
+      final LambdaAsyncClient lambdaAsyncClient, final String dataServiceLambdaFunctionName) {
 
-  @Override
-  public CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevision(
-      CreateTargetEnvironmentRevisionRequest request)
-      throws EnvironmentExistsException, EnvironmentNotFoundException, InvalidParameterException,
-          ServiceException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public DescribeEnvironmentResponse describeEnvironment(DescribeEnvironmentRequest request)
-      throws EnvironmentNotFoundException, InvalidParameterException, ServiceException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevision(
-      DescribeTargetEnvironmentRevisionRequest request)
-      throws EnvironmentVersionNotFoundException, InvalidParameterException, ServiceException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request)
-      throws InvalidParameterException, ServiceException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public ListClustersResponse listClusters(ListClustersRequest request)
-      throws InvalidParameterException, ServiceException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public StartDeploymentResponse startDeployment(StartDeploymentRequest request)
-      throws EnvironmentNotFoundException, EnvironmentVersionNotFoundException,
-          EnvironmentVersionOutdatedException, InvalidParameterException, ServiceException {
-    throw new UnsupportedOperationException();
+    //JsonRpcLambdaClient requires a lambda async client
+    return new JsonRpcLambdaClient(
+            DataServiceMapperFactory.newMapper(), lambdaAsyncClient, dataServiceLambdaFunctionName)
+        .newProxy(DataService.class);
   }
 }

@@ -12,14 +12,19 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package cucumber.steps;
+package steps.dataservice;
 
+import configuration.CucumberConfiguration;
 import cucumber.api.java8.En;
 import org.apache.commons.lang3.NotImplementedException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import steps.wrappers.DataServiceWrapper;
 
-@ContextConfiguration(classes = cucumber.CucumberConfiguration.class)
+@ContextConfiguration(classes = CucumberConfiguration.class)
 public class CreateEnvironmentSteps implements En {
+
+  @Autowired private DataServiceWrapper dataServiceWrapper;
 
   public CreateEnvironmentSteps() {
     When(

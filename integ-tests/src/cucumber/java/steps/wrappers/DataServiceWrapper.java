@@ -12,14 +12,15 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package cucumber;
+package steps.wrappers;
 
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import lombok.RequiredArgsConstructor;
 
-@Configuration
-@ComponentScan("cucumber.steps")
-public class CucumberConfiguration {
+@RequiredArgsConstructor
+public class DataServiceWrapper {
 
-  //TODO: add dataservice wrapper, exception context etc
+  private final DataService dataService;
+
+  //TODO: implement data service methods used in tests
 }

@@ -1,6 +1,8 @@
-description 'Blox DataService Client'
+plugins {
+    id 'java'
+}
 
-apply plugin: 'java'
+description 'Blox DataService Client'
 
 repositories {
     mavenCentral()
@@ -9,5 +11,8 @@ repositories {
 dependencies {
     compileOnly 'org.projectlombok:lombok:1.16.18'
 
-    compile project(":data-service-model")
+    compile(
+            project(":data-service-model"),
+            project(":json-rpc-lambda-client"),
+    )
 }

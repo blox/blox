@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id "com.github.samueltbrown.cucumber" version "0.9"
+    id "io.spring.dependency-management" version "1.0.3.RELEASE"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'software.amazon.awssdk:bom:2.0.0-preview-4'
+    }
+    dependencies {
+        dependencySet(group: 'org.springframework', version: '4.3.10.RELEASE') {
+            entry 'spring-core'
+            entry 'spring-beans'
+            entry 'spring-context'
+            entry 'spring-test'
+        }
+        dependencySet(group: 'org.slf4j', version: '1.7.+') {
+            entry 'slf4j-api'
+            entry 'jcl-over-slf4j'
+        }
+    }
+}
+
+
+repositories {
+    mavenCentral()
+}
+
+cucumber {
+    tags = ["~@ignore"]
+}
+
+dependencies {
+    compile project(":data-service-client")
+
+    cucumberCompile(
+        'info.cukes:cucumber-java8:1.2.5',
+        'info.cukes:cucumber-spring:1.2.5',
+        // To use JUnit assertions in the step definitions:
+        'junit:junit:4.12',
+
+        'org.apache.commons:commons-lang3:3.6',
+        'org.projectlombok:lombok:1.16.18',
+
+        'org.springframework:spring-beans',
+        'org.springframework:spring-context',
+        'org.springframework:spring-test',
+        'software.amazon.awssdk:cloudformation:2.0.0-preview-4'
+    )
+}
+
