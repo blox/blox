@@ -5,12 +5,6 @@ import io.swagger.models.Info
 import com.amazonaws.blox.swagger.ApiGatewayExtensionsFilter
 import com.amazonaws.blox.swagger.SwaggerFilter
 
-description "Lambda-backed API Gateway API for the Blox Frontend Service"
-
-apply plugin: 'java'
-
-sourceCompatibility = 1.8
-
 buildscript {
     repositories {
         mavenCentral()
@@ -21,9 +15,13 @@ buildscript {
     }
 }
 
-repositories {
-    mavenCentral()
+plugins {
+  id 'java'
 }
+
+description "Lambda-backed API Gateway API for the Blox Frontend Service"
+
+sourceCompatibility = 1.8
 
 dependencies {
     // basic Lambda handler support
@@ -36,7 +34,7 @@ dependencies {
     // extra swagger annotations for defining API properties in code
     compile "io.swagger:swagger-annotations:${swaggerVersion}"
 
-    compileOnly 'org.projectlombok:lombok:1.16.18'
+    compileOnly 'org.projectlombok:lombok'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }

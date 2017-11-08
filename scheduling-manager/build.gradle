@@ -1,28 +1,10 @@
 plugins {
     id "java"
-    id "io.spring.dependency-management" version "1.0.3.RELEASE"
+    id "io.spring.dependency-management"
 }
+
 
 description "Scheduling lifecycle and deployment logic"
-
-repositories {
-    mavenCentral()
-}
-
-dependencyManagement {
-    imports {
-        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.180'
-        mavenBom 'software.amazon.awssdk:bom:2.0.0-preview-4'
-    }
-    dependencies {
-        dependencySet(group: 'org.springframework', version: '4.3.10.RELEASE') {
-            entry 'spring-core'
-            entry 'spring-beans'
-            entry 'spring-context'
-            entry 'spring-test'
-        }
-    }
-}
 
 dependencies {
     compile(
@@ -36,7 +18,7 @@ dependencies {
 
             'org.apache.commons:commons-lang3:3.6+',
 
-            'org.projectlombok:lombok:1.16.18',
+            'org.projectlombok:lombok',
 
             'org.apache.logging.log4j:log4j-slf4j-impl:2.8.+',
             'org.slf4j:slf4j-api:1.7.+',
@@ -54,7 +36,7 @@ dependencies {
             'software.amazon.awssdk:cloudformation',
 
             'org.springframework:spring-test',
-            'org.mockito:mockito-core:2.8+',
+            'org.mockito:mockito-core',
             'org.hamcrest:hamcrest-junit:2.+',
             'junit:junit:4.12'
     )

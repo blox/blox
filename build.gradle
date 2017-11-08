@@ -1,17 +1,58 @@
 import groovy.json.JsonSlurper
 import groovy.transform.Canonical
 
+plugins {
+    id "io.spring.dependency-management" version "1.0.3.RELEASE" apply false
+
+    id 'com.diffplug.gradle.spotless' version '2.4.1' apply false
+    id 'net.ltgt.apt' version '0.13' apply false
+    id 'com.commercehub.cucumber-jvm' version '0.12' apply false
+}
+
 group 'com.amazonaws.blox'
 version '0.1-SNAPSHOT'
 description "Blox: Open Source schedulers for Amazon ECS"
 
-buildscript {
-    repositories {
-        maven { url 'https://plugins.gradle.org/m2/' }
-    }
+allprojects {
+    apply plugin: 'com.diffplug.gradle.spotless'
 
-    dependencies {
-        classpath 'com.diffplug.gradle.spotless:spotless:2.4.1'
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencyManagement {
+        imports {
+            mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.215'
+
+            mavenBom 'software.amazon.awssdk:bom:2.0.0-preview-4'
+        }
+        dependencies {
+            // The software.amazon.awssdk:bom incorrectly exports an old
+            // version of Mockito, so we have to override it to the version we
+            // want here:
+            dependency 'org.mockito:mockito-core:2.10+'
+
+            dependencySet(group: 'org.springframework', version: '4.3.10.RELEASE') {
+                entry 'spring-core'
+                entry 'spring-beans'
+                entry 'spring-context'
+                entry 'spring-test'
+            }
+            dependencySet(group: 'org.slf4j', version: '1.7.+') {
+                entry 'slf4j-api'
+                entry 'jcl-over-slf4j'
+            }
+            dependencySet(group: 'org.mapstruct', version: '1.2.0.CR2') {
+                entry 'mapstruct-jdk8'
+                entry 'mapstruct-processor'
+            }
+
+            dependency 'org.projectlombok:lombok:1.16.18'
+        }
     }
 }
 
@@ -19,11 +60,6 @@ def unformattedProjects = [
         'frontend-infrastructure',
         'frontend-service-client'
 ]
-
-allprojects {
-    apply plugin: 'com.diffplug.gradle.spotless'
-}
-
 configure(subprojects.findAll { !unformattedProjects.contains(it.name) }) {
     spotless {
         java {
@@ -34,7 +70,7 @@ configure(subprojects.findAll { !unformattedProjects.contains(it.name) }) {
 }
 
 wrapper {
-    gradleVersion = '4.0.2'
+    gradleVersion = '4.3'
 
     // The 'all' distribution includes files that allow IntelliJ to provide
     // additional context information in build.gradle files:

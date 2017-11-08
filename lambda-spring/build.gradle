@@ -1,13 +1,11 @@
+plugins {
+    id "java"
+}
+
 group 'com.amazonaws.blox'
 version '0.1-SNAPSHOT'
 
-apply plugin: 'java'
-
 sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     // TODO: Move dependencyManagement blocks to root project so we can

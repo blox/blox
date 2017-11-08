@@ -1,36 +1,9 @@
 plugins {
     id "java"
-    id 'net.ltgt.apt' version '0.11'
-    id "io.spring.dependency-management" version "1.0.3.RELEASE"
+    id 'net.ltgt.apt'
 }
 
 description "Implementation of the Blox DataService"
-
-repositories {
-    mavenCentral()
-}
-
-dependencyManagement {
-    imports {
-        mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.215'
-    }
-    dependencies {
-        dependencySet(group: 'org.springframework', version: '4.3.10.RELEASE') {
-            entry 'spring-core'
-            entry 'spring-beans'
-            entry 'spring-context'
-            entry 'spring-test'
-        }
-        dependencySet(group: 'org.slf4j', version: '1.7.+') {
-            entry 'slf4j-api'
-            entry 'jcl-over-slf4j'
-        }
-        dependencySet(group: 'org.mapstruct', version: '1.2.0.CR2') {
-            entry 'mapstruct-jdk8'
-            entry 'mapstruct-processor'
-        }
-    }
-}
 
 compileJava {
     options.compilerArgs = [
@@ -71,7 +44,7 @@ dependencies {
             'org.apache.logging.log4j:log4j-slf4j-impl:2.8.+',
             'org.apache.commons:commons-lang3:3.6',
 
-            'org.projectlombok:lombok:1.16.18',
+            'org.projectlombok:lombok',
 
             'org.mapstruct:mapstruct-jdk8',
 
@@ -85,7 +58,7 @@ dependencies {
     testCompile(
             'junit:junit:4.12',
             'org.hamcrest:hamcrest-junit:2.+',
-            'org.mockito:mockito-core:2.10.+',
+            'org.mockito:mockito-core',
             'org.slf4j:slf4j-api',
             'org.slf4j:jcl-over-slf4j',
             'org.springframework:spring-test'
@@ -104,7 +77,7 @@ dependencies {
     )
 
     apt 'org.mapstruct:mapstruct-processor'
-    apt 'org.projectlombok:lombok:1.16.18'
+    apt 'org.projectlombok:lombok'
 }
 
 

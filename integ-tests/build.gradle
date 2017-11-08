@@ -1,31 +1,13 @@
 plugins {
     id 'java'
-    id "com.github.samueltbrown.cucumber" version "0.9"
-    id "io.spring.dependency-management" version "1.0.3.RELEASE"
+    id "com.commercehub.cucumber-jvm"
 }
-
-dependencyManagement {
-    imports {
-        mavenBom 'software.amazon.awssdk:bom:2.0.0-preview-4'
-    }
-    dependencies {
-        dependencySet(group: 'org.springframework', version: '4.3.10.RELEASE') {
-            entry 'spring-core'
-            entry 'spring-beans'
-            entry 'spring-context'
-            entry 'spring-test'
-        }
-        dependencySet(group: 'org.slf4j', version: '1.7.+') {
-            entry 'slf4j-api'
-            entry 'jcl-over-slf4j'
-        }
-    }
-}
-
 
 repositories {
     mavenCentral()
 }
+
+addCucumberSuite 'cucumber'
 
 cucumber {
     tags = ["~@ignore"]

@@ -1,15 +1,11 @@
 plugins {
-    id 'java'
+    id "java"
 }
 
 description 'Blox DataService Client'
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    compileOnly 'org.projectlombok:lombok:1.16.18'
+    compileOnly 'org.projectlombok:lombok'
 
     compile(
             project(":data-service-model"),

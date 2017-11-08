@@ -1,17 +1,13 @@
-description 'Blox DataService Client'
-
-apply plugin: 'java'
-
-repositories {
-    mavenCentral()
+plugins {
+    id "java"
 }
+
+description 'Blox DataService Client'
 
 dependencies {
     compile "com.github.briandilley.jsonrpc4j:jsonrpc4j:+"
 
-    // TODO: Move dependencyManagement block to the root project so that
-    // we don't have to depend on a specific SDK version here:
-    compile "software.amazon.awssdk:lambda:+"
+    compile "software.amazon.awssdk:lambda"
 
-    compileOnly "org.projectlombok:lombok:1.16.18"
+    compileOnly "org.projectlombok:lombok"
 }

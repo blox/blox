@@ -1,6 +1,8 @@
-description "Custom build logic for building Blox"
+plugins {
+    id "java"
+}
 
-apply plugin: 'java'
+description "Custom build logic for building Blox"
 
 sourceCompatibility = 1.8
 
@@ -20,6 +22,9 @@ dependencies {
         exclude group: 'com.github.jknack', module: 'handlebars'
     }
 
+    // Since the `buildSrc` project must be configured and built before the
+    // main project, we can't rely on the dependencyManagement declared in the
+    // main build.gradle: specify all dependency versions explicitly.
     compileOnly 'org.projectlombok:lombok:1.16.18'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
