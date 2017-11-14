@@ -15,6 +15,7 @@
 package com.amazonaws.blox.scheduling;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentActiveException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
@@ -30,6 +31,8 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRe
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
@@ -84,6 +87,13 @@ public class FakeDataService implements DataService {
   @Override
   public ListClustersResponse listClusters(ListClustersRequest request) {
     return new ListClustersResponse(Collections.singletonList(clusterArn));
+  }
+
+  @Override
+  public DeleteEnvironmentResponse deleteEnvironment(DeleteEnvironmentRequest request)
+      throws EnvironmentNotFoundException, EnvironmentActiveException, InvalidParameterException,
+          ServiceException {
+    throw new UnsupportedOperationException();
   }
 
   @Override

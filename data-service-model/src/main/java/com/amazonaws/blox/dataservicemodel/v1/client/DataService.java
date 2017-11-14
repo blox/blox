@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.client;
 
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentActiveException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
@@ -24,6 +25,8 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRe
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
@@ -63,6 +66,11 @@ public interface DataService {
   /** Lists all clusters the have environments running on them. */
   ListClustersResponse listClusters(ListClustersRequest request)
       throws InvalidParameterException, ServiceException;
+
+  /** Deletes the provided environment if inactive or if forceDelete is true */
+  DeleteEnvironmentResponse deleteEnvironment(DeleteEnvironmentRequest request)
+      throws EnvironmentNotFoundException, EnvironmentActiveException, InvalidParameterException,
+          ServiceException;
 
   /** Creates a deployment record which asynchronously starts a deployment. */
   StartDeploymentResponse startDeployment(StartDeploymentRequest request)
