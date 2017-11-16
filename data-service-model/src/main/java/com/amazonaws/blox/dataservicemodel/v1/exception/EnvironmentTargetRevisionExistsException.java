@@ -14,9 +14,9 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.exception;
 
-public class EnvironmentVersionOutdatedException extends Exception {
+public class EnvironmentTargetRevisionExistsException extends Exception {
 
-  public EnvironmentVersionOutdatedException(String message) {
+  public EnvironmentTargetRevisionExistsException(String message) {
     super(message);
   }
 }

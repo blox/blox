@@ -29,6 +29,7 @@ import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
@@ -201,12 +202,12 @@ public class DataServiceApiTest {
     dataService.createTargetEnvironmentRevision(createTargetEnvironmentRevisionRequest);
   }
 
-  @Test(expected = EnvironmentExistsException.class)
+  @Test(expected = EnvironmentTargetRevisionExistsException.class)
   public void createTargetEnvironmentRevisionEnvironmentExistsException() throws Exception {
     when(environmentHandler.createEnvironmentTargetVersion(
             createTargetEnvironmentRevisionRequest.getEnvironmentId(),
             createTargetEnvironmentRevisionRequest.getEnvironmentVersion()))
-        .thenThrow(new EnvironmentExistsException(""));
+        .thenThrow(new EnvironmentTargetRevisionExistsException(""));
     dataService.createTargetEnvironmentRevision(createTargetEnvironmentRevisionRequest);
   }
 

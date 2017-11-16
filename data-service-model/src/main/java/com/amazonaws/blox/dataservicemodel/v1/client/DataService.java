@@ -17,8 +17,8 @@ package com.amazonaws.blox.dataservicemodel.v1.client;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentActiveException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionOutdatedException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
@@ -44,20 +44,21 @@ public interface DataService {
   CreateEnvironmentResponse createEnvironment(CreateEnvironmentRequest request)
       throws EnvironmentExistsException, InvalidParameterException, ServiceException;
 
-  /** Creates an environment version record. */
+  /** Creates an environment target revision record. */
   CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevision(
       CreateTargetEnvironmentRevisionRequest request)
-      throws EnvironmentExistsException, EnvironmentNotFoundException, InvalidParameterException,
-          ServiceException;
+      throws EnvironmentTargetRevisionExistsException, EnvironmentNotFoundException,
+          InvalidParameterException, ServiceException;
 
   /** Returns the environment record. */
   DescribeEnvironmentResponse describeEnvironment(DescribeEnvironmentRequest request)
       throws EnvironmentNotFoundException, InvalidParameterException, ServiceException;
 
-  /** Returns the environment target version record. */
+  /** Returns the environment target revision record. */
   DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevision(
       DescribeTargetEnvironmentRevisionRequest request)
-      throws EnvironmentVersionNotFoundException, InvalidParameterException, ServiceException;
+      throws EnvironmentTargetRevisionNotFoundException, InvalidParameterException,
+          ServiceException;
 
   /** Lists all environments with a filter. */
   ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request)
@@ -74,6 +75,6 @@ public interface DataService {
 
   /** Creates a deployment record which asynchronously starts a deployment. */
   StartDeploymentResponse startDeployment(StartDeploymentRequest request)
-      throws EnvironmentNotFoundException, EnvironmentVersionNotFoundException,
-          EnvironmentVersionOutdatedException, InvalidParameterException, ServiceException;
+      throws EnvironmentNotFoundException, EnvironmentTargetRevisionNotFoundException,
+          EnvironmentTargetRevisionExistsException, InvalidParameterException, ServiceException;
 }

@@ -30,7 +30,8 @@ import com.amazonaws.blox.dataservice.model.InstanceGroup;
 import com.amazonaws.blox.dataservice.repository.EnvironmentRepository;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -135,7 +136,8 @@ public class EnvironmentHandlerTest {
 
   @Test(expected = NullPointerException.class)
   public void createEnvironmentTargetVersionNullEnvironmentVersion()
-      throws EnvironmentNotFoundException, EnvironmentExistsException, ServiceException {
+      throws EnvironmentNotFoundException, EnvironmentTargetRevisionExistsException,
+          EnvironmentExistsException, ServiceException {
     environmentHandler.createEnvironmentTargetVersion(ENVIRONMENT_ID, null);
   }
 
@@ -179,7 +181,7 @@ public class EnvironmentHandlerTest {
     environmentHandler.describeEnvironmentTargetVersion(ENVIRONMENT_ID);
   }
 
-  @Test(expected = EnvironmentVersionNotFoundException.class)
+  @Test(expected = EnvironmentTargetRevisionNotFoundException.class)
   public void describeEnvironmentTargetVersionGetEnvironmentTargetVersionNull() throws Exception {
     when(environmentRepository.getEnvironmentTargetVersion(ENVIRONMENT_ID)).thenReturn(null);
     environmentHandler.describeEnvironmentTargetVersion(ENVIRONMENT_ID);

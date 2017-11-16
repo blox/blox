@@ -22,7 +22,8 @@ import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservice.repository.EnvironmentRepository;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import java.time.Instant;
 import java.util.List;
@@ -59,7 +60,8 @@ public class EnvironmentHandler {
 
   public EnvironmentVersion createEnvironmentTargetVersion(
       @NonNull final String environmentId, @NonNull final String environmentVersion)
-      throws EnvironmentNotFoundException, EnvironmentExistsException, ServiceException {
+      throws EnvironmentNotFoundException, EnvironmentTargetRevisionExistsException,
+          ServiceException {
 
     try {
       final Environment environment =
@@ -88,13 +90,13 @@ public class EnvironmentHandler {
   }
 
   public EnvironmentVersion describeEnvironmentTargetVersion(@NonNull final String environmentId)
-      throws EnvironmentVersionNotFoundException, ServiceException {
+      throws EnvironmentTargetRevisionNotFoundException, ServiceException {
     try {
       final EnvironmentVersion environmentVersion =
           environmentRepository.getEnvironmentTargetVersion(environmentId);
 
       if (environmentVersion == null) {
-        throw new EnvironmentVersionNotFoundException(
+        throw new EnvironmentTargetRevisionNotFoundException(
             String.format("Could not find environment with id %s", environmentId));
       }
 

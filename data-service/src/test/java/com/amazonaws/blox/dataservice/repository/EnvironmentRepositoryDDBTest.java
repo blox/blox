@@ -37,6 +37,7 @@ import com.amazonaws.blox.dataservice.model.InstanceGroup;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentTargetVersionDDBRecord;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
@@ -254,7 +255,7 @@ public class EnvironmentRepositoryDDBTest {
     environmentRepositoryDDB.createEnvironmentTargetVersion(null);
   }
 
-  @Test(expected = EnvironmentExistsException.class)
+  @Test(expected = EnvironmentTargetRevisionExistsException.class)
   public void createEnvironmentTargetVersionEnvironmentExistsException() throws Exception {
     doThrow(new ConditionalCheckFailedException(""))
         .when(dynamoDBMapper)

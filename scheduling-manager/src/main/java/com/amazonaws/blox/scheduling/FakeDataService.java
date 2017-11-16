@@ -18,8 +18,8 @@ import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentActiveException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionOutdatedException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
@@ -67,15 +67,15 @@ public class FakeDataService implements DataService {
   @Override
   public CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevision(
       CreateTargetEnvironmentRevisionRequest request)
-      throws EnvironmentExistsException, EnvironmentNotFoundException, InvalidParameterException,
-          ServiceException {
+      throws EnvironmentTargetRevisionExistsException, EnvironmentNotFoundException,
+          InvalidParameterException, ServiceException {
     return null;
   }
 
   @Override
   public StartDeploymentResponse startDeployment(StartDeploymentRequest request)
-      throws EnvironmentNotFoundException, EnvironmentVersionNotFoundException,
-          EnvironmentVersionOutdatedException, InvalidParameterException, ServiceException {
+      throws EnvironmentNotFoundException, EnvironmentTargetRevisionNotFoundException,
+          EnvironmentTargetRevisionExistsException, InvalidParameterException, ServiceException {
     return null;
   }
 

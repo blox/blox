@@ -18,6 +18,7 @@ import com.amazonaws.blox.dataservice.exception.StorageException;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
 import java.util.List;
 
 /** Methods for interacting with environment and target environment objects in the repository. */
@@ -30,7 +31,7 @@ public interface EnvironmentRepository {
       throws StorageException;
 
   EnvironmentVersion createEnvironmentTargetVersion(EnvironmentVersion environmentVersion)
-      throws StorageException, EnvironmentExistsException;
+      throws StorageException, EnvironmentTargetRevisionExistsException;
 
   EnvironmentVersion getEnvironmentTargetVersion(String environmentId) throws StorageException;
 

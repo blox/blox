@@ -14,9 +14,9 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.exception;
 
-public class EnvironmentVersionNotFoundException extends Exception {
+public class EnvironmentTargetRevisionNotFoundException extends Exception {
 
-  public EnvironmentVersionNotFoundException(String message) {
+  public EnvironmentTargetRevisionNotFoundException(String message) {
     super(message);
   }
 }

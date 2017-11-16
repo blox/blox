@@ -23,7 +23,8 @@ import com.amazonaws.blox.dataservice.Application;
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
@@ -101,7 +102,8 @@ public class EnvironmentIntegTest {
   @Test
   public void createAndDescribeEnvironmentTargetVersion()
       throws InvalidParameterException, ServiceException, EnvironmentExistsException,
-          EnvironmentVersionNotFoundException, EnvironmentNotFoundException {
+          EnvironmentTargetRevisionNotFoundException, EnvironmentTargetRevisionExistsException,
+          EnvironmentNotFoundException {
 
     CreateEnvironmentResponse createEnvironmentResponse = createEnvironment();
     CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevisionResponse =
@@ -130,8 +132,9 @@ public class EnvironmentIntegTest {
 
   @Test
   public void listAllClusters()
-      throws ServiceException, EnvironmentExistsException, EnvironmentVersionNotFoundException,
-          EnvironmentNotFoundException, InvalidParameterException {
+      throws ServiceException, EnvironmentExistsException,
+          EnvironmentTargetRevisionNotFoundException, EnvironmentNotFoundException,
+          EnvironmentTargetRevisionExistsException, InvalidParameterException {
 
     CreateEnvironmentResponse createEnvironmentResponse = createEnvironment();
     dataService.createTargetEnvironmentRevision(
@@ -172,7 +175,8 @@ public class EnvironmentIntegTest {
   @Test
   public void listEnvironmentsWithCluster()
       throws ServiceException, EnvironmentExistsException, EnvironmentNotFoundException,
-          EnvironmentVersionNotFoundException, InvalidParameterException {
+          EnvironmentTargetRevisionNotFoundException, EnvironmentTargetRevisionExistsException,
+          InvalidParameterException {
 
     List<String> environmentIds =
         dataService

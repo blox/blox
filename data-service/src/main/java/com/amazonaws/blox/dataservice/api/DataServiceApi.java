@@ -23,8 +23,8 @@ import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentActiveException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentVersionOutdatedException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
@@ -83,8 +83,8 @@ public class DataServiceApi implements DataService {
   @Override
   public CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevision(
       @NonNull final CreateTargetEnvironmentRevisionRequest request)
-      throws EnvironmentExistsException, EnvironmentNotFoundException, InvalidParameterException,
-          ServiceException {
+      throws EnvironmentTargetRevisionExistsException, EnvironmentNotFoundException,
+          InvalidParameterException, ServiceException {
 
     //TODO: validate parameters and throw InvalidParameterException
 
@@ -95,7 +95,9 @@ public class DataServiceApi implements DataService {
 
       return apiModelMapper.toCreateTargetEnvironmentRevisionResponse(environmentVersion);
 
-    } catch (final EnvironmentNotFoundException | EnvironmentExistsException | ServiceException e) {
+    } catch (final EnvironmentNotFoundException
+        | EnvironmentTargetRevisionExistsException
+        | ServiceException e) {
       log.error(e.getMessage(), e);
       throw e;
     }
@@ -122,7 +124,8 @@ public class DataServiceApi implements DataService {
   @Override
   public DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevision(
       DescribeTargetEnvironmentRevisionRequest request)
-      throws EnvironmentVersionNotFoundException, InvalidParameterException, ServiceException {
+      throws EnvironmentTargetRevisionNotFoundException, InvalidParameterException,
+          ServiceException {
     //TODO: validate parameters and throw InvalidParameterException
 
     try {
@@ -130,7 +133,7 @@ public class DataServiceApi implements DataService {
           environmentHandler.describeEnvironmentTargetVersion(request.getEnvironmentId());
       return apiModelMapper.toDescribeTargetEnvironmentRevisionResponse(environmentVersion);
 
-    } catch (final EnvironmentVersionNotFoundException | ServiceException e) {
+    } catch (final EnvironmentTargetRevisionNotFoundException | ServiceException e) {
       log.error(e.getMessage(), e);
       throw e;
     }
@@ -176,8 +179,8 @@ public class DataServiceApi implements DataService {
 
   @Override
   public StartDeploymentResponse startDeployment(StartDeploymentRequest request)
-      throws EnvironmentNotFoundException, EnvironmentVersionNotFoundException,
-          EnvironmentVersionOutdatedException, InvalidParameterException, ServiceException {
+      throws EnvironmentNotFoundException, EnvironmentTargetRevisionNotFoundException,
+          EnvironmentTargetRevisionExistsException, InvalidParameterException, ServiceException {
     //TODO: validate parameters and throw InvalidParameterException
     throw new UnsupportedOperationException();
   }

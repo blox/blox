@@ -22,6 +22,7 @@ import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentTargetVersionDDBRecord;
 import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
@@ -86,7 +87,7 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
   @Override
   public EnvironmentVersion createEnvironmentTargetVersion(
       @NonNull final EnvironmentVersion environmentVersion)
-      throws StorageException, EnvironmentExistsException {
+      throws StorageException, EnvironmentTargetRevisionExistsException {
 
     final EnvironmentTargetVersionDDBRecord environmentTargetVersionDDBRecord =
         environmentMapper.toEnvironmentTargetVersionDDBRecord(environmentVersion);
@@ -94,7 +95,7 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
     try {
       dynamoDBMapper.save(environmentTargetVersionDDBRecord);
     } catch (final ConditionalCheckFailedException e) {
-      throw new EnvironmentExistsException(
+      throw new EnvironmentTargetRevisionExistsException(
           String.format(
               "Environment with id %s and version %s already exists",
               environmentVersion.getEnvironmentId(), environmentVersion.getEnvironmentVersion()));
