@@ -1,6 +1,7 @@
 plugins {
     id "java"
     id 'net.ltgt.apt'
+    id 'blox-deploy'
 }
 
 description "Implementation of the Blox DataService"
@@ -93,22 +94,19 @@ task packageLambda(type: Zip, dependsOn: classes) {
     }
 }
 
-task deploy {
-    inputs.file packageLambda
+deployment {
+    aws {
+        profile stack.profile.toString()
+        region stack.region.toString()
+    }
 
-    doLast {
-        exec {
-            commandLine aws("cloudformation", "package",
-                    "--template-file", "templates/data_service.yml",
-                    "--output-template-file", "templates/data_service.output.yml",
-                    "--s3-bucket", stack.s3Bucket)
-        }
+    stackName "data-service"
+    s3Bucket stack.s3Bucket.toString()
 
-        exec {
-            commandLine aws("cloudformation", "deploy",
-                    "--template-file", "templates/data_service.output.yml",
-                    "--stack-name", "data-service",
-                    "--capabilities", "CAPABILITY_IAM")
-        }
+    templateFile file("templates/data_service.yml")
+
+    lambdaFunctions {
+        DataServiceHandler { zipFile = packageLambda }
     }
 }
+

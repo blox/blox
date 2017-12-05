@@ -6,7 +6,7 @@ Resources:
     Properties:
       Handler: com.amazonaws.blox.scheduling.scheduler.SchedulerEntrypoint
       Runtime: java8
-      CodeUri: ../build/distributions/scheduling-manager.zip
+      CodeUri: null
       Timeout: 60
       MemorySize: 512
       Tracing: PassThrough
@@ -17,13 +17,14 @@ Resources:
         - AmazonEC2ContainerServiceFullAccess
       Environment:
         Variables:
-          data_service_function_name: !ImportValue DataServiceHandler
+          data_service_function_name:
+            Fn::ImportValue: DataServiceHandler
   Manager:
     Type: AWS::Serverless::Function
     Properties:
       Handler: com.amazonaws.blox.scheduling.manager.ManagerEntrypoint
       Runtime: java8
-      CodeUri: ../build/distributions/scheduling-manager.zip
+      CodeUri: null
       Timeout: 60
       MemorySize: 512
       Tracing: PassThrough
@@ -34,15 +35,17 @@ Resources:
         - AmazonEC2ContainerServiceFullAccess
       Environment:
         Variables:
-          scheduler_function_name: !Ref Scheduler
-          data_service_function_name: !ImportValue DataServiceHandler
+          scheduler_function_name:
+            Ref: Scheduler
+          data_service_function_name:
+            Fn::ImportValue: DataServiceHandler
 
   Reconciler:
     Type: AWS::Serverless::Function
     Properties:
       Handler: com.amazonaws.blox.scheduling.reconciler.ReconcilerEntrypoint
       Runtime: java8
-      CodeUri: ../build/distributions/scheduling-manager.zip
+      CodeUri: null
       Timeout: 60
       MemorySize: 512
       Tracing: Active
@@ -51,8 +54,10 @@ Resources:
         - AWSXrayWriteOnlyAccess
       Environment:
         Variables:
-          manager_function_name: !Ref Manager
-          data_service_function_name: !ImportValue DataServiceHandler
+          manager_function_name:
+            Ref: Manager
+          data_service_function_name:
+            Fn::ImportValue: DataServiceHandler
 
   ReconcilerTrigger:
     Type: AWS::Events::Rule
@@ -60,14 +65,16 @@ Resources:
       Description: Periodic trigger for Scheduler Reconciliation
       ScheduleExpression: "rate(1 minute)"
       Targets:
-        - Id: !Ref Reconciler
+        - Id:
+            Ref: Reconciler
           Arn:
             Fn::GetAtt: [Reconciler, Arn]
 
   ReconcilerPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref Reconciler
+      FunctionName:
+        Ref: Reconciler
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn:

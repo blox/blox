@@ -1,6 +1,7 @@
 plugins {
     id "java"
     id "io.spring.dependency-management"
+    id "blox-deploy"
 }
 
 
@@ -56,22 +57,23 @@ task packageLambda(type: Zip) {
     }
 }
 
-task deploy {
-    inputs.file packageLambda
-
-    doLast {
-        exec {
-            commandLine aws("cloudformation", "package",
-                    "--template-file", "templates/scheduling_manager.yml",
-                    "--output-template-file", "templates/scheduling_manager.output.yml",
-                    "--s3-bucket", stack.s3Bucket)
-        }
-
-        exec {
-            commandLine aws("cloudformation", "deploy",
-                    "--template-file", "templates/scheduling_manager.output.yml",
-                    "--stack-name", "scheduling-manager",
-                    "--capabilities", "CAPABILITY_IAM")
-        }
+deployment {
+    aws {
+        profile stack.profile.toString()
+        region stack.region.toString()
     }
+
+    stackName "scheduling-manager"
+    s3Bucket stack.s3Bucket.toString()
+
+    templateFile file("templates/scheduling_manager.yml")
+    lambdaFunctions {
+        Reconciler { zipFile = packageLambda }
+        Manager { zipFile = packageLambda }
+        Scheduler { zipFile = packageLambda }
+    }
+}
+
+afterEvaluate {
+    it.tasks.deploy.mustRunAfter(":data-service:deploy")
 }

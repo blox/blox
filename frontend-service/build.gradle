@@ -1,9 +1,8 @@
+import com.amazonaws.blox.swagger.ApiGatewayExtensionsFilter
 import com.amazonaws.blox.swagger.ApiGatewaySecurityFilter
+import com.amazonaws.blox.swagger.SwaggerFilter
 import com.amazonaws.blox.tasks.GenerateSwaggerModel
 import io.swagger.models.Info
-
-import com.amazonaws.blox.swagger.ApiGatewayExtensionsFilter
-import com.amazonaws.blox.swagger.SwaggerFilter
 
 buildscript {
     repositories {
@@ -16,7 +15,8 @@ buildscript {
 }
 
 plugins {
-  id 'java'
+    id 'java'
+    id 'blox-deploy'
 }
 
 description "Lambda-backed API Gateway API for the Blox Frontend Service"
@@ -69,5 +69,40 @@ task packageLambda(type: Zip, dependsOn: classes) {
 
     into('lib') {
         from configurations.runtime
+    }
+}
+
+deployment {
+    aws {
+        profile stack.profile.toString()
+        region stack.region.toString()
+    }
+
+    stackName stack.cfnStack.toString()
+    s3Bucket stack.s3Bucket.toString()
+
+    templateFile file("cloudformation/template.yml")
+
+    parameters["Stage"] = stack.stage.toString()
+
+    apis {
+        FrontendApi {
+            swaggerFile = swagger
+        }
+    }
+
+    lambdaFunctions {
+        FrontendHandler {
+            zipFile = packageLambda
+        }
+    }
+}
+
+task showDeployedApi() {
+    group "help"
+    description "Show details about the currently deployed stack"
+
+    doLast {
+        println "API URL: ${deployment.outputs["ApiUrl"] ?: "Not Deployed"}"
     }
 }

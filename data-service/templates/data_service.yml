@@ -54,7 +54,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: java8
-      CodeUri: ../build/distributions/data-service.zip
+      CodeUri: null
       Handler: com.amazonaws.blox.dataservice.LambdaHandler
       MemorySize: 512
       Timeout: 30
@@ -64,6 +64,7 @@ Resources:
 Outputs:
   DataService:
     Description: Name of Data service handler function
-    Value: !Ref DataServiceHandler
+    Value:
+      Ref: DataServiceHandler
     Export:
       Name: DataServiceHandler

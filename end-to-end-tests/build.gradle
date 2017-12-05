@@ -1,5 +1,6 @@
 plugins {
     id "java"
+    id "blox-deploy"
 }
 
 group 'com.amazonaws.blox'
@@ -24,36 +25,30 @@ dependencies {
 
 test { onlyIf { false } }
 
-task deploy {
-    description "Deploy a simple ECS cluster that can be used for integration testing"
-    doLast {
-        exec {
-            commandLine aws("cloudformation", "package",
-                    "--template-file", "templates/test_cluster.yml",
-                    "--output-template-file", "templates/test_cluster.output.yml",
-                    "--s3-bucket", stack.s3Bucket)
-        }
-
-        exec {
-            commandLine aws("cloudformation", "deploy",
-                    "--template-file", "templates/test_cluster.output.yml",
-                    "--stack-name", "blox-test-cluster",
-                    "--capabilities", "CAPABILITY_IAM")
-        }
+deployment {
+    aws {
+        profile stack.profile.toString()
+        region stack.region.toString()
     }
+
+    stackName "blox-test-cluster"
+    s3Bucket stack.s3Bucket.toString()
+
+    templateFile file("templates/test_cluster.yml")
 }
 
-task testEndToEnd(type: Test, dependsOn: rootProject.task("deploy")) {
+task testEndToEnd(type: Test) {
     group "verification"
     description "Run end to end integration tests"
 
-    def deployTask = tasks.getByPath(":frontend-infrastructure:deploy")
-    dependsOn deployTask
-    dependsOn << ":deploy"
-    dependsOn << ":data-service:deploy"
-    dependsOn << ":scheduling-manager:deploy"
+    dependsOn ":end-to-end-tests:deploy"
+    dependsOn ":frontend-service:deploy"
+    dependsOn ":data-service:deploy"
+    dependsOn ":scheduling-manager:deploy"
 
-    systemProperty 'blox.tests.awsProfile', stack.profile.toString()
-    systemProperty 'blox.tests.apiUrl', deployTask.project.stackOutputs.apiUrl
+    doFirst {
+        systemProperty 'blox.tests.awsProfile', stack.profile.toString()
+        systemProperty 'blox.tests.apiUrl', findProject(":frontend-service").deployment.outputs["ApiUrl"]
+    }
 }
 

@@ -57,7 +57,6 @@ subprojects {
 }
 
 def unformattedProjects = [
-        'frontend-infrastructure',
         'frontend-service-client'
 ]
 configure(subprojects.findAll { !unformattedProjects.contains(it.name) }) {
@@ -165,15 +164,13 @@ task downloadClient() {
     group "codegen"
     description "Download a new version of the SDK for the currently deployed stack."
 
-    def deployTask = tasks.getByPath(":frontend-infrastructure:deploy")
+    def deployTask = tasks.getByPath(":frontend-service:deploy")
 
     inputs.file deployTask
     outputs.file sdkZip
 
     doLast {
         sdkZip.parentFile.mkdirs()
-
-        def stackOutputs = new JsonSlurper().parse(deployTask.outputs.files.singleFile)
 
         def parameters = [
                 "service.name=Blox",
@@ -186,7 +183,7 @@ task downloadClient() {
 
         exec {
             commandLine aws("apigateway", "get-sdk",
-                    "--rest-api-id", stackOutputs.ApiId,
+                    "--rest-api-id", project(":frontend-service").deployment.outputs["ApiId"],
                     "--stage-name", stack.stage,
                     "--sdk-type", "java",
                     "--parameters", parameters,
