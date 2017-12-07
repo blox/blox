@@ -12,15 +12,9 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.wrappers;
+package com.amazonaws.blox.dataservicemodel.v1.old.model;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import lombok.RequiredArgsConstructor;
+public class EnvironmentHealth {
 
-@RequiredArgsConstructor
-public class DataServiceWrapper {
-
-  private final DataService dataService;
-
-  //TODO: implement data service methods used in tests
+  public static final String HEALTHY = "Healthy";
 }

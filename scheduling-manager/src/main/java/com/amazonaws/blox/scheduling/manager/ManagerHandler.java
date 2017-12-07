@@ -14,9 +14,9 @@
  */
 package com.amazonaws.blox.scheduling.manager;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerInput;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerOutput;

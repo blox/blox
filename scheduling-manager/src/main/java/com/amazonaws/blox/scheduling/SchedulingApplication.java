@@ -14,8 +14,8 @@
  */
 package com.amazonaws.blox.scheduling;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.serialization.DataServiceMapperFactory;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.serialization.DataServiceMapperFactory;
 import com.amazonaws.blox.jsonrpc.JsonRpcLambdaClient;
 import com.amazonaws.blox.lambda.JacksonRequestStreamHandler;
 import com.amazonaws.services.lambda.runtime.RequestHandler;

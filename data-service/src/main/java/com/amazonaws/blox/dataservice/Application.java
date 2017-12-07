@@ -14,8 +14,8 @@
  */
 package com.amazonaws.blox.dataservice;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.serialization.DataServiceMapperFactory;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.serialization.DataServiceMapperFactory;
 import com.amazonaws.blox.jsonrpc.JsonRpcLambdaHandler;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;

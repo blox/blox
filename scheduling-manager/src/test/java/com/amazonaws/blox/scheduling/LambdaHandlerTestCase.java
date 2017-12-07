@@ -14,7 +14,7 @@
  */
 package com.amazonaws.blox.scheduling;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
 import com.amazonaws.blox.scheduling.LambdaHandlerTestCase.TestConfigOverrides;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.BufferedReader;

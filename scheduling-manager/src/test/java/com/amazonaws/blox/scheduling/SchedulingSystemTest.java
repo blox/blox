@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
 import com.amazonaws.blox.lambda.TestLambdaFunction;
 import com.amazonaws.blox.scheduling.manager.ManagerHandler;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;

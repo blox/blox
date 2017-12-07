@@ -14,7 +14,7 @@
  */
 package com.amazonaws.blox.integ;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
 import java.util.List;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDBClient;

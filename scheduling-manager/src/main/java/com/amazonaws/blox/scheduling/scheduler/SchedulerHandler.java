@@ -14,11 +14,11 @@
  */
 package com.amazonaws.blox.scheduling.scheduler;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
 import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription;
 import com.amazonaws.blox.scheduling.scheduler.engine.Scheduler;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;

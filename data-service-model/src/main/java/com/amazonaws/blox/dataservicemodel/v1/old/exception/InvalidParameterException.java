@@ -12,15 +12,11 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.wrappers;
+package com.amazonaws.blox.dataservicemodel.v1.old.exception;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import lombok.RequiredArgsConstructor;
+public class InvalidParameterException extends Exception {
 
-@RequiredArgsConstructor
-public class DataServiceWrapper {
-
-  private final DataService dataService;
-
-  //TODO: implement data service methods used in tests
+  public InvalidParameterException(String message) {
+    super(message);
+  }
 }

@@ -12,15 +12,10 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.wrappers;
+package com.amazonaws.blox.dataservicemodel.v1.old.model;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
-public class DataServiceWrapper {
-
-  private final DataService dataService;
-
-  //TODO: implement data service methods used in tests
+public enum EnvironmentType {
+  // TODO Temporary deployment type for steel thread, remove once Daemon is implemented:
+  SingleTask,
+  Daemon
 }

@@ -14,9 +14,9 @@
  */
 package com.amazonaws.blox.scheduling.reconciler;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;
 import com.amazonaws.blox.scheduling.manager.ManagerOutput;

@@ -18,8 +18,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.EnvironmentType;
 import com.amazonaws.blox.scheduling.FakeDataService;
 import com.amazonaws.blox.scheduling.scheduler.engine.Scheduler;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;

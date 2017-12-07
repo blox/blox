@@ -12,15 +12,20 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.wrappers;
+package com.amazonaws.blox.dataservicemodel.v1.old.serialization;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-@RequiredArgsConstructor
-public class DataServiceWrapper {
+public class DataServiceMapperFactory {
+  public static ObjectMapper newMapper() {
+    return configureMapper(new ObjectMapper());
+  }
 
-  private final DataService dataService;
-
-  //TODO: implement data service methods used in tests
+  public static ObjectMapper configureMapper(ObjectMapper mapper) {
+    return mapper
+        .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+        .registerModule(new JavaTimeModule());
+  }
 }

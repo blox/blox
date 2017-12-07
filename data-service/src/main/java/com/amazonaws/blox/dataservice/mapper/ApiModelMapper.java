@@ -16,15 +16,15 @@ package com.amazonaws.blox.dataservice.mapper;
 
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
-import com.amazonaws.blox.dataservicemodel.v1.model.Attribute;
-import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
-import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateTargetEnvironmentRevisionResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.Attribute;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.DeploymentConfiguration;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.EnvironmentType;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.InstanceGroup;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

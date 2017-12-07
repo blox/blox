@@ -12,15 +12,21 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.wrappers;
+package com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-@RequiredArgsConstructor
-public class DataServiceWrapper {
-
-  private final DataService dataService;
-
-  //TODO: implement data service methods used in tests
+@Data
+@Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
+public class ListClustersResponse {
+  @NonNull private List<String> clusters;
 }

@@ -12,20 +12,24 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.scheduling.scheduler.engine;
+package com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers;
 
+import com.amazonaws.blox.dataservicemodel.v1.old.model.DeploymentConfiguration;
 import com.amazonaws.blox.dataservicemodel.v1.old.model.EnvironmentType;
-import org.springframework.stereotype.Component;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.InstanceGroup;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
 
-@Component
-public class SchedulerFactory {
+@Value
+@Builder
+public class CreateEnvironmentRequest {
 
-  public Scheduler schedulerFor(EnvironmentType type) {
-    switch (type) {
-      case SingleTask:
-        return new SingleTaskScheduler();
-      default:
-        throw new RuntimeException("Deployment method not supported");
-    }
-  }
+  @NonNull private String environmentName;
+  @NonNull private String accountId;
+  @NonNull private String taskDefinition;
+  @NonNull private String role;
+  @NonNull private InstanceGroup instanceGroup;
+  @NonNull private EnvironmentType environmentType;
+  private DeploymentConfiguration deploymentConfiguration;
 }

@@ -20,9 +20,9 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerInput;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerOutput;

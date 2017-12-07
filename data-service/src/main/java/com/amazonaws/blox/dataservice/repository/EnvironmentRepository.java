@@ -17,8 +17,8 @@ package com.amazonaws.blox.dataservice.repository;
 import com.amazonaws.blox.dataservice.exception.StorageException;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentVersion;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentExistsException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.EnvironmentTargetRevisionExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentTargetRevisionExistsException;
 import java.util.List;
 
 /** Methods for interacting with environment and target environment objects in the repository. */

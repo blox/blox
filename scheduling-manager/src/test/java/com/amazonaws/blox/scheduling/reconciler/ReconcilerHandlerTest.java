@@ -19,8 +19,8 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;
 import com.amazonaws.blox.scheduling.manager.ManagerOutput;

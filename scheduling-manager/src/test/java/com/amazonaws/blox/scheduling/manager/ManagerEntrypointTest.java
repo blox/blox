@@ -20,8 +20,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.lambda.TestLambdaFunction;
 import com.amazonaws.blox.scheduling.LambdaHandlerTestCase;
