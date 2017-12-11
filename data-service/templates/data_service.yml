@@ -55,7 +55,7 @@ Resources:
     Properties:
       Runtime: java8
       CodeUri: null
-      Handler: com.amazonaws.blox.dataservice.LambdaHandler
+      Handler: com.amazonaws.blox.dataservice.old.LambdaHandler
       MemorySize: 512
       Timeout: 30
       Policies:
