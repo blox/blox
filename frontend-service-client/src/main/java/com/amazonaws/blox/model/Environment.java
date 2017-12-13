@@ -10,37 +10,93 @@ import com.amazonaws.protocol.ProtocolMarshaller;
 
 /**
  * 
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/joufu8ief9-v2017-07-11/Environment" target="_top">AWS API
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/Environment" target="_top">AWS API
  *      Documentation</a>
  */
 @Generated("com.amazonaws:aws-java-sdk-code-generator")
 public class Environment implements Serializable, Cloneable, StructuredPojo {
 
-    private String name;
+    private String cluster;
+
+    private String environmentName;
+
+    private String targetRevisionId;
 
     /**
-     * @param name
+     * @param cluster
      */
 
-    public void setName(String name) {
-        this.name = name;
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
     }
 
     /**
      * @return
      */
 
-    public String getName() {
-        return this.name;
+    public String getCluster() {
+        return this.cluster;
     }
 
     /**
-     * @param name
+     * @param cluster
      * @return Returns a reference to this object so that method calls can be chained together.
      */
 
-    public Environment name(String name) {
-        setName(name);
+    public Environment cluster(String cluster) {
+        setCluster(cluster);
+        return this;
+    }
+
+    /**
+     * @param environmentName
+     */
+
+    public void setEnvironmentName(String environmentName) {
+        this.environmentName = environmentName;
+    }
+
+    /**
+     * @return
+     */
+
+    public String getEnvironmentName() {
+        return this.environmentName;
+    }
+
+    /**
+     * @param environmentName
+     * @return Returns a reference to this object so that method calls can be chained together.
+     */
+
+    public Environment environmentName(String environmentName) {
+        setEnvironmentName(environmentName);
+        return this;
+    }
+
+    /**
+     * @param targetRevisionId
+     */
+
+    public void setTargetRevisionId(String targetRevisionId) {
+        this.targetRevisionId = targetRevisionId;
+    }
+
+    /**
+     * @return
+     */
+
+    public String getTargetRevisionId() {
+        return this.targetRevisionId;
+    }
+
+    /**
+     * @param targetRevisionId
+     * @return Returns a reference to this object so that method calls can be chained together.
+     */
+
+    public Environment targetRevisionId(String targetRevisionId) {
+        setTargetRevisionId(targetRevisionId);
         return this;
     }
 
@@ -55,8 +111,12 @@ public class Environment implements Serializable, Cloneable, StructuredPojo {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        if (getName() != null)
-            sb.append("Name: ").append(getName());
+        if (getCluster() != null)
+            sb.append("Cluster: ").append(getCluster()).append(",");
+        if (getEnvironmentName() != null)
+            sb.append("EnvironmentName: ").append(getEnvironmentName()).append(",");
+        if (getTargetRevisionId() != null)
+            sb.append("TargetRevisionId: ").append(getTargetRevisionId());
         sb.append("}");
         return sb.toString();
     }
@@ -71,9 +131,17 @@ public class Environment implements Serializable, Cloneable, StructuredPojo {
         if (obj instanceof Environment == false)
             return false;
         Environment other = (Environment) obj;
-        if (other.getName() == null ^ this.getName() == null)
+        if (other.getCluster() == null ^ this.getCluster() == null)
             return false;
-        if (other.getName() != null && other.getName().equals(this.getName()) == false)
+        if (other.getCluster() != null && other.getCluster().equals(this.getCluster()) == false)
+            return false;
+        if (other.getEnvironmentName() == null ^ this.getEnvironmentName() == null)
+            return false;
+        if (other.getEnvironmentName() != null && other.getEnvironmentName().equals(this.getEnvironmentName()) == false)
+            return false;
+        if (other.getTargetRevisionId() == null ^ this.getTargetRevisionId() == null)
+            return false;
+        if (other.getTargetRevisionId() != null && other.getTargetRevisionId().equals(this.getTargetRevisionId()) == false)
             return false;
         return true;
     }
@@ -83,7 +151,9 @@ public class Environment implements Serializable, Cloneable, StructuredPojo {
         final int prime = 31;
         int hashCode = 1;
 
-        hashCode = prime * hashCode + ((getName() == null) ? 0 : getName().hashCode());
+        hashCode = prime * hashCode + ((getCluster() == null) ? 0 : getCluster().hashCode());
+        hashCode = prime * hashCode + ((getEnvironmentName() == null) ? 0 : getEnvironmentName().hashCode());
+        hashCode = prime * hashCode + ((getTargetRevisionId() == null) ? 0 : getTargetRevisionId().hashCode());
         return hashCode;
     }
 

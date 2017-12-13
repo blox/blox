@@ -24,7 +24,7 @@ import javax.annotation.Generated;
 @Generated("com.amazonaws:aws-java-sdk-code-generator")
 public final class BloxClientBuilder extends SdkSyncClientBuilder<BloxClientBuilder, Blox> {
 
-    private static final URI DEFAULT_ENDPOINT = RuntimeHttpUtils.toUri("joufu8ief9.execute-api.us-west-2.amazonaws.com", Protocol.HTTPS);
+    private static final URI DEFAULT_ENDPOINT = RuntimeHttpUtils.toUri("ecs-blox.execute-api.us-west-2.amazonaws.com", Protocol.HTTPS);
     private static final String DEFAULT_REGION = "us-west-2";
 
     /**

@@ -145,6 +145,8 @@ Service exceptions and client exceptions can be handled separately. Any exceptio
 ```java
 try {
     client.describeEnvironment(...);
+} catch(NotFoundException e) {
+    // This is a modeled exception defined in the API
 } catch(BloxException e) {
    // All service exceptions will extend from BloxException.
    // Any unknown or unmodeled service exceptions will be represented as a BloxException.
@@ -200,7 +202,7 @@ The easiest way to create a custom retry policy is to use the RetryPolicyBuilder
  */
 Blox client = Blox.builder()
         .retryPolicy(RetryPolicyBuilder.standard()
-                             .retryOnExceptions(SocketTimeoutException.class)
+                             .retryOnExceptions(NotFoundException.class, SocketTimeoutException.class)
                              .retryOnStatusCodes(429, 500)
                              .maxNumberOfRetries(10)
                              .fixedBackoff(100)

@@ -14,9 +14,14 @@
  */
 package com.amazonaws.blox.frontend.models;
 
+import lombok.Builder;
 import lombok.Value;
 
 @Value
+@Builder
 public final class Environment {
-  private final String name;
+  private final String environmentName;
+  private final String environmentType;
+  private final String cluster;
+  private final String targetRevisionId;
 }

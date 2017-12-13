@@ -34,6 +34,8 @@ dependencies {
     // extra swagger annotations for defining API properties in code
     compile "io.swagger:swagger-annotations:${swaggerVersion}"
 
+    compile project(":data-service-client")
+
     compileOnly 'org.projectlombok:lombok'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
@@ -45,7 +47,17 @@ task swagger(type: GenerateSwaggerModel, dependsOn: classes) {
 
     scanClasspath = project.sourceSets.main.runtimeClasspath
 
-    apiClasses.add 'com.amazonaws.blox.frontend.controllers.EnvironmentController'
+    // TODO: Specify API classes by package rather than name
+    apiClasses += [
+            'com.amazonaws.blox.frontend.operations.CreateEnvironment',
+            'com.amazonaws.blox.frontend.operations.DescribeEnvironment',
+            'com.amazonaws.blox.frontend.operations.DescribeEnvironmentDeployment',
+            'com.amazonaws.blox.frontend.operations.DescribeEnvironmentRevision',
+            'com.amazonaws.blox.frontend.operations.ListEnvironmentDeployments',
+            'com.amazonaws.blox.frontend.operations.ListEnvironmentRevisions',
+            'com.amazonaws.blox.frontend.operations.ListEnvironments',
+            'com.amazonaws.blox.frontend.operations.StartDeployment',
+    ]
 
     swaggerFile file("api/swagger.yml")
 
@@ -83,7 +95,7 @@ deployment {
 
     templateFile file("cloudformation/template.yml")
 
-    parameters["Stage"] = stack.stage.toString()
+    parameters["StageName"] = stack.stage.toString()
 
     apis {
         FrontendApi {

@@ -22,8 +22,9 @@ import com.amazonaws.annotation.SdkInternalApi;
 @SdkInternalApi
 public class DescribeEnvironmentRequestProtocolMarshaller implements Marshaller<Request<DescribeEnvironmentRequest>, DescribeEnvironmentRequest> {
 
-    private static final OperationInfo SDK_OPERATION_BINDING = OperationInfo.builder().protocol(Protocol.API_GATEWAY).requestUri("/alpha/environments/{name}")
-            .httpMethodName(HttpMethodName.GET).hasExplicitPayloadMember(false).hasPayloadMembers(false).serviceName("Blox").build();
+    private static final OperationInfo SDK_OPERATION_BINDING = OperationInfo.builder().protocol(Protocol.API_GATEWAY)
+            .requestUri("/alpha/v1/{cluster}/environments/{environmentName}").httpMethodName(HttpMethodName.GET).hasExplicitPayloadMember(false)
+            .hasPayloadMembers(false).serviceName("Blox").build();
 
     private final com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl protocolFactory;
 

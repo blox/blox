@@ -39,9 +39,17 @@ public class EnvironmentJsonUnmarshaller implements Unmarshaller<Environment, Js
                 break;
 
             if (token == FIELD_NAME || token == START_OBJECT) {
-                if (context.testExpression("name", targetDepth)) {
+                if (context.testExpression("cluster", targetDepth)) {
                     context.nextToken();
-                    environment.setName(context.getUnmarshaller(String.class).unmarshall(context));
+                    environment.setCluster(context.getUnmarshaller(String.class).unmarshall(context));
+                }
+                if (context.testExpression("environmentName", targetDepth)) {
+                    context.nextToken();
+                    environment.setEnvironmentName(context.getUnmarshaller(String.class).unmarshall(context));
+                }
+                if (context.testExpression("targetRevisionId", targetDepth)) {
+                    context.nextToken();
+                    environment.setTargetRevisionId(context.getUnmarshaller(String.class).unmarshall(context));
                 }
             } else if (token == END_ARRAY || token == END_OBJECT) {
                 if (context.getLastParsedParentElement() == null || context.getLastParsedParentElement().equals(currentParentElement)) {

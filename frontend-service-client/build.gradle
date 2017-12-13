@@ -22,6 +22,6 @@ repositories {
 }
 
 dependencies {
-    compile "com.amazonaws:aws-java-sdk-opensdk:1.11.168"
+    compile "com.amazonaws:aws-java-sdk-opensdk:1.11.229"
 }
 

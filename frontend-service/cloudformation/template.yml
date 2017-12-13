@@ -16,6 +16,10 @@ Resources:
       Handler: com.amazonaws.blox.frontend.LambdaHandler
       MemorySize: 512
       Timeout: 15
+      Environment:
+        Variables:
+          data_service_function_name:
+            Fn::ImportValue: DataServiceHandler
       Events:
         FrontendApi:
           Type: Api

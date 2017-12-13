@@ -179,6 +179,8 @@ task downloadClient() {
                 "java.group-id=${project.group}",
                 "java.artifact-id=frontend-service-client",
                 "java.artifact-version=${project.version}",
+                "flattenRequests=true",
+                "flattenResponses=true",
         ].join(",")
 
         exec {
@@ -200,6 +202,11 @@ task updateClient(type: Copy, dependsOn: downloadClient) {
 
     from zipTree(sdkZip)
     into tmpDir
+
+    // Replace the API id in the generated client with a fixed string
+    // Otherwise we get a diff every time the client is updated for a different stack, even if the code is identical.
+    def apiId = project(":frontend-service").deployment.outputs["ApiId"]
+    filter { line -> line.replaceAll(apiId, "ecs-blox") }
 
     doLast {
         file("frontend-service-client").deleteDir()

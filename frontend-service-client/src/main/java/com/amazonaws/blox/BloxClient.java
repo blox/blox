@@ -48,8 +48,14 @@ class BloxClient implements Blox {
 
     private final ClientHandler clientHandler;
 
-    private final com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl protocolFactory = new com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl(
-            new JsonClientMetadata().withProtocolVersion("1.1").withSupportsCbor(false).withSupportsIon(false).withContentTypeOverride("application/json")
+    private static final com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl protocolFactory = new com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl(
+            new JsonClientMetadata()
+                    .withProtocolVersion("1.1")
+                    .withSupportsCbor(false)
+                    .withSupportsIon(false)
+                    .withContentTypeOverride("application/json")
+                    .addErrorMetadata(
+                            new JsonErrorShapeMetadata().withErrorCode("NotFoundException").withModeledClass(com.amazonaws.blox.model.NotFoundException.class))
                     .withBaseServiceExceptionClass(com.amazonaws.blox.model.BloxException.class));
 
     /**
@@ -67,10 +73,30 @@ class BloxClient implements Blox {
     }
 
     /**
+     * @param createEnvironmentRequest
+     * @return Result of the createEnvironment operation returned by the service.
+     * @sample Blox.createEnvironment
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/createEnvironment" target="_top">AWS
+     *      API Documentation</a>
+     */
+    @Override
+    public CreateEnvironmentResult createEnvironment(CreateEnvironmentRequest createEnvironmentRequest) {
+        HttpResponseHandler<CreateEnvironmentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata().withPayloadJson(true)
+                .withHasStreamingSuccessResponse(false), new CreateEnvironmentResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<CreateEnvironmentRequest, CreateEnvironmentResult>()
+                .withMarshaller(new CreateEnvironmentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(createEnvironmentRequest));
+    }
+
+    /**
      * @param describeEnvironmentRequest
      * @return Result of the describeEnvironment operation returned by the service.
+     * @throws NotFoundException
      * @sample Blox.describeEnvironment
-     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/joufu8ief9-v2017-07-11/describeEnvironment"
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/describeEnvironment"
      *      target="_top">AWS API Documentation</a>
      */
     @Override
@@ -78,11 +104,126 @@ class BloxClient implements Blox {
         HttpResponseHandler<DescribeEnvironmentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata()
                 .withPayloadJson(true).withHasStreamingSuccessResponse(false), new DescribeEnvironmentResultJsonUnmarshaller());
 
-        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler(new JsonErrorShapeMetadata().withModeledClass(
+                NotFoundException.class).withHttpStatusCode(404));
 
         return clientHandler.execute(new ClientExecutionParams<DescribeEnvironmentRequest, DescribeEnvironmentResult>()
                 .withMarshaller(new DescribeEnvironmentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
                 .withErrorResponseHandler(errorResponseHandler).withInput(describeEnvironmentRequest));
+    }
+
+    /**
+     * @param describeEnvironmentDeploymentRequest
+     * @return Result of the describeEnvironmentDeployment operation returned by the service.
+     * @sample Blox.describeEnvironmentDeployment
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/describeEnvironmentDeployment"
+     *      target="_top">AWS API Documentation</a>
+     */
+    @Override
+    public DescribeEnvironmentDeploymentResult describeEnvironmentDeployment(DescribeEnvironmentDeploymentRequest describeEnvironmentDeploymentRequest) {
+        HttpResponseHandler<DescribeEnvironmentDeploymentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata()
+                .withPayloadJson(true).withHasStreamingSuccessResponse(false), new DescribeEnvironmentDeploymentResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<DescribeEnvironmentDeploymentRequest, DescribeEnvironmentDeploymentResult>()
+                .withMarshaller(new DescribeEnvironmentDeploymentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(describeEnvironmentDeploymentRequest));
+    }
+
+    /**
+     * @param describeEnvironmentRevisionRequest
+     * @return Result of the describeEnvironmentRevision operation returned by the service.
+     * @sample Blox.describeEnvironmentRevision
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/describeEnvironmentRevision"
+     *      target="_top">AWS API Documentation</a>
+     */
+    @Override
+    public DescribeEnvironmentRevisionResult describeEnvironmentRevision(DescribeEnvironmentRevisionRequest describeEnvironmentRevisionRequest) {
+        HttpResponseHandler<DescribeEnvironmentRevisionResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata()
+                .withPayloadJson(true).withHasStreamingSuccessResponse(false), new DescribeEnvironmentRevisionResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<DescribeEnvironmentRevisionRequest, DescribeEnvironmentRevisionResult>()
+                .withMarshaller(new DescribeEnvironmentRevisionRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(describeEnvironmentRevisionRequest));
+    }
+
+    /**
+     * @param listEnvironmentDeploymentsRequest
+     * @return Result of the listEnvironmentDeployments operation returned by the service.
+     * @sample Blox.listEnvironmentDeployments
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/listEnvironmentDeployments"
+     *      target="_top">AWS API Documentation</a>
+     */
+    @Override
+    public ListEnvironmentDeploymentsResult listEnvironmentDeployments(ListEnvironmentDeploymentsRequest listEnvironmentDeploymentsRequest) {
+        HttpResponseHandler<ListEnvironmentDeploymentsResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata()
+                .withPayloadJson(true).withHasStreamingSuccessResponse(false), new ListEnvironmentDeploymentsResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<ListEnvironmentDeploymentsRequest, ListEnvironmentDeploymentsResult>()
+                .withMarshaller(new ListEnvironmentDeploymentsRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(listEnvironmentDeploymentsRequest));
+    }
+
+    /**
+     * @param listEnvironmentRevisionsRequest
+     * @return Result of the listEnvironmentRevisions operation returned by the service.
+     * @sample Blox.listEnvironmentRevisions
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/listEnvironmentRevisions"
+     *      target="_top">AWS API Documentation</a>
+     */
+    @Override
+    public ListEnvironmentRevisionsResult listEnvironmentRevisions(ListEnvironmentRevisionsRequest listEnvironmentRevisionsRequest) {
+        HttpResponseHandler<ListEnvironmentRevisionsResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata()
+                .withPayloadJson(true).withHasStreamingSuccessResponse(false), new ListEnvironmentRevisionsResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<ListEnvironmentRevisionsRequest, ListEnvironmentRevisionsResult>()
+                .withMarshaller(new ListEnvironmentRevisionsRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(listEnvironmentRevisionsRequest));
+    }
+
+    /**
+     * @param listEnvironmentsRequest
+     * @return Result of the listEnvironments operation returned by the service.
+     * @sample Blox.listEnvironments
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/listEnvironments" target="_top">AWS
+     *      API Documentation</a>
+     */
+    @Override
+    public ListEnvironmentsResult listEnvironments(ListEnvironmentsRequest listEnvironmentsRequest) {
+        HttpResponseHandler<ListEnvironmentsResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata().withPayloadJson(true)
+                .withHasStreamingSuccessResponse(false), new ListEnvironmentsResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<ListEnvironmentsRequest, ListEnvironmentsResult>()
+                .withMarshaller(new ListEnvironmentsRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(listEnvironmentsRequest));
+    }
+
+    /**
+     * @param startDeploymentRequest
+     * @return Result of the startDeployment operation returned by the service.
+     * @sample Blox.startDeployment
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/startDeployment" target="_top">AWS
+     *      API Documentation</a>
+     */
+    @Override
+    public StartDeploymentResult startDeployment(StartDeploymentRequest startDeploymentRequest) {
+        HttpResponseHandler<StartDeploymentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata().withPayloadJson(true)
+                .withHasStreamingSuccessResponse(false), new StartDeploymentResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<StartDeploymentRequest, StartDeploymentResult>()
+                .withMarshaller(new StartDeploymentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(startDeploymentRequest));
     }
 
     /**

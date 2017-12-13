@@ -12,27 +12,34 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.frontend.controllers;
+package com.amazonaws.blox.frontend.operations;
 
-import com.amazonaws.blox.frontend.models.Environment;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.Builder;
+import lombok.Value;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Api
 @RestController
-@RequestMapping(
-  path = "/environments",
-  produces = "application/json",
-  consumes = "application/json"
-)
-public class EnvironmentController {
-  @RequestMapping(path = "/{name}", method = RequestMethod.GET, consumes = "*/*")
-  @ApiOperation(value = "Describe Environment by name")
-  public Environment describeEnvironment(@PathVariable("name") String name) {
-    return new Environment(name);
+public class StartDeployment extends EnvironmentController {
+  @RequestMapping(path = "/{environmentName}/deployments", method = RequestMethod.POST)
+  @ApiOperation(value = "Deploy Environment revision")
+  public StartDeploymentResponse startDeployment(
+      @PathVariable("cluster") String cluster,
+      @PathVariable("environmentName") String environmentName,
+      @RequestParam("revisionId") String revisionId) {
+
+    return StartDeploymentResponse.builder()
+        .deploymentId(environmentName + "_" + revisionId + "_deploymentId")
+        .build();
+  }
+
+  @Value
+  @Builder
+  public static class StartDeploymentResponse {
+    private final String deploymentId;
   }
 }

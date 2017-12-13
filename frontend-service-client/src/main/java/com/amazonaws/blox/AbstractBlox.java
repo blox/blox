@@ -19,7 +19,42 @@ public class AbstractBlox implements Blox {
     }
 
     @Override
+    public CreateEnvironmentResult createEnvironment(CreateEnvironmentRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
     public DescribeEnvironmentResult describeEnvironment(DescribeEnvironmentRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
+    public DescribeEnvironmentDeploymentResult describeEnvironmentDeployment(DescribeEnvironmentDeploymentRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
+    public DescribeEnvironmentRevisionResult describeEnvironmentRevision(DescribeEnvironmentRevisionRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
+    public ListEnvironmentDeploymentsResult listEnvironmentDeployments(ListEnvironmentDeploymentsRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
+    public ListEnvironmentRevisionsResult listEnvironmentRevisions(ListEnvironmentRevisionsRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
+    public ListEnvironmentsResult listEnvironments(ListEnvironmentsRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
+    public StartDeploymentResult startDeployment(StartDeploymentRequest request) {
         throw new java.lang.UnsupportedOperationException();
     }
 

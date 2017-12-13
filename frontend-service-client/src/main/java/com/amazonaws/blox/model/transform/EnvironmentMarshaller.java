@@ -18,8 +18,12 @@ import com.amazonaws.annotation.SdkInternalApi;
 @SdkInternalApi
 public class EnvironmentMarshaller {
 
-    private static final MarshallingInfo<String> NAME_BINDING = MarshallingInfo.builder(MarshallingType.STRING).marshallLocation(MarshallLocation.PAYLOAD)
-            .marshallLocationName("name").build();
+    private static final MarshallingInfo<String> CLUSTER_BINDING = MarshallingInfo.builder(MarshallingType.STRING).marshallLocation(MarshallLocation.PAYLOAD)
+            .marshallLocationName("cluster").build();
+    private static final MarshallingInfo<String> ENVIRONMENTNAME_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
+            .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("environmentName").build();
+    private static final MarshallingInfo<String> TARGETREVISIONID_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
+            .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("targetRevisionId").build();
 
     private static final EnvironmentMarshaller instance = new EnvironmentMarshaller();
 
@@ -37,7 +41,9 @@ public class EnvironmentMarshaller {
         }
 
         try {
-            protocolMarshaller.marshall(environment.getName(), NAME_BINDING);
+            protocolMarshaller.marshall(environment.getCluster(), CLUSTER_BINDING);
+            protocolMarshaller.marshall(environment.getEnvironmentName(), ENVIRONMENTNAME_BINDING);
+            protocolMarshaller.marshall(environment.getTargetRevisionId(), TARGETREVISIONID_BINDING);
         } catch (Exception e) {
             throw new SdkClientException("Unable to marshall request to JSON: " + e.getMessage(), e);
         }

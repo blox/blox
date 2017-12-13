@@ -14,11 +14,25 @@
  */
 package com.amazonaws.blox.frontend;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
 @Configuration
 @EnableWebMvc
 @ComponentScan("com.amazonaws.blox.frontend")
-public class Application {}
+public class Application {
+
+  @Value("${data_service_function_name}")
+  public String dataServiceFunctionName;
+
+  // TODO: Add DataService bean once refactoring is done
+
+  @Bean
+  public LambdaAsyncClient lambdaClient() {
+    return LambdaAsyncClient.create();
+  }
+}

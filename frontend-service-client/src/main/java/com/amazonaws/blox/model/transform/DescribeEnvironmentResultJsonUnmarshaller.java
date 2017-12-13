@@ -38,7 +38,17 @@ public class DescribeEnvironmentResultJsonUnmarshaller implements Unmarshaller<D
             if (token == null)
                 break;
 
-            describeEnvironmentResult.setEnvironment(EnvironmentJsonUnmarshaller.getInstance().unmarshall(context));
+            if (token == FIELD_NAME || token == START_OBJECT) {
+                if (context.testExpression("environment", targetDepth)) {
+                    context.nextToken();
+                    describeEnvironmentResult.setEnvironment(EnvironmentJsonUnmarshaller.getInstance().unmarshall(context));
+                }
+            } else if (token == END_ARRAY || token == END_OBJECT) {
+                if (context.getLastParsedParentElement() == null || context.getLastParsedParentElement().equals(currentParentElement)) {
+                    if (context.getCurrentDepth() <= originalDepth)
+                        break;
+                }
+            }
             token = context.nextToken();
         }
 

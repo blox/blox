@@ -14,17 +14,20 @@
  */
 package com.amazonaws.blox;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.blox.model.CreateEnvironmentRequest;
 import com.amazonaws.blox.model.DescribeEnvironmentRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentResult;
+import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
+import com.amazonaws.blox.model.Environment;
+import com.amazonaws.blox.model.EnvironmentRevision;
+import com.amazonaws.blox.model.ListEnvironmentRevisionsRequest;
+import com.amazonaws.blox.model.ListEnvironmentsRequest;
 import com.amazonaws.opensdk.protect.auth.RequestSignerNotFoundException;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.net.URL;
+import java.util.List;
+import java.util.UUID;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -32,6 +35,9 @@ import org.junit.rules.ExpectedException;
 public class EnvironmentTest {
   private static final String apiUrl = System.getProperty("blox.tests.apiUrl");
   private static final String awsProfile = System.getProperty("blox.tests.awsProfile");
+  private static final String ENVIRONMENT_NAME = "EndToEndTests-" + UUID.randomUUID().toString();
+  private static final String TASK_DEFINITION = "some-task:1";
+  private static final String CLUSTER = "default";
 
   @Rule public final ExpectedException thrown = ExpectedException.none();
 
@@ -52,11 +58,54 @@ public class EnvironmentTest {
   }
 
   @Test
-  public void describeEnvironmentReturnsFakeEnvironment() throws Exception {
-    DescribeEnvironmentResult result =
-        client.describeEnvironment(new DescribeEnvironmentRequest().name("foo"));
+  public void creatingANewEnvironment() throws Exception {
+    // When I create a new environment
+    String revisionId =
+        client
+            .createEnvironment(
+                new CreateEnvironmentRequest()
+                    .cluster(CLUSTER)
+                    .environmentName(ENVIRONMENT_NAME)
+                    .taskDefinition(TASK_DEFINITION)
+                    .deploymentType("SingleTask"))
+            .getEnvironmentRevisionId();
 
-    assertEquals("foo", result.getEnvironment().getName());
+    // Then when I describe that environment ...
+    Environment environment =
+        client
+            .describeEnvironment(
+                new DescribeEnvironmentRequest().cluster(CLUSTER).environmentName(ENVIRONMENT_NAME))
+            .getEnvironment();
+
+    // the names should match
+    assertThat(environment.getEnvironmentName()).as("environment name").isEqualTo(ENVIRONMENT_NAME);
+    // and it should not have a target revision
+    assertThat(environment.getTargetRevisionId()).isNull();
+
+    // But the revision should show up in the revision list ...
+    List<String> revisions =
+        client
+            .listEnvironmentRevisions(
+                new ListEnvironmentRevisionsRequest()
+                    .cluster(CLUSTER)
+                    .environmentName(ENVIRONMENT_NAME))
+            .getRevisionIds();
+
+    // with the revision ID returned from createEnvironment
+    assertThat(revisions).contains(revisionId);
+
+    // And when I describe the revision
+    EnvironmentRevision revision =
+        client
+            .describeEnvironmentRevision(
+                new DescribeEnvironmentRevisionRequest()
+                    .cluster(CLUSTER)
+                    .environmentName(ENVIRONMENT_NAME)
+                    .revisionId(revisionId))
+            .getRevision();
+
+    // The task definition should match
+    assertThat(revision.getTaskDefinition()).isEqualTo(TASK_DEFINITION);
   }
 
   @Test
@@ -64,6 +113,6 @@ public class EnvironmentTest {
     Blox unauthenticatedClient = Blox.builder().endpoint(endpoint()).build();
 
     thrown.expect(RequestSignerNotFoundException.class);
-    unauthenticatedClient.describeEnvironment(new DescribeEnvironmentRequest().name("foo"));
+    unauthenticatedClient.listEnvironments(new ListEnvironmentsRequest().cluster("default"));
   }
 }

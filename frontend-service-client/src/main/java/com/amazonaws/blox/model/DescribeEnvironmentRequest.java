@@ -11,37 +11,65 @@ import com.amazonaws.opensdk.protect.auth.RequestSignerAware;
 
 /**
  * 
- * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/joufu8ief9-v2017-07-11/DescribeEnvironment" target="_top">AWS
+ * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/DescribeEnvironment" target="_top">AWS
  *      API Documentation</a>
  */
 @Generated("com.amazonaws:aws-java-sdk-code-generator")
 public class DescribeEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest implements Serializable, Cloneable, RequestSignerAware {
 
-    private String name;
+    private String cluster;
+
+    private String environmentName;
 
     /**
-     * @param name
+     * @param cluster
      */
 
-    public void setName(String name) {
-        this.name = name;
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
     }
 
     /**
      * @return
      */
 
-    public String getName() {
-        return this.name;
+    public String getCluster() {
+        return this.cluster;
     }
 
     /**
-     * @param name
+     * @param cluster
      * @return Returns a reference to this object so that method calls can be chained together.
      */
 
-    public DescribeEnvironmentRequest name(String name) {
-        setName(name);
+    public DescribeEnvironmentRequest cluster(String cluster) {
+        setCluster(cluster);
+        return this;
+    }
+
+    /**
+     * @param environmentName
+     */
+
+    public void setEnvironmentName(String environmentName) {
+        this.environmentName = environmentName;
+    }
+
+    /**
+     * @return
+     */
+
+    public String getEnvironmentName() {
+        return this.environmentName;
+    }
+
+    /**
+     * @param environmentName
+     * @return Returns a reference to this object so that method calls can be chained together.
+     */
+
+    public DescribeEnvironmentRequest environmentName(String environmentName) {
+        setEnvironmentName(environmentName);
         return this;
     }
 
@@ -56,8 +84,10 @@ public class DescribeEnvironmentRequest extends com.amazonaws.opensdk.BaseReques
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        if (getName() != null)
-            sb.append("Name: ").append(getName());
+        if (getCluster() != null)
+            sb.append("Cluster: ").append(getCluster()).append(",");
+        if (getEnvironmentName() != null)
+            sb.append("EnvironmentName: ").append(getEnvironmentName());
         sb.append("}");
         return sb.toString();
     }
@@ -72,9 +102,13 @@ public class DescribeEnvironmentRequest extends com.amazonaws.opensdk.BaseReques
         if (obj instanceof DescribeEnvironmentRequest == false)
             return false;
         DescribeEnvironmentRequest other = (DescribeEnvironmentRequest) obj;
-        if (other.getName() == null ^ this.getName() == null)
+        if (other.getCluster() == null ^ this.getCluster() == null)
             return false;
-        if (other.getName() != null && other.getName().equals(this.getName()) == false)
+        if (other.getCluster() != null && other.getCluster().equals(this.getCluster()) == false)
+            return false;
+        if (other.getEnvironmentName() == null ^ this.getEnvironmentName() == null)
+            return false;
+        if (other.getEnvironmentName() != null && other.getEnvironmentName().equals(this.getEnvironmentName()) == false)
             return false;
         return true;
     }
@@ -84,7 +118,8 @@ public class DescribeEnvironmentRequest extends com.amazonaws.opensdk.BaseReques
         final int prime = 31;
         int hashCode = 1;
 
-        hashCode = prime * hashCode + ((getName() == null) ? 0 : getName().hashCode());
+        hashCode = prime * hashCode + ((getCluster() == null) ? 0 : getCluster().hashCode());
+        hashCode = prime * hashCode + ((getEnvironmentName() == null) ? 0 : getEnvironmentName().hashCode());
         return hashCode;
     }
 
