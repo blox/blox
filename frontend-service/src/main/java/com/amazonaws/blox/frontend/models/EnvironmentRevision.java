@@ -14,19 +14,14 @@
  */
 package com.amazonaws.blox.frontend.models;
 
-import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 public class EnvironmentRevision {
-  private final String cluster;
-  private final String environmentName;
   private final String environmentRevisionId;
   private final String taskDefinition;
   private final InstanceGroup instanceGroup;
-  private final String deploymentMethod;
-  private final Map<String, String> deploymentConfiguration;
   private final TaskCounts counts;
 }

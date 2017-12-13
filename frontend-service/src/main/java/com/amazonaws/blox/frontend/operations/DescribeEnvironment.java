@@ -37,7 +37,7 @@ public class DescribeEnvironment extends EnvironmentController {
             Environment.builder()
                 .cluster(cluster)
                 .environmentName(environmentName)
-                .targetRevisionId(null)
+                .activeEnvironmentRevisionId(null)
                 .build())
         .build();
   }

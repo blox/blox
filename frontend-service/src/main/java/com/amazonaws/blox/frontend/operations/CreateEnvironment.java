@@ -60,10 +60,11 @@ public class CreateEnvironment extends EnvironmentController {
   public static class CreateEnvironmentRequest {
 
     private String environmentName;
+    private String environmentType;
     private String taskDefinition;
-    private InstanceGroup instanceGroup;
-    private String deploymentType;
     private String deploymentMethod;
+    private String role;
+    private InstanceGroup instanceGroup;
     private DeploymentConfiguration deploymentConfiguration;
   }
 }

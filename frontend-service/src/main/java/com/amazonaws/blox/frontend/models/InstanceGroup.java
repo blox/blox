@@ -14,11 +14,12 @@
  */
 package com.amazonaws.blox.frontend.models;
 
+import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 public class InstanceGroup {
-  private final String query;
+  private final Set<Attribute> attributes;
 }

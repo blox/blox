@@ -22,11 +22,11 @@ import org.springframework.http.ResponseEntity;
 @Getter
 @RequiredArgsConstructor
 public class ApiError<T> {
-  private final int code;
+  private final HttpStatus code;
   private final String message;
 
   @SuppressWarnings("unchecked")
   public ResponseEntity<T> toResponseEntity() {
-    return new ResponseEntity(this, HttpStatus.valueOf(code));
+    return new ResponseEntity(this, code);
   }
 }

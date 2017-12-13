@@ -35,8 +35,6 @@ public class DescribeEnvironmentRevision extends EnvironmentController {
     return DescribeEnvironmentRevisionResponse.builder()
         .revision(
             EnvironmentRevision.builder()
-                .environmentName(environmentName)
-                .cluster(cluster)
                 .environmentRevisionId(revisionId)
                 .taskDefinition(null)
                 .build())

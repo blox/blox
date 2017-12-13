@@ -19,13 +19,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public final class Environment {
-  private final String environmentName;
-  private final String cluster;
-  private final String role;
-  private final String environmentType;
-  private final String environmentHealth;
-  private final String deploymentMethod;
-  private final DeploymentConfiguration deploymentConfiguration;
-  private final String activeEnvironmentRevisionId;
+public class Attribute {
+  private final String name;
+  private final String value;
 }
