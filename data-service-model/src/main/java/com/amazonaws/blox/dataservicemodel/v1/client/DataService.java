@@ -14,11 +14,11 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.client;
 
-import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceInUseException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceInUseException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
@@ -41,39 +41,39 @@ public interface DataService {
 
   /** Creates an environment record and a new revision record. */
   CreateEnvironmentResponse createEnvironment(CreateEnvironmentRequest request)
-      throws ResourceExistsException, InvalidParameterException, ServiceException;
+      throws ResourceExistsException, InvalidParameterException, InternalServiceException;
 
   /** Creates a new environment revision for the environment. */
   UpdateEnvironmentResponse updateEnvironment(UpdateEnvironmentRequest request)
-      throws ResourceNotFoundException, InvalidParameterException, ServiceException;
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException;
 
   /** Returns the environment record. */
   DescribeEnvironmentResponse describeEnvironment(DescribeEnvironmentRequest request)
-      throws ResourceNotFoundException, InvalidParameterException, ServiceException;
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException;
 
   /** Lists all environments with a filter. */
   ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request)
-      throws InvalidParameterException, ServiceException;
+      throws InvalidParameterException, InternalServiceException;
 
   /** Deletes the provided environment if inactive or if forceDelete is true */
   DeleteEnvironmentResponse deleteEnvironment(DeleteEnvironmentRequest request)
       throws ResourceNotFoundException, ResourceInUseException, InvalidParameterException,
-          ServiceException;
+          InternalServiceException;
 
   /** Returns the requested environment revision. */
   DescribeEnvironmentRevisionResponse describeEnvironmentRevision(
       DescribeEnvironmentRequest request)
-      throws ResourceNotFoundException, InvalidParameterException, ServiceException;
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException;
 
   /** Lists all environment revisions for the environment. */
   ListEnvironmentRevisionsResponse listEnvironmentRevisions(ListEnvironmentRevisionsRequest request)
-      throws ResourceNotFoundException, InvalidParameterException, ServiceException;
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException;
 
   /** Lists all clusters the have environments running on them. */
   ListClustersResponse listClusters(ListClustersRequest request)
-      throws InvalidParameterException, ServiceException;
+      throws InvalidParameterException, InternalServiceException;
 
   /** Creates a deployment record which starts a deployment. */
   StartDeploymentResponse startDeployment(StartDeploymentRequest request)
-      throws ResourceNotFoundException, InvalidParameterException, ServiceException;
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException;
 }
