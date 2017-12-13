@@ -25,6 +25,7 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRe
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
@@ -62,7 +63,7 @@ public interface DataService {
 
   /** Returns the requested environment revision. */
   DescribeEnvironmentRevisionResponse describeEnvironmentRevision(
-      DescribeEnvironmentRequest request)
+      DescribeEnvironmentRevisionRequest request)
       throws ResourceNotFoundException, InvalidParameterException, InternalServiceException;
 
   /** Lists all environment revisions for the environment. */
