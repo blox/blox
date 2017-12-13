@@ -12,10 +12,10 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataserviceclient.v1.client;
+package com.amazonaws.blox.dataserviceclient.v1.old.client;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.serialization.DataServiceMapperFactory;
+import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.old.serialization.DataServiceMapperFactory;
 import com.amazonaws.blox.jsonrpc.JsonRpcLambdaClient;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
