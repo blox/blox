@@ -8,14 +8,14 @@ Feature: List clusters
     Then 0 clusters are returned
 
   Scenario: List clusters when multiple environments exist on one cluster
-    Given I create an environment
-    And I create another environment with the same cluster
+    Given I create an environment named "test" in the cluster "testCluster"
+    And I create another environment named "anotherenv" in the cluster "testCluster"
     When I list clusters
     Then 1 cluster is returned
 
   Scenario: List clusters when multiple environments exist on different clusters
-    Given I create an environment
-    And I create another environment with a different cluster
+    Given I create an environment named "test" in the cluster "testCluster"
+    And I create another environment named "anotherenv" in the cluster "anothercluster"
     When I list clusters
     Then 2 clusters are returned
 
