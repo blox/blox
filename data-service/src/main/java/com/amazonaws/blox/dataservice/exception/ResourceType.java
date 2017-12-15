@@ -12,17 +12,9 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.exception;
+package com.amazonaws.blox.dataservice.exception;
 
-public class ResourceExistsException extends ClientException {
+public class ResourceType {
 
-  private String resourceType;
-  private String resourceId;
-
-  public ResourceExistsException(String resourceType, String resourceId) {
-    super(String.format("%s with id %s already exists", resourceType, resourceId));
-
-    this.resourceType = resourceType;
-    this.resourceId = resourceId;
-  }
+  public static final String ENVIRONMENT = "environment";
 }

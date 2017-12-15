@@ -12,17 +12,15 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.exception;
+package com.amazonaws.blox.dataservice.repository;
 
-public class ResourceExistsException extends ClientException {
+import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 
-  private String resourceType;
-  private String resourceId;
+/** Methods for interacting with environment and environment revision objects in the repository. */
+public interface EnvironmentRepository {
 
-  public ResourceExistsException(String resourceType, String resourceId) {
-    super(String.format("%s with id %s already exists", resourceType, resourceId));
-
-    this.resourceType = resourceType;
-    this.resourceId = resourceId;
-  }
+  Environment createEnvironment(Environment environment)
+      throws ResourceExistsException, InternalServiceException;
 }

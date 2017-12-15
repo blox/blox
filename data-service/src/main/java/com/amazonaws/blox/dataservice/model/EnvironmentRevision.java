@@ -12,17 +12,24 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.exception;
+package com.amazonaws.blox.dataservice.model;
 
-public class ResourceExistsException extends ClientException {
+import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
-  private String resourceType;
-  private String resourceId;
+@Data
+@Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
+public class EnvironmentRevision {
 
-  public ResourceExistsException(String resourceType, String resourceId) {
-    super(String.format("%s with id %s already exists", resourceType, resourceId));
-
-    this.resourceType = resourceType;
-    this.resourceId = resourceId;
-  }
+  @NonNull private String environmentRevisionId;
+  @NonNull private String taskDefinition;
+  @NonNull private InstanceGroup instanceGroup;
 }

@@ -64,6 +64,7 @@ public class EnvironmentDDBRecord {
   @DynamoDBTypeConverted(converter = InstantDDBConverter.class)
   private Instant lastUpdatedTime;
 
+  //TODO: add deploymentConfiguration to ddb record
   private String role;
   private String activeEnvironmentRevisionId;
 
