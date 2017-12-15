@@ -15,11 +15,18 @@
 package com.amazonaws.blox.frontend.models;
 
 import java.util.Set;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 
-@Value
+@Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class InstanceGroup {
-  private final Set<Attribute> attributes;
+  private Set<Attribute> attributes;
 }

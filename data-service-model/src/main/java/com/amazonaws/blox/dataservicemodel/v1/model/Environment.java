@@ -15,12 +15,19 @@
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
 import java.time.Instant;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 
-@Value
+@Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class Environment {
 
   @NonNull private EnvironmentId environmentId;
@@ -30,6 +37,7 @@ public class Environment {
   @NonNull private Instant lastUpdatedTime;
   @NonNull private String environmentHealth;
   @NonNull private String environmentStatus;
+  @NonNull private String deploymentMethod;
   private DeploymentConfiguration deploymentConfiguration;
   private String activeEnvironmentRevisionId;
 }

@@ -19,9 +19,10 @@ import com.amazonaws.blox.frontend.models.InstanceGroup;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
+import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,15 +49,23 @@ public class CreateEnvironment extends EnvironmentController {
     return CreateEnvironmentResponse.builder().environmentRevisionId(id).build();
   }
 
-  @Value
+  @Data
   @Builder
+  // required for builder
+  @AllArgsConstructor
+  // required for mapstruct
+  @NoArgsConstructor
   public static class CreateEnvironmentResponse {
 
-    private final String environmentRevisionId;
+    private String environmentRevisionId;
   }
 
   @Data
   @Builder
+  // required for builder
+  @AllArgsConstructor
+  // required for mapstruct
+  @NoArgsConstructor
   public static class CreateEnvironmentRequest {
 
     private String environmentName;

@@ -14,14 +14,21 @@
  */
 package com.amazonaws.blox.frontend.models;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 
-@Value
+@Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class EnvironmentRevision {
-  private final String environmentRevisionId;
-  private final String taskDefinition;
-  private final InstanceGroup instanceGroup;
-  private final TaskCounts counts;
+  private String environmentRevisionId;
+  private String taskDefinition;
+  private InstanceGroup instanceGroup;
+  private TaskCounts counts;
 }

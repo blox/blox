@@ -14,12 +14,19 @@
  */
 package com.amazonaws.blox.frontend.models;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 
-@Value
+@Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class Attribute {
-  private final String name;
-  private final String value;
+  private String name;
+  private String value;
 }

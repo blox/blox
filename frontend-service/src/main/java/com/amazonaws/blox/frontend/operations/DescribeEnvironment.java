@@ -16,8 +16,10 @@ package com.amazonaws.blox.frontend.operations;
 
 import com.amazonaws.blox.frontend.models.Environment;
 import io.swagger.annotations.ApiOperation;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -42,10 +44,14 @@ public class DescribeEnvironment extends EnvironmentController {
         .build();
   }
 
-  @Value
+  @Data
   @Builder
+  // required for builder
+  @AllArgsConstructor
+  // required for mapstruct
+  @NoArgsConstructor
   public static class DescribeEnvironmentResponse {
 
-    private final Environment environment;
+    private Environment environment;
   }
 }

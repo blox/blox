@@ -14,18 +14,25 @@
  */
 package com.amazonaws.blox.frontend.models;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 
-@Value
+@Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public final class Environment {
-  private final String environmentName;
-  private final String cluster;
-  private final String role;
-  private final String environmentType;
-  private final String environmentHealth;
-  private final String deploymentMethod;
-  private final DeploymentConfiguration deploymentConfiguration;
-  private final String activeEnvironmentRevisionId;
+  private String environmentName;
+  private String cluster;
+  private String role;
+  private String environmentType;
+  private String environmentHealth;
+  private String deploymentMethod;
+  private DeploymentConfiguration deploymentConfiguration;
+  private String activeEnvironmentRevisionId;
 }
