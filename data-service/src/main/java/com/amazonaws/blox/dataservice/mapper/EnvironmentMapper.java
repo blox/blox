@@ -15,7 +15,9 @@
 package com.amazonaws.blox.dataservice.mapper;
 
 import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentRevisionDDBRecord;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -46,4 +48,29 @@ public interface EnvironmentMapper {
         "java(EnvironmentId.getClusterFromAccountIdCluster(environmentDDBRecord.getEnvironmentId()))"
   )
   Environment toEnvironment(EnvironmentDDBRecord environmentDDBRecord);
+
+  @Mapping(source = "environmentId.cluster", target = "clusterName")
+  @Mapping(source = "environmentId.environmentName", target = "environmentName")
+  @Mapping(
+    target = "environmentId",
+    expression = "java(environmentRevision.getEnvironmentId().generateAccountIdCluster())"
+  )
+  @Mapping(source = "instanceGroup.attributes", target = "attributes")
+  EnvironmentRevisionDDBRecord toEnvironmentRevisionDDBRecord(
+      EnvironmentRevision environmentRevision);
+
+  @InheritInverseConfiguration
+  @Mapping(
+    target = "environmentId.accountId",
+    expression =
+        "java(EnvironmentId.getAccountIdFromAccountIdCluster(environmentRevisionDDBRecord.getEnvironmentId()))"
+  )
+  @Mapping(
+    target = "environmentId.cluster",
+    expression =
+        "java(EnvironmentId.getClusterFromAccountIdCluster(environmentRevisionDDBRecord.getEnvironmentId()))"
+  )
+  @Mapping(source = "attributes", target = "instanceGroup.attributes")
+  EnvironmentRevision toEnvironmentRevision(
+      EnvironmentRevisionDDBRecord environmentRevisionDDBRecord);
 }

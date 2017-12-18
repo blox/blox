@@ -14,22 +14,20 @@
  */
 package com.amazonaws.blox.dataservice.model;
 
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
-@Data
 @Builder
+@Data
 // required for builder
 @AllArgsConstructor
 // required for mapstruct
 @NoArgsConstructor
-public class EnvironmentRevision {
+public class InstanceGroup {
 
-  @NonNull private EnvironmentId environmentId;
-  @NonNull private String environmentRevisionId;
-  @NonNull private String taskDefinition;
-  @NonNull private InstanceGroup instanceGroup;
+  @NonNull private Set<Attribute> attributes;
 }

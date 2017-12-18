@@ -14,9 +14,11 @@
  */
 package com.amazonaws.blox.dataservice.repository.model;
 
+import com.amazonaws.blox.dataservice.model.Attribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -52,8 +54,10 @@ public class EnvironmentRevisionDDBRecord {
 
   @DynamoDBVersionAttribute private Long recordVersion;
 
-  //encoded name:value
-  private Set<String> attributes;
+  @DynamoDBTypeConverted(converter = AttributeDDBConverter.class)
+  private Set<Attribute> attributes;
+
   private String clusterName;
+  private String environmentName;
   private String taskDefinition;
 }

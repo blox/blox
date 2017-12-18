@@ -18,7 +18,9 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.blox.dataservice.exception.ResourceType;
 import com.amazonaws.blox.dataservice.mapper.EnvironmentMapper;
 import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentRevisionDDBRecord;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
@@ -54,5 +56,31 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
     }
 
     return environmentMapper.toEnvironment(environmentDDBRecord);
+  }
+
+  @Override
+  public EnvironmentRevision createEnvironmentRevision(
+      @NonNull final EnvironmentRevision environmentRevision)
+      throws ResourceExistsException, InternalServiceException {
+
+    final EnvironmentRevisionDDBRecord environmentRevisionDDBRecord =
+        environmentMapper.toEnvironmentRevisionDDBRecord(environmentRevision);
+
+    try {
+      dynamoDBMapper.save(environmentRevisionDDBRecord);
+    } catch (final ConditionalCheckFailedException e) {
+      throw new ResourceExistsException(
+          ResourceType.ENVIRONMENT_REVISION,
+          environmentRevisionDDBRecord.getEnvironmentRevisionId());
+
+    } catch (final AmazonServiceException e) {
+      throw new InternalServiceException(
+          String.format(
+              "Could not save record with environment revision id %s",
+              environmentRevision.getEnvironmentRevisionId()),
+          e);
+    }
+
+    return environmentMapper.toEnvironmentRevision(environmentRevisionDDBRecord);
   }
 }

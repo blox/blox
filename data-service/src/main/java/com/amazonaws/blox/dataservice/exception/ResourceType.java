@@ -17,4 +17,5 @@ package com.amazonaws.blox.dataservice.exception;
 public class ResourceType {
 
   public static final String ENVIRONMENT = "environment";
+  public static final String ENVIRONMENT_REVISION = "environmentRevision";
 }

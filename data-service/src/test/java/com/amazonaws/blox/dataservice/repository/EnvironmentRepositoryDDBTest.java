@@ -22,17 +22,23 @@ import static org.mockito.Mockito.verify;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.blox.dataservice.mapper.EnvironmentMapper;
+import com.amazonaws.blox.dataservice.model.Attribute;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentHealth;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
+import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservice.model.EnvironmentStatus;
 import com.amazonaws.blox.dataservice.model.EnvironmentType;
+import com.amazonaws.blox.dataservice.model.InstanceGroup;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentRevisionDDBRecord;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,13 +54,22 @@ public class EnvironmentRepositoryDDBTest {
 
   private static final String ENVIRONMENT_NAME = "test";
   private static final String ACCOUNT_ID = "12345678912";
+  private static final String ENVIRONMENT_REVISION_ID = UUID.randomUUID().toString();
   private static final String ROLE_ARN = "arn:aws:iam::" + ACCOUNT_ID + ":role/testRole";
+  private static final String TASK_DEF_ARN =
+      "arn:aws:ecs:us-east-1:" + ACCOUNT_ID + ":task-definition/sleep";
   private static final String CLUSTER = "cluster" + UUID.randomUUID().toString();
+  private static final String ATTRIBUTE_NAME_1 = "name1";
+  private static final String ATTRIBUTE_VALUE_1 = "value1";
+  private static final String ATTRIBUTE_NAME_2 = "name2";
+  private static final String ATTRIBUTE_VALUE_2 = "value2";
 
   @Mock private DynamoDBMapper dynamoDBMapper;
   @Captor private ArgumentCaptor<EnvironmentDDBRecord> environmentDDBRecordCaptor;
+  @Captor private ArgumentCaptor<EnvironmentRevisionDDBRecord> environmentRevisionDDBRecordCaptor;
 
   private Environment environment;
+  private EnvironmentRevision environmentRevision;
   private EnvironmentRepositoryDDB environmentRepositoryDDB;
 
   @Before
@@ -76,6 +91,23 @@ public class EnvironmentRepositoryDDBTest {
             .environmentHealth(EnvironmentHealth.Healthy)
             .createdTime(Instant.now())
             .lastUpdatedTime(Instant.now())
+            .build();
+
+    Set<Attribute> attributes = new HashSet<>();
+    attributes.add(Attribute.builder().name(ATTRIBUTE_NAME_1).value(ATTRIBUTE_VALUE_1).build());
+    attributes.add(Attribute.builder().name(ATTRIBUTE_NAME_2).value(ATTRIBUTE_VALUE_2).build());
+
+    environmentRevision =
+        EnvironmentRevision.builder()
+            .environmentId(
+                EnvironmentId.builder()
+                    .accountId(ACCOUNT_ID)
+                    .cluster(CLUSTER)
+                    .environmentName(ENVIRONMENT_NAME)
+                    .build())
+            .environmentRevisionId(ENVIRONMENT_REVISION_ID)
+            .taskDefinition(TASK_DEF_ARN)
+            .instanceGroup(InstanceGroup.builder().attributes(attributes).build())
             .build();
   }
 
@@ -138,5 +170,56 @@ public class EnvironmentRepositoryDDBTest {
     assertEquals(
         environment.getEnvironmentStatus(), environmentDDBRecordCaptor.getValue().getStatus());
     assertEquals(environment.getEnvironmentType(), environmentDDBRecordCaptor.getValue().getType());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void createEnvironmentRevisionNullEnvironmentRevision() throws Exception {
+    environmentRepositoryDDB.createEnvironmentRevision(null);
+  }
+
+  @Test(expected = ResourceExistsException.class)
+  public void createEnvironmentRevisionResourceExistsException() throws Exception {
+    doThrow(new ConditionalCheckFailedException(""))
+        .when(dynamoDBMapper)
+        .save(isA(EnvironmentRevisionDDBRecord.class));
+    environmentRepositoryDDB.createEnvironmentRevision(environmentRevision);
+  }
+
+  @Test(expected = InternalServiceException.class)
+  public void createEnvironmentRevisionInternalServiceException() throws Exception {
+    doThrow(new AmazonServiceException(""))
+        .when(dynamoDBMapper)
+        .save(isA(EnvironmentRevisionDDBRecord.class));
+    environmentRepositoryDDB.createEnvironmentRevision(environmentRevision);
+  }
+
+  @Test
+  public void createEnvironmentRevision() throws Exception {
+    doNothing().when(dynamoDBMapper).save(isA(EnvironmentRevisionDDBRecord.class));
+
+    EnvironmentRevision createdEnvironmentRevision =
+        environmentRepositoryDDB.createEnvironmentRevision(environmentRevision);
+    assertEquals(environmentRevision, createdEnvironmentRevision);
+
+    verify(dynamoDBMapper).save(environmentRevisionDDBRecordCaptor.capture());
+    assertEquals(
+        environmentRevision.getEnvironmentId().generateAccountIdCluster(),
+        environmentRevisionDDBRecordCaptor.getValue().getEnvironmentId());
+    assertEquals(
+        environmentRevision.getEnvironmentRevisionId(),
+        environmentRevisionDDBRecordCaptor.getValue().getEnvironmentRevisionId());
+    assertEquals(
+        environmentRevision.getEnvironmentId().getEnvironmentName(),
+        environmentRevisionDDBRecordCaptor.getValue().getEnvironmentName());
+    assertEquals(
+        environmentRevision.getEnvironmentId().getCluster(),
+        environmentRevisionDDBRecordCaptor.getValue().getClusterName());
+
+    assertEquals(
+        environmentRevision.getTaskDefinition(),
+        environmentRevisionDDBRecordCaptor.getValue().getTaskDefinition());
+    assertEquals(
+        environmentRevision.getInstanceGroup().getAttributes(),
+        environmentRevisionDDBRecordCaptor.getValue().getAttributes());
   }
 }

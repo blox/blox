@@ -24,12 +24,10 @@ import lombok.NonNull;
 @Builder
 // required for builder
 @AllArgsConstructor
-// required for mapstruct
+//required for mapstruct
 @NoArgsConstructor
-public class EnvironmentRevision {
+public class Attribute {
 
-  @NonNull private EnvironmentId environmentId;
-  @NonNull private String environmentRevisionId;
-  @NonNull private String taskDefinition;
-  @NonNull private InstanceGroup instanceGroup;
+  @NonNull private String name;
+  @NonNull private String value;
 }

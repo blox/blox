@@ -15,6 +15,7 @@
 package com.amazonaws.blox.dataservice.repository;
 
 import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 
@@ -22,5 +23,8 @@ import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 public interface EnvironmentRepository {
 
   Environment createEnvironment(Environment environment)
+      throws ResourceExistsException, InternalServiceException;
+
+  EnvironmentRevision createEnvironmentRevision(EnvironmentRevision environmentRevision)
       throws ResourceExistsException, InternalServiceException;
 }
