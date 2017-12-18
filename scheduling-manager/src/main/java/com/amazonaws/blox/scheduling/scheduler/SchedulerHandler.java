@@ -63,12 +63,14 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
 
     EnvironmentDescription environmentDescription =
         EnvironmentDescription.builder()
-            .environmentId(environment.getEnvironmentId())
-            .environmentVersion(environment.getEnvironmentVersion())
+            .environmentName(environment.getEnvironmentName())
+            .targetEnvironmentRevision(environment.getEnvironmentVersion())
+            .environmentType(
+                EnvironmentDescription.EnvironmentType.valueOf(environment.getType().toString()))
             .taskDefinitionArn(environment.getTaskDefinition())
             .build();
 
-    Scheduler s = schedulerFactory.schedulerFor(environment.getType());
+    Scheduler s = schedulerFactory.schedulerFor(environmentDescription);
 
     List<SchedulingAction> actions = s.schedule(input.getSnapshot(), environmentDescription);
 
@@ -85,6 +87,6 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
         input.getEnvironmentId(),
         outcomeCounts.getOrDefault(false, 0L),
         outcomeCounts.getOrDefault(true, 0L));
-    //TODO: handle exceptions. captured in the lambda exception handling issue
+    // TODO: handle exceptions. captured in the lambda exception handling issue
   }
 }

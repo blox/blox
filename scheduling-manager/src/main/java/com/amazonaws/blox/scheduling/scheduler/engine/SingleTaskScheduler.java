@@ -48,14 +48,14 @@ public class SingleTaskScheduler implements Scheduler {
             .anyMatch(
                 task ->
                     task.getContainerInstanceArn().equals(instance.getArn())
-                        && task.getGroup().equals(environment.getEnvironmentId()));
+                        && task.getGroup().equals(environment.getEnvironmentName()));
 
     if (!hasTaskAlready) {
       return Arrays.asList(
           StartTask.builder()
               .clusterArn(snapshot.getClusterArn())
               .taskDefinitionArn(environment.getTaskDefinitionArn())
-              .group(environment.getEnvironmentId())
+              .group(environment.getEnvironmentName())
               .containerInstanceArn(instance.getArn())
               .build());
     } else {

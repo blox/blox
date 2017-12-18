@@ -51,6 +51,17 @@ subprojects {
                 entry 'mapstruct-processor'
             }
 
+            // The AWS SDK v2 BOM is incorrectly pinning Cucumber to an
+            // old version, so we have to manually override the version
+            // of all Cucumber dependencies here, including the transitive
+            // dependency on cucumber-java from cucumber-java8.
+            dependencySet(group: 'info.cukes', version: '1.2.5') {
+                entry 'cucumber-core'
+                entry 'cucumber-java'
+                entry 'cucumber-java8'
+                entry 'cucumber-spring'
+            }
+
             dependency 'org.projectlombok:lombok:1.16.18'
         }
     }

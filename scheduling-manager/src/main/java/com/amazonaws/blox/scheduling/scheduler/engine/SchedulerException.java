@@ -14,23 +14,14 @@
  */
 package com.amazonaws.blox.scheduling.scheduler.engine;
 
-import lombok.Builder;
-import lombok.Value;
+/** Common superclass for Scheduler exceptions. */
+public class SchedulerException extends Exception {
 
-@Builder
-@Value
-/** The minimum set of Environment data needed for a Scheduler to make scheduling decisions */
-public class EnvironmentDescription {
-  private final String clusterArn;
-  private final String environmentName;
-  private final String targetEnvironmentRevision;
-  private final EnvironmentType environmentType;
+  public SchedulerException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  private final String deploymentMethod;
-  private final String taskDefinitionArn;
-
-  public enum EnvironmentType {
-    SingleTask,
-    Daemon
+  public SchedulerException(String message) {
+    super(message);
   }
 }

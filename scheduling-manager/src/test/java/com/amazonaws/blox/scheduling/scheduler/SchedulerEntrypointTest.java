@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.blox.scheduling.LambdaHandlerTestCase;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerEntrypointTest.TestConfig;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
+import com.amazonaws.blox.scheduling.scheduler.engine.UnsupportedDeploymentMethodException;
 import java.util.Collections;
 import org.junit.Test;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +50,7 @@ public class SchedulerEntrypointTest extends LambdaHandlerTestCase {
     }
 
     @Bean
-    public SchedulerFactory schedulerFactory() {
+    public SchedulerFactory schedulerFactory() throws Exception {
       return when(mock(SchedulerFactory.class).schedulerFor(any()))
           .thenReturn((snapshot, deploymentConfiguration) -> Collections.emptyList())
           .getMock();

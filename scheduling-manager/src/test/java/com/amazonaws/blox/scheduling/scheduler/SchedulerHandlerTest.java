@@ -16,6 +16,7 @@ package com.amazonaws.blox.scheduling.scheduler;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
@@ -54,7 +55,7 @@ public class SchedulerHandlerTest {
   @Mock private ECSAsyncClient ecs;
 
   @Test
-  public void invokesSchedulerCoreForDeploymentMethod() {
+  public void invokesSchedulerCoreForDeploymentMethod() throws Exception {
     ClusterSnapshot snapshot =
         new ClusterSnapshot(CLUSTER_ARN, Collections.emptyList(), Collections.emptyList());
 
@@ -63,7 +64,7 @@ public class SchedulerHandlerTest {
 
     Scheduler fakeScheduler = (s, environment) -> Arrays.asList(succesfulAction, failedAction);
 
-    when(schedulerFactory.schedulerFor(EnvironmentType.SingleTask)).thenReturn(fakeScheduler);
+    when(schedulerFactory.schedulerFor(any())).thenReturn(fakeScheduler);
 
     StartTaskResponse successResponse = StartTaskResponse.builder().failures().build();
 

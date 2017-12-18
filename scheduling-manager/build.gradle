@@ -2,10 +2,10 @@ plugins {
     id "java"
     id "io.spring.dependency-management"
     id "blox-deploy"
+    id "com.commercehub.cucumber-jvm"
 }
 
-
-description "Scheduling lifecycle and deployment logic"
+addCucumberSuite 'cucumber'
 
 dependencies {
     compile(
@@ -36,10 +36,17 @@ dependencies {
     testCompile(
             'software.amazon.awssdk:cloudformation',
 
+            'org.assertj:assertj-core:3.8+',
             'org.springframework:spring-test',
             'org.mockito:mockito-core',
             'org.hamcrest:hamcrest-junit:2.+',
             'junit:junit:4.12'
+    )
+
+    cucumberCompile(
+            'info.cukes:cucumber-java8',
+
+            'org.assertj:assertj-core:3.8+',
     )
 }
 
@@ -48,6 +55,8 @@ test {
         excludeCategories 'com.amazonaws.blox.testcategories.IntegrationTest'
     }
 }
+
+check.dependsOn("cucumber")
 
 task packageLambda(type: Zip) {
     from compileJava

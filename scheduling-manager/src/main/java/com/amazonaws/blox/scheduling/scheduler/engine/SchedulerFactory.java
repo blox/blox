@@ -14,16 +14,24 @@
  */
 package com.amazonaws.blox.scheduling.scheduler.engine;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.model.EnvironmentType;
+import com.amazonaws.blox.scheduling.scheduler.engine.daemon.ReplaceAfterTerminateScheduler;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SchedulerFactory {
 
-  public Scheduler schedulerFor(EnvironmentType type) {
-    switch (type) {
+  public Scheduler schedulerFor(EnvironmentDescription environment)
+      throws UnsupportedDeploymentMethodException {
+    switch (environment.getEnvironmentType()) {
       case SingleTask:
         return new SingleTaskScheduler();
+      case Daemon:
+        if (environment.getDeploymentMethod().equals(ReplaceAfterTerminateScheduler.ID)) {
+          return new ReplaceAfterTerminateScheduler();
+        } else {
+          throw new UnsupportedDeploymentMethodException(
+              environment.getEnvironmentType(), environment.getDeploymentMethod());
+        }
       default:
         throw new RuntimeException("Deployment method not supported");
     }

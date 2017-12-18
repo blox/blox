@@ -14,23 +14,16 @@
  */
 package com.amazonaws.blox.scheduling.scheduler.engine;
 
-import lombok.Builder;
-import lombok.Value;
+import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription.EnvironmentType;
 
-@Builder
-@Value
-/** The minimum set of Environment data needed for a Scheduler to make scheduling decisions */
-public class EnvironmentDescription {
-  private final String clusterArn;
-  private final String environmentName;
-  private final String targetEnvironmentRevision;
-  private final EnvironmentType environmentType;
+public class UnsupportedDeploymentMethodException extends SchedulerException {
 
-  private final String deploymentMethod;
-  private final String taskDefinitionArn;
+  public UnsupportedDeploymentMethodException(
+      EnvironmentType environmentType, String deploymentMethod) {
 
-  public enum EnvironmentType {
-    SingleTask,
-    Daemon
+    super(
+        String.format(
+            "EnvironmentType %s does not support deployment method %s",
+            environmentType, deploymentMethod));
   }
 }
