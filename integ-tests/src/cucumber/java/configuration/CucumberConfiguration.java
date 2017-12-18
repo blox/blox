@@ -14,13 +14,14 @@
  */
 package configuration;
 
-import com.amazonaws.blox.dataserviceclient.v1.old.client.DataServiceLambdaClient;
+import com.amazonaws.blox.dataserviceclient.v1.client.DataServiceLambdaClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import steps.helpers.CloudFormationStacks;
+import steps.helpers.ExceptionContext;
 import steps.wrappers.DataServiceWrapper;
 
 @Configuration
@@ -35,7 +36,13 @@ public class CucumberConfiguration {
     return new DataServiceWrapper(
         DataServiceLambdaClient.dataService(
             lambdaAsyncClient(),
-            cloudFormationStacks().get(DATASERVICE_STACK).output(DATASERVICE_LAMBDA_FUNCTION_KEY)));
+            cloudFormationStacks().get(DATASERVICE_STACK).output(DATASERVICE_LAMBDA_FUNCTION_KEY)),
+        exceptionContext());
+  }
+
+  @Bean
+  public ExceptionContext exceptionContext() {
+    return new ExceptionContext();
   }
 
   @Bean

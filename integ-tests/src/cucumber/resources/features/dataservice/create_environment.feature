@@ -4,7 +4,7 @@
 Feature: Create environment
 
   Scenario: Create an environment
-    When I create an environment named "test"
+    When I create an environment
     Then the created environment response is valid
 
   Scenario: Create an environment that already exists
