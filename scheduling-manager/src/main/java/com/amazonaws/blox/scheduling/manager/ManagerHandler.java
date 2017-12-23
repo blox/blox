@@ -30,12 +30,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@Log4j2
 public class ManagerHandler implements RequestHandler<ManagerInput, ManagerOutput> {
   private final DataService data;
   private final ECSState ecs;

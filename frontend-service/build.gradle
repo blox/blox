@@ -26,7 +26,7 @@ sourceCompatibility = 1.8
 dependencies {
     // basic Lambda handler support
     compile 'com.amazonaws:aws-lambda-java-core:1.+'
-    compile 'com.amazonaws:aws-lambda-java-log4j:1.+'
+    compile project(":lambda-logging")
 
     // lambda+spring integration
     compile 'com.amazonaws.serverless:aws-serverless-java-container-spring:0.4+'

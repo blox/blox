@@ -39,14 +39,12 @@ import com.amazonaws.blox.scheduling.state.ECSState;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.log4j.Log4j2;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.ecs.ECSAsyncClient;
 import software.amazon.awssdk.services.ecs.model.StartTaskRequest;
 import software.amazon.awssdk.services.ecs.model.StartTaskResponse;
 
-@Log4j2
 public class SchedulingSystemTest {
 
   private static final String CLUSTER_ARN = "arn:::::cluster1";

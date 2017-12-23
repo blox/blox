@@ -27,13 +27,11 @@ import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateEnvironme
 import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateTargetEnvironmentRevisionRequest;
 import com.amazonaws.blox.integ.BloxTestStack;
 import java.util.UUID;
-import lombok.extern.log4j.Log4j;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-@Log4j
 public class CreateSingleTaskEnvironmentTest {
   private static final String ENVIRONMENT_NAME = "EndToEndTestEnvironment_" + UUID.randomUUID();
   private static final String ACCOUNT_ID = "012345789";

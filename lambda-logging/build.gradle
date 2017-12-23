@@ -1,0 +1,21 @@
+group 'com.amazonaws.blox'
+version '0.1-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    runtime(
+            'com.amazonaws:aws-lambda-java-log4j2:1.+',
+            'org.apache.logging.log4j:log4j-slf4j-impl',
+    )
+
+    compile(
+            'org.slf4j:slf4j-api',
+    )
+}

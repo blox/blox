@@ -21,13 +21,13 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import software.amazon.awssdk.services.lambda.model.InvocationType;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 
-@Log4j2
+@Slf4j
 public class AwsSdkV2LambdaFunction<IN, OUT> implements LambdaFunction<IN, OUT> {
 
   private final LambdaAsyncClient lambda;

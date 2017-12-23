@@ -17,14 +17,14 @@ package com.amazonaws.blox.scheduling.scheduler.engine;
 import java.util.concurrent.CompletableFuture;
 import lombok.Builder;
 import lombok.Value;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.ecs.ECSAsyncClient;
 import software.amazon.awssdk.services.ecs.model.StartTaskRequest;
 import software.amazon.awssdk.services.ecs.model.StartTaskResponse;
 
 @Value
 @Builder
-@Log4j2
+@Slf4j
 public class StartTask implements SchedulingAction {
   private final String clusterArn;
   private final String containerInstanceArn;

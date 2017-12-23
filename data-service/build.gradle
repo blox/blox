@@ -39,10 +39,9 @@ dependencies {
     compile project(":json-rpc-lambda-server")
 
     compile(
+            project(":lambda-logging"),
             'com.amazonaws:aws-java-sdk-dynamodb',
-            'com.amazonaws:aws-lambda-java-log4j2:1.0.+',
 
-            'org.apache.logging.log4j:log4j-slf4j-impl:2.8.+',
             'org.apache.commons:commons-lang3:3.6',
 
             'org.projectlombok:lombok',
@@ -52,15 +51,12 @@ dependencies {
             'org.springframework:spring-core',
             'org.springframework:spring-beans',
             'org.springframework:spring-context',
-
-            'org.slf4j:slf4j-api'
     )
 
     testCompile(
             'junit:junit:4.12',
             'org.hamcrest:hamcrest-junit:2.+',
             'org.mockito:mockito-core',
-            'org.slf4j:slf4j-api',
             'org.slf4j:jcl-over-slf4j',
             'org.springframework:spring-test'
     )

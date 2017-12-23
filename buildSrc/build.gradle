@@ -21,6 +21,9 @@ dependencies {
         // with JDK 8. It's not actually used, but it causes annoying warning
         // messages.
         exclude group: 'com.github.jknack', module: 'handlebars'
+        // We don't use any of the logging in the swagger generator,
+        // exclude the outdated version of log4j it depends on.
+        exclude group: 'log4j', module: 'log4j'
     }
 
     // Since the `buildSrc` project must be configured and built before the

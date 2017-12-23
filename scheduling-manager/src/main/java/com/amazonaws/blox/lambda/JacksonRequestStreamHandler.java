@@ -26,7 +26,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Map;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -37,7 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * and outputs are serialized. This class provides a way to inject a Jackson {@link ObjectMapper}
  * instance that can be configured as needed.
  */
-@Log4j2
+@Slf4j
 public class JacksonRequestStreamHandler<IN, OUT> implements RequestStreamHandler {
 
   private static final TypeVariable<Class<RequestHandler>>[] PARAMETERS =

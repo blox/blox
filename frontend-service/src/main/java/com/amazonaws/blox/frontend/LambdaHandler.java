@@ -24,10 +24,10 @@ import com.amazonaws.serverless.proxy.internal.servlet.AwsProxyHttpServletReques
 import com.amazonaws.serverless.proxy.spring.SpringLambdaContainerHandler;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 
 /** Entrypoint for mapping incoming API GW requests to Lambda into Spring controllers */
-@Log4j
+@Slf4j
 public class LambdaHandler implements RequestHandler<AwsProxyRequest, AwsProxyResponse> {
   private SpringLambdaContainerHandler<AwsProxyRequest, AwsProxyResponse> handler;
 

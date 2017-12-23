@@ -63,6 +63,8 @@ subprojects {
             }
 
             dependency 'org.projectlombok:lombok:1.16.18'
+
+            dependency 'org.apache.logging.log4j:log4j-slf4j-impl:2.8+'
         }
     }
 }
