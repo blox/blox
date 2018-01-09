@@ -157,7 +157,7 @@ class DeploymentPlugin implements Plugin<Project> {
 class DeploymentPluginExtension {
     DeploymentPluginExtension(Project project) {
         this.project = project
-        this.aws = project.objects.newInstance(Aws)
+        this.aws = extensions.create("aws", Aws)
         this.apis = project.container(Api)
         this.lambdaFunctions = project.container(LambdaFunction)
 
