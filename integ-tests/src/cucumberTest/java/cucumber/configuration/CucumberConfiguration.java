@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package configuration;
+package cucumber.configuration;
 
 import com.amazonaws.blox.dataserviceclient.v1.client.DataServiceLambdaClient;
 import org.springframework.context.annotation.Bean;
@@ -20,15 +20,15 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
-import steps.helpers.CloudFormationStacks;
-import steps.helpers.ExceptionContext;
-import steps.wrappers.DataServiceWrapper;
+import cucumber.steps.helpers.CloudFormationStacks;
+import cucumber.steps.helpers.ExceptionContext;
+import cucumber.steps.wrappers.DataServiceWrapper;
 
 @Configuration
-@ComponentScan("steps")
+@ComponentScan("cucumber.steps")
 public class CucumberConfiguration {
 
-  public static final String DATASERVICE_STACK = "data-service";
+  public static final String DATASERVICE_STACK = "dataservice";
   public static final String DATASERVICE_LAMBDA_FUNCTION_KEY = "DataService";
 
   @Bean

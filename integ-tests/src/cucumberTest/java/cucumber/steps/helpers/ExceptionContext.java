@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.helpers;
+package cucumber.steps.helpers;
 
 /**
  * This class is used by Cucumber tests to keep track of any exceptions that tests need to check

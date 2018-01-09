@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
@@ -35,5 +36,6 @@ public class CreateEnvironmentRequest {
   @NonNull private String role;
   @NonNull private EnvironmentType environmentType;
   @NonNull private String taskDefinition;
-  @NonNull private InstanceGroup instanceGroup;
+  private InstanceGroup instanceGroup;
+  private DeploymentConfiguration deploymentConfiguration;
 }

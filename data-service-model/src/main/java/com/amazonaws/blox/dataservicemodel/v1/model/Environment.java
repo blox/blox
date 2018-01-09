@@ -20,7 +20,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 
 @Data
 @Builder
@@ -40,4 +39,5 @@ public class Environment {
   @NonNull private String deploymentMethod;
   private DeploymentConfiguration deploymentConfiguration;
   private String activeEnvironmentRevisionId;
+  private String latestEnvironmentRevisionId;
 }

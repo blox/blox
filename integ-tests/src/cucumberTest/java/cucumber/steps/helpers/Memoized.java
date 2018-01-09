@@ -12,26 +12,13 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.helpers;
-
-import java.util.List;
-import java.util.function.Function;
+package cucumber.steps.helpers;
 
 /**
  * Represents an entity that caches previous values. The values can be of any type, and the history
  * is kept per type.
  */
 public interface Memoized {
-
-  /**
-   * Retrieves a value from a particular type's history.
-   *
-   * @param type the class of the objects
-   * @param fn a function to extract the value from the list of historical values
-   * @param <T> the type of the objects
-   * @return the value
-   */
-  <T> T getFromHistory(Class<T> type, Function<List<Object>, Object> fn);
 
   /**
    * Retrieves the last value from a particular type's history.
@@ -50,4 +37,15 @@ public interface Memoized {
    * @param <T> the type of the objects
    */
   <T> void addToHistory(Class<T> type, T value);
+
+  /**
+   * Call the function, with the given input, storing both the input and the output in the history.
+   *
+   * @param <T> the input's type
+   * @param <R> the output's type
+   * @param input the function's input
+   * @param fn the function to call
+   * @return the function's result value
+   */
+  <T, R> R memoizeFunction(T input, ThrowingFunction<T, R> fn);
 }

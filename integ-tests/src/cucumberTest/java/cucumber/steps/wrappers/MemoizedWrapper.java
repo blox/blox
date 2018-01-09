@@ -12,14 +12,14 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.wrappers;
+package cucumber.steps.wrappers;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
-import java.util.List;
-import java.util.function.Function;
-import steps.helpers.Memoized;
+import org.apache.commons.lang3.Validate;
+import cucumber.steps.helpers.Memoized;
+import cucumber.steps.helpers.ThrowingFunction;
 
 public class MemoizedWrapper implements Memoized {
 
@@ -27,17 +27,22 @@ public class MemoizedWrapper implements Memoized {
       Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
 
   @Override
-  public <T> T getFromHistory(Class<T> type, Function<List<Object>, Object> fn) {
-    return null;
-  }
-
-  @Override
   public <T> T getLastFromHistory(Class<T> type) {
-    return null;
+    return (T) memory.get(type).get(memory.get(type).size() - 1);
   }
 
   @Override
   public final <T> void addToHistory(final Class<T> type, final T value) {
     memory.put(type, type.cast(value));
+  }
+
+  @Override
+  public final <T, R> R memoizeFunction(final T input, final ThrowingFunction<T, R> fn) {
+    Validate.notNull(input);
+
+    addToHistory((Class<T>) input.getClass(), input);
+    final R result = fn.apply(input);
+    addToHistory((Class<R>) result.getClass(), result);
+    return result;
   }
 }

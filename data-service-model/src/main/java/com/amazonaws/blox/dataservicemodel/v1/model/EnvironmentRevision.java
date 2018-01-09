@@ -14,12 +14,12 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model;
 
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 
 @Data
 @Builder
@@ -29,7 +29,9 @@ import lombok.Value;
 @NoArgsConstructor
 public class EnvironmentRevision {
 
+  @NonNull private EnvironmentId environmentId;
   @NonNull private String environmentRevisionId;
   @NonNull private String taskDefinition;
   @NonNull private InstanceGroup instanceGroup;
+  @NonNull private Instant createdTime;
 }

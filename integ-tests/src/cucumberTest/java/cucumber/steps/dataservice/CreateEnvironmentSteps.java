@@ -12,17 +12,24 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.dataservice;
+package cucumber.steps.dataservice;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentHealth;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentStatus;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
-import configuration.CucumberConfiguration;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
+import cucumber.configuration.CucumberConfiguration;
+import cucumber.api.PendingException;
 import cucumber.api.java8.En;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import steps.wrappers.DataServiceWrapper;
+import cucumber.steps.wrappers.DataServiceWrapper;
 
 @ContextConfiguration(classes = CucumberConfiguration.class)
 public class CreateEnvironmentSteps implements En {
@@ -44,10 +51,77 @@ public class CreateEnvironmentSteps implements En {
           dataServiceWrapper.createEnvironment(createEnvironmentRequest());
         });
 
+    Then(
+        "the created environment response is valid",
+        () -> {
+          final CreateEnvironmentRequest request =
+              dataServiceWrapper.getLastFromHistory(CreateEnvironmentRequest.class);
+          final CreateEnvironmentResponse response =
+              dataServiceWrapper.getLastFromHistory(CreateEnvironmentResponse.class);
+
+          assertNotNull(response);
+          assertNotNull(response.getEnvironment());
+          assertNotNull(response.getEnvironmentRevision());
+
+          assertEquals(request.getEnvironmentId(), response.getEnvironment().getEnvironmentId());
+          assertEquals(request.getRole(), response.getEnvironment().getRole());
+          assertEquals(
+              request.getEnvironmentType(), response.getEnvironment().getEnvironmentType());
+          assertEquals(
+              request.getDeploymentConfiguration(),
+              response.getEnvironment().getDeploymentConfiguration());
+
+          assertNotNull(response.getEnvironment().getCreatedTime());
+          assertNotNull(response.getEnvironment().getLatestEnvironmentRevisionId());
+          assertEquals(EnvironmentHealth.HEALTHY, response.getEnvironment().getEnvironmentHealth());
+          assertEquals(
+              EnvironmentStatus.INACTIVE, response.getEnvironment().getEnvironmentStatus());
+
+          assertEquals(
+              request.getEnvironmentId(), response.getEnvironmentRevision().getEnvironmentId());
+          assertEquals(
+              request.getTaskDefinition(), response.getEnvironmentRevision().getTaskDefinition());
+          assertEquals(
+              request.getInstanceGroup(), response.getEnvironmentRevision().getInstanceGroup());
+
+          assertNotNull(response.getEnvironmentRevision().getCreatedTime());
+          assertNotNull(response.getEnvironmentRevision().getEnvironmentRevisionId());
+        });
+
     When(
         "^I create an environment named \"([^\"]*)\"$",
         (String environmentName) -> {
           dataServiceWrapper.createEnvironment(createEnvironmentRequest(environmentName));
+        });
+
+    Given(
+        "^I create an environment named \"([^\"]*)\" in the cluster \"([^\"]*)\"$",
+        (String arg1, String arg2) -> {
+          throw new PendingException();
+        });
+
+    When(
+        "^I try to create another environment with the name \"([^\"]*)\" in the cluster \"([^\"]*)\"$",
+        (String arg1, String arg2) -> {
+          throw new PendingException();
+        });
+
+    Then(
+        "^there should be a ResourceExistsException thrown$",
+        () -> {
+          throw new PendingException();
+        });
+
+    Then(
+        "^the resourceType is \"([^\"]*)\"$",
+        (String arg1) -> {
+          throw new PendingException();
+        });
+
+    Then(
+        "^the resourceId contains \"([^\"]*)\"$",
+        (String arg1) -> {
+          throw new PendingException();
         });
   }
 

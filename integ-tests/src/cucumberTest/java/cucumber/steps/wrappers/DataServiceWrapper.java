@@ -12,16 +12,14 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package steps.wrappers;
+package cucumber.steps.wrappers;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.Validate;
-import steps.helpers.ExceptionContext;
-import steps.helpers.ThrowingFunction;
+import cucumber.steps.helpers.ExceptionContext;
 
 @RequiredArgsConstructor
 public class DataServiceWrapper extends MemoizedWrapper {
@@ -31,17 +29,11 @@ public class DataServiceWrapper extends MemoizedWrapper {
 
   public CreateEnvironmentResponse createEnvironment(
       CreateEnvironmentRequest createEnvironmentRequest) {
-    return memoizeInputAndCall(createEnvironmentRequest, dataService::createEnvironment);
+    return memoizeFunction(createEnvironmentRequest, dataService::createEnvironment);
   }
 
   public void tryCreateEnvironment(CreateEnvironmentRequest createEnvironmentRequest) {
     captureException(createEnvironmentRequest, this::createEnvironment);
-  }
-
-  private <T, R> R memoizeInputAndCall(final T input, ThrowingFunction<T, R> fn) {
-    Validate.notNull(input);
-    addToHistory((Class<T>) input.getClass(), input);
-    return fn.apply(input);
   }
 
   private <T> void captureException(final T input, final Consumer<T> consumer) {

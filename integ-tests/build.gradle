@@ -7,16 +7,16 @@ repositories {
     mavenCentral()
 }
 
-addCucumberSuite 'cucumber'
+addCucumberSuite 'cucumberTest'
 
-cucumber {
+cucumberTest {
     tags = ["~@ignore"]
 }
 
 dependencies {
     compile project(":data-service-client")
 
-    cucumberCompile(
+    cucumberTestCompile(
         'com.google.guava:guava:23.0',
         'info.cukes:cucumber-java8:1.2.5',
         'info.cukes:cucumber-spring:1.2.5',
