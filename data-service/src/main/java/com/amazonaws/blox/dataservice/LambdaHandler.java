@@ -12,9 +12,13 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservice.old.model;
+package com.amazonaws.blox.dataservice;
 
-public enum EnvironmentType {
-  SingleTask,
-  Daemon
+import com.amazonaws.blox.lambda.SpringLambdaHandler;
+
+public class LambdaHandler extends SpringLambdaHandler<Application> {
+
+  public LambdaHandler() {
+    super(Application.class);
+  }
 }

@@ -36,6 +36,7 @@ public class CreateEnvironmentRequest {
   @NonNull private String role;
   @NonNull private EnvironmentType environmentType;
   @NonNull private String taskDefinition;
+  @NonNull private String deploymentMethod;
   private InstanceGroup instanceGroup;
   private DeploymentConfiguration deploymentConfiguration;
 }

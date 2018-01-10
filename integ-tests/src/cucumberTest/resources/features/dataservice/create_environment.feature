@@ -1,4 +1,3 @@
-@ignore
 @dataservice
 @create-environment
 Feature: Create environment

@@ -15,20 +15,20 @@
 package cucumber.configuration;
 
 import com.amazonaws.blox.dataserviceclient.v1.client.DataServiceLambdaClient;
+import cucumber.steps.helpers.CloudFormationStacks;
+import cucumber.steps.helpers.ExceptionContext;
+import cucumber.steps.wrappers.DataServiceWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
-import cucumber.steps.helpers.CloudFormationStacks;
-import cucumber.steps.helpers.ExceptionContext;
-import cucumber.steps.wrappers.DataServiceWrapper;
 
 @Configuration
 @ComponentScan("cucumber.steps")
 public class CucumberConfiguration {
 
-  public static final String DATASERVICE_STACK = "dataservice";
+  public static final String DATASERVICE_STACK = "data-service";
   public static final String DATASERVICE_LAMBDA_FUNCTION_KEY = "DataService";
 
   @Bean

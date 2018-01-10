@@ -8,7 +8,7 @@ Resources:
      #TODO: change ddb table names to have region prefix passed in as a resource
      TableName: Environments
      AttributeDefinitions:
-       - AttributeName: environmentId
+       - AttributeName: accountIdCluster
          AttributeType: S
        - AttributeName: environmentName
          AttributeType: S
@@ -17,7 +17,7 @@ Resources:
        - AttributeName: cluster
          AttributeType: S
      KeySchema:
-       - AttributeName: "environmentId"
+       - AttributeName: "accountIdCluster"
          KeyType: HASH
        - AttributeName: "environmentName"
          KeyType: RANGE
@@ -44,19 +44,18 @@ Resources:
      #TODO: change ddb table names to have region prefix passed in as a resource
       TableName: EnvironmentRevisions
       AttributeDefinitions:
-        - AttributeName: environmentId
+        - AttributeName: accountIdClusterEnvironmentName
           AttributeType: S
         - AttributeName: environmentRevisionId
           AttributeType: S
       KeySchema:
-        - AttributeName: "environmentId"
+        - AttributeName: "accountIdClusterEnvironmentName"
           KeyType: HASH
         - AttributeName: "environmentRevisionId"
           KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: 15
         WriteCapacityUnits: 15
-
 
   DataServiceHandler:
     Type: AWS::Serverless::Function

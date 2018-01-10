@@ -73,6 +73,7 @@ public class CreateEnvironmentSteps implements En {
 
           assertNotNull(response.getEnvironment().getCreatedTime());
           assertNotNull(response.getEnvironment().getLatestEnvironmentRevisionId());
+          assertNotNull(response.getEnvironment().getDeploymentMethod());
           assertEquals(EnvironmentHealth.HEALTHY, response.getEnvironment().getEnvironmentHealth());
           assertEquals(
               EnvironmentStatus.INACTIVE, response.getEnvironment().getEnvironmentStatus());
@@ -149,6 +150,7 @@ public class CreateEnvironmentSteps implements En {
         .role(ROLE_ARN)
         .taskDefinition(TASK_DEFINITION_ARN)
         .environmentType(EnvironmentType.Daemon)
+        .deploymentMethod("ReplaceAfterTerminate")
         .build();
   }
 

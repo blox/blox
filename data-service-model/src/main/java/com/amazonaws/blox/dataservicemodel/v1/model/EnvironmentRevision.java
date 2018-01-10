@@ -32,6 +32,6 @@ public class EnvironmentRevision {
   @NonNull private EnvironmentId environmentId;
   @NonNull private String environmentRevisionId;
   @NonNull private String taskDefinition;
-  @NonNull private InstanceGroup instanceGroup;
   @NonNull private Instant createdTime;
+  private InstanceGroup instanceGroup;
 }

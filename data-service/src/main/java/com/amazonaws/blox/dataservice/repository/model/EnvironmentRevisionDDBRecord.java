@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
+import java.time.Instant;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,22 +36,34 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EnvironmentRevisionDDBRecord {
 
-  public static final String ENVIRONMENT_ID_HASH_KEY = "environmentId";
+  public static final String ACCOUNT_ID_CLUSTER_ENVIRONMENT_NAME_HASH_KEY =
+      "accountIdClusterEnvironmentName";
   public static final String ENVIRONMENT_REVISION_ID_RANGE_KEY = "environmentRevisionId";
 
-  public static EnvironmentRevisionDDBRecord withKeys(
-      final String environmentId, final String environmentRevisionId) {
+  public static EnvironmentRevisionDDBRecord withHashKey(
+      final String accountIdClusterEnvironmentName) {
+
     return EnvironmentRevisionDDBRecord.builder()
-        .environmentId(environmentId)
+        .accountIdClusterEnvironmentName(accountIdClusterEnvironmentName)
+        .build();
+  }
+
+  public static EnvironmentRevisionDDBRecord withKeys(
+      final String accountIdClusterEnvironmentName, final String environmentRevisionId) {
+    return EnvironmentRevisionDDBRecord.builder()
+        .accountIdClusterEnvironmentName(accountIdClusterEnvironmentName)
         .environmentRevisionId(environmentRevisionId)
         .build();
   }
 
-  @DynamoDBHashKey(attributeName = ENVIRONMENT_ID_HASH_KEY)
-  private String environmentId;
+  @DynamoDBHashKey(attributeName = ACCOUNT_ID_CLUSTER_ENVIRONMENT_NAME_HASH_KEY)
+  private String accountIdClusterEnvironmentName;
 
   @DynamoDBRangeKey(attributeName = ENVIRONMENT_REVISION_ID_RANGE_KEY)
   private String environmentRevisionId;
+
+  @DynamoDBTypeConverted(converter = InstantDDBConverter.class)
+  private Instant createdTime;
 
   @DynamoDBVersionAttribute private Long recordVersion;
 

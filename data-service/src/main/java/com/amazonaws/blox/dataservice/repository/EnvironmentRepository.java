@@ -15,16 +15,29 @@
 package com.amazonaws.blox.dataservice.repository;
 
 import com.amazonaws.blox.dataservice.model.Environment;
+import com.amazonaws.blox.dataservice.model.EnvironmentId;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
+import java.util.List;
 
 /** Methods for interacting with environment and environment revision objects in the repository. */
 public interface EnvironmentRepository {
 
-  Environment createEnvironment(Environment environment)
+  Environment createEnvironmentAndEnvironmentRevision(
+      Environment environment, EnvironmentRevision environmentRevision)
       throws ResourceExistsException, InternalServiceException;
 
-  EnvironmentRevision createEnvironmentRevision(EnvironmentRevision environmentRevision)
-      throws ResourceExistsException, InternalServiceException;
+  Environment getEnvironment(EnvironmentId environmentId)
+      throws ResourceNotFoundException, InternalServiceException;
+
+  Environment updateEnvironment(Environment environment)
+      throws ResourceNotFoundException, InternalServiceException;
+
+  List<EnvironmentRevision> listEnvironmentRevisions(EnvironmentId environmentId)
+      throws InternalServiceException;
+
+  void deleteEnvironmentRevision(EnvironmentRevision environmentRevision)
+      throws InternalServiceException;
 }

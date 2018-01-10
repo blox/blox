@@ -31,7 +31,7 @@ public interface EnvironmentMapper {
   @Mapping(source = "environmentStatus", target = "status")
   @Mapping(target = "recordVersion", ignore = true)
   @Mapping(
-    target = "environmentId",
+    target = "accountIdCluster",
     expression = "java(environment.getEnvironmentId().generateAccountIdCluster())"
   )
   EnvironmentDDBRecord toEnvironmentDDBRecord(Environment environment);
@@ -40,20 +40,21 @@ public interface EnvironmentMapper {
   @Mapping(
     target = "environmentId.accountId",
     expression =
-        "java(EnvironmentId.getAccountIdFromAccountIdCluster(environmentDDBRecord.getEnvironmentId()))"
+        "java(EnvironmentId.getAccountIdFromAccountIdCluster(environmentDDBRecord.getAccountIdCluster()))"
   )
   @Mapping(
     target = "environmentId.cluster",
     expression =
-        "java(EnvironmentId.getClusterFromAccountIdCluster(environmentDDBRecord.getEnvironmentId()))"
+        "java(EnvironmentId.getClusterFromAccountIdCluster(environmentDDBRecord.getAccountIdCluster()))"
   )
   Environment toEnvironment(EnvironmentDDBRecord environmentDDBRecord);
 
   @Mapping(source = "environmentId.cluster", target = "clusterName")
   @Mapping(source = "environmentId.environmentName", target = "environmentName")
   @Mapping(
-    target = "environmentId",
-    expression = "java(environmentRevision.getEnvironmentId().generateAccountIdCluster())"
+    target = "accountIdClusterEnvironmentName",
+    expression =
+        "java(environmentRevision.getEnvironmentId().generateAccountIdClusterEnvironmentName())"
   )
   @Mapping(source = "instanceGroup.attributes", target = "attributes")
   EnvironmentRevisionDDBRecord toEnvironmentRevisionDDBRecord(
@@ -63,14 +64,8 @@ public interface EnvironmentMapper {
   @Mapping(
     target = "environmentId.accountId",
     expression =
-        "java(EnvironmentId.getAccountIdFromAccountIdCluster(environmentRevisionDDBRecord.getEnvironmentId()))"
+        "java(EnvironmentId.getAccountIdFromAccountIdClusterEnvironmentName(environmentRevisionDDBRecord.getAccountIdClusterEnvironmentName()))"
   )
-  @Mapping(
-    target = "environmentId.cluster",
-    expression =
-        "java(EnvironmentId.getClusterFromAccountIdCluster(environmentRevisionDDBRecord.getEnvironmentId()))"
-  )
-  @Mapping(source = "attributes", target = "instanceGroup.attributes")
   EnvironmentRevision toEnvironmentRevision(
       EnvironmentRevisionDDBRecord environmentRevisionDDBRecord);
 }

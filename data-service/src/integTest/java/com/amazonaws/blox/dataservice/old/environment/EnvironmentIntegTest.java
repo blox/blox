@@ -19,7 +19,6 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.amazonaws.blox.dataservice.old.Application;
 import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentNotFoundException;

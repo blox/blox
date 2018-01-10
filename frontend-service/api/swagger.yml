@@ -5,6 +5,39 @@ info:
   version: "v2017-07-11"
   title: "ecs-blox-frontend"
 paths:
+  /v1/{cluster}/environments/{environmentName}/revisions/{revisionId}:
+    get:
+      summary: "Describe Environment revisions"
+      description: ""
+      operationId: "describeEnvironmentRevision"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "cluster"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "environmentName"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "revisionId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DescribeEnvironmentRevisionResponse"
+      security:
+      - defaultAuthorization: []
+      x-amazon-apigateway-integration:
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
   /v1/{cluster}/environments:
     get:
       summary: "List all environments"
@@ -70,39 +103,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/CreateEnvironmentResponse"
-      security:
-      - defaultAuthorization: []
-      x-amazon-apigateway-integration:
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        type: "aws_proxy"
-        uri:
-          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
-  /v1/{cluster}/environments/{environmentName}/revisions/{revisionId}:
-    get:
-      summary: "Describe Environment revisions"
-      description: ""
-      operationId: "describeEnvironmentRevision"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "cluster"
-        in: "path"
-        required: true
-        type: "string"
-      - name: "environmentName"
-        in: "path"
-        required: true
-        type: "string"
-      - name: "revisionId"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/DescribeEnvironmentRevisionResponse"
       security:
       - defaultAuthorization: []
       x-amazon-apigateway-integration:
@@ -202,10 +202,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/DescribeEnvironmentResponse"
-        404:
-          description: "Environment not found"
-          schema:
-            $ref: "#/definitions/EnvironmentNotFoundError"
       security:
       - defaultAuthorization: []
       x-amazon-apigateway-integration:
@@ -292,61 +288,37 @@ securityDefinitions:
     in: "header"
     x-amazon-apigateway-authtype: "awsSigv4"
 definitions:
-  CreateEnvironmentResponse:
-    type: "object"
-    properties:
-      environmentRevisionId:
-        type: "string"
-  CreateEnvironmentRequest:
-    type: "object"
-    properties:
-      environmentName:
-        type: "string"
-      taskDefinition:
-        type: "string"
-      instanceGroup:
-        $ref: "#/definitions/InstanceGroup"
-      deploymentType:
-        type: "string"
-      deploymentMethod:
-        type: "string"
-      deploymentConfiguration:
-        $ref: "#/definitions/DeploymentConfiguration"
-  DeploymentConfiguration:
-    type: "object"
-  InstanceGroup:
-    type: "object"
-    properties:
-      query:
-        type: "string"
   DescribeEnvironmentRevisionResponse:
     type: "object"
     properties:
-      revision:
+      environmentRevision:
         $ref: "#/definitions/EnvironmentRevision"
+  Attribute:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      value:
+        type: "string"
   EnvironmentRevision:
     type: "object"
     properties:
-      cluster:
-        type: "string"
-      environmentName:
-        type: "string"
       environmentRevisionId:
         type: "string"
       taskDefinition:
         type: "string"
       instanceGroup:
         $ref: "#/definitions/InstanceGroup"
-      environmentType:
-        type: "string"
-      deploymentMethod:
-        type: "string"
-      deploymentConfiguration:
-        type: "object"
-        additionalProperties:
-          type: "string"
       counts:
         $ref: "#/definitions/TaskCounts"
+  InstanceGroup:
+    type: "object"
+    properties:
+      attributes:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Attribute"
   TaskCounts:
     type: "object"
     properties:
@@ -359,6 +331,30 @@ definitions:
       total:
         type: "integer"
         format: "int64"
+  CreateEnvironmentResponse:
+    type: "object"
+    properties:
+      environmentRevisionId:
+        type: "string"
+  CreateEnvironmentRequest:
+    type: "object"
+    properties:
+      environmentName:
+        type: "string"
+      environmentType:
+        type: "string"
+      taskDefinition:
+        type: "string"
+      deploymentMethod:
+        type: "string"
+      role:
+        type: "string"
+      instanceGroup:
+        $ref: "#/definitions/InstanceGroup"
+      deploymentConfiguration:
+        $ref: "#/definitions/DeploymentConfiguration"
+  DeploymentConfiguration:
+    type: "object"
   StartDeploymentResponse:
     type: "object"
     properties:
@@ -376,15 +372,17 @@ definitions:
         type: "string"
       cluster:
         type: "string"
-      targetRevisionId:
+      role:
         type: "string"
-  EnvironmentNotFoundError:
-    type: "object"
-    properties:
-      code:
-        type: "integer"
-        format: "int32"
-      message:
+      environmentType:
+        type: "string"
+      environmentHealth:
+        type: "string"
+      deploymentMethod:
+        type: "string"
+      deploymentConfiguration:
+        $ref: "#/definitions/DeploymentConfiguration"
+      activeEnvironmentRevisionId:
         type: "string"
   ListEnvironmentsResponse:
     type: "object"
@@ -430,4 +428,4 @@ definitions:
         type: "string"
       newTargetRevisionId:
         type: "string"
-x-generated-at: "2017-12-12T01:01:27.502Z"
+x-generated-at: "2018-01-09T22:55:42.535Z"

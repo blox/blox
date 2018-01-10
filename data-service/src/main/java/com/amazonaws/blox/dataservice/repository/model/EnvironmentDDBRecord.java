@@ -38,20 +38,21 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EnvironmentDDBRecord {
 
-  public static final String ENVIRONMENT_ID_HASH_KEY = "environmentId";
+  public static final String ACCOUNT_ID_CLUSTER_HASH_KEY = "accountIdCluster";
   public static final String ENVIRONMENT_NAME_RANGE_KEY = "environmentName";
+  public static final String LATEST_ENVIRONMENT_REVISION_ID = "latestEnvironmentRevisionId";
 
   public static EnvironmentDDBRecord withKeys(
-      final String environmentId, final String environmentName) {
+      final String accountIdCluster, final String environmentName) {
 
     return EnvironmentDDBRecord.builder()
-        .environmentId(environmentId)
+        .accountIdCluster(accountIdCluster)
         .environmentName(environmentName)
         .build();
   }
 
-  @DynamoDBHashKey(attributeName = ENVIRONMENT_ID_HASH_KEY)
-  private String environmentId;
+  @DynamoDBHashKey(attributeName = ACCOUNT_ID_CLUSTER_HASH_KEY)
+  private String accountIdCluster;
 
   @DynamoDBRangeKey(attributeName = ENVIRONMENT_NAME_RANGE_KEY)
   private String environmentName;
@@ -67,6 +68,9 @@ public class EnvironmentDDBRecord {
   //TODO: add deploymentConfiguration to ddb record
   private String role;
   private String activeEnvironmentRevisionId;
+  private String latestEnvironmentRevisionId;
+  private Boolean validEnvironment;
+  private String deploymentMethod;
 
   @DynamoDBTypeConvertedEnum private EnvironmentType type;
 

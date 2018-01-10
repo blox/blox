@@ -39,11 +39,20 @@ public class EnvironmentId {
     return new StringJoiner(UNDERSCORE).add(accountId).add(cluster).toString();
   }
 
+  public String generateAccountIdClusterEnvironmentName() {
+    return new StringJoiner(UNDERSCORE).add(accountId).add(cluster).add(environmentName).toString();
+  }
+
   public static String getAccountIdFromAccountIdCluster(String accountIdCluster) {
     return accountIdCluster.split(UNDERSCORE)[0];
   }
 
   public static String getClusterFromAccountIdCluster(String accountIdCluster) {
     return accountIdCluster.split(UNDERSCORE, 2)[1];
+  }
+
+  public static String getAccountIdFromAccountIdClusterEnvironmentName(
+      String accountIdClusterEnvironmentName) {
+    return accountIdClusterEnvironmentName.split(UNDERSCORE)[0];
   }
 }

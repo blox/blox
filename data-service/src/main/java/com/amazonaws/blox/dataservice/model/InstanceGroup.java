@@ -19,7 +19,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 @Builder
 @Data
@@ -29,5 +28,5 @@ import lombok.NonNull;
 @NoArgsConstructor
 public class InstanceGroup {
 
-  @NonNull private Set<Attribute> attributes;
+  private Set<Attribute> attributes;
 }

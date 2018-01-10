@@ -36,6 +36,10 @@ public class Environment {
   @NonNull private Instant lastUpdatedTime;
   @NonNull private EnvironmentHealth environmentHealth;
   @NonNull private EnvironmentStatus environmentStatus;
+  @NonNull private String latestEnvironmentRevisionId;
+  // environment and revision were both successfully created
+  @NonNull private boolean validEnvironment;
   private DeploymentConfiguration deploymentConfiguration;
   private String activeEnvironmentRevisionId;
+  @NonNull private String deploymentMethod;
 }
