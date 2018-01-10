@@ -17,6 +17,7 @@ buildscript {
 plugins {
     id 'java'
     id 'blox-deploy'
+    id 'net.ltgt.apt'
 }
 
 description "Lambda-backed API Gateway API for the Blox Frontend Service"
@@ -34,11 +35,24 @@ dependencies {
     // extra swagger annotations for defining API properties in code
     compile "io.swagger:swagger-annotations:${swaggerVersion}"
 
+    compile "org.mapstruct:mapstruct-jdk8"
+    apt "org.mapstruct:mapstruct-processor"
+
     compile project(":data-service-client")
 
     compileOnly 'org.projectlombok:lombok'
+    apt "org.projectlombok:lombok"
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile "org.assertj:assertj-core:3.8.0"
+    testCompile 'org.mockito:mockito-core'
+    testCompile 'org.springframework:spring-test'
+}
+
+compileJava {
+    options.compilerArgs = [
+            '-Amapstruct.defaultComponentModel=spring'
+    ]
 }
 
 task swagger(type: GenerateSwaggerModel, dependsOn: classes) {

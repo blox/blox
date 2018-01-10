@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.frontend.operations;
 
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.serverless.proxy.internal.model.ApiGatewayRequestContext;
 import com.amazonaws.serverless.proxy.internal.servlet.AwsProxyHttpServletRequestReader;
 import io.swagger.annotations.Api;
@@ -24,27 +25,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Api
 @RequestMapping(path = "/v1/{cluster}/environments", produces = "application/json")
 public abstract class EnvironmentController {
-
   // Spring will autowire the current request into this field, so that we can get a handle on the
   // request context from API gateway.
   @Autowired HttpServletRequest request;
 
-  /** Get the caller's AWS Account ID from the current request. */
-  protected String getAwsAccountId() {
-    return getApiGatewayRequestContext().getAccountId();
-  }
+  @Autowired DataService dataService;
 
   /**
    * Get the API gateway request context from the current request.
    *
    * @return
    */
-  private ApiGatewayRequestContext getApiGatewayRequestContext() {
+  protected ApiGatewayRequestContext getApiGatewayRequestContext() {
     return (ApiGatewayRequestContext)
         request.getAttribute(AwsProxyHttpServletRequestReader.API_GATEWAY_CONTEXT_PROPERTY);
-  }
-
-  protected String getEnvironmentId(String environmentName) {
-    return getAwsAccountId() + "_" + environmentName;
   }
 }

@@ -14,6 +14,8 @@
  */
 package com.amazonaws.blox.frontend;
 
+import com.amazonaws.blox.dataserviceclient.v1.client.DataServiceLambdaClient;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -29,7 +31,10 @@ public class Application {
   @Value("${data_service_function_name}")
   public String dataServiceFunctionName;
 
-  // TODO: Add DataService bean once refactoring is done
+  @Bean
+  public DataService dataService() {
+    return DataServiceLambdaClient.dataService(lambdaClient(), dataServiceFunctionName);
+  }
 
   @Bean
   public LambdaAsyncClient lambdaClient() {

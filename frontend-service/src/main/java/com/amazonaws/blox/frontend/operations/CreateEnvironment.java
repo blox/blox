@@ -14,15 +14,19 @@
  */
 package com.amazonaws.blox.frontend.operations;
 
+import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import com.amazonaws.blox.frontend.mappers.CreateEnvironmentMapper;
 import com.amazonaws.blox.frontend.models.DeploymentConfiguration;
 import com.amazonaws.blox.frontend.models.InstanceGroup;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class CreateEnvironment extends EnvironmentController {
+  @Autowired CreateEnvironmentMapper mapper;
 
   private static final String CLUSTER_PARAM_DESCRIPTION =
       "The short name or full Amazon Resource Name (ARN) of the cluster on which to run your Environment. If you do not specify a cluster, the default cluster is assumed.";
@@ -41,12 +46,12 @@ public class CreateEnvironment extends EnvironmentController {
   @ApiOperation(value = "Create a new Environment", notes = CREATE_ENVIRONMENT_NOTES)
   public CreateEnvironmentResponse createEnvironment(
       @ApiParam(name = "cluster", value = CLUSTER_PARAM_DESCRIPTION) @PathVariable String cluster,
-      @ApiParam(required = true) @RequestBody CreateEnvironmentRequest request) {
+      @ApiParam(required = true) @RequestBody CreateEnvironmentRequest request)
+      throws InvalidParameterException, ServiceException, ResourceExistsException {
 
-    // TODO: Stub implementation, replace with dataservice call
-    String id = UUID.randomUUID().toString();
-
-    return CreateEnvironmentResponse.builder().environmentRevisionId(id).build();
+    return mapper.fromDataServiceResponse(
+        dataService.createEnvironment(
+            mapper.toDataServiceRequest(getApiGatewayRequestContext(), cluster, request)));
   }
 
   @Data

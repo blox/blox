@@ -14,12 +14,16 @@
  */
 package com.amazonaws.blox.frontend.operations;
 
+import com.amazonaws.blox.dataservicemodel.v1.exception.ClientException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import com.amazonaws.blox.frontend.mappers.DescribeEnvironmentRevisionMapper;
 import com.amazonaws.blox.frontend.models.EnvironmentRevision;
 import io.swagger.annotations.ApiOperation;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -27,20 +31,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class DescribeEnvironmentRevision extends EnvironmentController {
-  @RequestMapping(path = "/{environmentName}/revisions/{revisionId}", method = RequestMethod.GET)
+  @Autowired DescribeEnvironmentRevisionMapper mapper;
+
+  @RequestMapping(
+    path = "/{environmentName}/revisions/{environmentRevisionId}",
+    method = RequestMethod.GET
+  )
   @ApiOperation(value = "Describe Environment revisions")
   public DescribeEnvironmentRevisionResponse describeEnvironmentRevision(
       @PathVariable("cluster") String cluster,
       @PathVariable("environmentName") String environmentName,
-      @PathVariable("revisionId") String revisionId) {
-
-    return DescribeEnvironmentRevisionResponse.builder()
-        .environmentRevision(
-            EnvironmentRevision.builder()
-                .environmentRevisionId(revisionId)
-                .taskDefinition(null)
-                .build())
-        .build();
+      @PathVariable("environmentRevisionId") String environmentRevisionId)
+      throws ServiceException, ClientException {
+    return mapper.fromDataServiceResponse(
+        dataService.describeEnvironmentRevision(
+            mapper.toDataServiceRequest(
+                getApiGatewayRequestContext(), cluster, environmentName, environmentRevisionId)));
   }
 
   @Data
