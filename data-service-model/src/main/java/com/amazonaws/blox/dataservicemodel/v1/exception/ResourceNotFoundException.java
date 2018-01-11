@@ -20,7 +20,7 @@ public class ResourceNotFoundException extends ClientException {
   private String resourceId;
 
   public ResourceNotFoundException(String resourceType, String resourceId) {
-    super(String.format("%s with id %s could not be found"));
+    super(String.format("%s with id %s could not be found", resourceType, resourceId));
 
     this.resourceType = resourceType;
     this.resourceId = resourceId;

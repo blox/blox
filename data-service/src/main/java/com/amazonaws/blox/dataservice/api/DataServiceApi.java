@@ -49,6 +49,7 @@ import org.springframework.stereotype.Component;
 public class DataServiceApi implements DataService {
 
   @NonNull private final CreateEnvironmentApi createEnvironmentApi;
+  @NonNull private final DescribeEnvironmentApi describeEnvironmentApi;
 
   @Override
   public CreateEnvironmentResponse createEnvironment(
@@ -65,9 +66,10 @@ public class DataServiceApi implements DataService {
   }
 
   @Override
-  public DescribeEnvironmentResponse describeEnvironment(DescribeEnvironmentRequest request)
+  public DescribeEnvironmentResponse describeEnvironment(
+      @NonNull final DescribeEnvironmentRequest request)
       throws ResourceNotFoundException, InvalidParameterException, InternalServiceException {
-    return null;
+    return describeEnvironmentApi.describeEnvironment(request);
   }
 
   @Override
