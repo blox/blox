@@ -74,7 +74,9 @@ Next, in order to deploy your personal stack:
                 "lambda:*",
                 "apigateway:*",
                 "cloudformation:*",
-                "iam:*"
+                "iam:*",
+                "execute-api:*",
+                "events:DescribeRule"
             ],
             "Resource":"*"
         }]
@@ -88,6 +90,7 @@ Next, in order to deploy your personal stack:
   the AWS credentials for the user you created above:
 
     ```
+    aws configure --profile blox-<username>-alpha-us-west-2 set region us-west-2
     aws configure --profile blox-<username>-alpha-us-west-2
     ```
 
