@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.model.Attribute;
+import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import com.amazonaws.blox.frontend.MapperConfiguration;
@@ -54,6 +55,17 @@ public abstract class EnvironmentControllerTestCase {
   ApiGatewayRequestContext requestContext = new ApiGatewayRequestContext();
   DataService dataService = mock(DataService.class);
 
+  @Before
+  public void setupRequest() {
+    servletRequest = new MockHttpServletRequest();
+    servletRequest.setAttribute(
+        AwsProxyHttpServletRequestReader.API_GATEWAY_CONTEXT_PROPERTY, requestContext);
+  }
+
+  // TODO: Pull these helper methods out into a fixture generator class, so that we can do e.g:
+  // fixtures.DS.instanceGroup("key", "value");
+  // fixtures.FE.instanceGroup("key", "value");
+
   protected com.amazonaws.blox.frontend.models.InstanceGroup instanceGroupWithAttributeFE(
       String attributeName, String attributeValue) {
     return com.amazonaws.blox.frontend.models.InstanceGroup.builder()
@@ -77,10 +89,11 @@ public abstract class EnvironmentControllerTestCase {
         .build();
   }
 
-  @Before
-  public void setupRequest() {
-    servletRequest = new MockHttpServletRequest();
-    servletRequest.setAttribute(
-        AwsProxyHttpServletRequestReader.API_GATEWAY_CONTEXT_PROPERTY, requestContext);
+  protected DeploymentConfiguration deploymentConfigurationDS() {
+    return DeploymentConfiguration.builder().build();
+  }
+
+  protected com.amazonaws.blox.frontend.models.DeploymentConfiguration deploymentConfigurationFE() {
+    return com.amazonaws.blox.frontend.models.DeploymentConfiguration.builder().build();
   }
 }

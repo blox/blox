@@ -19,12 +19,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
 import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import com.amazonaws.blox.frontend.mappers.CreateEnvironmentMapper;
-import com.amazonaws.blox.frontend.models.DeploymentConfiguration;
 import com.amazonaws.blox.frontend.operations.CreateEnvironment.CreateEnvironmentRequest;
 import com.amazonaws.blox.frontend.operations.CreateEnvironment.CreateEnvironmentResponse;
 import java.time.Instant;
@@ -55,6 +55,7 @@ public class CreateEnvironmentTest extends EnvironmentControllerTestCase {
             .build();
 
     InstanceGroup instanceGroup = instanceGroupWithAttributeDS(ATTRIBUTE_NAME, ATTRIBUTE_VALUE);
+    DeploymentConfiguration deploymentConfiguration = deploymentConfigurationDS();
 
     when(dataService.createEnvironment(any()))
         .thenReturn(
@@ -68,14 +69,17 @@ public class CreateEnvironmentTest extends EnvironmentControllerTestCase {
                         .environmentHealth(HEALTHY)
                         .environmentStatus(STATUS)
                         .deploymentMethod(DEPLOYMENT_METHOD)
+                        .deploymentConfiguration(deploymentConfiguration)
                         .createdTime(Instant.now())
                         .lastUpdatedTime(Instant.now())
                         .build())
                 .environmentRevision(
                     EnvironmentRevision.builder()
+                        .environmentId(id)
                         .environmentRevisionId(ENVIRONMENT_REVISION_ID)
                         .instanceGroup(instanceGroup)
                         .taskDefinition(TASK_DEFINITION)
+                        .createdTime(Instant.now())
                         .build())
                 .build());
 
@@ -87,7 +91,7 @@ public class CreateEnvironmentTest extends EnvironmentControllerTestCase {
                 .environmentType(ENVIRONMENT_TYPE_STRING)
                 .role(ROLE)
                 .deploymentMethod(DEPLOYMENT_METHOD)
-                .deploymentConfiguration(DeploymentConfiguration.builder().build())
+                .deploymentConfiguration(deploymentConfigurationFE())
                 .instanceGroup(instanceGroupWithAttributeFE(ATTRIBUTE_NAME, ATTRIBUTE_VALUE))
                 .taskDefinition(TASK_DEFINITION)
                 .build());
@@ -97,6 +101,8 @@ public class CreateEnvironmentTest extends EnvironmentControllerTestCase {
             com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest.builder()
                 .environmentId(id)
                 .environmentType(ENVIRONMENT_TYPE)
+                .deploymentMethod(DEPLOYMENT_METHOD)
+                .deploymentConfiguration(deploymentConfiguration)
                 .instanceGroup(instanceGroup)
                 .role(ROLE)
                 .taskDefinition(TASK_DEFINITION)

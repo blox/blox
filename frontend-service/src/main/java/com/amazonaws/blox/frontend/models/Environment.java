@@ -35,4 +35,5 @@ public final class Environment {
   private String deploymentMethod;
   private DeploymentConfiguration deploymentConfiguration;
   private String activeEnvironmentRevisionId;
+  private String latestEnvironmentRevisionId;
 }

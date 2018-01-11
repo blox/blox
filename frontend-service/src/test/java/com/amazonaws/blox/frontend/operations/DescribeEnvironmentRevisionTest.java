@@ -23,6 +23,7 @@ import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
 import com.amazonaws.blox.frontend.mappers.DescribeEnvironmentRevisionMapper;
 import com.amazonaws.blox.frontend.operations.DescribeEnvironmentRevision.DescribeEnvironmentRevisionResponse;
+import java.time.Instant;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,9 +52,11 @@ public class DescribeEnvironmentRevisionTest extends EnvironmentControllerTestCa
 
     EnvironmentRevision environmentRevision =
         EnvironmentRevision.builder()
+            .environmentId(id)
             .environmentRevisionId(ENVIRONMENT_REVISION_ID)
             .instanceGroup(instanceGroupWithAttributeDS(ATTRIBUTE_NAME, ATTRIBUTE_VALUE))
             .taskDefinition(TASK_DEFINITION)
+            .createdTime(Instant.now())
             .build();
 
     when(dataService.describeEnvironmentRevision(any()))
