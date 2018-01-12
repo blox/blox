@@ -12,10 +12,8 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
+package com.amazonaws.blox.dataservicemodel.v1.model;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +26,7 @@ import lombok.NonNull;
 @AllArgsConstructor
 // required for mapstruct
 @NoArgsConstructor
-public class ListClustersResponse {
-  @NonNull private List<Cluster> clusters;
+public class Cluster {
+  @NonNull private String accountId;
+  @NonNull private String clusterName;
 }
