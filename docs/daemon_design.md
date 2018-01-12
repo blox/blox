@@ -84,19 +84,27 @@ Out of scope for v1:
 
 ## User Experience
 
-> TODO: We're currently refining this user experience in [this issue](https://github.com/blox/blox/pull/252)
+(Also see the [deployment ux doc](https://github.com/blox/blox/blob/dev/docs/deployment-ux.md))
 
 Users interact with the scheduler by using **deployment** and **environment** APIs. An **environment** is an object that contains the configuration and metadata about deployments. An environment is what defines what type of scheduler will be running in a cluster (service, daemon, cron) and how it will be rolled out (deployment preferences). A **deployment** is what places tasks in the cluster.
+
+Environment consists of **environment revisions**. The revision is immutable and a new one is created every time the environment is updated. The environment revision is what determines what task definition is going to be deployed to the cluster and which cluster it's going to be deployed to.
 
 Modeling the APIs around deployments gives users the flexibility to start, stop, rollback and update deployments, and also control how they want their tasks to be updated and rolled back on instances during a deployment simply by providing deployment configuration. By keeping the APIs generic around deployments, we can add additional schedulers in the future but keep the interface and APIs consistent across scheduler types.
 
 ### Starting a Deployment
 To start deploying tasks, users need to create an environment.
+
 ```
 CreateEnvironmentResponse CreateEnvironment(CreateEnvironmentRequest)
 
 CreateEnvironmentRequest {
-    Name: string
+    EnvironmentId: {
+      AccountId: string
+      EnvironmentName: string
+      Cluster: string
+    }
+    EnvironmentType: string
     TaskDefinition: string
     InstanceGroup: InstanceGroup
     Role: string
@@ -104,12 +112,12 @@ CreateEnvironmentRequest {
 }
 
 CreateEnvironmentResponse {
-    EnvironmentVersion: uuid // deployable version of the environment
+    Environment: Environment
+    EnvironmentRevision: EnvironmentRevision
 }
 
 InstanceGroup {
-    Cluster: string
-    Attributes: list of string (optional)
+    Attributes: key-value pairs
 }
 
 ServiceDeploymentConfiguration isA DeploymentConfiguration {
@@ -123,6 +131,34 @@ ServiceDeploymentConfiguration isA DeploymentConfiguration {
 
 DaemonDeploymentConfiguration isA DeploymentConfiguration {
     MinHealthyPercent: int
+}
+
+Environment {
+    EnvironmentId environmentId
+    String role
+    EnvironmentType environmentType
+    Instant createdTime
+    Instant lastUpdatedTime
+    String environmentHealth
+    String environmentStatus
+    String deploymentMethod
+    DeploymentConfiguration deploymentConfiguration
+    String activeEnvironmentRevisionId
+    String latestEnvironmentRevisionId
+}
+
+EnvironmentRevision {
+    EnvironmentId environmentId
+    String environmentRevisionId
+    String taskDefinition
+    Instant createdTime
+    InstanceGroup instanceGroup
+}
+
+DescribeEnvironmentResponse describeEnvironment(EnvironmentId)
+
+DescribeEnvironmentResponse {
+  Environment object without environment revision history.
 }
 ```
 
@@ -138,54 +174,42 @@ A deployment can be started once an environment exists. A deployment in a daemon
 StartDeploymentResponse StartDeployment(StartDeploymentRequest)
 
 StartDeploymentRequest {
-    EnvironmentName: string
-    EnvironmentVersion: uuid
+    EnvironmentId: string
+    EnvironmentRevision: uuid
 }
-
 ```
 
 ![Starting a deployment](images/StartingDeploymentSeq.png)
 
 ### Updating a deployment
 
-The deployment configuration can be updated with **UpdateEnvironment**. All fields except TaskDefinition are optional and if not provided will remain the same. This will not kick off a new deployment until the user makes a **StartDeployment** call. If there is a pending deployment, that deployment will be canceled. If there are in-progress deployments, the new deployment will stay in pending state until the in-progress deployment is completed.
+The deployment configuration can be updated with **UpdateEnvironment**. The update environment call will create a new environment revision in the provided environment. This will not kick off a new deployment until the user makes a **StartDeployment** call. If there is a pending deployment, that deployment will be canceled. If there are in-progress deployments, the new deployment will stay in pending state until the in-progress deployment is completed.
 
 If the cluster or instances are modified, tasks are started on the new instances matching the constraints and tasks on instances that don't match anymore are terminated.
+
 ```
 UpdateEnvironmentResponse UpdateEnvironment(UpdateEnvironmentRequest)
 
 UpdateEnvironmentRequest {
-    Name: string
+    EnvironmentId: EnvironmentId
     TaskDefinition: string
     InstanceGroup: InstanceGroup
     Role: string
     DeploymentConfiguration: DeploymentConfiguration
-}
-
-StartDeploymentResponse StartDeployment(StartDeploymentRequest)
-
-StartDeploymentRequest {
-    EnvironmentName: string
-    EnvironmentVersion: uuid
-}
-
-InstanceGroup {
-    Cluster: string
-    Attributes: list of string (optional)
 }
 ```
 
 ![Updating a deployment](images/UpdatingDeploymentSeq.png)
 
 ### Rolling back a deployment
-Rolling back a deployment will start a new deployment with the previous deployment configuration. Users can also pass in an environmentversion to rollback to. Rollback will use minHealthyPercent from the deployment configuration to perform the deployment.
+Rolling back a deployment will start a new deployment with the previous deployment configuration. Users can also pass in an environmentrevision to rollback to. Rollback will use minHealthyPercent from the deployment configuration to perform the deployment.
 
 ```
 RollbackDeploymentResponse RollbackDeployment(RollbackDeploymentRequest)
 
 RollbackDeploymentRequest {
-    EnvironmentName: string
-    EnvironmentVersion: uuid
+    EnvironmentId: EnvironmentId
+    EnvironmentRevision: uuid
 }
 ```
 
@@ -196,74 +220,24 @@ Stopping a deployment will halt the in-progress deployment if one exists. The st
 StopDeploymentResponse StopDeployment(StopDeploymentRequest)
 
 StopDeploymentRequest {
-    EnvironmentName: string
-    DeploymentID: string
+    EnvironmentId: string
+    DeploymentId: string
 }
 ```
 
 ### Deleting an environment
-An environment cannot be deleted if it has an in-progress deployment started by a user (if there are in-progress deployments started by new instance monitors, those will be stopped). The in-progress deployment needs to be stopped before the environment can be deleted.
+Deleting an Environment will not make any changes to cluster state by default, it will only stop taking deployment actions. This means that any Tasks that were running at the time of deletion will still be running.
+
+If we want to also terminate any running tasks in the environment, we can specify the --terminate-tasks option:
+
+This will place the environment into the Deleting state, as all revisions that still have tasks running are undeployed.
 
 ```
 DeleteEnvironmentResponse DeleteEnvironment(DeleteEnvironmentRequest)
 
 DeleteEnvironmentRequest {
-   Name: string
-}
-```
-### Getting deployment and environment state
-```
-GetEnvironmentResponse GetEnvironment(GetEnvironmentRequest)
-
-GetEnvironmentRequest {
-    EnvironmentName: string
-}
-
-GetEnvironmentResponse {
-    Environment object without full deployment history. To get deployment history call ListDeployments for the environment.
-}
-
-ListEnvironmentsResponse ListEnvironments(ListEnvironmentsRequest)
-
-ListEnvironmentsRequest {
-    EnvironmentType: [Daemon, Service, etc] (optional)
-}
-
-ListEnvironmentsResponse {
-    List of environments {
-        EnvironmentName: string
-        EnvironmentState: [active, inactive]
-        EnvironmentHealth: [healthy, unhealthy]
-        ActiveDeployment: Deployment if there is a pending or in-progress one
-        EnvironmentType: [Daemon, Service, etc]
-    }
-}
-
-GetDeploymentResponse GetDeployment(GetDeploymentRequest)
-
-GetDeploymentRequest {
-    EnvironmentName: string
-    DeploymentID: string
-}
-
-GetDeploymentResponse {
-    Deployment object
-}
-
-GetDeploymentsByState? or should this be an optional field in getDeployment if ID is not passed
-
-ListDeploymentsResponse ListDeployments(ListDeploymentsRequest)
-
-ListDeploymentsRequest {
-    EnvironmentName: string
-}
-
-ListDeploymentsResponse {
-    list of deployments reverse-time sorted (latest first) {
-        EnvironmentName: string
-        DeploymentID: string
-        DeploymentState: {in-progress, x/n complete etc}
-    }
+    EnvironmentId: EnvironmentId
+    TerminateTasks: boolean
 }
 ```
 
@@ -285,7 +259,7 @@ The state service creates and stores a copy of the cluster (instance and task) s
 #### Scheduling Manager
 The scheduling manager handles deployments and ensures that the environment is up to date. It handles
 
-*	monitoring the deployment table for pending deployments and starting them
+*	starting deployments
 *	monitoring the deployment table for in-progress deployments and updating state
 *	updating environment state: healthy/unhealthy, etc
 *	monitoring new instances and starting tasks on them
@@ -309,49 +283,54 @@ The blox scheduler will have its own frontend instead of being part of the ECS f
 
 > TODO: We're currently defining the exact user experience for these APIs in [this issue](https://github.com/blox/blox/pull/252).
 
-**CreateEnvironment** creates an environment object in the data service. The environment is created in an inactive state which means that no monitor-deployments (which are deployments created automatically by the manager monitors when a new instance joins the cluster or a task failure happens) are created until a user-created deployment is kicked off or the environment is updated to be active.
+**CreateEnvironment** creates an environment and environment revision objects in the data service. The environment is created in an inactive state which means that no monitor-deployments (which are deployments created automatically by the manager monitors when a new instance joins the cluster or a task failure happens) are created until a user-created deployment is kicked off or the environment is updated to be active.
 
 An alternative is to kick off a deployment any time an environment is created or updated, effectively removing the need for a **startDeployment** API. The advantages of this approach are one less API to call but the disadvantages are less control: the user cannot see the diff of changes before making them, the user cannot create an environment without kicking off a deployment and they cannot update an environment while a deployment is in progress because that deployment will be stopped and a new one will be started. One might argue that there is no reason for a user to update an environment unless they want to create a new deployment. While true, AWS APIs conventionally don't have a lot of side effects and err on the side of more control. It also might be confusing to have a **stopDeployment** API but not have a **startDeployment** one.
 
 All deployments created with the APIs are marked as user-created. When a new instance joins or a task needs to be restarted the deployment is marked as monitor-created.
 
-**StartDeployment** creates a deployment object in the data service. Deployments are created in pending state. If there is an existing user-created pending deployment, that deployment is set to canceled.
+**StartDeployment** takes the environment revision and kicks off a deployment for it that starts the provided tasks on the provided cluster.
 
 **RollbackDeployment** retrieves the corresponding deployment details and creates a new pending deployment with those details.
 
 **StopDeployment** updates the deployment status to to-be-stopped.
 
-**UpdateEnvironment** updates the environment object in the data service.
+**UpdateEnvironment** updates the environment object in the data service and/or creates a new environment revision depending on the updated fields.
 
-**DeleteEnvironment** checks that there are no in-progress deployments and set the environment status to to-be-deleted.
+**DeleteEnvironment** checks that there are no in-progress deployments and sets the environment status to to-be-deleted.
 
-All the Get/List APIs interact with the data service to retrieve and return objects.
+All the Describe/List APIs interact with the data service to retrieve and return objects.
 
 #### Data Service
 ##### Data Model
+
     Environment
-       Name: string
-       Status: EnvironmentStatus enum string
-       Health: EnvironmentHealth enum string
-       CreatedAt: timestamp
-       UpdatedAt: timestamp
+        EnvironmentId environmentId
+        String role
+        EnvironmentType environmentType
+        Instant createdTime
+        Instant lastUpdatedTime
+        String environmentHealth
+        String environmentStatus
+        String deploymentMethod
+        DeploymentConfiguration deploymentConfiguration
+        String activeEnvironmentRevisionId
+        String latestEnvironmentRevisionId
 
-       EnvironmentType: EnvironmentType enum string
-       DeploymentConfiguration: DeploymentConfiguration
+    EnvironmentRevision
+        environmentId EnvironmentId
+        environmentRevisionId String
+        taskDefinition String
+        createdTime Instant
+        instanceGroup InstanceGroup
 
-       DesiredTaskDefintion: string
-       DesiredCount: int
-       CurrentInstanceGroup: InstanceGroup
-       CurrentState: list of task objects grouped by task-def
-         [
-           task-definition-1: [task1, task2]
-           task-defintion-2: [task3, task4,..,taskn]
-         ]
+    EnvironmentId
+        AccountId string
+        EnvironmentName: string
+        Cluster: string
 
     InstanceGroup
-        ID: uuid
-        Cluster: string
-        Attributes: list of string (optional)
+        Attributes: key-value pairs
 
     EnvironmentStatus
         Active,
@@ -375,51 +354,30 @@ All the Get/List APIs interact with the data service to retrieve and return obje
     DaemonDeploymentConfiguration isA DeploymentConfiguration
         MinHealthyPercent: int (deploy to 100-minHealthyPercent at a time, make sure they're up and healthy, deploy the next 100-minHealthyPercent)
 
-
-    Deployment
-        ID: uuid
-        EnvironmentName: string
-        DeploymentType: DeploymentType enum string
-        Status: DeploymentStatus    
-        CreatedAt: timestamp
-        StartTime: timestamp
-        EndTime: timestamp
-
-    DeploymentType (need to come up with better names)
-        User-created
-        Autoscaling (new instance?)
-        Health-repair
-
-    DeploymentStatus
-       Pending
-       InProgress
-       Stopped
-       Blocked
-       Complete
-
 #### Queries
 The scheduling manager and controller will need to query the data in the following format:
 *	get all environments by name
-*	get all environments that contain cluster or attributes
+*	get all environments that contain cluster
 *	get all environments by status
 *	get all environments by health
 * get all deployments by status
-*	get deployments by environment name
+*	get environment revisions by environment name
 *	get deployment by deployment id
 
-DynamoDB supports querying by primary key and additional filtering by sort key. There can, however, only be one sort key. (It's possible to add local and global indices but that consumes more capacity.) Because we need to query by a few different attributes it seems inevitable the we will need to scan through items to filter after the items are retrieved.
+Environment keys are prepended by accountId to make environment names unique per account.
 
-Environment name is prepended by accountId to make environment names unique per account.
+    Table: Environment
+        Key: accountIdCluster
+        SortKey: environmentName
+    Index: environmentClusterIndex
+        Key: accountId
+        SortKey: cluster
 
-    Table: Environment_By_Type (Daemon, Service, etc)
-    Key: accountId
-    SortKey: environmentName
+    Table: EnvironmentRevision
+        Key: accountIdClusterEnvironmentName
+        SortKey: environmentRevisionId
 
-    Table: Deployment
-    Key: accountId_environmentName
-    SortKey: deploymentId
-
-It's tempting to use status as the index in the deployments table since we'll be retrieving deployments by status most frequently. However, keys cannot be updated so if we use status as the sort key, every time we update the status we will need to delete it and recreate item. As the number of deployments in the environment grows scanning the results filtered by environment is going to become expensive. If that becomes an issue in the future, we can move completed deployments to their own key/table.
+The most up to date schema can be found in the [data service template](https://github.com/blox/blox/blob/dev/data-service/templates/data_service.yml).
 
 #### State Service
 > TODO: We're currently exploring different options for dealing with cluster state in [this issue](https://github.com/blox/blox/issues/238).
@@ -460,7 +418,7 @@ We will be storing all state in the state service and not just data about the ta
 Typically, the scheduler decides which instances to launch tasks on. Currently all placing and monitoring logic will live in the scheduling manager. We can split it out into 2 services when we implement a service scheduler.
 
 The scheduling manager is responsible for:
-*	handling new deployments, updates, rollbacks and stopping deployments
+* handling new deployments, updates, rollbacks and stopping deployments
   * processing the DynamoDB stream of new deployment records
   * monitoring the deployment table for pending deployments and starting them
   * monitoring the deployment table for in-progress deployments and updating state
