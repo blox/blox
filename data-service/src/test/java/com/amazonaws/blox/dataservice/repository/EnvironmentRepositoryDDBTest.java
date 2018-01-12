@@ -17,23 +17,36 @@ package com.amazonaws.blox.dataservice.repository;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.blox.dataservice.exception.ResourceType;
 import com.amazonaws.blox.dataservice.mapper.EnvironmentMapper;
+import com.amazonaws.blox.dataservice.model.Cluster;
+import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentRevisionDDBRecord;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,12 +61,18 @@ public class EnvironmentRepositoryDDBTest {
 
   @Mock private DynamoDBMapper dynamoDBMapper;
   @Mock private EnvironmentMapper environmentMapper;
+  @Mock private EnvironmentDDBRecord environmentDDBRecord;
+  @Mock private Environment environment;
   @Mock private EnvironmentRevisionDDBRecord environmentRevisionDDBRecord;
   @Mock private EnvironmentRevision environmentRevision;
+  @Mock private PaginatedQueryList<EnvironmentDDBRecord> environmentDDBRecords;
 
   @InjectMocks private EnvironmentRepositoryDDB environmentRepositoryDDB;
 
+  @Captor private ArgumentCaptor<DynamoDBQueryExpression> ddbQueryExpressionCaptor;
+
   private EnvironmentId environmentId;
+  private Cluster cluster;
 
   @Before
   public void setUp() {
@@ -63,6 +82,8 @@ public class EnvironmentRepositoryDDBTest {
             .cluster(CLUSTER)
             .environmentName(ENVIRONMENT_NAME)
             .build();
+
+    cluster = Cluster.builder().accountId(ACCOUNT_ID).clusterName(CLUSTER).build();
   }
 
   @Test
@@ -123,5 +144,52 @@ public class EnvironmentRepositoryDDBTest {
 
     // When
     environmentRepositoryDDB.getEnvironmentRevision(environmentId, ENVIRONMENT_REVISION_ID);
+  }
+
+  @Test
+  public void testListEnvironments() throws Exception {
+    when(environmentDDBRecords.stream()).thenReturn(Stream.of(environmentDDBRecord));
+    when(dynamoDBMapper.query(eq(EnvironmentDDBRecord.class), any(DynamoDBQueryExpression.class)))
+        .thenReturn(environmentDDBRecords);
+    when(environmentMapper.toEnvironment(environmentDDBRecord)).thenReturn(environment);
+
+    final List<Environment> result = environmentRepositoryDDB.listEnvironments(cluster);
+
+    verify(dynamoDBMapper)
+        .query(eq(EnvironmentDDBRecord.class), ddbQueryExpressionCaptor.capture());
+    verify(environmentMapper).toEnvironment(environmentDDBRecord);
+
+    final EnvironmentDDBRecord queriedEnvironmentDDBRecord =
+        (EnvironmentDDBRecord) ddbQueryExpressionCaptor.getValue().getHashKeyValues();
+
+    assertThat(
+        queriedEnvironmentDDBRecord.getAccountIdCluster(), is(cluster.generateAccountIdCluster()));
+    assertThat(result.size(), is(1));
+    assertThat(result.get(0), is(environment));
+  }
+
+  @Test
+  public void testListEnvironmentsEmptyResult() throws Exception {
+    when(environmentDDBRecords.stream()).thenReturn(Stream.empty());
+    when(dynamoDBMapper.query(eq(EnvironmentDDBRecord.class), any(DynamoDBQueryExpression.class)))
+        .thenReturn(environmentDDBRecords);
+
+    final List<Environment> result = environmentRepositoryDDB.listEnvironments(cluster);
+
+    verify(dynamoDBMapper).query(eq(EnvironmentDDBRecord.class), any());
+    verify(environmentMapper, never()).toEnvironment(environmentDDBRecord);
+    assertThat(result.size(), is(0));
+  }
+
+  @Test
+  public void testListEnvironmentsInternalError() throws Exception {
+    when(dynamoDBMapper.query(eq(EnvironmentDDBRecord.class), any(DynamoDBQueryExpression.class)))
+        .thenThrow(AmazonServiceException.class);
+
+    thrown.expect(InternalServiceException.class);
+    thrown.expectMessage(
+        String.format("Could not query environments for cluster %s", cluster.toString()));
+
+    environmentRepositoryDDB.listEnvironments(cluster);
   }
 }

@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservice.repository;
 
+import com.amazonaws.blox.dataservice.model.Cluster;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
@@ -31,6 +32,8 @@ public interface EnvironmentRepository {
 
   Environment getEnvironment(EnvironmentId environmentId)
       throws ResourceNotFoundException, InternalServiceException;
+
+  List<Environment> listEnvironments(Cluster cluster) throws InternalServiceException;
 
   Environment updateEnvironment(Environment environment)
       throws ResourceNotFoundException, InternalServiceException;

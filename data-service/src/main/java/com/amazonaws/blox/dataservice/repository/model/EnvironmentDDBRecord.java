@@ -42,6 +42,10 @@ public class EnvironmentDDBRecord {
   public static final String ENVIRONMENT_NAME_RANGE_KEY = "environmentName";
   public static final String LATEST_ENVIRONMENT_REVISION_ID = "latestEnvironmentRevisionId";
 
+  public static EnvironmentDDBRecord withHashKeys(final String accountIdCluster) {
+    return EnvironmentDDBRecord.builder().accountIdCluster(accountIdCluster).build();
+  }
+
   public static EnvironmentDDBRecord withKeys(
       final String accountIdCluster, final String environmentName) {
 

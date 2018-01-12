@@ -19,6 +19,7 @@ import static com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBReco
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.blox.dataservice.exception.ResourceType;
 import com.amazonaws.blox.dataservice.mapper.EnvironmentMapper;
+import com.amazonaws.blox.dataservice.model.Cluster;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
@@ -307,6 +308,25 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
   }
 
   @Override
+  public List<Environment> listEnvironments(@NonNull final Cluster cluster)
+      throws InternalServiceException {
+    try {
+      return dynamoDBMapper
+          .query(
+              EnvironmentDDBRecord.class,
+              new DynamoDBQueryExpression<EnvironmentDDBRecord>()
+                  .withHashKeyValues(
+                      EnvironmentDDBRecord.withHashKeys(cluster.generateAccountIdCluster())))
+          .stream()
+          .map(environmentMapper::toEnvironment)
+          .collect(Collectors.toList());
+    } catch (final AmazonServiceException e) {
+      throw new InternalServiceException(
+          String.format("Could not query environments for cluster %s", cluster.toString()), e);
+    }
+  }
+
+  @Override
   public List<EnvironmentRevision> listEnvironmentRevisions(
       @NonNull final EnvironmentId environmentId) throws InternalServiceException {
     try {
@@ -318,7 +338,7 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
                       EnvironmentRevisionDDBRecord.withHashKey(
                           environmentId.generateAccountIdClusterEnvironmentName())))
           .stream()
-          .map(r -> environmentMapper.toEnvironmentRevision(r))
+          .map(environmentMapper::toEnvironmentRevision)
           .collect(Collectors.toList());
     } catch (final AmazonServiceException e) {
       throw new InternalServiceException(

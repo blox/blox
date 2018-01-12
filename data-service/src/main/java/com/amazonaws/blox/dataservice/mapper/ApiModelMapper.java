@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservice.mapper;
 
+import com.amazonaws.blox.dataservice.model.Cluster;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
@@ -36,6 +37,8 @@ public interface ApiModelMapper {
   @Mapping(target = "latestEnvironmentRevisionId", ignore = true)
   @Mapping(target = "validEnvironment", ignore = true)
   Environment toEnvironment(CreateEnvironmentRequest createEnvironmentRequest);
+
+  Cluster toModelCluster(com.amazonaws.blox.dataservicemodel.v1.model.Cluster cluster);
 
   com.amazonaws.blox.dataservicemodel.v1.model.Environment toWrapperEnvironment(
       Environment environment);

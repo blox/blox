@@ -12,16 +12,19 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
+package com.amazonaws.blox.dataservice.repository.model;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import org.junit.Test;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.Value;
+public class EnvironmentDDBRecordTest {
+  static final String ACCOUNTID_CLUSTER = "accountIdCluster";
 
-@Value
-@Builder
-public class ListEnvironmentsRequest {
-  @NonNull private final Cluster cluster;
+  @Test
+  public void testWithHashKeys() {
+    assertThat(
+        EnvironmentDDBRecord.withHashKeys(ACCOUNTID_CLUSTER).getAccountIdCluster(),
+        is(ACCOUNTID_CLUSTER));
+  }
 }

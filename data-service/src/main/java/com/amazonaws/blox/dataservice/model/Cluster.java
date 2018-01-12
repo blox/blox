@@ -12,16 +12,29 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
+package com.amazonaws.blox.dataservice.model;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import java.util.StringJoiner;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 
-@Value
+@Data
 @Builder
-public class ListEnvironmentsRequest {
-  @NonNull private final Cluster cluster;
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
+public class Cluster {
+  private static final String UNDERSCORE = "_";
+
+  @NonNull private String accountId;
+  @NonNull private String clusterName;
+
+  public String generateAccountIdCluster() {
+    return new StringJoiner(UNDERSCORE).add(accountId).add(clusterName).toString();
+  }
 }
