@@ -18,8 +18,17 @@ import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
 import cucumber.steps.helpers.ExceptionContext;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentResponse;
 import java.util.function.Consumer;
+
+import cucumber.steps.helpers.ThrowingFunction;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.Validate;
 
 @RequiredArgsConstructor
 public class DataServiceWrapper extends MemoizedWrapper {
@@ -32,8 +41,43 @@ public class DataServiceWrapper extends MemoizedWrapper {
     return memoizeFunction(createEnvironmentRequest, dataService::createEnvironment);
   }
 
+  public DescribeEnvironmentResponse describeEnvironment(
+      DescribeEnvironmentRequest describeEnvironmentRequest) {
+    return memoizeInputAndCall(describeEnvironmentRequest, dataService::describeEnvironment);
+  }
+
+  public UpdateEnvironmentResponse updateEnvironment(
+      UpdateEnvironmentRequest updateEnvironmentRequest) {
+    return memoizeInputAndCall(updateEnvironmentRequest, dataService::updateEnvironment);
+  }
+
+  public DeleteEnvironmentResponse deleteEnvironment(
+      DeleteEnvironmentRequest deleteEnvironmentRequest) {
+    return memoizeInputAndCall(deleteEnvironmentRequest, dataService::deleteEnvironment);
+  }
+
   public void tryCreateEnvironment(CreateEnvironmentRequest createEnvironmentRequest) {
     captureException(createEnvironmentRequest, this::createEnvironment);
+  }
+
+  public void tryDescribeEnvironment(DescribeEnvironmentRequest describeEnvironmentRequest) {
+    captureException(describeEnvironmentRequest, this::describeEnvironment);
+  }
+
+  public void tryUpdateEnvironment(UpdateEnvironmentRequest updateEnvironmentRequest) {
+    captureException(updateEnvironmentRequest, this::updateEnvironment);
+  }
+
+  public void tryDeleteEnvironment(DeleteEnvironmentRequest deleteEnvironmentRequest) {
+    captureException(deleteEnvironmentRequest, this::deleteEnvironment);
+  }
+
+  private <T, R> R memoizeInputAndCall(final T input, ThrowingFunction<T, R> fn) {
+    Validate.notNull(input);
+    addToHistory((Class<T>) input.getClass(), input);
+    final R response = fn.apply(input);
+    addToHistory((Class<R>) response.getClass(), response);
+    return response;
   }
 
   private <T> void captureException(final T input, final Consumer<T> consumer) {

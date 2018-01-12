@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import lombok.Builder;
 import lombok.NonNull;
@@ -22,7 +23,7 @@ import lombok.Value;
 @Value
 @Builder
 public class UpdateEnvironmentRequest {
-
+  @NonNull private EnvironmentId environmentId;
   @NonNull private String role;
   @NonNull private String taskDefinition;
   @NonNull private InstanceGroup instanceGroup;

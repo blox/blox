@@ -18,37 +18,28 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentHealth;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentStatus;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
 import cucumber.configuration.CucumberConfiguration;
 import cucumber.api.PendingException;
 import cucumber.api.java8.En;
-import java.util.UUID;
+import cucumber.steps.helpers.InputCreator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+
 import cucumber.steps.wrappers.DataServiceWrapper;
 
 @ContextConfiguration(classes = CucumberConfiguration.class)
 public class CreateEnvironmentSteps implements En {
-
-  private static final String ENVIRONMENT_NAME_PREFIX = "test";
-  private static final int ACCOUNT_ID_SIZE = 12;
-  private static final String ACCOUNT_ID = generateAccountId();
-  private static final String TASK_DEFINITION_ARN =
-      "arn:aws:ecs:us-east-1:" + ACCOUNT_ID + ":task-definition/sleep";
-  private static final String ROLE_ARN = "arn:aws:iam::" + ACCOUNT_ID + ":role/testRole";
-  private static final String CLUSTER_NAME_PREFIX = "cluster";
-
   @Autowired private DataServiceWrapper dataServiceWrapper;
+  @Autowired private InputCreator inputCreator;
 
   public CreateEnvironmentSteps() {
     When(
         "^I create an environment$",
         () -> {
-          dataServiceWrapper.createEnvironment(createEnvironmentRequest());
+          dataServiceWrapper.createEnvironment(inputCreator.createEnvironmentRequest());
         });
 
     Then(
@@ -92,7 +83,8 @@ public class CreateEnvironmentSteps implements En {
     When(
         "^I create an environment named \"([^\"]*)\"$",
         (String environmentName) -> {
-          dataServiceWrapper.createEnvironment(createEnvironmentRequest(environmentName));
+          dataServiceWrapper.createEnvironment(
+              inputCreator.createEnvironmentRequest(environmentName));
         });
 
     Given(
@@ -124,38 +116,5 @@ public class CreateEnvironmentSteps implements En {
         (String arg1) -> {
           throw new PendingException();
         });
-  }
-
-  private CreateEnvironmentRequest createEnvironmentRequest() {
-    final String environmentName = ENVIRONMENT_NAME_PREFIX + UUID.randomUUID().toString();
-    final String clusterName = CLUSTER_NAME_PREFIX + UUID.randomUUID().toString();
-    return createEnvironmentRequest(environmentName, clusterName);
-  }
-
-  private CreateEnvironmentRequest createEnvironmentRequest(final String environmentNamePrefix) {
-    final String environmentName = environmentNamePrefix + UUID.randomUUID().toString();
-    final String clusterName = CLUSTER_NAME_PREFIX + UUID.randomUUID().toString();
-    return createEnvironmentRequest(environmentName, clusterName);
-  }
-
-  private CreateEnvironmentRequest createEnvironmentRequest(
-      final String environmentName, final String cluster) {
-    return CreateEnvironmentRequest.builder()
-        .environmentId(
-            EnvironmentId.builder()
-                .accountId(ACCOUNT_ID)
-                .cluster(cluster)
-                .environmentName(environmentName)
-                .build())
-        .role(ROLE_ARN)
-        .taskDefinition(TASK_DEFINITION_ARN)
-        .environmentType(EnvironmentType.Daemon)
-        .deploymentMethod("ReplaceAfterTerminate")
-        .build();
-  }
-
-  //TODO: random
-  private static String generateAccountId() {
-    return "12345678912";
   }
 }

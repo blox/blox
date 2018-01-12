@@ -17,6 +17,7 @@ package cucumber.configuration;
 import com.amazonaws.blox.dataserviceclient.v1.client.DataServiceLambdaClient;
 import cucumber.steps.helpers.CloudFormationStacks;
 import cucumber.steps.helpers.ExceptionContext;
+import cucumber.steps.helpers.InputCreator;
 import cucumber.steps.wrappers.DataServiceWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -58,5 +59,10 @@ public class CucumberConfiguration {
   @Bean
   public CloudFormationClient cloudFormationClient() {
     return CloudFormationClient.create();
+  }
+
+  @Bean
+  public InputCreator inputCreator() {
+    return new InputCreator();
   }
 }

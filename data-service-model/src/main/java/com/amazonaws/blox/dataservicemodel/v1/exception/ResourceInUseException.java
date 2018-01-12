@@ -14,6 +14,9 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.exception;
 
+import lombok.Value;
+
+@Value
 public class ResourceInUseException extends ClientException {
 
   private String resourceType;
