@@ -121,10 +121,11 @@ public class EnvironmentRepositoryDDBTest {
         .thenReturn(null);
 
     // Expected exception
-    thrown.expect(
-        is(
-            new ResourceNotFoundException(
-                ResourceType.ENVIRONMENT_REVISION, ENVIRONMENT_REVISION_ID)));
+    thrown.expect(ResourceNotFoundException.class);
+    thrown.expectMessage(
+        String.format(
+            "%s with id %s could not be found",
+            ResourceType.ENVIRONMENT_REVISION, ENVIRONMENT_REVISION_ID));
 
     // When
     environmentRepositoryDDB.getEnvironmentRevision(environmentId, ENVIRONMENT_REVISION_ID);
