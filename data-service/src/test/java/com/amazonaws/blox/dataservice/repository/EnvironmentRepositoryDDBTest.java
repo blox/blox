@@ -1,0 +1,127 @@
+/*
+ * Copyright 2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"). You may
+ * not use this file except in compliance with the License. A copy of the
+ * License is located at
+ *
+ *     http://aws.amazon.com/apache2.0/
+ *
+ * or in the "LICENSE" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+package com.amazonaws.blox.dataservice.repository;
+
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.blox.dataservice.exception.ResourceType;
+import com.amazonaws.blox.dataservice.mapper.EnvironmentMapper;
+import com.amazonaws.blox.dataservice.model.EnvironmentId;
+import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
+import com.amazonaws.blox.dataservice.repository.model.EnvironmentRevisionDDBRecord;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.StrictStubs.class)
+public class EnvironmentRepositoryDDBTest {
+  private static final String ACCOUNT_ID = "123456789012";
+  private static final String CLUSTER = "mycluster";
+  private static final String ENVIRONMENT_NAME = "myenv";
+  private static final String ENVIRONMENT_REVISION_ID = "revision-id";
+
+  @Rule public ExpectedException thrown = ExpectedException.none();
+
+  @Mock private DynamoDBMapper dynamoDBMapper;
+  @Mock private EnvironmentMapper environmentMapper;
+  @Mock private EnvironmentRevisionDDBRecord environmentRevisionDDBRecord;
+  @Mock private EnvironmentRevision environmentRevision;
+
+  @InjectMocks private EnvironmentRepositoryDDB environmentRepositoryDDB;
+
+  private EnvironmentId environmentId;
+
+  @Before
+  public void setUp() {
+    environmentId =
+        EnvironmentId.builder()
+            .accountId(ACCOUNT_ID)
+            .cluster(CLUSTER)
+            .environmentName(ENVIRONMENT_NAME)
+            .build();
+  }
+
+  @Test
+  public void testGetEnvironmentRevision() throws Exception {
+    // Given
+    when(dynamoDBMapper.load(
+            EnvironmentRevisionDDBRecord.class,
+            environmentId.generateAccountIdClusterEnvironmentName(),
+            ENVIRONMENT_REVISION_ID))
+        .thenReturn(environmentRevisionDDBRecord);
+    when(environmentMapper.toEnvironmentRevision(environmentRevisionDDBRecord))
+        .thenReturn(environmentRevision);
+
+    // When
+    final EnvironmentRevision result =
+        environmentRepositoryDDB.getEnvironmentRevision(environmentId, ENVIRONMENT_REVISION_ID);
+
+    // Then
+    verify(dynamoDBMapper)
+        .load(
+            EnvironmentRevisionDDBRecord.class,
+            environmentId.generateAccountIdClusterEnvironmentName(),
+            ENVIRONMENT_REVISION_ID);
+    verify(environmentMapper).toEnvironmentRevision(environmentRevisionDDBRecord);
+    assertThat(result, is(environmentRevision));
+  }
+
+  @Test
+  public void testGetEnvironmentRevisionNotFound() throws Exception {
+    // Given
+    when(dynamoDBMapper.load(
+            EnvironmentRevisionDDBRecord.class,
+            environmentId.generateAccountIdClusterEnvironmentName(),
+            ENVIRONMENT_REVISION_ID))
+        .thenReturn(null);
+
+    // Expected exception
+    thrown.expect(
+        is(
+            new ResourceNotFoundException(
+                ResourceType.ENVIRONMENT_REVISION, ENVIRONMENT_REVISION_ID)));
+
+    // When
+    environmentRepositoryDDB.getEnvironmentRevision(environmentId, ENVIRONMENT_REVISION_ID);
+  }
+
+  @Test
+  public void testGetEnvironmentRevisionInternalError() throws Exception {
+    // Given
+    when(dynamoDBMapper.load(
+            EnvironmentRevisionDDBRecord.class,
+            environmentId.generateAccountIdClusterEnvironmentName(),
+            ENVIRONMENT_REVISION_ID))
+        .thenThrow(AmazonServiceException.class);
+
+    // Expected exception
+    thrown.expect(InternalServiceException.class);
+
+    // When
+    environmentRepositoryDDB.getEnvironmentRevision(environmentId, ENVIRONMENT_REVISION_ID);
+  }
+}

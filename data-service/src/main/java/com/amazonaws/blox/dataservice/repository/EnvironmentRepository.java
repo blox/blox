@@ -35,6 +35,10 @@ public interface EnvironmentRepository {
   Environment updateEnvironment(Environment environment)
       throws ResourceNotFoundException, InternalServiceException;
 
+  EnvironmentRevision getEnvironmentRevision(
+      EnvironmentId environmentId, String environmentRevisionId)
+      throws ResourceNotFoundException, InternalServiceException;
+
   List<EnvironmentRevision> listEnvironmentRevisions(EnvironmentId environmentId)
       throws InternalServiceException;
 

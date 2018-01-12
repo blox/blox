@@ -57,6 +57,7 @@ public interface EnvironmentMapper {
         "java(environmentRevision.getEnvironmentId().generateAccountIdClusterEnvironmentName())"
   )
   @Mapping(source = "instanceGroup.attributes", target = "attributes")
+  @Mapping(target = "recordVersion", ignore = true)
   EnvironmentRevisionDDBRecord toEnvironmentRevisionDDBRecord(
       EnvironmentRevision environmentRevision);
 

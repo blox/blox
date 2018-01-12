@@ -68,6 +68,32 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
     return updateEnvironment(environment, null);
   }
 
+  @Override
+  public EnvironmentRevision getEnvironmentRevision(
+      @NonNull final EnvironmentId environmentId, @NonNull final String environmentRevisionId)
+      throws ResourceNotFoundException, InternalServiceException {
+    final String accountIdClusterEnvironmentName =
+        environmentId.generateAccountIdClusterEnvironmentName();
+    try {
+      final EnvironmentRevisionDDBRecord environmentRevisionRecord =
+          dynamoDBMapper.load(
+              EnvironmentRevisionDDBRecord.class,
+              accountIdClusterEnvironmentName,
+              environmentRevisionId);
+      if (environmentRevisionRecord == null) {
+        throw new ResourceNotFoundException(
+            ResourceType.ENVIRONMENT_REVISION, environmentRevisionId);
+      }
+      return environmentMapper.toEnvironmentRevision(environmentRevisionRecord);
+    } catch (final AmazonServiceException e) {
+      throw new InternalServiceException(
+          String.format(
+              "Could not load record with environment revision key %s and environment revision id %s",
+              accountIdClusterEnvironmentName, environmentRevisionId),
+          e);
+    }
+  }
+
   private Environment updateEnvironment(
       @NonNull final Environment environment, final DynamoDBSaveExpression dynamoDBSaveExpression)
       throws ResourceNotFoundException, InternalServiceException {
