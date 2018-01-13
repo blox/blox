@@ -55,6 +55,7 @@ dependencies {
 
     testCompile(
             'junit:junit:4.12',
+            'org.assertj:assertj-core:3.8+',
             'org.hamcrest:hamcrest-junit:2.+',
             'org.mockito:mockito-core',
             'org.slf4j:jcl-over-slf4j',
