@@ -89,32 +89,16 @@ public class CreateEnvironmentSteps implements En {
 
     Given(
         "^I create an environment named \"([^\"]*)\" in the cluster \"([^\"]*)\"$",
-        (String arg1, String arg2) -> {
-          throw new PendingException();
+        (final String environmentName, final String clusterName) -> {
+          dataServiceWrapper.createEnvironment(
+              inputCreator.createEnvironmentRequest(environmentName, clusterName));
         });
 
     When(
         "^I try to create another environment with the name \"([^\"]*)\" in the cluster \"([^\"]*)\"$",
-        (String arg1, String arg2) -> {
-          throw new PendingException();
-        });
-
-    Then(
-        "^there should be a ResourceExistsException thrown$",
-        () -> {
-          throw new PendingException();
-        });
-
-    Then(
-        "^the resourceType is \"([^\"]*)\"$",
-        (String arg1) -> {
-          throw new PendingException();
-        });
-
-    Then(
-        "^the resourceId contains \"([^\"]*)\"$",
-        (String arg1) -> {
-          throw new PendingException();
+        (final String environmentName, final String clusterName) -> {
+          dataServiceWrapper.tryCreateEnvironment(
+              inputCreator.createEnvironmentRequest(environmentName, clusterName));
         });
   }
 }
