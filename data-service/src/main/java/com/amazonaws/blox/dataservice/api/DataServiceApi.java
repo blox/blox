@@ -51,6 +51,7 @@ public class DataServiceApi implements DataService {
   @NonNull private final CreateEnvironmentApi createEnvironmentApi;
   @NonNull private final DescribeEnvironmentApi describeEnvironmentApi;
   @NonNull private final StartDeploymentApi startDeploymentApi;
+  @NonNull private final ListEnvironmentsApi listEnvironmentsApi;
 
   @Override
   public CreateEnvironmentResponse createEnvironment(
@@ -76,7 +77,7 @@ public class DataServiceApi implements DataService {
   @Override
   public ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request)
       throws InvalidParameterException, InternalServiceException {
-    return null;
+    return listEnvironmentsApi.listEnvironments(request);
   }
 
   @Override
