@@ -15,14 +15,13 @@
 package com.amazonaws.blox.dataservice.api;
 
 import com.amazonaws.blox.dataservice.mapper.ApiModelMapper;
-import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
+import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservice.repository.EnvironmentRepository;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
-
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionResponse;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -31,21 +30,25 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @Value
-public class DescribeEnvironmentApi {
+public class DescribeEnvironmentRevisionApi {
   @NonNull private ApiModelMapper apiModelMapper;
   @NonNull private EnvironmentRepository environmentRepository;
 
-  public DescribeEnvironmentResponse describeEnvironment(
-      @NonNull final DescribeEnvironmentRequest describeEnvironmentRequest)
+  public DescribeEnvironmentRevisionResponse describeEnvironmentRevision(
+      @NonNull final DescribeEnvironmentRevisionRequest describeEnvironmentRevisionRequest)
       throws ResourceNotFoundException, InternalServiceException {
+
     final com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId environmentIdFromRequest =
-        describeEnvironmentRequest.getEnvironmentId();
+        describeEnvironmentRevisionRequest.getEnvironmentId();
     final EnvironmentId environmentId =
         apiModelMapper.toModelEnvironmentId(environmentIdFromRequest);
+    final String environmentRevisionId =
+        describeEnvironmentRevisionRequest.getEnvironmentRevisionId();
     try {
-      final Environment environment = environmentRepository.getEnvironment(environmentId);
-      return DescribeEnvironmentResponse.builder()
-          .environment(apiModelMapper.toWrapperEnvironment(environment))
+      final EnvironmentRevision environmentRevision =
+          environmentRepository.getEnvironmentRevision(environmentId, environmentRevisionId);
+      return DescribeEnvironmentRevisionResponse.builder()
+          .environmentRevision(apiModelMapper.toWrapperEnvironmentRevision(environmentRevision))
           .build();
     } catch (final ResourceNotFoundException | InternalServiceException e) {
       log.error(e.getMessage(), e);

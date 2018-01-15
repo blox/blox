@@ -52,6 +52,7 @@ public class DataServiceApi implements DataService {
   @NonNull private final DescribeEnvironmentApi describeEnvironmentApi;
   @NonNull private final StartDeploymentApi startDeploymentApi;
   @NonNull private final ListEnvironmentsApi listEnvironmentsApi;
+  @NonNull private final DescribeEnvironmentRevisionApi describeEnvironmentRevisionApi;
 
   @Override
   public CreateEnvironmentResponse createEnvironment(
@@ -91,7 +92,7 @@ public class DataServiceApi implements DataService {
   public DescribeEnvironmentRevisionResponse describeEnvironmentRevision(
       DescribeEnvironmentRevisionRequest request)
       throws ResourceNotFoundException, InvalidParameterException, InternalServiceException {
-    return null;
+    return describeEnvironmentRevisionApi.describeEnvironmentRevision(request);
   }
 
   @Override
