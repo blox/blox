@@ -6,7 +6,7 @@ plugins {
 
     id 'com.diffplug.gradle.spotless' version '2.4.1' apply false
     id 'net.ltgt.apt' version '0.13' apply false
-    id 'com.commercehub.cucumber-jvm' version '0.12' apply false
+    id 'com.commercehub.cucumber-jvm' version '0.13' apply false
 }
 
 group 'com.amazonaws.blox'

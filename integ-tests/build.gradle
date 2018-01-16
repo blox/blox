@@ -11,6 +11,13 @@ addCucumberSuite 'cucumberTest'
 
 cucumberTest {
     tags = ["~@ignore"]
+
+    dependsOn ":data-service:deploy"
+
+    systemProperties = [
+            'aws.region': stack.region.toString(),
+            'aws.defaultProfile': stack.profile.toString(),
+    ]
 }
 
 dependencies {
