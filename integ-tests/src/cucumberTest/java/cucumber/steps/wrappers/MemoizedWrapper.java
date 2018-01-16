@@ -42,6 +42,7 @@ public class MemoizedWrapper implements Memoized {
 
     addToHistory((Class<T>) input.getClass(), input);
     final R result = fn.apply(input);
+    Validate.notNull(result);
     addToHistory((Class<R>) result.getClass(), result);
     return result;
   }
