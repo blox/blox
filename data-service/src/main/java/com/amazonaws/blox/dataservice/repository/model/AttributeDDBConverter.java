@@ -20,11 +20,11 @@ import java.util.StringJoiner;
 
 public class AttributeDDBConverter implements DynamoDBTypeConverter<String, Attribute> {
 
-  private static final String UNDERSCORE = "_";
+  private static final String DELIMITER = "/";
 
   @Override
   public String convert(final Attribute attribute) {
-    return new StringJoiner(UNDERSCORE)
+    return new StringJoiner(DELIMITER)
         .add(attribute.getName())
         .add(attribute.getValue())
         .toString();
@@ -33,8 +33,8 @@ public class AttributeDDBConverter implements DynamoDBTypeConverter<String, Attr
   @Override
   public Attribute unconvert(final String stringValue) {
     return Attribute.builder()
-        .name(stringValue.split(UNDERSCORE)[0])
-        .value(stringValue.split(UNDERSCORE, 2)[1])
+        .name(stringValue.split(DELIMITER)[0])
+        .value(stringValue.split(DELIMITER, 2)[1])
         .build();
   }
 }

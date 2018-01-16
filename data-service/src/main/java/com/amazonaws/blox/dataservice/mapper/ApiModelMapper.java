@@ -14,14 +14,14 @@
  */
 package com.amazonaws.blox.dataservice.mapper;
 
+import com.amazonaws.blox.dataservice.model.Attribute;
 import com.amazonaws.blox.dataservice.model.Cluster;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
-import com.amazonaws.blox.dataservicemodel.v1.model.Attribute;
-import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
-import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
+import com.amazonaws.blox.dataservice.model.EnvironmentType;
+import com.amazonaws.blox.dataservice.model.DeploymentConfiguration;
+import com.amazonaws.blox.dataservice.model.InstanceGroup;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -38,39 +38,39 @@ public interface ApiModelMapper {
   @Mapping(target = "validEnvironment", ignore = true)
   Environment toEnvironment(CreateEnvironmentRequest createEnvironmentRequest);
 
-  Cluster toModelCluster(com.amazonaws.blox.dataservicemodel.v1.model.Cluster cluster);
-
   com.amazonaws.blox.dataservicemodel.v1.model.Environment toWrapperEnvironment(
       Environment environment);
 
-  com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId toWrapperEnvironmentId(
-      EnvironmentId environmentId);
+  Cluster toModelCluster(com.amazonaws.blox.dataservicemodel.v1.model.Cluster cluster);
 
   EnvironmentId toModelEnvironmentId(
       com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId environmentId);
 
+  com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId toWrapperEnvironmentId(
+      EnvironmentId environmentId);
+
   com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision toWrapperEnvironmentRevision(
       EnvironmentRevision environmentRevision);
 
-  EnvironmentType toWrapperEnvironmentType(
-      com.amazonaws.blox.dataservice.model.EnvironmentType environmentType);
+  EnvironmentType toModelEnvironmentType(
+      com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType environmentType);
 
-  com.amazonaws.blox.dataservice.model.EnvironmentType toModelEnvironmentType(
+  com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType toWrapperEnvironmentType(
       EnvironmentType environmentType);
 
-  InstanceGroup toWrapperInstanceGroup(
-      com.amazonaws.blox.dataservice.model.InstanceGroup instanceGroup);
+  InstanceGroup toModelInstanceGroup(
+      com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup instanceGroup);
 
-  com.amazonaws.blox.dataservice.model.InstanceGroup toModelInstanceGroup(
+  com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup toWrapperInstanceGroup(
       InstanceGroup instanceGroup);
 
-  Attribute toWrapperAttribute(com.amazonaws.blox.dataservice.model.Attribute attribute);
+  Attribute toModelAttribute(com.amazonaws.blox.dataservicemodel.v1.model.Attribute attribute);
 
-  com.amazonaws.blox.dataservice.model.Attribute toModelAttribute(Attribute attribute);
+  com.amazonaws.blox.dataservicemodel.v1.model.Attribute toWrapperAttribute(Attribute attribute);
 
-  DeploymentConfiguration toWrapperDeploymentConfiguration(
-      com.amazonaws.blox.dataservice.model.DeploymentConfiguration deploymentConfiguration);
+  DeploymentConfiguration toModelDeploymentConfiguration(
+      com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration deploymentConfiguration);
 
-  com.amazonaws.blox.dataservice.model.DeploymentConfiguration toModelDeploymentConfiguration(
-      DeploymentConfiguration deploymentConfiguration);
+  com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration
+      toWrapperDeploymentConfiguration(DeploymentConfiguration deploymentConfiguration);
 }

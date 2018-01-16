@@ -29,12 +29,12 @@ import lombok.NonNull;
 // required for mapstruct
 @NoArgsConstructor
 public class Cluster {
-  private static final String UNDERSCORE = "_";
+  private static final String DELIMITER = "/";
 
   @NonNull private String accountId;
   @NonNull private String clusterName;
 
   public String generateAccountIdCluster() {
-    return new StringJoiner(UNDERSCORE).add(accountId).add(clusterName).toString();
+    return new StringJoiner(DELIMITER).add(accountId).add(clusterName).toString();
   }
 }

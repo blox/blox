@@ -29,30 +29,30 @@ import lombok.NonNull;
 @NoArgsConstructor
 public class EnvironmentId {
 
-  private static final String UNDERSCORE = "_";
+  private static final String DELIMITER = "/";
 
   @NonNull private String environmentName;
   @NonNull private String accountId;
   @NonNull private String cluster;
 
   public String generateAccountIdCluster() {
-    return new StringJoiner(UNDERSCORE).add(accountId).add(cluster).toString();
+    return new StringJoiner(DELIMITER).add(accountId).add(cluster).toString();
   }
 
   public String generateAccountIdClusterEnvironmentName() {
-    return new StringJoiner(UNDERSCORE).add(accountId).add(cluster).add(environmentName).toString();
+    return new StringJoiner(DELIMITER).add(accountId).add(cluster).add(environmentName).toString();
   }
 
   public static String getAccountIdFromAccountIdCluster(String accountIdCluster) {
-    return accountIdCluster.split(UNDERSCORE)[0];
+    return accountIdCluster.split(DELIMITER)[0];
   }
 
   public static String getClusterFromAccountIdCluster(String accountIdCluster) {
-    return accountIdCluster.split(UNDERSCORE, 2)[1];
+    return accountIdCluster.split(DELIMITER, 2)[1];
   }
 
   public static String getAccountIdFromAccountIdClusterEnvironmentName(
       String accountIdClusterEnvironmentName) {
-    return accountIdClusterEnvironmentName.split(UNDERSCORE)[0];
+    return accountIdClusterEnvironmentName.split(DELIMITER)[0];
   }
 }
