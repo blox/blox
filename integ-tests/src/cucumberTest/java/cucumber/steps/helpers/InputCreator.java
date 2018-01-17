@@ -21,94 +21,99 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRe
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
-
+import java.util.Collections;
+import java.util.StringJoiner;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 public class InputCreator {
-  private static final String ENVIRONMENT_NAME_PREFIX = "test";
-  private static final int ACCOUNT_ID_SIZE = 12;
-  private static final String ACCOUNT_ID = generateAccountId();
-  private static final String TASK_DEFINITION_ARN =
-      "arn:aws:ecs:us-east-1:" + ACCOUNT_ID + ":task-definition/sleep";
-  private static final String ROLE_ARN = "arn:aws:iam::" + ACCOUNT_ID + ":role/testRole";
-  private static final String CLUSTER_NAME_PREFIX = "cluster";
+  private static final String DEFAULT_ACCOUNT_ID = "123456789012";
+  private static final String DEFAULT_CLUSTER_NAME = "Cluster";
+  private static final String DEFAULT_ENVIRONMENT_NAME = "Environment";
+  private static final String NAMING_PREFIX = "blox-integ-tests";
+
+  private final String sharedId = UUID.randomUUID().toString();
+  @Getter @Setter private String accountId = DEFAULT_ACCOUNT_ID;
+
+  private String getTaskDefinitionArn() {
+    return "arn:aws:ecs:us-east-1:" + getAccountId() + ":task-definition/sleep";
+  }
+
+  private String getRoleArn() {
+    return "arn:aws:iam::" + getAccountId() + ":role/testRole";
+  }
+
+  public String prefixName(final String name) {
+    return new StringJoiner("-").add(NAMING_PREFIX).add(sharedId).add(name).toString();
+  }
 
   public CreateEnvironmentRequest createEnvironmentRequest() {
-    final String environmentName = ENVIRONMENT_NAME_PREFIX + UUID.randomUUID().toString();
-    final String clusterName = CLUSTER_NAME_PREFIX + UUID.randomUUID().toString();
-    return createEnvironmentRequest(environmentName, clusterName);
+    return createEnvironmentRequest(DEFAULT_ENVIRONMENT_NAME, DEFAULT_CLUSTER_NAME);
   }
 
-  public CreateEnvironmentRequest createEnvironmentRequest(final String environmentNamePrefix) {
-    final String environmentName = environmentNamePrefix + UUID.randomUUID().toString();
-    final String clusterName = CLUSTER_NAME_PREFIX + UUID.randomUUID().toString();
-    return createEnvironmentRequest(environmentName, clusterName);
+  public CreateEnvironmentRequest createEnvironmentRequest(final String environmentName) {
+    return createEnvironmentRequest(environmentName, DEFAULT_CLUSTER_NAME);
   }
 
-  public DescribeEnvironmentRequest describeEnvironmentRequest(final String environmentNamePrefix) {
-    final String environmentName = environmentNamePrefix + UUID.randomUUID().toString();
-    final String clusterName = CLUSTER_NAME_PREFIX + UUID.randomUUID().toString();
-    return describeEnvironmentRequest(environmentName, clusterName);
+  public DescribeEnvironmentRequest describeEnvironmentRequest(final String environmentName) {
+    return describeEnvironmentRequest(environmentName, DEFAULT_CLUSTER_NAME);
   }
 
   public CreateEnvironmentRequest createEnvironmentRequest(
       final String environmentName, final String cluster) {
+    EnvironmentId id = environmentId(environmentName, cluster);
+    return createEnvironmentRequest(id);
+  }
+
+  private CreateEnvironmentRequest createEnvironmentRequest(final EnvironmentId id) {
     return CreateEnvironmentRequest.builder()
-        .environmentId(
-            EnvironmentId.builder()
-                .accountId(ACCOUNT_ID)
-                .cluster(cluster)
-                .environmentName(environmentName)
-                .build())
-        .role(ROLE_ARN)
-        .taskDefinition(TASK_DEFINITION_ARN)
+        .environmentId(id)
+        .role(getRoleArn())
+        .taskDefinition(getTaskDefinitionArn())
         .environmentType(EnvironmentType.Daemon)
         .deploymentMethod("ReplaceAfterTerminate")
         .build();
   }
 
+  private EnvironmentId environmentId(final String environmentName, final String cluster) {
+    return EnvironmentId.builder()
+        .accountId(getAccountId())
+        .cluster(prefixName(cluster))
+        .environmentName(prefixName(environmentName))
+        .build();
+  }
+
   public DescribeEnvironmentRequest describeEnvironmentRequest(
       final String environmentName, final String cluster) {
-    return DescribeEnvironmentRequest.builder()
-        .environmentId(
-            EnvironmentId.builder()
-                .accountId(ACCOUNT_ID)
-                .cluster(cluster)
-                .environmentName(environmentName)
-                .build())
-        .build();
+    EnvironmentId id = environmentId(environmentName, cluster);
+    return describeEnvironmentRequest(id);
+  }
+
+  private DescribeEnvironmentRequest describeEnvironmentRequest(final EnvironmentId id) {
+    return DescribeEnvironmentRequest.builder().environmentId(id).build();
   }
 
   public UpdateEnvironmentRequest updateEnvironmentRequestWithNewCluster(
       final String environmentName, final String cluster) {
+    EnvironmentId id = environmentId(environmentName, cluster);
+    return updateEnvironmentRequest(id);
+  }
+
+  private UpdateEnvironmentRequest updateEnvironmentRequest(final EnvironmentId id) {
     return UpdateEnvironmentRequest.builder()
-        .environmentId(
-            EnvironmentId.builder()
-                .accountId(ACCOUNT_ID)
-                .cluster(cluster)
-                .environmentName(environmentName)
-                .build())
-        .role(ROLE_ARN)
-        .taskDefinition(TASK_DEFINITION_ARN)
-        .instanceGroup(InstanceGroup.builder().attributes(null).build())
+        .environmentId(id)
+        .role(getRoleArn())
+        .taskDefinition(getTaskDefinitionArn())
+        .instanceGroup(InstanceGroup.builder().attributes(Collections.emptySet()).build())
         .build();
   }
 
   public DeleteEnvironmentRequest deleteEnvironmentRequest(
       final String environmentName, final String cluster) {
     return DeleteEnvironmentRequest.builder()
-        .environmentId(
-            EnvironmentId.builder()
-                .accountId(ACCOUNT_ID)
-                .cluster(cluster)
-                .environmentName(environmentName)
-                .build())
+        .environmentId(environmentId(environmentName, cluster))
         .forceDelete(false)
         .build();
-  }
-
-  //TODO: random
-  private static String generateAccountId() {
-    return "123456789012";
   }
 }

@@ -28,6 +28,7 @@ import cucumber.steps.helpers.ExceptionContext;
 import cucumber.steps.helpers.InputCreator;
 import cucumber.steps.wrappers.DataServiceWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.Assert.assertEquals;
@@ -35,6 +36,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @ContextConfiguration(classes = CucumberConfiguration.class)
+@DirtiesContext
 public class DataServiceSteps implements En {
 
   @Autowired private ExceptionContext exceptionContext;
@@ -143,7 +145,7 @@ public class DataServiceSteps implements En {
           final EnvironmentId environmentId = getEnvironmentIdFromCreatedEnvironment();
           dataServiceWrapper.updateEnvironment(
               inputCreator.updateEnvironmentRequestWithNewCluster(
-                  environmentId.getEnvironmentName(), newCluster));
+                  environmentId.getEnvironmentName(), inputCreator.prefixName(newCluster)));
         });
 
     Then(
@@ -228,7 +230,9 @@ public class DataServiceSteps implements En {
           }
         });
   }
-  // TODO: Currently just check if the environment are equal to the other. May only need to just compare the equality of some fields but not all
+
+  // TODO: Currently just check if the environment are equal to the other. May only need to just
+  // compare the equality of some fields but not all
   private void checkEnvironmentEquality(
       final Environment thisEnvironment, final Environment otherEnvironment) {
     assertTrue(thisEnvironment.equals(otherEnvironment));
