@@ -14,9 +14,20 @@
  */
 package com.amazonaws.blox.frontend.operations;
 
+import com.amazonaws.blox.dataservicemodel.v1.exception.ClientException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import com.amazonaws.blox.frontend.mappers.DescribeEnvironmentMapper;
+import com.amazonaws.blox.frontend.mappers.StartDeploymentMapper;
 import io.swagger.annotations.ApiOperation;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -25,21 +36,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class StartDeployment extends EnvironmentController {
+  @Autowired StartDeploymentMapper mapper;
+
   @RequestMapping(path = "/{environmentName}/deployments", method = RequestMethod.POST)
   @ApiOperation(value = "Deploy Environment revision")
   public StartDeploymentResponse startDeployment(
       @PathVariable("cluster") String cluster,
       @PathVariable("environmentName") String environmentName,
-      @RequestParam("revisionId") String revisionId) {
+      @RequestParam("revisionId") String revisionId)
+      throws ServiceException, ClientException {
 
-    return StartDeploymentResponse.builder()
-        .deploymentId(environmentName + "_" + revisionId + "_deploymentId")
-        .build();
+    return mapper.fromDataServiceResponse(
+        dataService.startDeployment(
+            mapper.toDataServiceRequest(
+                getApiGatewayRequestContext(), cluster, environmentName, revisionId)));
   }
 
-  @Value
+  @Data
   @Builder
+  @AllArgsConstructor
+  @NoArgsConstructor
   public static class StartDeploymentResponse {
-    private final String deploymentId;
+    private String deploymentId;
   }
 }

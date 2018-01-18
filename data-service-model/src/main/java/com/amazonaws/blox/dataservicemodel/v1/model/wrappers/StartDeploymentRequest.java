@@ -15,12 +15,17 @@
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 
-@Value
+@Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class StartDeploymentRequest {
 
   @NonNull private EnvironmentId environmentId;

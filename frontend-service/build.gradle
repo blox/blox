@@ -36,6 +36,8 @@ dependencies {
     compile "io.swagger:swagger-annotations:${swaggerVersion}"
 
     compile "org.mapstruct:mapstruct-jdk8"
+
+    compileOnly "org.mapstruct:mapstruct-processor"
     apt "org.mapstruct:mapstruct-processor"
 
     compile project(":data-service-client")
