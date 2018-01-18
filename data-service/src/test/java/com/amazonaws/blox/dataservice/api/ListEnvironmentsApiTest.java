@@ -30,9 +30,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
+import java.util.Optional;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,6 +40,8 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.StrictStubs.class)
 public class ListEnvironmentsApiTest {
+  private ListEnvironmentsRequest request;
+
   @Mock private ApiModelMapper apiModelMapper;
   @Mock private EnvironmentRepository environmentRepository;
   @Mock private com.amazonaws.blox.dataservicemodel.v1.model.Cluster clusterWrapper;
@@ -49,8 +51,6 @@ public class ListEnvironmentsApiTest {
   @Mock private Environment environment;
 
   @InjectMocks private ListEnvironmentsApi api;
-
-  private ListEnvironmentsRequest request;
 
   @Before
   public void setup() {
@@ -62,35 +62,34 @@ public class ListEnvironmentsApiTest {
 
   @Test
   public void testListEnvironments() throws Exception {
-    when(environmentRepository.listEnvironments(cluster))
+    when(environmentRepository.listEnvironments(cluster, null))
         .thenReturn(Collections.singletonList(environment));
 
     final ListEnvironmentsResponse response = api.listEnvironments(request);
 
     verify(apiModelMapper).toModelCluster(clusterWrapper);
-    verify(environmentRepository).listEnvironments(cluster);
-    verify(apiModelMapper).toWrapperEnvironmentId(environmentId);
+    verify(environmentRepository).listEnvironments(cluster, null);
 
-    assertThat(response.getEnvironmentIds().size(), is(1));
-    assertThat(response.getEnvironmentIds().get(0), is(environmentIdWrapper));
+    assertThat(response.getEnvironmentIds().size()).isEqualTo(1);
+    assertThat(response.getEnvironmentIds().get(0)).isEqualTo(environmentIdWrapper);
   }
 
   @Test
   public void testListEnvironmentsEmptyResult() throws Exception {
-    when(environmentRepository.listEnvironments(cluster)).thenReturn(Collections.emptyList());
+    when(environmentRepository.listEnvironments(cluster, null)).thenReturn(Collections.emptyList());
 
     final ListEnvironmentsResponse response = api.listEnvironments(request);
 
     verify(apiModelMapper).toModelCluster(clusterWrapper);
-    verify(environmentRepository).listEnvironments(cluster);
+    verify(environmentRepository).listEnvironments(cluster, null);
     verify(apiModelMapper, never()).toWrapperEnvironmentId(any());
 
-    assertThat(response.getEnvironmentIds().size(), is(0));
+    assertThat(response.getEnvironmentIds().size()).isEqualTo(0);
   }
 
   @Test(expected = InternalServiceException.class)
   public void testListEnvironmentsInternalServiceException() throws Exception {
-    when(environmentRepository.listEnvironments(cluster))
+    when(environmentRepository.listEnvironments(cluster, null))
         .thenThrow(new InternalServiceException(""));
 
     api.listEnvironments(request);
@@ -98,7 +97,8 @@ public class ListEnvironmentsApiTest {
 
   @Test(expected = InternalServiceException.class)
   public void testListEnvironmentsUnknownException() throws Exception {
-    when(environmentRepository.listEnvironments(cluster)).thenThrow(new IllegalStateException());
+    when(environmentRepository.listEnvironments(cluster, null))
+        .thenThrow(new IllegalStateException());
 
     api.listEnvironments(request);
   }

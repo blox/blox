@@ -14,13 +14,19 @@
  */
 package com.amazonaws.blox.frontend.operations;
 
+import com.amazonaws.blox.dataservicemodel.v1.exception.ClientException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import com.amazonaws.blox.frontend.mappers.ListEnvironmentsMapper;
 import com.amazonaws.blox.frontend.models.PaginatedResponse;
 import com.amazonaws.blox.frontend.models.RequestPagination;
 import io.swagger.annotations.ApiOperation;
-import java.util.Collections;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,22 +36,29 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ListEnvironments extends EnvironmentController {
+  @Autowired ListEnvironmentsMapper mapper;
 
   @RequestMapping(method = RequestMethod.GET)
   @ApiOperation(value = "List all environments")
   public ListEnvironmentsResponse listEnvironments(
       @PathVariable("cluster") String cluster,
       @RequestParam(value = "environmentNamePrefix", required = false) String environmentNamePrefix,
-      @ModelAttribute RequestPagination pagination) {
+      @ModelAttribute RequestPagination pagination)
+      throws ServiceException, ClientException {
 
-    return ListEnvironmentsResponse.builder().environmentNames(Collections.emptyList()).build();
+    // TODO: Add validation for cluster. Add Validation for environmentNamePrefix
+    return mapper.fromDataServiceResponse(
+        dataService.listEnvironments(
+            mapper.toListEnvironmentsRequest(
+                getApiGatewayRequestContext(), cluster, environmentNamePrefix)));
   }
 
-  @Value
+  @Data
   @Builder
+  @AllArgsConstructor
+  @NoArgsConstructor
   public static class ListEnvironmentsResponse implements PaginatedResponse {
-
-    private final List<String> environmentNames;
-    private final String nextToken;
+    private List<String> environmentNames;
+    private String nextToken;
   }
 }

@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservice.repository;
 
+import static com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord.ENVIRONMENT_NAME_RANGE_KEY;
 import static com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord.LATEST_ENVIRONMENT_REVISION_ID;
 
 import com.amazonaws.AmazonServiceException;
@@ -34,6 +35,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.SaveB
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBSaveExpression;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import java.util.List;
@@ -310,13 +313,27 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
   @Override
   public List<Environment> listEnvironments(@NonNull final Cluster cluster)
       throws InternalServiceException {
+    return listEnvironments(cluster, null);
+  }
+
+  @Override
+  public List<Environment> listEnvironments(
+      @NonNull final Cluster cluster, final String environmentNamePrefix)
+      throws InternalServiceException {
     try {
+      final DynamoDBQueryExpression<EnvironmentDDBRecord> queryExpression =
+          new DynamoDBQueryExpression<EnvironmentDDBRecord>()
+              .withHashKeyValues(
+                  EnvironmentDDBRecord.withHashKeys(cluster.generateAccountIdCluster()));
+      if (environmentNamePrefix != null) {
+        queryExpression.withRangeKeyCondition(
+            ENVIRONMENT_NAME_RANGE_KEY,
+            new Condition()
+                .withComparisonOperator(ComparisonOperator.BEGINS_WITH)
+                .withAttributeValueList(new AttributeValue().withS(environmentNamePrefix)));
+      }
       return dynamoDBMapper
-          .query(
-              EnvironmentDDBRecord.class,
-              new DynamoDBQueryExpression<EnvironmentDDBRecord>()
-                  .withHashKeyValues(
-                      EnvironmentDDBRecord.withHashKeys(cluster.generateAccountIdCluster())))
+          .query(EnvironmentDDBRecord.class, queryExpression)
           .stream()
           .map(environmentMapper::toEnvironment)
           .collect(Collectors.toList());

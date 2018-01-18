@@ -19,7 +19,6 @@ import com.amazonaws.blox.dataservice.model.Cluster;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.repository.EnvironmentRepository;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import lombok.AllArgsConstructor;
@@ -28,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,13 +38,13 @@ public class ListEnvironmentsApi {
   @NonNull private EnvironmentRepository environmentRepository;
 
   public ListEnvironmentsResponse listEnvironments(@NonNull final ListEnvironmentsRequest request)
-      throws InvalidParameterException, InternalServiceException {
+      throws InternalServiceException {
 
-    // TODO validate the cluster
     final Cluster cluster = apiModelMapper.toModelCluster(request.getCluster());
 
     try {
-      final List<Environment> environments = environmentRepository.listEnvironments(cluster);
+      final List<Environment> environments =
+          environmentRepository.listEnvironments(cluster, request.getEnvironmentNamePrefix());
       return ListEnvironmentsResponse.builder()
           .environmentIds(
               environments

@@ -16,12 +16,17 @@ package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 
-@Value
+@Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ListEnvironmentsRequest {
-  @NonNull private final Cluster cluster;
+  @NonNull private Cluster cluster;
+  private String environmentNamePrefix;
 }

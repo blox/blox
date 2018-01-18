@@ -77,7 +77,7 @@ public class DataServiceApi implements DataService {
 
   @Override
   public ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request)
-      throws InvalidParameterException, InternalServiceException {
+      throws InternalServiceException {
     return listEnvironmentsApi.listEnvironments(request);
   }
 

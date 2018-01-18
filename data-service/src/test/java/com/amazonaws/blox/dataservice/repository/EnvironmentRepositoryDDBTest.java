@@ -28,6 +28,9 @@ import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundExceptio
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,10 +43,11 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord.ENVIRONMENT_NAME_RANGE_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -108,7 +112,7 @@ public class EnvironmentRepositoryDDBTest {
             environmentId.generateAccountIdClusterEnvironmentName(),
             ENVIRONMENT_REVISION_ID);
     verify(environmentMapper).toEnvironmentRevision(environmentRevisionDDBRecord);
-    assertThat(result, is(environmentRevision));
+    assertThat(result).isEqualTo(environmentRevision);
   }
 
   @Test
@@ -148,13 +152,47 @@ public class EnvironmentRepositoryDDBTest {
   }
 
   @Test
-  public void testListEnvironments() throws Exception {
+  public void testListEnvironmentsWithEnvironmentNamePrefix() throws Exception {
+    final String environmentNamePrefix = "environmentNamePrefix";
+
     when(environmentDDBRecords.stream()).thenReturn(Stream.of(environmentDDBRecord));
     when(dynamoDBMapper.query(eq(EnvironmentDDBRecord.class), any(DynamoDBQueryExpression.class)))
         .thenReturn(environmentDDBRecords);
     when(environmentMapper.toEnvironment(environmentDDBRecord)).thenReturn(environment);
 
-    final List<Environment> result = environmentRepositoryDDB.listEnvironments(cluster);
+    final List<Environment> result =
+        environmentRepositoryDDB.listEnvironments(cluster, environmentNamePrefix);
+
+    verify(dynamoDBMapper)
+        .query(eq(EnvironmentDDBRecord.class), ddbQueryExpressionCaptor.capture());
+    verify(environmentMapper).toEnvironment(environmentDDBRecord);
+
+    final EnvironmentDDBRecord queriedEnvironmentDDBRecord =
+        (EnvironmentDDBRecord) ddbQueryExpressionCaptor.getValue().getHashKeyValues();
+    final Map<String, Condition> queryConditions =
+        ddbQueryExpressionCaptor.getValue().getRangeKeyConditions();
+
+    assertThat(queriedEnvironmentDDBRecord.getAccountIdCluster())
+        .isEqualTo(cluster.generateAccountIdCluster());
+    assertThat(queryConditions).isNotEmpty().hasSize(1);
+    assertThat(queryConditions).containsKey(ENVIRONMENT_NAME_RANGE_KEY);
+    assertThat(queryConditions)
+        .containsValue(
+            new Condition()
+                .withComparisonOperator(ComparisonOperator.BEGINS_WITH)
+                .withAttributeValueList(new AttributeValue().withS(environmentNamePrefix)));
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(0)).isEqualTo(environment);
+  }
+
+  @Test
+  public void testListEnvironmentsWithoutEnvironmentNamePrefix() throws Exception {
+    when(environmentDDBRecords.stream()).thenReturn(Stream.of(environmentDDBRecord));
+    when(dynamoDBMapper.query(eq(EnvironmentDDBRecord.class), any(DynamoDBQueryExpression.class)))
+        .thenReturn(environmentDDBRecords);
+    when(environmentMapper.toEnvironment(environmentDDBRecord)).thenReturn(environment);
+
+    final List<Environment> result = environmentRepositoryDDB.listEnvironments(cluster, null);
 
     verify(dynamoDBMapper)
         .query(eq(EnvironmentDDBRecord.class), ddbQueryExpressionCaptor.capture());
@@ -163,10 +201,11 @@ public class EnvironmentRepositoryDDBTest {
     final EnvironmentDDBRecord queriedEnvironmentDDBRecord =
         (EnvironmentDDBRecord) ddbQueryExpressionCaptor.getValue().getHashKeyValues();
 
-    assertThat(
-        queriedEnvironmentDDBRecord.getAccountIdCluster(), is(cluster.generateAccountIdCluster()));
-    assertThat(result.size(), is(1));
-    assertThat(result.get(0), is(environment));
+    assertThat(ddbQueryExpressionCaptor.getValue().getRangeKeyConditions()).isNull();
+    assertThat(queriedEnvironmentDDBRecord.getAccountIdCluster())
+        .isEqualTo(cluster.generateAccountIdCluster());
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(0)).isEqualTo(environment);
   }
 
   @Test
@@ -175,11 +214,11 @@ public class EnvironmentRepositoryDDBTest {
     when(dynamoDBMapper.query(eq(EnvironmentDDBRecord.class), any(DynamoDBQueryExpression.class)))
         .thenReturn(environmentDDBRecords);
 
-    final List<Environment> result = environmentRepositoryDDB.listEnvironments(cluster);
+    final List<Environment> result = environmentRepositoryDDB.listEnvironments(cluster, null);
 
     verify(dynamoDBMapper).query(eq(EnvironmentDDBRecord.class), any());
     verify(environmentMapper, never()).toEnvironment(environmentDDBRecord);
-    assertThat(result.size(), is(0));
+    assertThat(result.size()).isEqualTo(0);
   }
 
   @Test
@@ -191,6 +230,6 @@ public class EnvironmentRepositoryDDBTest {
     thrown.expectMessage(
         String.format("Could not query environments for cluster %s", cluster.toString()));
 
-    environmentRepositoryDDB.listEnvironments(cluster);
+    environmentRepositoryDDB.listEnvironments(cluster, null);
   }
 }

@@ -21,6 +21,7 @@ import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
+
 import java.util.List;
 
 /** Methods for interacting with environment and environment revision objects in the repository. */
@@ -34,6 +35,9 @@ public interface EnvironmentRepository {
       throws ResourceNotFoundException, InternalServiceException;
 
   List<Environment> listEnvironments(Cluster cluster) throws InternalServiceException;
+
+  List<Environment> listEnvironments(Cluster cluster, String environmentNamePrefix)
+      throws InternalServiceException;
 
   Environment updateEnvironment(Environment environment)
       throws ResourceNotFoundException, InternalServiceException;
