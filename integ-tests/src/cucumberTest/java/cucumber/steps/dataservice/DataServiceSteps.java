@@ -114,8 +114,7 @@ public class DataServiceSteps implements En {
         () -> {
           final EnvironmentId environmentId = getEnvironmentIdFromCreatedEnvironment();
           dataServiceWrapper.describeEnvironment(
-              inputCreator.describeEnvironmentRequest(
-                  environmentId.getEnvironmentName(), environmentId.getCluster()));
+              inputCreator.describeEnvironmentRequest(environmentId));
         });
 
     When(
@@ -123,8 +122,7 @@ public class DataServiceSteps implements En {
         () -> {
           final EnvironmentId environmentId = getEnvironmentIdFromUpdatedEnvironment();
           dataServiceWrapper.describeEnvironment(
-              inputCreator.describeEnvironmentRequest(
-                  environmentId.getEnvironmentName(), environmentId.getCluster()));
+              inputCreator.describeEnvironmentRequest(environmentId));
         });
 
     Then(
@@ -172,8 +170,7 @@ public class DataServiceSteps implements En {
         () -> {
           final EnvironmentId environmentId = getEnvironmentIdFromCreatedEnvironment();
           dataServiceWrapper.deleteEnvironment(
-              inputCreator.deleteEnvironmentRequest(
-                  environmentId.getEnvironmentName(), environmentId.getCluster()));
+              inputCreator.deleteEnvironmentRequest(environmentId));
         });
 
     When(
@@ -181,8 +178,7 @@ public class DataServiceSteps implements En {
         () -> {
           final EnvironmentId environmentId = getEnvironmentIdFromCreatedEnvironment();
           dataServiceWrapper.tryDescribeEnvironment(
-              inputCreator.describeEnvironmentRequest(
-                  environmentId.getEnvironmentName(), environmentId.getCluster()));
+              inputCreator.describeEnvironmentRequest(environmentId));
         });
 
     Then(

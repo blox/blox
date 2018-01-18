@@ -84,13 +84,13 @@ public class InputCreator {
         .build();
   }
 
-  public DescribeEnvironmentRequest describeEnvironmentRequest(
+  private DescribeEnvironmentRequest describeEnvironmentRequest(
       final String environmentName, final String cluster) {
     EnvironmentId id = environmentId(environmentName, cluster);
     return describeEnvironmentRequest(id);
   }
 
-  private DescribeEnvironmentRequest describeEnvironmentRequest(final EnvironmentId id) {
+  public DescribeEnvironmentRequest describeEnvironmentRequest(final EnvironmentId id) {
     return DescribeEnvironmentRequest.builder().environmentId(id).build();
   }
 
@@ -106,6 +106,13 @@ public class InputCreator {
         .role(getRoleArn())
         .taskDefinition(getTaskDefinitionArn())
         .instanceGroup(InstanceGroup.builder().attributes(Collections.emptySet()).build())
+        .build();
+  }
+
+  public DeleteEnvironmentRequest deleteEnvironmentRequest(final EnvironmentId environmentId) {
+    return DeleteEnvironmentRequest.builder()
+        .environmentId(environmentId)
+        .forceDelete(false)
         .build();
   }
 

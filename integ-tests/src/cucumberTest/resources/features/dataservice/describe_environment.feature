@@ -1,4 +1,3 @@
-@ignore
 @dataservice
 @describe-environment
 Feature: Describe environment
