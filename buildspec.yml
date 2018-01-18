@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - mkdir -p /root/.gradle
+      - echo "org.gradle.daemon=false" > /root/.gradle/gradle.properties
+  build:
+    commands:
+      - ./gradlew build
+  post_build:
+    commands:
+      - rm -f  /root/.gradle/caches/modules-2/modules-2.lock
+      - rm -fr /root/.gradle/caches/*/plugin-resolution/
+      - rm -fr /root/.gradle/caches/*/fileHashes/
+      - rm -fr /root/.gradle/caches/jars-3/
+
+cache:
+  paths:
+    - '/root/.gradle/caches/**/*'
+    - '/root/.gradle/wrapper/**/*'
+
