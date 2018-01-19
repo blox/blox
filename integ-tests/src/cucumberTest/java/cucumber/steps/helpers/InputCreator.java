@@ -20,6 +20,7 @@ import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import java.util.Collections;
 import java.util.StringJoiner;
@@ -121,6 +122,13 @@ public class InputCreator {
     return DeleteEnvironmentRequest.builder()
         .environmentId(environmentId(environmentName, cluster))
         .forceDelete(false)
+        .build();
+  }
+
+  public ListClustersRequest listClustersRequest() {
+    return ListClustersRequest.builder()
+        .accountId(getAccountId())
+        .clusterNamePrefix(prefixName(""))
         .build();
   }
 }

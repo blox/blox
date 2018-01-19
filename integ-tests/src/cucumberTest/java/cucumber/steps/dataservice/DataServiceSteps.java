@@ -14,14 +14,26 @@
  */
 package cucumber.steps.dataservice;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceInUseException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
 import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentHealth;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentStatus;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.*;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
+import cucumber.api.DataTable;
 import cucumber.api.java8.En;
 import cucumber.configuration.CucumberConfiguration;
 import cucumber.steps.helpers.ExceptionContext;
@@ -30,10 +42,6 @@ import cucumber.steps.wrappers.DataServiceWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @ContextConfiguration(classes = CucumberConfiguration.class)
 @DirtiesContext
@@ -137,6 +145,7 @@ public class DataServiceSteps implements En {
               describeEnvironmentResponse.getEnvironment());
         });
 
+    // TODO: Remove; changing the cluster of an existent environment is unsupported.
     Given(
         "^I update the created environment with cluster name \"([^\"]*)\"$",
         (final String newCluster) -> {
@@ -224,6 +233,42 @@ public class DataServiceSteps implements En {
                 (ResourceInUseException) exceptionContext.getException();
             assertEquals(resourceId, exception.getResourceType());
           }
+        });
+
+    When(
+        "^I list clusters$",
+        () -> {
+          dataServiceWrapper.listClusters(inputCreator.listClustersRequest());
+        });
+
+    Given(
+        "^I am using account ID (\\d+)$",
+        (String accountId) -> {
+          inputCreator.setAccountId(accountId);
+        });
+
+    Then(
+        "^no clusters are returned$",
+        () -> {
+          final ListClustersResponse response =
+              dataServiceWrapper.getLastFromHistory(ListClustersResponse.class);
+          assertThat(response.getClusters()).isEmpty();
+        });
+
+    Then(
+        "^these clusters are returned:$",
+        (DataTable table) -> {
+          final ListClustersResponse response =
+              dataServiceWrapper.getLastFromHistory(ListClustersResponse.class);
+
+          Cluster[] expectedClusters =
+              table
+                  .asList(Cluster.class)
+                  .stream()
+                  .peek(c -> c.setClusterName(inputCreator.prefixName(c.getClusterName())))
+                  .toArray(Cluster[]::new);
+
+          assertThat(response.getClusters()).containsExactlyInAnyOrder(expectedClusters);
         });
   }
 

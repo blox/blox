@@ -34,6 +34,8 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.SaveBehavior;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBSaveExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedScanList;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -41,9 +43,11 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -117,7 +121,8 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
       final EnvironmentDDBRecord environmentRecordUpdates =
           environmentMapper.toEnvironmentDDBRecord(environment);
 
-      // optimistic locking will prevent an update if the record has been updated since this was loaded
+      // optimistic locking will prevent an update if the record has been updated since this was
+      // loaded
       environmentRecordUpdates.setRecordVersion(environmentDDBRecord.getRecordVersion());
 
       dynamoDBMapper.save(environmentRecordUpdates, dynamoDBSaveExpression);
@@ -181,7 +186,8 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
       log.debug(
           String.format("Environment %s is not valid", environment.getEnvironmentId().toString()));
 
-      // if it's not valid, that means creation failed sometimes before it was successfully set to valid.
+      // if it's not valid, that means creation failed sometimes before it was successfully set to
+      // valid.
       // clean up potential existing revisions and recreate the environment
       cleanupEnvironmentRevisions(environment.getEnvironmentId());
       // clears and replaces all attributes. Versioned field constraints are also disregarded.
@@ -382,5 +388,32 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
               environmentRevision.getEnvironmentRevisionId()),
           e);
     }
+  }
+
+  @Override
+  public List<Cluster> listClusters(String accountId, String clusterNamePrefix) {
+    if (clusterNamePrefix != null) {
+      Validate.notNull(accountId, "accountId must be specified if clusterNamePrefix is specified");
+    }
+
+    // TODO: rewrite this to use the index instead of scanning the table
+    PaginatedScanList<EnvironmentDDBRecord> records =
+        dynamoDBMapper.scan(EnvironmentDDBRecord.class, new DynamoDBScanExpression());
+
+    Stream<Cluster> stream =
+        records
+            .stream()
+            .map(EnvironmentDDBRecord::getAccountIdCluster)
+            .distinct()
+            .map(Cluster::fromAccountIdCluster);
+
+    if (accountId != null) {
+      stream = stream.filter(c -> c.getAccountId().equals(accountId));
+    }
+    if (clusterNamePrefix != null) {
+      stream = stream.filter(c -> c.getClusterName().startsWith(clusterNamePrefix));
+    }
+
+    return stream.collect(Collectors.toList());
   }
 }

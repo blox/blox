@@ -37,4 +37,9 @@ public class Cluster {
   public String generateAccountIdCluster() {
     return new StringJoiner(DELIMITER).add(accountId).add(clusterName).toString();
   }
+
+  public static Cluster fromAccountIdCluster(String accountIdCluster) {
+    String[] parts = accountIdCluster.split(DELIMITER, 2);
+    return Cluster.builder().accountId(parts[0]).clusterName(parts[1]).build();
+  }
 }

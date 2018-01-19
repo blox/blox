@@ -38,6 +38,7 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequ
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
+import java.util.Collections;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,7 @@ public class DataServiceApi implements DataService {
   @NonNull private final StartDeploymentApi startDeploymentApi;
   @NonNull private final ListEnvironmentsApi listEnvironmentsApi;
   @NonNull private final DescribeEnvironmentRevisionApi describeEnvironmentRevisionApi;
+  @NonNull private final ListClustersApi listClustersApi;
 
   @Override
   public CreateEnvironmentResponse createEnvironment(
@@ -105,7 +107,7 @@ public class DataServiceApi implements DataService {
   @Override
   public ListClustersResponse listClusters(ListClustersRequest request)
       throws InvalidParameterException, InternalServiceException {
-    return null;
+    return listClustersApi.listClusters(request);
   }
 
   @Override

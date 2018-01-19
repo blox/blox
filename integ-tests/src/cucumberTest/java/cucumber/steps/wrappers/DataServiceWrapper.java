@@ -17,15 +17,18 @@ package cucumber.steps.wrappers;
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
-import cucumber.steps.helpers.ExceptionContext;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
+import cucumber.steps.helpers.ExceptionContext;
+import java.util.Set;
 import java.util.function.Consumer;
-
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -52,6 +55,10 @@ public class DataServiceWrapper extends MemoizedWrapper {
   public DeleteEnvironmentResponse deleteEnvironment(
       DeleteEnvironmentRequest deleteEnvironmentRequest) {
     return memoizeFunction(deleteEnvironmentRequest, dataService::deleteEnvironment);
+  }
+
+  public ListClustersResponse listClusters(ListClustersRequest request) {
+    return memoizeFunction(request, dataService::listClusters);
   }
 
   public void tryCreateEnvironment(CreateEnvironmentRequest createEnvironmentRequest) {

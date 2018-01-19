@@ -41,6 +41,8 @@ public interface ApiModelMapper {
   com.amazonaws.blox.dataservicemodel.v1.model.Environment toWrapperEnvironment(
       Environment environment);
 
+  com.amazonaws.blox.dataservicemodel.v1.model.Cluster toCluster(Cluster cluster);
+
   Cluster toModelCluster(com.amazonaws.blox.dataservicemodel.v1.model.Cluster cluster);
 
   EnvironmentId toModelEnvironmentId(

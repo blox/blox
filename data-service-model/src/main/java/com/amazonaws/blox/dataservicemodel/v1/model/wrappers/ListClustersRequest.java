@@ -19,4 +19,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ListClustersRequest {}
+public class ListClustersRequest {
+  String accountId;
+  String clusterNamePrefix;
+}
