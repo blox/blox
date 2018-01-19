@@ -15,7 +15,15 @@ Resources:
       CodeUri: "" # will be dynamically replaced
       Handler: com.amazonaws.blox.frontend.LambdaHandler
       MemorySize: 512
-      Timeout: 15
+      Timeout: 30
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource:
+                Fn::ImportValue: DataServiceHandlerArn
       Environment:
         Variables:
           data_service_function_name:

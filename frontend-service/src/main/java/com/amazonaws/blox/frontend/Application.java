@@ -28,6 +28,11 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 @ComponentScan("com.amazonaws.blox.frontend")
 public class Application {
 
+  static {
+    // See https://github.com/aws/aws-sdk-java-v2/issues/193
+    System.setProperty("java.net.preferIPv4Stack", "true");
+  }
+
   @Value("${data_service_function_name}")
   public String dataServiceFunctionName;
 

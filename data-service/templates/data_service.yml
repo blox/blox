@@ -75,3 +75,9 @@ Outputs:
       Ref: DataServiceHandler
     Export:
       Name: DataServiceHandler
+  DataServiceArn:
+    Description: Arn of Data service handler function
+    Value:
+      Fn::GetAtt: [DataServiceHandler, Arn]
+    Export:
+      Name: DataServiceHandlerArn
