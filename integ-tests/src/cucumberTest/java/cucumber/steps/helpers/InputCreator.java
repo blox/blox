@@ -14,6 +14,7 @@
  */
 package cucumber.steps.helpers;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
@@ -21,6 +22,7 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRe
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import java.util.Collections;
 import java.util.StringJoiner;
@@ -129,6 +131,18 @@ public class InputCreator {
     return ListClustersRequest.builder()
         .accountId(getAccountId())
         .clusterNamePrefix(prefixName(""))
+        .build();
+  }
+
+  public ListEnvironmentsRequest listEnvironmentsRequest(
+      final String clusterName, final String environmentNamePrefix) {
+    return ListEnvironmentsRequest.builder()
+        .cluster(
+            Cluster.builder()
+                .accountId(getAccountId())
+                .clusterName(prefixName(clusterName))
+                .build())
+        .environmentNamePrefix(environmentNamePrefix)
         .build();
   }
 }

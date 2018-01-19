@@ -23,6 +23,8 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironment
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
 import cucumber.steps.helpers.ExceptionContext;
@@ -59,6 +61,11 @@ public class DataServiceWrapper extends MemoizedWrapper {
 
   public ListClustersResponse listClusters(ListClustersRequest request) {
     return memoizeFunction(request, dataService::listClusters);
+  }
+
+  public ListEnvironmentsResponse listEnvironments(
+      ListEnvironmentsRequest listEnvironmentsRequest) {
+    return memoizeFunction(listEnvironmentsRequest, dataService::listEnvironments);
   }
 
   public void tryCreateEnvironment(CreateEnvironmentRequest createEnvironmentRequest) {

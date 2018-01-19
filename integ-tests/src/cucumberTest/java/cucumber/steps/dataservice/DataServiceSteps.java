@@ -31,6 +31,8 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRe
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
 import cucumber.api.DataTable;
@@ -269,6 +271,42 @@ public class DataServiceSteps implements En {
                   .toArray(Cluster[]::new);
 
           assertThat(response.getClusters()).containsExactlyInAnyOrder(expectedClusters);
+        });
+
+    When(
+        "^I list environments in cluster \"([^\"]*)\"$",
+        (final String clusterName) -> {
+          dataServiceWrapper.listEnvironments(
+              inputCreator.listEnvironmentsRequest(clusterName, null));
+        });
+
+    When(
+        "^I list environments in cluster \"([^\"]*)\" with name prefix \"([^\"]*)\"$",
+        (final String clusterName, final String environmentNamePrefix) -> {
+          dataServiceWrapper.listEnvironments(
+              inputCreator.listEnvironmentsRequest(
+                  clusterName, inputCreator.prefixName(environmentNamePrefix)));
+        });
+
+    Then(
+        "^these environments are returned$",
+        (DataTable table) -> {
+          final ListEnvironmentsResponse response =
+              dataServiceWrapper.getLastFromHistory(ListEnvironmentsResponse.class);
+
+          EnvironmentId[] expectedEnvironmentIds =
+              table
+                  .asList(EnvironmentId.class)
+                  .stream()
+                  .peek(
+                      e -> {
+                        e.setCluster(inputCreator.prefixName(e.getCluster()));
+                        e.setEnvironmentName(inputCreator.prefixName(e.getEnvironmentName()));
+                      })
+                  .toArray(EnvironmentId[]::new);
+
+          assertThat(response.getEnvironmentIds())
+              .containsExactlyInAnyOrder(expectedEnvironmentIds);
         });
   }
 
