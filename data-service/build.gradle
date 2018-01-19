@@ -12,27 +12,6 @@ compileJava {
     ]
 }
 
-sourceSets {
-    integTest {
-        java.srcDir file('src/integTest/java')
-        resources.srcDir file('src/integTest/resources')
-        runtimeClasspath += main.output + test.output
-    }
-}
-
-task integTests(type: Test, dependsOn: build) {
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    description = 'Runs the integration tests.'
-
-    maxHeapSize = '1024m'
-
-    testClassesDirs = sourceSets.integTest.output.classesDirs
-}
-
-test {
-    exclude '**/*IntegTest'
-}
-
 dependencies {
     compile project(":data-service-model")
     compile project(":lambda-spring")
@@ -60,18 +39,6 @@ dependencies {
             'org.mockito:mockito-core',
             'org.slf4j:jcl-over-slf4j',
             'org.springframework:spring-test'
-    )
-
-    integTestCompile(
-            sourceSets.main.output,
-            sourceSets.test.output,
-            configurations.compile,
-            configurations.testCompile
-    )
-
-    integTestRuntime(
-            configurations.runtime,
-            configurations.testRuntime
     )
 
     apt 'org.mapstruct:mapstruct-processor'
