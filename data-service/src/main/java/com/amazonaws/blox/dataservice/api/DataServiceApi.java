@@ -38,7 +38,6 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequ
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
-import java.util.Collections;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

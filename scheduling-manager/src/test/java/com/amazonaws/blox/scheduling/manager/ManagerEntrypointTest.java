@@ -58,16 +58,12 @@ public class ManagerEntrypointTest extends LambdaHandlerTestCase {
 
     @Bean
     public DataService dataService() throws Exception {
-      return when(
-              mock(DataService.class)
-                  .listEnvironments(
-                      ListEnvironmentsRequest.builder()
-                          .cluster(
-                              Cluster.builder()
-                                  .accountId(ACCOUNT_ID)
-                                  .clusterName(CLUSTER_NAME)
-                                  .build())
-                          .build()))
+      return when(mock(DataService.class)
+              .listEnvironments(
+                  ListEnvironmentsRequest.builder()
+                      .cluster(
+                          Cluster.builder().accountId(ACCOUNT_ID).clusterName(CLUSTER_NAME).build())
+                      .build()))
           .thenReturn(
               ListEnvironmentsResponse.builder()
                   .environmentIds(

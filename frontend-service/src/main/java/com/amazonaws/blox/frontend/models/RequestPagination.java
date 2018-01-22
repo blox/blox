@@ -16,8 +16,6 @@ package com.amazonaws.blox.frontend.models;
 
 import io.swagger.annotations.ApiParam;
 import lombok.Data;
-import lombok.Getter;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Data

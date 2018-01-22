@@ -15,7 +15,6 @@
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

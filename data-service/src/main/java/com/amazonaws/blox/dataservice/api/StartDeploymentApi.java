@@ -23,12 +23,11 @@ import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.util.UUID;
 
 @Slf4j
 @Component

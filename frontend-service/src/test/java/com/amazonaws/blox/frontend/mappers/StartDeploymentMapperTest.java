@@ -14,6 +14,8 @@
  */
 package com.amazonaws.blox.frontend.mappers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
@@ -22,8 +24,6 @@ import com.amazonaws.serverless.proxy.internal.model.ApiGatewayRequestContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.mapstruct.factory.Mappers;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class StartDeploymentMapperTest {
 

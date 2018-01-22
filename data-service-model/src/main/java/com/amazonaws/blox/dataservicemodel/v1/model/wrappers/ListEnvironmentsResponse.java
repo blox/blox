@@ -14,9 +14,8 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
-import java.util.List;
-
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

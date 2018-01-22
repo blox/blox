@@ -17,9 +17,9 @@ package cucumber.steps.wrappers;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
-import org.apache.commons.lang3.Validate;
 import cucumber.steps.helpers.Memoized;
 import cucumber.steps.helpers.ThrowingFunction;
+import org.apache.commons.lang3.Validate;
 
 public class MemoizedWrapper implements Memoized {
 

@@ -21,7 +21,6 @@ import com.amazonaws.blox.frontend.models.PaginatedResponse;
 import com.amazonaws.blox.frontend.models.RequestPagination;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

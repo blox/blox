@@ -14,9 +14,6 @@
  */
 package com.amazonaws.blox.scheduling;
 
-import java.time.Instant;
-import java.util.Collections;
-
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
@@ -49,6 +46,8 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequ
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
+import java.time.Instant;
+import java.util.Collections;
 import lombok.Builder;
 
 /**

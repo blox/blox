@@ -22,7 +22,6 @@ import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
-
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;

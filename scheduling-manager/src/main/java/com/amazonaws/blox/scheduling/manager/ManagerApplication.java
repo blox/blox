@@ -14,8 +14,8 @@
  */
 package com.amazonaws.blox.scheduling.manager;
 
-import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.lambda.AwsSdkV2LambdaFunction;
+import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.SchedulingApplication;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerInput;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerOutput;

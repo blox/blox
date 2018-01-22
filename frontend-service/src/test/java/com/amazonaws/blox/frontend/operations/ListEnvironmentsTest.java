@@ -14,6 +14,10 @@
  */
 package com.amazonaws.blox.frontend.operations;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
@@ -21,18 +25,13 @@ import com.amazonaws.blox.frontend.mappers.ListEnvironmentsMapper;
 import com.amazonaws.blox.frontend.models.RequestPagination;
 import com.amazonaws.serverless.proxy.internal.model.ApiGatewayRequestContext;
 import com.amazonaws.serverless.proxy.internal.servlet.AwsProxyHttpServletRequestReader;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import javax.servlet.http.HttpServletRequest;
 
 @RunWith(MockitoJUnitRunner.StrictStubs.class)
 public class ListEnvironmentsTest {

@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.frontend.integration;
 
+import static org.mockito.Mockito.mock;
+
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.frontend.MapperConfiguration;
-import com.amazonaws.serverless.exceptions.ContainerInitializationException;
 import com.amazonaws.serverless.proxy.internal.model.AwsProxyRequest;
 import com.amazonaws.serverless.proxy.internal.model.AwsProxyResponse;
 import com.amazonaws.serverless.proxy.internal.testutils.MockLambdaContext;
@@ -29,8 +30,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-
-import static org.mockito.Mockito.mock;
 
 @Configuration
 @Import(MapperConfiguration.class)

@@ -15,11 +15,8 @@
 package com.amazonaws.blox.scheduling.scheduler;
 
 import com.amazonaws.blox.scheduling.SchedulingApplication;
-import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import software.amazon.awssdk.services.ecs.ECSAsyncClient;
 
 @Configuration
 @ComponentScan("com.amazonaws.blox.scheduling.scheduler")

@@ -36,7 +36,6 @@ import com.amazonaws.blox.scheduling.scheduler.engine.Scheduler;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulingAction;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;

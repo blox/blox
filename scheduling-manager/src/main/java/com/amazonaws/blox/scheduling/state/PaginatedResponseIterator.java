@@ -15,7 +15,6 @@
 package com.amazonaws.blox.scheduling.state;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Function;

@@ -16,11 +16,11 @@ package com.amazonaws.blox.dataservice.mapper;
 
 import com.amazonaws.blox.dataservice.model.Attribute;
 import com.amazonaws.blox.dataservice.model.Cluster;
+import com.amazonaws.blox.dataservice.model.DeploymentConfiguration;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentId;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservice.model.EnvironmentType;
-import com.amazonaws.blox.dataservice.model.DeploymentConfiguration;
 import com.amazonaws.blox.dataservice.model.InstanceGroup;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import org.mapstruct.Mapper;

@@ -35,7 +35,6 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironment
 import com.amazonaws.blox.scheduling.LambdaHandlerTestCase;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerEntrypointTest.TestConfig;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
-
 import java.time.Instant;
 import java.util.Collections;
 import org.junit.Test;

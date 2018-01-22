@@ -15,7 +15,6 @@
 package com.amazonaws.blox.dataservice.repository.model;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverter;
-
 import java.time.Instant;
 
 public class InstantDDBConverter implements DynamoDBTypeConverter<String, Instant> {

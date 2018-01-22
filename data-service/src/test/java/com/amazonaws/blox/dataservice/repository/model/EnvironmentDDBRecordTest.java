@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.dataservice.repository.model;
 
-import org.junit.Test;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
 
 public class EnvironmentDDBRecordTest {
   static final String ACCOUNTID_CLUSTER = "accountIdCluster";

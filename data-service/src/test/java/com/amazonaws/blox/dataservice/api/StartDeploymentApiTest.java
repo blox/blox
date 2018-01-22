@@ -14,6 +14,11 @@
  */
 package com.amazonaws.blox.dataservice.api;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.blox.dataservice.exception.ResourceType;
 import com.amazonaws.blox.dataservice.mapper.ApiModelMapper;
 import com.amazonaws.blox.dataservice.model.Environment;
@@ -31,11 +36,6 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.StrictStubs.class)
 public class StartDeploymentApiTest {

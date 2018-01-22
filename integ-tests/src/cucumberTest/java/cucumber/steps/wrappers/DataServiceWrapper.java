@@ -28,9 +28,7 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRes
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
 import cucumber.steps.helpers.ExceptionContext;
-import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

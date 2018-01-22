@@ -15,7 +15,6 @@
 package com.amazonaws.blox.dataservice.model;
 
 import java.util.StringJoiner;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

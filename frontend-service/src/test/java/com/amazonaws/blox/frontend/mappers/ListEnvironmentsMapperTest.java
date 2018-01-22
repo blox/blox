@@ -14,17 +14,16 @@
  */
 package com.amazonaws.blox.frontend.mappers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.frontend.operations.ListEnvironments;
 import com.amazonaws.serverless.proxy.internal.model.ApiGatewayRequestContext;
-import org.junit.Before;
+import java.util.Collections;
 import org.junit.Test;
 import org.mapstruct.factory.Mappers;
-import java.util.Collections;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ListEnvironmentsMapperTest {
   private static final String ACCOUNT_ID = "123456789012";
