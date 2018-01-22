@@ -6,6 +6,7 @@ Feature: Create environment
     When I create an environment
     Then the created environment response is valid
 
+  @ignore
   Scenario: Create an environment that already exists
     Given I create an environment named "test" in the cluster "testCluster"
     When I try to create another environment with the name "test" in the cluster "testCluster"
