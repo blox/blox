@@ -34,11 +34,11 @@ class TaskLister {
   private final ListTasksRequest.Builder listRequest;
   private final DescribeTasksRequest.Builder describeRequest;
 
-  public TaskLister(ECSAsyncClient ecs, String clusterArn) {
+  public TaskLister(ECSAsyncClient ecs, String clusterName) {
     this(
         ecs,
-        ListTasksRequest.builder().cluster(clusterArn),
-        DescribeTasksRequest.builder().cluster(clusterArn));
+        ListTasksRequest.builder().cluster(clusterName),
+        DescribeTasksRequest.builder().cluster(clusterName));
   }
 
   protected ListTasksResponse list(String nextToken) {

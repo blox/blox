@@ -14,12 +14,13 @@
  */
 package com.amazonaws.blox.scheduling.scheduler;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import lombok.Data;
 
 @Data
 public class SchedulerOutput {
-  private final String clusterArn;
-  private final String environmentId;
+  private final String clusterName;
+  private final EnvironmentId environmentId;
 
   private final long successfulActions;
   private final long failedActions;

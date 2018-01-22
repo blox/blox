@@ -41,7 +41,7 @@ public class DaemonEnvironment {
 
   public StartTask startTaskFor(ContainerInstance i) {
     return StartTask.builder()
-        .clusterArn(environment.getClusterArn())
+        .clusterName(environment.getClusterName())
         .containerInstanceArn(i.getArn())
         .taskDefinitionArn(environment.getTaskDefinitionArn())
         .group(environment.getEnvironmentName())

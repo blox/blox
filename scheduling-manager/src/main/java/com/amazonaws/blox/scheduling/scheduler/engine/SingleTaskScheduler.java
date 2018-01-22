@@ -53,7 +53,7 @@ public class SingleTaskScheduler implements Scheduler {
     if (!hasTaskAlready) {
       return Arrays.asList(
           StartTask.builder()
-              .clusterArn(snapshot.getClusterArn())
+              .clusterName(snapshot.getClusterName())
               .taskDefinitionArn(environment.getTaskDefinitionArn())
               .group(environment.getEnvironmentName())
               .containerInstanceArn(instance.getArn())

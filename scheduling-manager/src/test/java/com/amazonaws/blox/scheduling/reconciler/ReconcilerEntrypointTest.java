@@ -16,7 +16,13 @@ package com.amazonaws.blox.scheduling.reconciler;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.lambda.TestLambdaFunction;
 import com.amazonaws.blox.scheduling.LambdaHandlerTestCase;
@@ -42,11 +48,28 @@ public class ReconcilerEntrypointTest extends LambdaHandlerTestCase {
   @Configuration
   @Import(ReconcilerApplication.class)
   public static class TestConfig {
+    private static final String ACCOUNT_ID = "123456789012";
+    private static final String CLUSTER_NAME = "default";
+
+    @Bean
+    public DataService dataService() throws Exception {
+      return when(mock(DataService.class).listClusters(ListClustersRequest.builder().build()))
+          .thenReturn(
+              ListClustersResponse.builder()
+                  .clusters(
+                      Collections.singletonList(
+                          Cluster.builder()
+                              .accountId(ACCOUNT_ID)
+                              .clusterName(CLUSTER_NAME)
+                              .build()))
+                  .build())
+          .getMock();
+    }
 
     @Bean
     public LambdaFunction<ManagerInput, ManagerOutput> manager() {
       return new TestLambdaFunction<>(
-          (input, context) -> new ManagerOutput(input.getClusterArn(), Collections.emptyList()));
+          (input, context) -> new ManagerOutput(input.getCluster(), Collections.emptyList()));
     }
   }
 }

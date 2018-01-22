@@ -28,12 +28,12 @@ public class ECSStateClient implements ECSState {
   private final ECSAsyncClient ecs;
 
   @Override
-  public ClusterSnapshot snapshotState(String clusterArn) {
+  public ClusterSnapshot snapshotState(String clusterName) {
     CompletableFuture<List<ClusterSnapshot.Task>> tasks =
-        new TaskLister(ecs, clusterArn).describe();
+        new TaskLister(ecs, clusterName).describe();
     CompletableFuture<List<ClusterSnapshot.ContainerInstance>> instances =
-        new ContainerInstanceLister(ecs, clusterArn).describe();
+        new ContainerInstanceLister(ecs, clusterName).describe();
 
-    return new ClusterSnapshot(clusterArn, tasks.join(), instances.join());
+    return new ClusterSnapshot(clusterName, tasks.join(), instances.join());
   }
 }

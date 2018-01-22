@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.scheduling.manager;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
 import lombok.Data;
 
 @Data
 public class ManagerInput {
-  private final String clusterArn;
+  private final Cluster cluster;
 }

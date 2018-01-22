@@ -23,7 +23,7 @@ import lombok.Value;
 
 @Data
 public class ClusterSnapshot {
-  private final String clusterArn;
+  private final String clusterName;
   private final List<Task> tasks;
   private final List<ContainerInstance> instances;
 

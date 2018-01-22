@@ -19,8 +19,9 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;
 import com.amazonaws.blox.scheduling.manager.ManagerOutput;
@@ -35,8 +36,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class ReconcilerHandlerTest {
 
-  public static final String FIRST_CLUSTER_ARN = "arn:::::cluster1";
-  public static final String SECOND_CLUSTER_ARN = "arn:::::cluster2";
+  public static final String ACCOUNT_ID = "123456789012";
+  public static final String FIRST_CLUSTER_NAME = "cluster1";
+  public static final String SECOND_CLUSTER_NAME = "cluster2";
+
+  private static final Cluster CLUSTER1 =
+      Cluster.builder().accountId(ACCOUNT_ID).clusterName(FIRST_CLUSTER_NAME).build();
+  private static final Cluster CLUSTER2 =
+      Cluster.builder().accountId(ACCOUNT_ID).clusterName(SECOND_CLUSTER_NAME).build();
 
   private ArgumentCaptor<ManagerInput> input = ArgumentCaptor.forClass(ManagerInput.class);
   @Mock private DataService data;
@@ -45,7 +52,7 @@ public class ReconcilerHandlerTest {
   @Test
   public void invokesManagerAsynchronouslyForAllClusters() throws Exception {
     when(data.listClusters(any()))
-        .thenReturn(new ListClustersResponse(Arrays.asList(FIRST_CLUSTER_ARN, SECOND_CLUSTER_ARN)));
+        .thenReturn(new ListClustersResponse(Arrays.asList(CLUSTER1, CLUSTER2)));
 
     when(manager.triggerAsync(input.capture())).thenReturn(CompletableFuture.completedFuture(null));
 
@@ -53,7 +60,6 @@ public class ReconcilerHandlerTest {
     handler.handleRequest(new CloudWatchEvent<>(), null);
 
     assertThat(
-        input.getAllValues(),
-        hasItems(new ManagerInput(FIRST_CLUSTER_ARN), new ManagerInput(SECOND_CLUSTER_ARN)));
+        input.getAllValues(), hasItems(new ManagerInput(CLUSTER1), new ManagerInput(CLUSTER2)));
   }
 }

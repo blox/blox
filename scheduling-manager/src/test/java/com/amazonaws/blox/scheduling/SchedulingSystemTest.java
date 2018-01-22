@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.lambda.TestLambdaFunction;
 import com.amazonaws.blox.scheduling.manager.ManagerHandler;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;
@@ -47,18 +47,18 @@ import software.amazon.awssdk.services.ecs.model.StartTaskResponse;
 
 public class SchedulingSystemTest {
 
-  private static final String CLUSTER_ARN = "arn:::::cluster1";
+  private static final String CLUSTER_NAME = "cluster1";
   private static final String INSTANCE_ARN = "arn:::::instance1";
-  private static final String ENVIRONMENT_ID = "arn:::::env1";
+  private static final String ENVIRONMENT_NAME = "env1";
   private static final String TASKDEF_ARN = "arn:::::task:1";
 
   private final ClusterSnapshot snapshot =
-      new ClusterSnapshot(CLUSTER_ARN, Collections.emptyList(), new ArrayList<>());
+      new ClusterSnapshot(CLUSTER_NAME, Collections.emptyList(), new ArrayList<>());
 
   private final DataService dataService =
       FakeDataService.builder()
-          .clusterArn(CLUSTER_ARN)
-          .environmentId(ENVIRONMENT_ID)
+          .clusterName(CLUSTER_NAME)
+          .environmentName(ENVIRONMENT_NAME)
           .taskDefinition(TASKDEF_ARN)
           .build();
 
@@ -77,7 +77,7 @@ public class SchedulingSystemTest {
 
   @Test
   public void runSingleReconciliation() {
-    when(ecsState.snapshotState(CLUSTER_ARN)).thenReturn(snapshot);
+    when(ecsState.snapshotState(CLUSTER_NAME)).thenReturn(snapshot);
 
     when(ecs.startTask(any()))
         .thenReturn(
@@ -93,9 +93,9 @@ public class SchedulingSystemTest {
     verify(ecs).startTask(startArgument.capture());
 
     StartTaskRequest request = startArgument.getValue();
-    assertThat(request.cluster(), equalTo(CLUSTER_ARN));
+    assertThat(request.cluster(), equalTo(CLUSTER_NAME));
     assertThat(request.containerInstances(), hasItem(INSTANCE_ARN));
     assertThat(request.taskDefinition(), equalTo(TASKDEF_ARN));
-    assertThat(request.group(), equalTo(ENVIRONMENT_ID));
+    assertThat(request.group(), equalTo(ENVIRONMENT_NAME));
   }
 }

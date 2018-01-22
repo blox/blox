@@ -16,5 +16,5 @@ package com.amazonaws.blox.scheduling.state;
 
 public interface ECSState {
 
-  ClusterSnapshot snapshotState(String clusterArn);
+  ClusterSnapshot snapshotState(String clusterName);
 }

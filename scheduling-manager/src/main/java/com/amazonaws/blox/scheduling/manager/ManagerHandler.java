@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.scheduling.manager;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerInput;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerOutput;
@@ -44,10 +45,10 @@ public class ManagerHandler implements RequestHandler<ManagerInput, ManagerOutpu
   public ManagerOutput handleRequest(ManagerInput input, Context context) {
     ListEnvironmentsResponse r =
         data.listEnvironments(
-            ListEnvironmentsRequest.builder().cluster(input.getClusterArn()).build());
-    List<String> environments = r.getEnvironmentIds();
+            ListEnvironmentsRequest.builder().cluster(input.getCluster()).build());
+    List<EnvironmentId> environments = r.getEnvironmentIds();
 
-    ClusterSnapshot state = ecs.snapshotState(input.getClusterArn());
+    ClusterSnapshot state = ecs.snapshotState(input.getCluster().getClusterName());
 
     Stream<CompletableFuture<SchedulerOutput>> pendingRequests =
         environments
@@ -56,6 +57,6 @@ public class ManagerHandler implements RequestHandler<ManagerInput, ManagerOutpu
 
     List<SchedulerOutput> outputs = pendingRequests.collect(CompletableFutures.joinList()).join();
 
-    return new ManagerOutput(input.getClusterArn(), outputs);
+    return new ManagerOutput(input.getCluster(), outputs);
   }
 }

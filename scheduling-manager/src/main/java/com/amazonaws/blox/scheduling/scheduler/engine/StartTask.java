@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.ecs.model.StartTaskResponse;
 @Builder
 @Slf4j
 public class StartTask implements SchedulingAction {
-  private final String clusterArn;
+  private final String clusterName;
   private final String containerInstanceArn;
   private final String taskDefinitionArn;
   private final String group;
@@ -36,7 +36,7 @@ public class StartTask implements SchedulingAction {
     CompletableFuture<StartTaskResponse> pendingRequest =
         ecs.startTask(
             StartTaskRequest.builder()
-                .cluster(clusterArn)
+                .cluster(clusterName)
                 .containerInstances(containerInstanceArn)
                 .taskDefinition(taskDefinitionArn)
                 .group(group)

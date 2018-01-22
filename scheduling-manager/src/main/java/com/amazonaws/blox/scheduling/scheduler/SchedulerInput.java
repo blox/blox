@@ -14,11 +14,12 @@
  */
 package com.amazonaws.blox.scheduling.scheduler;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
 import lombok.Data;
 
 @Data
 public class SchedulerInput {
   final ClusterSnapshot snapshot;
-  final String environmentId;
+  final EnvironmentId environmentId;
 }

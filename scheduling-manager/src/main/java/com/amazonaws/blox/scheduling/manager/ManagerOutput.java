@@ -14,12 +14,13 @@
  */
 package com.amazonaws.blox.scheduling.manager;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerOutput;
 import java.util.List;
 import lombok.Data;
 
 @Data
 public class ManagerOutput {
-  private final String clusterArn;
+  private final Cluster cluster;
   private final List<SchedulerOutput> scheduleResults;
 }

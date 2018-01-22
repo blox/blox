@@ -14,8 +14,6 @@
  */
 package com.amazonaws.blox.scheduling;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.scheduling.LambdaHandlerTestCase.TestConfigOverrides;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -27,16 +25,12 @@ import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
-@ContextConfiguration(classes = TestConfigOverrides.class)
 public abstract class LambdaHandlerTestCase {
 
   @Autowired protected RequestStreamHandler handler;
@@ -61,14 +55,6 @@ public abstract class LambdaHandlerTestCase {
   protected String fixtureAsString(String path) throws IOException {
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(fixture(path)))) {
       return reader.lines().collect(Collectors.joining("\n"));
-    }
-  }
-
-  @Configuration
-  static class TestConfigOverrides {
-    @Bean
-    public DataService dataService() {
-      return FakeDataService.builder().build();
     }
   }
 }

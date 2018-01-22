@@ -20,9 +20,11 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerInput;
 import com.amazonaws.blox.scheduling.scheduler.SchedulerOutput;
@@ -37,9 +39,25 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ManagerHandlerTest {
-  public static final String CLUSTER_ARN = "arn:::::cluster1";
-  public static final String FIRST_ENVIRONMENT_ARN = "arn:::::environment1";
-  public static final String SECOND_ENVIRONMENT_ARN = "arn:::::environment2";
+  public static final String ACCOUNT_ID = "12345678012";
+  public static final String CLUSTER_NAME = "cluster1";
+  public static final String FIRST_ENVIRONMENT_NAME = "environment1";
+  public static final String SECOND_ENVIRONMENT_NAME = "environment2";
+
+  private static final Cluster CLUSTER =
+      Cluster.builder().accountId(ACCOUNT_ID).clusterName(CLUSTER_NAME).build();
+  private static final EnvironmentId FIRST_ENVIRONMENT_ID =
+      EnvironmentId.builder()
+          .environmentName(FIRST_ENVIRONMENT_NAME)
+          .accountId(ACCOUNT_ID)
+          .cluster(CLUSTER_NAME)
+          .build();
+  private static final EnvironmentId SECOND_ENVIRONMENT_ID =
+      EnvironmentId.builder()
+          .environmentName(SECOND_ENVIRONMENT_NAME)
+          .accountId(ACCOUNT_ID)
+          .cluster(CLUSTER_NAME)
+          .build();
 
   private ArgumentCaptor<SchedulerInput> schedulerArgument =
       ArgumentCaptor.forClass(SchedulerInput.class);
@@ -50,24 +68,24 @@ public class ManagerHandlerTest {
   @Test
   @SuppressWarnings("unchecked")
   public void invokesSchedulerForAllEnvironments() throws Exception {
-    when(dataService.listEnvironments(
-            ListEnvironmentsRequest.builder().cluster(CLUSTER_ARN).build()))
+    when(dataService.listEnvironments(ListEnvironmentsRequest.builder().cluster(CLUSTER).build()))
         .thenReturn(
-            new ListEnvironmentsResponse(
-                Arrays.asList(FIRST_ENVIRONMENT_ARN, SECOND_ENVIRONMENT_ARN)));
+            ListEnvironmentsResponse.builder()
+                .environmentIds(Arrays.asList(FIRST_ENVIRONMENT_ID, SECOND_ENVIRONMENT_ID))
+                .build());
 
     when(scheduler.callAsync(schedulerArgument.capture()))
         .thenReturn(
             CompletableFuture.completedFuture(
-                new SchedulerOutput(CLUSTER_ARN, "arn:::::environment1", 1, 1)));
+                new SchedulerOutput(CLUSTER_NAME, FIRST_ENVIRONMENT_ID, 1, 1)));
 
     ManagerHandler handler = new ManagerHandler(dataService, ecs, scheduler);
-    ManagerOutput managerOutput = handler.handleRequest(new ManagerInput(CLUSTER_ARN), null);
+    handler.handleRequest(new ManagerInput(CLUSTER), null);
 
     assertThat(
         schedulerArgument.getAllValues(),
         contains(
-            hasProperty("environmentId", is(FIRST_ENVIRONMENT_ARN)),
-            hasProperty("environmentId", is(SECOND_ENVIRONMENT_ARN))));
+            hasProperty("environmentId", is(FIRST_ENVIRONMENT_ID)),
+            hasProperty("environmentId", is(SECOND_ENVIRONMENT_ID))));
   }
 }

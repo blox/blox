@@ -20,8 +20,11 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.lambda.TestLambdaFunction;
 import com.amazonaws.blox.scheduling.LambdaHandlerTestCase;
@@ -49,11 +52,32 @@ public class ManagerEntrypointTest extends LambdaHandlerTestCase {
   @Configuration
   @Import(ManagerApplication.class)
   public static class TestConfig {
+    private static final String ACCOUNT_ID = "123456789012";
+    private static final String CLUSTER_NAME = "default";
+    private static final String ENVIRONMENT_NAME = "SomeEnvironment";
 
     @Bean
     public DataService dataService() throws Exception {
-      return when(mock(DataService.class).listEnvironments(any()))
-          .thenReturn(new ListEnvironmentsResponse(Collections.singletonList("SomeEnvironment")))
+      return when(
+              mock(DataService.class)
+                  .listEnvironments(
+                      ListEnvironmentsRequest.builder()
+                          .cluster(
+                              Cluster.builder()
+                                  .accountId(ACCOUNT_ID)
+                                  .clusterName(CLUSTER_NAME)
+                                  .build())
+                          .build()))
+          .thenReturn(
+              ListEnvironmentsResponse.builder()
+                  .environmentIds(
+                      Collections.singletonList(
+                          EnvironmentId.builder()
+                              .accountId(ACCOUNT_ID)
+                              .cluster(CLUSTER_NAME)
+                              .environmentName(ENVIRONMENT_NAME)
+                              .build()))
+                  .build())
           .getMock();
     }
 
@@ -61,10 +85,7 @@ public class ManagerEntrypointTest extends LambdaHandlerTestCase {
     public ECSState ecsState() {
       return when(mock(ECSState.class).snapshotState(any()))
           .thenReturn(
-              new ClusterSnapshot(
-                  "arn:aws:ecs:us-east-1:1234:cluster/default",
-                  Collections.emptyList(),
-                  Collections.emptyList()))
+              new ClusterSnapshot(CLUSTER_NAME, Collections.emptyList(), Collections.emptyList()))
           .getMock();
     }
 
@@ -73,7 +94,7 @@ public class ManagerEntrypointTest extends LambdaHandlerTestCase {
       return new TestLambdaFunction<>(
           (input, context) ->
               new SchedulerOutput(
-                  input.getSnapshot().getClusterArn(), input.getEnvironmentId(), 0L, 0L));
+                  input.getSnapshot().getClusterName(), input.getEnvironmentId(), 0L, 0L));
     }
   }
 }

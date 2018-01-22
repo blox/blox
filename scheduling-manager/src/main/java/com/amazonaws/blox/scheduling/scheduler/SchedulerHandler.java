@@ -14,11 +14,12 @@
  */
 package com.amazonaws.blox.scheduling.scheduler;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionRequest;
 import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription;
 import com.amazonaws.blox.scheduling.scheduler.engine.Scheduler;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
@@ -49,25 +50,31 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
   public SchedulerOutput handleRequest(SchedulerInput input, Context context) {
     log.debug("Request: {}", input);
 
-    DescribeTargetEnvironmentRevisionResponse targetEnvironmentRevision =
-        data.describeTargetEnvironmentRevision(
-            DescribeTargetEnvironmentRevisionRequest.builder()
-                .environmentId(input.getEnvironmentId())
-                .build());
-    DescribeEnvironmentResponse environment =
+    EnvironmentId environmentId = input.getEnvironmentId();
+
+    Environment environment =
         data.describeEnvironment(
-            DescribeEnvironmentRequest.builder()
-                .environmentId(targetEnvironmentRevision.getEnvironmentId())
-                .environmentVersion(targetEnvironmentRevision.getEnvironmentVersion())
-                .build());
+                DescribeEnvironmentRequest.builder().environmentId(environmentId).build())
+            .getEnvironment();
+
+    String activeEnvironmentId = environment.getActiveEnvironmentRevisionId();
+
+    EnvironmentRevision activeEnvironmentRevision =
+        data.describeEnvironmentRevision(
+                DescribeEnvironmentRevisionRequest.builder()
+                    .environmentId(environmentId)
+                    .environmentRevisionId(activeEnvironmentId)
+                    .build())
+            .getEnvironmentRevision();
 
     EnvironmentDescription environmentDescription =
         EnvironmentDescription.builder()
-            .environmentName(environment.getEnvironmentName())
-            .targetEnvironmentRevision(environment.getEnvironmentVersion())
+            .environmentName(environmentId.getEnvironmentName())
+            .activeEnvironmentRevisionId(activeEnvironmentId)
             .environmentType(
-                EnvironmentDescription.EnvironmentType.valueOf(environment.getType().toString()))
-            .taskDefinitionArn(environment.getTaskDefinition())
+                EnvironmentDescription.EnvironmentType.valueOf(
+                    environment.getEnvironmentType().toString()))
+            .taskDefinitionArn(activeEnvironmentRevision.getTaskDefinition())
             .build();
 
     Scheduler s = schedulerFactory.schedulerFor(environmentDescription);
@@ -83,7 +90,7 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
     return new SchedulerOutput(
-        input.getSnapshot().getClusterArn(),
+        input.getSnapshot().getClusterName(),
         input.getEnvironmentId(),
         outcomeCounts.getOrDefault(false, 0L),
         outcomeCounts.getOrDefault(true, 0L));

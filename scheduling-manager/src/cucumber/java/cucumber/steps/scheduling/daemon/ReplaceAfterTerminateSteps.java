@@ -95,7 +95,7 @@ public class ReplaceAfterTerminateSteps implements En {
     return startTasksTable
         .asList(StartTask.StartTaskBuilder.class)
         .stream()
-        .map(b -> b.clusterArn(environment.getClusterArn()).build())
+        .map(b -> b.clusterName(environment.getClusterName()).build())
         .collect(Collectors.toList());
   }
 

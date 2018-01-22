@@ -3,7 +3,7 @@ Feature: Deploying a Daemon environment to a cluster with Replace After Terminat
   Background:
     Given a cluster named "TestCluster"
     And a Daemon environment named "DaemonEnvironment":
-      | clusterArn  | deploymentMethod      | taskDefinitionArn |
+      | clusterName | deploymentMethod      | taskDefinitionArn |
       | TestCluster | ReplaceAfterTerminate | v1                |
 
 
@@ -14,7 +14,7 @@ Feature: Deploying a Daemon environment to a cluster with Replace After Terminat
       | i-2      |       |
     When the scheduler runs
     Then it should start the following tasks:
-      | clusterArn  | containerInstanceArn | taskDefinitionArn | group             |
+      | clusterName | containerInstanceArn | taskDefinitionArn | group             |
       | TestCluster | i-1                  | v1                | DaemonEnvironment |
       | TestCluster | i-2                  | v1                | DaemonEnvironment |
     And it should not take any further actions

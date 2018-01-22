@@ -14,37 +14,41 @@
  */
 package com.amazonaws.blox.scheduling;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentActiveException;
-import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentExistsException;
-import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentTargetRevisionNotFoundException;
-import com.amazonaws.blox.dataservicemodel.v1.old.exception.EnvironmentTargetRevisionExistsException;
-import com.amazonaws.blox.dataservicemodel.v1.old.exception.InvalidParameterException;
-import com.amazonaws.blox.dataservicemodel.v1.old.exception.ServiceException;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.DeploymentConfiguration;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.EnvironmentHealth;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.EnvironmentStatus;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.EnvironmentType;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.InstanceGroup;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateTargetEnvironmentRevisionRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.CreateTargetEnvironmentRevisionResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DeleteEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DeleteEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeEnvironmentResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeTargetEnvironmentRevisionRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.DescribeTargetEnvironmentRevisionResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListEnvironmentsResponse;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.StartDeploymentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.StartDeploymentResponse;
 import java.time.Instant;
 import java.util.Collections;
+
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceInUseException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
+import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentHealth;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentStatus;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentRevisionsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentRevisionsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.StartDeploymentResponse;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
 import lombok.Builder;
 
 /**
@@ -54,73 +58,99 @@ import lombok.Builder;
  */
 @Builder
 public class FakeDataService implements DataService {
-  @Builder.Default private String clusterArn = "default";
+  @Builder.Default private String accountId = "123456789012";
+  @Builder.Default private String clusterName = "default";
   @Builder.Default private String taskDefinition = "sleep:1";
-  @Builder.Default private String environmentId = "TestEnvironment";
+  @Builder.Default private String environmentName = "TestEnvironment";
+  @Builder.Default private String deploymentMethod = "ReplaceAfterTerminate";
+  @Builder.Default private String activeEnvironmentRevisionId = "1";
 
   @Override
   public CreateEnvironmentResponse createEnvironment(CreateEnvironmentRequest request)
-      throws EnvironmentExistsException, InvalidParameterException, ServiceException {
+      throws ResourceExistsException, InvalidParameterException, InternalServiceException {
     return null;
   }
 
   @Override
-  public CreateTargetEnvironmentRevisionResponse createTargetEnvironmentRevision(
-      CreateTargetEnvironmentRevisionRequest request)
-      throws EnvironmentTargetRevisionExistsException, EnvironmentNotFoundException,
-          InvalidParameterException, ServiceException {
+  public UpdateEnvironmentResponse updateEnvironment(UpdateEnvironmentRequest request)
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException {
     return null;
-  }
-
-  @Override
-  public StartDeploymentResponse startDeployment(StartDeploymentRequest request)
-      throws EnvironmentNotFoundException, EnvironmentTargetRevisionNotFoundException,
-          EnvironmentTargetRevisionExistsException, InvalidParameterException, ServiceException {
-    return null;
-  }
-
-  @Override
-  public ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request) {
-    return new ListEnvironmentsResponse(Collections.singletonList(environmentId));
-  }
-
-  @Override
-  public ListClustersResponse listClusters(ListClustersRequest request) {
-    return new ListClustersResponse(Collections.singletonList(clusterArn));
-  }
-
-  @Override
-  public DeleteEnvironmentResponse deleteEnvironment(DeleteEnvironmentRequest request)
-      throws EnvironmentNotFoundException, EnvironmentActiveException, InvalidParameterException,
-          ServiceException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public DescribeTargetEnvironmentRevisionResponse describeTargetEnvironmentRevision(
-      DescribeTargetEnvironmentRevisionRequest request) {
-    return DescribeTargetEnvironmentRevisionResponse.builder()
-        .environmentId(request.getEnvironmentId())
-        .environmentVersion("1")
-        .cluster(clusterArn)
-        .build();
   }
 
   @Override
   public DescribeEnvironmentResponse describeEnvironment(DescribeEnvironmentRequest request)
-      throws EnvironmentNotFoundException, InvalidParameterException, ServiceException {
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException {
     return DescribeEnvironmentResponse.builder()
-        .environmentId(request.getEnvironmentId())
-        .environmentVersion("1")
-        .environmentName(request.getEnvironmentId())
-        .taskDefinition(taskDefinition)
-        .role("")
-        .status(EnvironmentStatus.ACTIVE)
-        .health(EnvironmentHealth.HEALTHY)
-        .createdTime(Instant.now())
-        .instanceGroup(InstanceGroup.builder().cluster(clusterArn).build())
-        .type(EnvironmentType.SingleTask)
-        .deploymentConfiguration(DeploymentConfiguration.builder().build())
+        .environment(
+            Environment.builder()
+                .environmentId(request.getEnvironmentId())
+                .role("")
+                .environmentType(EnvironmentType.SingleTask)
+                .createdTime(Instant.now())
+                .lastUpdatedTime(Instant.now())
+                .environmentHealth(EnvironmentHealth.HEALTHY)
+                .environmentStatus(EnvironmentStatus.ACTIVE)
+                .deploymentMethod(deploymentMethod)
+                .deploymentConfiguration(DeploymentConfiguration.builder().build())
+                .activeEnvironmentRevisionId(activeEnvironmentRevisionId)
+                .build())
         .build();
+  }
+
+  @Override
+  public ListEnvironmentsResponse listEnvironments(ListEnvironmentsRequest request) {
+    return ListEnvironmentsResponse.builder()
+        .environmentIds(
+            Collections.singletonList(
+                EnvironmentId.builder()
+                    .accountId(accountId)
+                    .cluster(clusterName)
+                    .environmentName(environmentName)
+                    .build()))
+        .build();
+  }
+
+  @Override
+  public DeleteEnvironmentResponse deleteEnvironment(DeleteEnvironmentRequest request)
+      throws ResourceNotFoundException, ResourceInUseException, InvalidParameterException,
+          InternalServiceException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public DescribeEnvironmentRevisionResponse describeEnvironmentRevision(
+      DescribeEnvironmentRevisionRequest request)
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException {
+    return DescribeEnvironmentRevisionResponse.builder()
+        .environmentRevision(
+            EnvironmentRevision.builder()
+                .environmentId(request.getEnvironmentId())
+                .environmentRevisionId("1")
+                .taskDefinition(taskDefinition)
+                .createdTime(Instant.now())
+                .build())
+        .build();
+  }
+
+  @Override
+  public ListEnvironmentRevisionsResponse listEnvironmentRevisions(
+      ListEnvironmentRevisionsRequest request)
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException {
+    return null;
+  }
+
+  @Override
+  public ListClustersResponse listClusters(ListClustersRequest request) {
+    return ListClustersResponse.builder()
+        .clusters(
+            Collections.singletonList(
+                Cluster.builder().accountId(accountId).clusterName(clusterName).build()))
+        .build();
+  }
+
+  @Override
+  public StartDeploymentResponse startDeployment(StartDeploymentRequest request)
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException {
+    return null;
   }
 }

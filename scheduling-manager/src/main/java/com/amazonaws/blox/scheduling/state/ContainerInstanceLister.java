@@ -37,11 +37,11 @@ class ContainerInstanceLister {
   private final ListContainerInstancesRequest.Builder listRequest;
   private final DescribeContainerInstancesRequest.Builder describeRequest;
 
-  public ContainerInstanceLister(ECSAsyncClient ecs, String clusterArn) {
+  public ContainerInstanceLister(ECSAsyncClient ecs, String clusterName) {
     this(
         ecs,
-        ListContainerInstancesRequest.builder().cluster(clusterArn),
-        DescribeContainerInstancesRequest.builder().cluster(clusterArn));
+        ListContainerInstancesRequest.builder().cluster(clusterName),
+        DescribeContainerInstancesRequest.builder().cluster(clusterName));
   }
 
   protected ListContainerInstancesResponse list(String nextToken) {

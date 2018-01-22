@@ -21,9 +21,9 @@ import lombok.Value;
 @Value
 /** The minimum set of Environment data needed for a Scheduler to make scheduling decisions */
 public class EnvironmentDescription {
-  private final String clusterArn;
+  private final String clusterName;
   private final String environmentName;
-  private final String targetEnvironmentRevision;
+  private final String activeEnvironmentRevisionId;
   private final EnvironmentType environmentType;
 
   private final String deploymentMethod;

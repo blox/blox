@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.scheduling.reconciler;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersRequest;
-import com.amazonaws.blox.dataservicemodel.v1.old.model.wrappers.ListClustersResponse;
+import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
 import com.amazonaws.blox.lambda.LambdaFunction;
 import com.amazonaws.blox.scheduling.manager.ManagerInput;
 import com.amazonaws.blox.scheduling.manager.ManagerOutput;
@@ -39,7 +40,7 @@ public class ReconcilerHandler implements RequestHandler<CloudWatchEvent<Map>, V
   @SneakyThrows // TODO add checked exception handling
   public Void handleRequest(CloudWatchEvent<Map> input, Context context) {
     ListClustersResponse r = dataService.listClusters(ListClustersRequest.builder().build());
-    List<String> clusters = r.getClusters();
+    List<Cluster> clusters = r.getClusters();
 
     clusters
         .stream()

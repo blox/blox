@@ -28,7 +28,7 @@ public class DaemonEnvironmentTest {
 
   EnvironmentDescription env =
       EnvironmentDescription.builder()
-          .clusterArn("TestCluster")
+          .clusterName("TestCluster")
           .environmentName("TestEnvironment")
           .environmentType(EnvironmentType.Daemon)
           .deploymentMethod("TestDeploymentMethod")
@@ -86,7 +86,7 @@ public class DaemonEnvironmentTest {
 
     assertSoftly(
         s -> {
-          s.assertThat(task.getClusterArn()).isEqualTo(env.getClusterArn());
+          s.assertThat(task.getClusterName()).isEqualTo(env.getClusterName());
           s.assertThat(task.getContainerInstanceArn()).isEqualTo(instance.getArn());
           s.assertThat(task.getGroup()).isEqualTo(env.getEnvironmentName());
           s.assertThat(task.getTaskDefinitionArn()).isEqualTo(env.getTaskDefinitionArn());
