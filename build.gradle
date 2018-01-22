@@ -4,7 +4,7 @@ import groovy.transform.Canonical
 plugins {
     id "io.spring.dependency-management" version "1.0.3.RELEASE" apply false
 
-    id 'com.diffplug.gradle.spotless' version '2.4.1' apply false
+    id 'com.diffplug.gradle.spotless' version '3.8.0' apply false
     id 'net.ltgt.apt' version '0.13' apply false
     id 'com.commercehub.cucumber-jvm' version '0.13' apply false
 }
@@ -76,6 +76,7 @@ configure(subprojects.findAll { !unformattedProjects.contains(it.name) }) {
     spotless {
         java {
             googleJavaFormat()
+
             licenseHeaderFile rootProject.file('licenses/license-header.java')
         }
     }
