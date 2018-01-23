@@ -54,6 +54,7 @@ public class DataServiceApi implements DataService {
   @NonNull private final ListEnvironmentsApi listEnvironmentsApi;
   @NonNull private final DescribeEnvironmentRevisionApi describeEnvironmentRevisionApi;
   @NonNull private final ListClustersApi listClustersApi;
+  @NonNull private final DeleteEnvironmentApi deleteEnvironmentApi;
 
   @Override
   public CreateEnvironmentResponse createEnvironment(
@@ -86,7 +87,7 @@ public class DataServiceApi implements DataService {
   public DeleteEnvironmentResponse deleteEnvironment(DeleteEnvironmentRequest request)
       throws ResourceNotFoundException, ResourceInUseException, InvalidParameterException,
           InternalServiceException {
-    return null;
+    return deleteEnvironmentApi.deleteEnvironment(request);
   }
 
   @Override

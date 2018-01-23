@@ -52,4 +52,6 @@ public interface EnvironmentRepository {
       throws InternalServiceException;
 
   List<Cluster> listClusters(String accountId, String clusterNamePrefix);
+
+  void deleteEnvironment(EnvironmentId environmentId) throws InternalServiceException;
 }

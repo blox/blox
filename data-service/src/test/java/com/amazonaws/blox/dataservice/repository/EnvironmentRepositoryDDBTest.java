@@ -16,9 +16,13 @@ package com.amazonaws.blox.dataservice.repository;
 
 import static com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord.ENVIRONMENT_NAME_RANGE_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +38,7 @@ import com.amazonaws.blox.dataservice.repository.model.EnvironmentRevisionDDBRec
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -59,6 +64,8 @@ public class EnvironmentRepositoryDDBTest {
   private static final String CLUSTER = "mycluster";
   private static final String ENVIRONMENT_NAME = "myenv";
   private static final String ENVIRONMENT_REVISION_ID = "revision-id";
+  private static final DynamoDBMapperConfig CONFIG =
+      DynamoDBMapperConfig.SaveBehavior.CLOBBER.config();
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -73,6 +80,7 @@ public class EnvironmentRepositoryDDBTest {
   @InjectMocks private EnvironmentRepositoryDDB environmentRepositoryDDB;
 
   @Captor private ArgumentCaptor<DynamoDBQueryExpression> ddbQueryExpressionCaptor;
+  @Captor private ArgumentCaptor<EnvironmentDDBRecord> environmentDDBRecordArgumentCaptor;
 
   private EnvironmentId environmentId;
   private Cluster cluster;
@@ -230,5 +238,32 @@ public class EnvironmentRepositoryDDBTest {
         String.format("Could not query environments for cluster %s", cluster.toString()));
 
     environmentRepositoryDDB.listEnvironments(cluster, null);
+  }
+
+  @Test
+  public void testDeleteEnvironmentSuccess() throws Exception {
+    doNothing().when(dynamoDBMapper).delete(any(EnvironmentDDBRecord.class));
+
+    environmentRepositoryDDB.deleteEnvironment(environmentId);
+    verify(dynamoDBMapper, times(1)).delete(environmentDDBRecordArgumentCaptor.capture());
+    assertEquals(
+        environmentId.generateAccountIdCluster(),
+        environmentDDBRecordArgumentCaptor.getValue().getAccountIdCluster());
+    assertEquals(
+        environmentId.getEnvironmentName(),
+        environmentDDBRecordArgumentCaptor.getValue().getEnvironmentName());
+  }
+
+  @Test
+  public void testDeleteEnvironmentInternalError() throws Exception {
+    doThrow(AmazonServiceException.class)
+        .when(dynamoDBMapper)
+        .delete(any(EnvironmentDDBRecord.class));
+
+    thrown.expect(InternalServiceException.class);
+    thrown.expectMessage(
+        "Fail to delete environment with accountIdCluster 123456789012/mycluster and environment name myenv");
+
+    environmentRepositoryDDB.deleteEnvironment(environmentId);
   }
 }
