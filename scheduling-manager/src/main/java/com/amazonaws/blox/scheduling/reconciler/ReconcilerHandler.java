@@ -28,10 +28,12 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ReconcilerHandler implements RequestHandler<CloudWatchEvent<Map>, Void> {
   final DataService dataService;
   final LambdaFunction<ManagerInput, ManagerOutput> stateFunction;
@@ -39,6 +41,8 @@ public class ReconcilerHandler implements RequestHandler<CloudWatchEvent<Map>, V
   @Override
   @SneakyThrows // TODO add checked exception handling
   public Void handleRequest(CloudWatchEvent<Map> input, Context context) {
+    log.debug("Reconciler request: {}", input);
+
     ListClustersResponse r = dataService.listClusters(ListClustersRequest.builder().build());
     List<Cluster> clusters = r.getClusters();
 

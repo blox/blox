@@ -14,10 +14,6 @@
  */
 package com.amazonaws.blox.integ;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.old.serialization.DataServiceMapperFactory;
-import com.amazonaws.blox.integ.CloudFormationStacks.CfnStack;
-import com.amazonaws.blox.jsonrpc.JsonRpcLambdaClient;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -31,26 +27,15 @@ import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
-import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
 @RequiredArgsConstructor
-public class DataServiceWrapper {
-  private final LambdaAsyncClient lambda;
-  private final CloudFormationStacks stacks;
+public class DBWrapper {
   private final DynamoDBClient ddb;
-
-  public DataService createDataService() {
-    CfnStack stack = stacks.get("data-service");
-    String functionName = stack.output("DataService");
-
-    return new JsonRpcLambdaClient(DataServiceMapperFactory.newMapper(), lambda, functionName)
-        .newProxy(DataService.class);
-  }
 
   public void reset() {
     // TODO: This is a temporary measure to clean up until we have a working DeleteEnvironment API.
     truncateTable("Environments");
-    truncateTable("EnvironmentTargetVersion");
+    truncateTable("EnvironmentRevisions");
   }
 
   void truncateTable(String tableName) {

@@ -3,6 +3,7 @@
 */
 package com.amazonaws.blox.model.transform;
 
+import java.util.List;
 import javax.annotation.Generated;
 
 import com.amazonaws.SdkClientException;
@@ -18,8 +19,8 @@ import com.amazonaws.annotation.SdkInternalApi;
 @SdkInternalApi
 public class InstanceGroupMarshaller {
 
-    private static final MarshallingInfo<String> QUERY_BINDING = MarshallingInfo.builder(MarshallingType.STRING).marshallLocation(MarshallLocation.PAYLOAD)
-            .marshallLocationName("query").build();
+    private static final MarshallingInfo<List> ATTRIBUTES_BINDING = MarshallingInfo.builder(MarshallingType.LIST).marshallLocation(MarshallLocation.PAYLOAD)
+            .marshallLocationName("attributes").build();
 
     private static final InstanceGroupMarshaller instance = new InstanceGroupMarshaller();
 
@@ -37,7 +38,7 @@ public class InstanceGroupMarshaller {
         }
 
         try {
-            protocolMarshaller.marshall(instanceGroup.getQuery(), QUERY_BINDING);
+            protocolMarshaller.marshall(instanceGroup.getAttributes(), ATTRIBUTES_BINDING);
         } catch (Exception e) {
             throw new SdkClientException("Unable to marshall request to JSON: " + e.getMessage(), e);
         }

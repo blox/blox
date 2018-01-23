@@ -49,13 +49,7 @@ class BloxClient implements Blox {
     private final ClientHandler clientHandler;
 
     private static final com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl protocolFactory = new com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl(
-            new JsonClientMetadata()
-                    .withProtocolVersion("1.1")
-                    .withSupportsCbor(false)
-                    .withSupportsIon(false)
-                    .withContentTypeOverride("application/json")
-                    .addErrorMetadata(
-                            new JsonErrorShapeMetadata().withErrorCode("NotFoundException").withModeledClass(com.amazonaws.blox.model.NotFoundException.class))
+            new JsonClientMetadata().withProtocolVersion("1.1").withSupportsCbor(false).withSupportsIon(false).withContentTypeOverride("application/json")
                     .withBaseServiceExceptionClass(com.amazonaws.blox.model.BloxException.class));
 
     /**
@@ -94,7 +88,6 @@ class BloxClient implements Blox {
     /**
      * @param describeEnvironmentRequest
      * @return Result of the describeEnvironment operation returned by the service.
-     * @throws NotFoundException
      * @sample Blox.describeEnvironment
      * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/describeEnvironment"
      *      target="_top">AWS API Documentation</a>
@@ -104,8 +97,7 @@ class BloxClient implements Blox {
         HttpResponseHandler<DescribeEnvironmentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata()
                 .withPayloadJson(true).withHasStreamingSuccessResponse(false), new DescribeEnvironmentResultJsonUnmarshaller());
 
-        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler(new JsonErrorShapeMetadata().withModeledClass(
-                NotFoundException.class).withHttpStatusCode(404));
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
 
         return clientHandler.execute(new ClientExecutionParams<DescribeEnvironmentRequest, DescribeEnvironmentResult>()
                 .withMarshaller(new DescribeEnvironmentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)

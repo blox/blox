@@ -85,12 +85,6 @@ Resources:
             echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
             yum install -y aws-cfn-bootstrap
             /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
-  Service:
-    Type: AWS::ECS::Service
-    Properties:
-      Cluster: { Ref:  Cluster }
-      DesiredCount: { Ref: DesiredTasks }
-      TaskDefinition:  { Ref: SleepTask }
   EC2Role:
     Type: AWS::IAM::Role
     Properties:
@@ -134,8 +128,6 @@ Resources:
       Path: /
       Roles: [{ Ref: 'EC2Role' }]
 Outputs:
-  service:
-    Value: { Ref: 'Service' }
   cluster:
     Value: { Ref: 'Cluster' }
   taskdef:

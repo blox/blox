@@ -31,10 +31,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ManagerHandler implements RequestHandler<ManagerInput, ManagerOutput> {
   private final DataService data;
   private final ECSState ecs;
@@ -43,6 +45,8 @@ public class ManagerHandler implements RequestHandler<ManagerInput, ManagerOutpu
   @Override
   @SneakyThrows // TODO add checked exception handling
   public ManagerOutput handleRequest(ManagerInput input, Context context) {
+    log.debug("Manager request: {}", input);
+
     ListEnvironmentsResponse r =
         data.listEnvironments(
             ListEnvironmentsRequest.builder().cluster(input.getCluster()).build());

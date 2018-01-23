@@ -69,12 +69,14 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
 
     EnvironmentDescription environmentDescription =
         EnvironmentDescription.builder()
+            .clusterName(environmentId.getCluster())
             .environmentName(environmentId.getEnvironmentName())
             .activeEnvironmentRevisionId(activeEnvironmentId)
             .environmentType(
                 EnvironmentDescription.EnvironmentType.valueOf(
                     environment.getEnvironmentType().toString()))
             .taskDefinitionArn(activeEnvironmentRevision.getTaskDefinition())
+            .deploymentMethod(environment.getDeploymentMethod())
             .build();
 
     Scheduler s = schedulerFactory.schedulerFor(environmentDescription);

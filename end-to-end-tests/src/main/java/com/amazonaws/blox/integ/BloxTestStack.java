@@ -14,13 +14,13 @@
  */
 package com.amazonaws.blox.integ;
 
-import com.amazonaws.blox.dataservicemodel.v1.old.client.DataService;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.blox.Blox;
 import java.util.List;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDBClient;
 import software.amazon.awssdk.services.ecs.ECSClient;
 import software.amazon.awssdk.services.ecs.model.Task;
-import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
 /**
  * Facade over everything in an end-to-end Blox stack that's needed in tests.
@@ -29,20 +29,38 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
  * of this whole stack, so this will probably be removed soon.
  */
 public class BloxTestStack {
-  private CloudFormationClient cloudFormationClient = CloudFormationClient.create();
-  private DynamoDBClient dynamoDBClient = DynamoDBClient.create();
-  private ECSClient ecsClient = ECSClient.create();
-  private LambdaAsyncClient lambdaClient = LambdaAsyncClient.create();
 
-  private CloudFormationStacks stacks = new CloudFormationStacks(cloudFormationClient);
+  private final String bloxEndpoint;
+  private final CloudFormationClient cloudFormationClient;
+  private final DynamoDBClient dynamoDBClient;
+  private final ECSClient ecsClient;
 
-  private final DataServiceWrapper dataService =
-      new DataServiceWrapper(lambdaClient, stacks, dynamoDBClient);
-  private final ECSClusterWrapper ecs = new ECSClusterWrapper(ecsClient, stacks);
+  private final CloudFormationStacks stacks;
+  private final ECSClusterWrapper ecs;
+  private final DBWrapper db;
 
-  public DataService createDataService() {
-    // TODO: Replace with frontend once we have it wired up
-    return dataService.createDataService();
+  private final Blox blox;
+
+  public BloxTestStack(String bloxEndpoint) {
+    this.bloxEndpoint = bloxEndpoint;
+
+    this.cloudFormationClient = CloudFormationClient.create();
+    this.dynamoDBClient = DynamoDBClient.create();
+    this.ecsClient = ECSClient.create();
+    this.stacks = new CloudFormationStacks(cloudFormationClient);
+
+    this.ecs = new ECSClusterWrapper(ecsClient, stacks);
+    this.db = new DBWrapper(this.dynamoDBClient);
+
+    this.blox =
+        Blox.builder()
+            .iamCredentials(new DefaultAWSCredentialsProviderChain())
+            .endpoint(this.bloxEndpoint)
+            .build();
+  }
+
+  public Blox getBlox() {
+    return this.blox;
   }
 
   public List<Task> describeTasks() {
@@ -58,7 +76,7 @@ public class BloxTestStack {
   }
 
   public void reset() {
-    dataService.reset();
     ecs.reset();
+    db.reset();
   }
 }

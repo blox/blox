@@ -30,7 +30,6 @@ public interface Blox {
     /**
      * @param describeEnvironmentRequest
      * @return Result of the describeEnvironment operation returned by the service.
-     * @throws NotFoundException
      * @sample Blox.describeEnvironment
      * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/describeEnvironment"
      *      target="_top">AWS API Documentation</a>

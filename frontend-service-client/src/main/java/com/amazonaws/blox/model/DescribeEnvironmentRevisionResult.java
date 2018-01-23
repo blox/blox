@@ -14,31 +14,31 @@ import javax.annotation.Generated;
 @Generated("com.amazonaws:aws-java-sdk-code-generator")
 public class DescribeEnvironmentRevisionResult extends com.amazonaws.opensdk.BaseResult implements Serializable, Cloneable {
 
-    private EnvironmentRevision revision;
+    private EnvironmentRevision environmentRevision;
 
     /**
-     * @param revision
+     * @param environmentRevision
      */
 
-    public void setRevision(EnvironmentRevision revision) {
-        this.revision = revision;
+    public void setEnvironmentRevision(EnvironmentRevision environmentRevision) {
+        this.environmentRevision = environmentRevision;
     }
 
     /**
      * @return
      */
 
-    public EnvironmentRevision getRevision() {
-        return this.revision;
+    public EnvironmentRevision getEnvironmentRevision() {
+        return this.environmentRevision;
     }
 
     /**
-     * @param revision
+     * @param environmentRevision
      * @return Returns a reference to this object so that method calls can be chained together.
      */
 
-    public DescribeEnvironmentRevisionResult revision(EnvironmentRevision revision) {
-        setRevision(revision);
+    public DescribeEnvironmentRevisionResult environmentRevision(EnvironmentRevision environmentRevision) {
+        setEnvironmentRevision(environmentRevision);
         return this;
     }
 
@@ -53,8 +53,8 @@ public class DescribeEnvironmentRevisionResult extends com.amazonaws.opensdk.Bas
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        if (getRevision() != null)
-            sb.append("Revision: ").append(getRevision());
+        if (getEnvironmentRevision() != null)
+            sb.append("EnvironmentRevision: ").append(getEnvironmentRevision());
         sb.append("}");
         return sb.toString();
     }
@@ -69,9 +69,9 @@ public class DescribeEnvironmentRevisionResult extends com.amazonaws.opensdk.Bas
         if (obj instanceof DescribeEnvironmentRevisionResult == false)
             return false;
         DescribeEnvironmentRevisionResult other = (DescribeEnvironmentRevisionResult) obj;
-        if (other.getRevision() == null ^ this.getRevision() == null)
+        if (other.getEnvironmentRevision() == null ^ this.getEnvironmentRevision() == null)
             return false;
-        if (other.getRevision() != null && other.getRevision().equals(this.getRevision()) == false)
+        if (other.getEnvironmentRevision() != null && other.getEnvironmentRevision().equals(this.getEnvironmentRevision()) == false)
             return false;
         return true;
     }
@@ -81,7 +81,7 @@ public class DescribeEnvironmentRevisionResult extends com.amazonaws.opensdk.Bas
         final int prime = 31;
         int hashCode = 1;
 
-        hashCode = prime * hashCode + ((getRevision() == null) ? 0 : getRevision().hashCode());
+        hashCode = prime * hashCode + ((getEnvironmentRevision() == null) ? 0 : getEnvironmentRevision().hashCode());
         return hashCode;
     }
 

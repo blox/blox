@@ -14,9 +14,10 @@
  */
 package com.amazonaws.blox.scheduling.scheduler;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +33,7 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironment
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionResponse;
+import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription;
 import com.amazonaws.blox.scheduling.scheduler.engine.Scheduler;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulerFactory;
 import com.amazonaws.blox.scheduling.scheduler.engine.SchedulingAction;
@@ -42,6 +44,7 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import software.amazon.awssdk.services.ecs.ECSAsyncClient;
@@ -112,9 +115,11 @@ public class SchedulerHandlerTest {
     SchedulingAction successfulAction = e -> CompletableFuture.completedFuture(true);
     SchedulingAction failedAction = e -> CompletableFuture.completedFuture(false);
 
-    Scheduler fakeScheduler = (s, environment) -> Arrays.asList(successfulAction, failedAction);
+    Scheduler mockScheduler = mock(Scheduler.class);
+    when(mockScheduler.schedule(any(), any()))
+        .thenReturn(Arrays.asList(successfulAction, failedAction));
 
-    when(schedulerFactory.schedulerFor(any())).thenReturn(fakeScheduler);
+    when(schedulerFactory.schedulerFor(any())).thenReturn(mockScheduler);
 
     SchedulerHandler handler = new SchedulerHandler(dataService, ecs, schedulerFactory);
 
@@ -123,10 +128,23 @@ public class SchedulerHandlerTest {
 
     verify(dataService).describeEnvironment(describeEnvironmentRequest);
     verify(dataService).describeEnvironmentRevision(describeEnvironmentRevisionRequest);
+    ArgumentCaptor<EnvironmentDescription> environmentDescription =
+        ArgumentCaptor.forClass(EnvironmentDescription.class);
+    verify(mockScheduler).schedule(eq(snapshot), environmentDescription.capture());
+    assertThat(environmentDescription.getValue())
+        .isEqualTo(
+            EnvironmentDescription.builder()
+                .clusterName(CLUSTER_NAME)
+                .environmentName(ENVIRONMENT_NAME)
+                .activeEnvironmentRevisionId(ACTIVE_ENVIRONMENT_REVISION_ID)
+                .environmentType(EnvironmentDescription.EnvironmentType.SingleTask)
+                .taskDefinitionArn(TASK_DEFINITION)
+                .deploymentMethod(DEPLOYMENT_METHOD)
+                .build());
 
-    assertThat(output.getClusterName(), is(CLUSTER_NAME));
-    assertThat(output.getEnvironmentId(), is(environmentId));
-    assertThat(output.getSuccessfulActions(), is(1L));
-    assertThat(output.getFailedActions(), is(1L));
+    assertThat(output.getClusterName()).isEqualTo(CLUSTER_NAME);
+    assertThat(output.getEnvironmentId()).isEqualTo(environmentId);
+    assertThat(output.getSuccessfulActions()).isEqualTo(1L);
+    assertThat(output.getFailedActions()).isEqualTo(1L);
   }
 }

@@ -16,31 +16,57 @@ import com.amazonaws.protocol.ProtocolMarshaller;
 @Generated("com.amazonaws:aws-java-sdk-code-generator")
 public class InstanceGroup implements Serializable, Cloneable, StructuredPojo {
 
-    private String query;
-
-    /**
-     * @param query
-     */
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
+    private java.util.List<Attribute> attributes;
 
     /**
      * @return
      */
 
-    public String getQuery() {
-        return this.query;
+    public java.util.List<Attribute> getAttributes() {
+        return attributes;
     }
 
     /**
-     * @param query
+     * @param attributes
+     */
+
+    public void setAttributes(java.util.Collection<Attribute> attributes) {
+        if (attributes == null) {
+            this.attributes = null;
+            return;
+        }
+
+        this.attributes = new java.util.ArrayList<Attribute>(attributes);
+    }
+
+    /**
+     * <p>
+     * <b>NOTE:</b> This method appends the values to the existing list (if any). Use
+     * {@link #setAttributes(java.util.Collection)} or {@link #withAttributes(java.util.Collection)} if you want to
+     * override the existing values.
+     * </p>
+     * 
+     * @param attributes
      * @return Returns a reference to this object so that method calls can be chained together.
      */
 
-    public InstanceGroup query(String query) {
-        setQuery(query);
+    public InstanceGroup attributes(Attribute... attributes) {
+        if (this.attributes == null) {
+            setAttributes(new java.util.ArrayList<Attribute>(attributes.length));
+        }
+        for (Attribute ele : attributes) {
+            this.attributes.add(ele);
+        }
+        return this;
+    }
+
+    /**
+     * @param attributes
+     * @return Returns a reference to this object so that method calls can be chained together.
+     */
+
+    public InstanceGroup attributes(java.util.Collection<Attribute> attributes) {
+        setAttributes(attributes);
         return this;
     }
 
@@ -55,8 +81,8 @@ public class InstanceGroup implements Serializable, Cloneable, StructuredPojo {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        if (getQuery() != null)
-            sb.append("Query: ").append(getQuery());
+        if (getAttributes() != null)
+            sb.append("Attributes: ").append(getAttributes());
         sb.append("}");
         return sb.toString();
     }
@@ -71,9 +97,9 @@ public class InstanceGroup implements Serializable, Cloneable, StructuredPojo {
         if (obj instanceof InstanceGroup == false)
             return false;
         InstanceGroup other = (InstanceGroup) obj;
-        if (other.getQuery() == null ^ this.getQuery() == null)
+        if (other.getAttributes() == null ^ this.getAttributes() == null)
             return false;
-        if (other.getQuery() != null && other.getQuery().equals(this.getQuery()) == false)
+        if (other.getAttributes() != null && other.getAttributes().equals(this.getAttributes()) == false)
             return false;
         return true;
     }
@@ -83,7 +109,7 @@ public class InstanceGroup implements Serializable, Cloneable, StructuredPojo {
         final int prime = 31;
         int hashCode = 1;
 
-        hashCode = prime * hashCode + ((getQuery() == null) ? 0 : getQuery().hashCode());
+        hashCode = prime * hashCode + ((getAttributes() == null) ? 0 : getAttributes().hashCode());
         return hashCode;
     }
 

@@ -46,7 +46,8 @@ task testEndToEnd(type: Test) {
     dependsOn ":scheduling-manager:deploy"
 
     doFirst {
-        systemProperty 'blox.tests.awsProfile', stack.profile.toString()
+        systemProperty 'aws.region', stack.region.toString()
+        systemProperty 'aws.defaultProfile', stack.profile.toString()
         systemProperty 'blox.tests.apiUrl', findProject(":frontend-service").deployment.outputs["ApiUrl"]
     }
 }

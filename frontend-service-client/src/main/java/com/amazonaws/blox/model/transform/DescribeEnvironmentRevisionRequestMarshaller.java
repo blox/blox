@@ -22,8 +22,8 @@ public class DescribeEnvironmentRevisionRequestMarshaller {
             .marshallLocationName("cluster").build();
     private static final MarshallingInfo<String> ENVIRONMENTNAME_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
             .marshallLocation(MarshallLocation.PATH).marshallLocationName("environmentName").build();
-    private static final MarshallingInfo<String> REVISIONID_BINDING = MarshallingInfo.builder(MarshallingType.STRING).marshallLocation(MarshallLocation.PATH)
-            .marshallLocationName("revisionId").build();
+    private static final MarshallingInfo<String> ENVIRONMENTREVISIONID_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
+            .marshallLocation(MarshallLocation.PATH).marshallLocationName("environmentRevisionId").build();
 
     private static final DescribeEnvironmentRevisionRequestMarshaller instance = new DescribeEnvironmentRevisionRequestMarshaller();
 
@@ -43,7 +43,7 @@ public class DescribeEnvironmentRevisionRequestMarshaller {
         try {
             protocolMarshaller.marshall(describeEnvironmentRevisionRequest.getCluster(), CLUSTER_BINDING);
             protocolMarshaller.marshall(describeEnvironmentRevisionRequest.getEnvironmentName(), ENVIRONMENTNAME_BINDING);
-            protocolMarshaller.marshall(describeEnvironmentRevisionRequest.getRevisionId(), REVISIONID_BINDING);
+            protocolMarshaller.marshall(describeEnvironmentRevisionRequest.getEnvironmentRevisionId(), ENVIRONMENTREVISIONID_BINDING);
         } catch (Exception e) {
             throw new SdkClientException("Unable to marshall request to JSON: " + e.getMessage(), e);
         }

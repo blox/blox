@@ -39,9 +39,9 @@ public class DescribeEnvironmentRevisionResultJsonUnmarshaller implements Unmars
                 break;
 
             if (token == FIELD_NAME || token == START_OBJECT) {
-                if (context.testExpression("revision", targetDepth)) {
+                if (context.testExpression("environmentRevision", targetDepth)) {
                     context.nextToken();
-                    describeEnvironmentRevisionResult.setRevision(EnvironmentRevisionJsonUnmarshaller.getInstance().unmarshall(context));
+                    describeEnvironmentRevisionResult.setEnvironmentRevision(EnvironmentRevisionJsonUnmarshaller.getInstance().unmarshall(context));
                 }
             } else if (token == END_ARRAY || token == END_OBJECT) {
                 if (context.getLastParsedParentElement() == null || context.getLastParsedParentElement().equals(currentParentElement)) {

@@ -21,7 +21,7 @@ public class DescribeEnvironmentRevisionRequest extends com.amazonaws.opensdk.Ba
 
     private String environmentName;
 
-    private String revisionId;
+    private String environmentRevisionId;
 
     /**
      * @param cluster
@@ -76,28 +76,28 @@ public class DescribeEnvironmentRevisionRequest extends com.amazonaws.opensdk.Ba
     }
 
     /**
-     * @param revisionId
+     * @param environmentRevisionId
      */
 
-    public void setRevisionId(String revisionId) {
-        this.revisionId = revisionId;
+    public void setEnvironmentRevisionId(String environmentRevisionId) {
+        this.environmentRevisionId = environmentRevisionId;
     }
 
     /**
      * @return
      */
 
-    public String getRevisionId() {
-        return this.revisionId;
+    public String getEnvironmentRevisionId() {
+        return this.environmentRevisionId;
     }
 
     /**
-     * @param revisionId
+     * @param environmentRevisionId
      * @return Returns a reference to this object so that method calls can be chained together.
      */
 
-    public DescribeEnvironmentRevisionRequest revisionId(String revisionId) {
-        setRevisionId(revisionId);
+    public DescribeEnvironmentRevisionRequest environmentRevisionId(String environmentRevisionId) {
+        setEnvironmentRevisionId(environmentRevisionId);
         return this;
     }
 
@@ -116,8 +116,8 @@ public class DescribeEnvironmentRevisionRequest extends com.amazonaws.opensdk.Ba
             sb.append("Cluster: ").append(getCluster()).append(",");
         if (getEnvironmentName() != null)
             sb.append("EnvironmentName: ").append(getEnvironmentName()).append(",");
-        if (getRevisionId() != null)
-            sb.append("RevisionId: ").append(getRevisionId());
+        if (getEnvironmentRevisionId() != null)
+            sb.append("EnvironmentRevisionId: ").append(getEnvironmentRevisionId());
         sb.append("}");
         return sb.toString();
     }
@@ -140,9 +140,9 @@ public class DescribeEnvironmentRevisionRequest extends com.amazonaws.opensdk.Ba
             return false;
         if (other.getEnvironmentName() != null && other.getEnvironmentName().equals(this.getEnvironmentName()) == false)
             return false;
-        if (other.getRevisionId() == null ^ this.getRevisionId() == null)
+        if (other.getEnvironmentRevisionId() == null ^ this.getEnvironmentRevisionId() == null)
             return false;
-        if (other.getRevisionId() != null && other.getRevisionId().equals(this.getRevisionId()) == false)
+        if (other.getEnvironmentRevisionId() != null && other.getEnvironmentRevisionId().equals(this.getEnvironmentRevisionId()) == false)
             return false;
         return true;
     }
@@ -154,7 +154,7 @@ public class DescribeEnvironmentRevisionRequest extends com.amazonaws.opensdk.Ba
 
         hashCode = prime * hashCode + ((getCluster() == null) ? 0 : getCluster().hashCode());
         hashCode = prime * hashCode + ((getEnvironmentName() == null) ? 0 : getEnvironmentName().hashCode());
-        hashCode = prime * hashCode + ((getRevisionId() == null) ? 0 : getRevisionId().hashCode());
+        hashCode = prime * hashCode + ((getEnvironmentRevisionId() == null) ? 0 : getEnvironmentRevisionId().hashCode());
         return hashCode;
     }
 

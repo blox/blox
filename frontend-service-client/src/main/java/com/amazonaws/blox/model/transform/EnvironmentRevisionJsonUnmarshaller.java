@@ -39,34 +39,13 @@ public class EnvironmentRevisionJsonUnmarshaller implements Unmarshaller<Environ
                 break;
 
             if (token == FIELD_NAME || token == START_OBJECT) {
-                if (context.testExpression("cluster", targetDepth)) {
-                    context.nextToken();
-                    environmentRevision.setCluster(context.getUnmarshaller(String.class).unmarshall(context));
-                }
                 if (context.testExpression("counts", targetDepth)) {
                     context.nextToken();
                     environmentRevision.setCounts(TaskCountsJsonUnmarshaller.getInstance().unmarshall(context));
                 }
-                if (context.testExpression("deploymentConfiguration", targetDepth)) {
-                    context.nextToken();
-                    environmentRevision.setDeploymentConfiguration(new MapUnmarshaller<String, String>(context.getUnmarshaller(String.class), context
-                            .getUnmarshaller(String.class)).unmarshall(context));
-                }
-                if (context.testExpression("deploymentMethod", targetDepth)) {
-                    context.nextToken();
-                    environmentRevision.setDeploymentMethod(context.getUnmarshaller(String.class).unmarshall(context));
-                }
-                if (context.testExpression("environmentName", targetDepth)) {
-                    context.nextToken();
-                    environmentRevision.setEnvironmentName(context.getUnmarshaller(String.class).unmarshall(context));
-                }
                 if (context.testExpression("environmentRevisionId", targetDepth)) {
                     context.nextToken();
                     environmentRevision.setEnvironmentRevisionId(context.getUnmarshaller(String.class).unmarshall(context));
-                }
-                if (context.testExpression("environmentType", targetDepth)) {
-                    context.nextToken();
-                    environmentRevision.setEnvironmentType(context.getUnmarshaller(String.class).unmarshall(context));
                 }
                 if (context.testExpression("instanceGroup", targetDepth)) {
                     context.nextToken();

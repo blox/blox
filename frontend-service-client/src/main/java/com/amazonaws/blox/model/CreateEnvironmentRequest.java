@@ -23,11 +23,13 @@ public class CreateEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest 
 
     private String deploymentMethod;
 
-    private String deploymentType;
-
     private String environmentName;
 
+    private String environmentType;
+
     private InstanceGroup instanceGroup;
+
+    private String role;
 
     private String taskDefinition;
 
@@ -110,32 +112,6 @@ public class CreateEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest 
     }
 
     /**
-     * @param deploymentType
-     */
-
-    public void setDeploymentType(String deploymentType) {
-        this.deploymentType = deploymentType;
-    }
-
-    /**
-     * @return
-     */
-
-    public String getDeploymentType() {
-        return this.deploymentType;
-    }
-
-    /**
-     * @param deploymentType
-     * @return Returns a reference to this object so that method calls can be chained together.
-     */
-
-    public CreateEnvironmentRequest deploymentType(String deploymentType) {
-        setDeploymentType(deploymentType);
-        return this;
-    }
-
-    /**
      * @param environmentName
      */
 
@@ -162,6 +138,32 @@ public class CreateEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest 
     }
 
     /**
+     * @param environmentType
+     */
+
+    public void setEnvironmentType(String environmentType) {
+        this.environmentType = environmentType;
+    }
+
+    /**
+     * @return
+     */
+
+    public String getEnvironmentType() {
+        return this.environmentType;
+    }
+
+    /**
+     * @param environmentType
+     * @return Returns a reference to this object so that method calls can be chained together.
+     */
+
+    public CreateEnvironmentRequest environmentType(String environmentType) {
+        setEnvironmentType(environmentType);
+        return this;
+    }
+
+    /**
      * @param instanceGroup
      */
 
@@ -184,6 +186,32 @@ public class CreateEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest 
 
     public CreateEnvironmentRequest instanceGroup(InstanceGroup instanceGroup) {
         setInstanceGroup(instanceGroup);
+        return this;
+    }
+
+    /**
+     * @param role
+     */
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    /**
+     * @return
+     */
+
+    public String getRole() {
+        return this.role;
+    }
+
+    /**
+     * @param role
+     * @return Returns a reference to this object so that method calls can be chained together.
+     */
+
+    public CreateEnvironmentRequest role(String role) {
+        setRole(role);
         return this;
     }
 
@@ -230,12 +258,14 @@ public class CreateEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest 
             sb.append("DeploymentConfiguration: ").append(getDeploymentConfiguration()).append(",");
         if (getDeploymentMethod() != null)
             sb.append("DeploymentMethod: ").append(getDeploymentMethod()).append(",");
-        if (getDeploymentType() != null)
-            sb.append("DeploymentType: ").append(getDeploymentType()).append(",");
         if (getEnvironmentName() != null)
             sb.append("EnvironmentName: ").append(getEnvironmentName()).append(",");
+        if (getEnvironmentType() != null)
+            sb.append("EnvironmentType: ").append(getEnvironmentType()).append(",");
         if (getInstanceGroup() != null)
             sb.append("InstanceGroup: ").append(getInstanceGroup()).append(",");
+        if (getRole() != null)
+            sb.append("Role: ").append(getRole()).append(",");
         if (getTaskDefinition() != null)
             sb.append("TaskDefinition: ").append(getTaskDefinition());
         sb.append("}");
@@ -264,17 +294,21 @@ public class CreateEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest 
             return false;
         if (other.getDeploymentMethod() != null && other.getDeploymentMethod().equals(this.getDeploymentMethod()) == false)
             return false;
-        if (other.getDeploymentType() == null ^ this.getDeploymentType() == null)
-            return false;
-        if (other.getDeploymentType() != null && other.getDeploymentType().equals(this.getDeploymentType()) == false)
-            return false;
         if (other.getEnvironmentName() == null ^ this.getEnvironmentName() == null)
             return false;
         if (other.getEnvironmentName() != null && other.getEnvironmentName().equals(this.getEnvironmentName()) == false)
             return false;
+        if (other.getEnvironmentType() == null ^ this.getEnvironmentType() == null)
+            return false;
+        if (other.getEnvironmentType() != null && other.getEnvironmentType().equals(this.getEnvironmentType()) == false)
+            return false;
         if (other.getInstanceGroup() == null ^ this.getInstanceGroup() == null)
             return false;
         if (other.getInstanceGroup() != null && other.getInstanceGroup().equals(this.getInstanceGroup()) == false)
+            return false;
+        if (other.getRole() == null ^ this.getRole() == null)
+            return false;
+        if (other.getRole() != null && other.getRole().equals(this.getRole()) == false)
             return false;
         if (other.getTaskDefinition() == null ^ this.getTaskDefinition() == null)
             return false;
@@ -291,9 +325,10 @@ public class CreateEnvironmentRequest extends com.amazonaws.opensdk.BaseRequest 
         hashCode = prime * hashCode + ((getCluster() == null) ? 0 : getCluster().hashCode());
         hashCode = prime * hashCode + ((getDeploymentConfiguration() == null) ? 0 : getDeploymentConfiguration().hashCode());
         hashCode = prime * hashCode + ((getDeploymentMethod() == null) ? 0 : getDeploymentMethod().hashCode());
-        hashCode = prime * hashCode + ((getDeploymentType() == null) ? 0 : getDeploymentType().hashCode());
         hashCode = prime * hashCode + ((getEnvironmentName() == null) ? 0 : getEnvironmentName().hashCode());
+        hashCode = prime * hashCode + ((getEnvironmentType() == null) ? 0 : getEnvironmentType().hashCode());
         hashCode = prime * hashCode + ((getInstanceGroup() == null) ? 0 : getInstanceGroup().hashCode());
+        hashCode = prime * hashCode + ((getRole() == null) ? 0 : getRole().hashCode());
         hashCode = prime * hashCode + ((getTaskDefinition() == null) ? 0 : getTaskDefinition().hashCode());
         return hashCode;
     }

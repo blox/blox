@@ -24,12 +24,14 @@ public class CreateEnvironmentRequestMarshaller {
             .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("deploymentConfiguration").build();
     private static final MarshallingInfo<String> DEPLOYMENTMETHOD_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
             .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("deploymentMethod").build();
-    private static final MarshallingInfo<String> DEPLOYMENTTYPE_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
-            .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("deploymentType").build();
     private static final MarshallingInfo<String> ENVIRONMENTNAME_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
             .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("environmentName").build();
+    private static final MarshallingInfo<String> ENVIRONMENTTYPE_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
+            .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("environmentType").build();
     private static final MarshallingInfo<StructuredPojo> INSTANCEGROUP_BINDING = MarshallingInfo.builder(MarshallingType.STRUCTURED)
             .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("instanceGroup").build();
+    private static final MarshallingInfo<String> ROLE_BINDING = MarshallingInfo.builder(MarshallingType.STRING).marshallLocation(MarshallLocation.PAYLOAD)
+            .marshallLocationName("role").build();
     private static final MarshallingInfo<String> TASKDEFINITION_BINDING = MarshallingInfo.builder(MarshallingType.STRING)
             .marshallLocation(MarshallLocation.PAYLOAD).marshallLocationName("taskDefinition").build();
 
@@ -52,9 +54,10 @@ public class CreateEnvironmentRequestMarshaller {
             protocolMarshaller.marshall(createEnvironmentRequest.getCluster(), CLUSTER_BINDING);
             protocolMarshaller.marshall(createEnvironmentRequest.getDeploymentConfiguration(), DEPLOYMENTCONFIGURATION_BINDING);
             protocolMarshaller.marshall(createEnvironmentRequest.getDeploymentMethod(), DEPLOYMENTMETHOD_BINDING);
-            protocolMarshaller.marshall(createEnvironmentRequest.getDeploymentType(), DEPLOYMENTTYPE_BINDING);
             protocolMarshaller.marshall(createEnvironmentRequest.getEnvironmentName(), ENVIRONMENTNAME_BINDING);
+            protocolMarshaller.marshall(createEnvironmentRequest.getEnvironmentType(), ENVIRONMENTTYPE_BINDING);
             protocolMarshaller.marshall(createEnvironmentRequest.getInstanceGroup(), INSTANCEGROUP_BINDING);
+            protocolMarshaller.marshall(createEnvironmentRequest.getRole(), ROLE_BINDING);
             protocolMarshaller.marshall(createEnvironmentRequest.getTaskDefinition(), TASKDEFINITION_BINDING);
         } catch (Exception e) {
             throw new SdkClientException("Unable to marshall request to JSON: " + e.getMessage(), e);

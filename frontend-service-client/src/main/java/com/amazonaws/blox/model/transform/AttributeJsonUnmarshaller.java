@@ -15,13 +15,13 @@ import com.fasterxml.jackson.core.JsonToken;
 import static com.fasterxml.jackson.core.JsonToken.*;
 
 /**
- * InstanceGroup JSON Unmarshaller
+ * Attribute JSON Unmarshaller
  */
 @Generated("com.amazonaws:aws-java-sdk-code-generator")
-public class InstanceGroupJsonUnmarshaller implements Unmarshaller<InstanceGroup, JsonUnmarshallerContext> {
+public class AttributeJsonUnmarshaller implements Unmarshaller<Attribute, JsonUnmarshallerContext> {
 
-    public InstanceGroup unmarshall(JsonUnmarshallerContext context) throws Exception {
-        InstanceGroup instanceGroup = new InstanceGroup();
+    public Attribute unmarshall(JsonUnmarshallerContext context) throws Exception {
+        Attribute attribute = new Attribute();
 
         int originalDepth = context.getCurrentDepth();
         String currentParentElement = context.getCurrentParentElement();
@@ -39,9 +39,13 @@ public class InstanceGroupJsonUnmarshaller implements Unmarshaller<InstanceGroup
                 break;
 
             if (token == FIELD_NAME || token == START_OBJECT) {
-                if (context.testExpression("attributes", targetDepth)) {
+                if (context.testExpression("name", targetDepth)) {
                     context.nextToken();
-                    instanceGroup.setAttributes(new ListUnmarshaller<Attribute>(AttributeJsonUnmarshaller.getInstance()).unmarshall(context));
+                    attribute.setName(context.getUnmarshaller(String.class).unmarshall(context));
+                }
+                if (context.testExpression("value", targetDepth)) {
+                    context.nextToken();
+                    attribute.setValue(context.getUnmarshaller(String.class).unmarshall(context));
                 }
             } else if (token == END_ARRAY || token == END_OBJECT) {
                 if (context.getLastParsedParentElement() == null || context.getLastParsedParentElement().equals(currentParentElement)) {
@@ -52,14 +56,14 @@ public class InstanceGroupJsonUnmarshaller implements Unmarshaller<InstanceGroup
             token = context.nextToken();
         }
 
-        return instanceGroup;
+        return attribute;
     }
 
-    private static InstanceGroupJsonUnmarshaller instance;
+    private static AttributeJsonUnmarshaller instance;
 
-    public static InstanceGroupJsonUnmarshaller getInstance() {
+    public static AttributeJsonUnmarshaller getInstance() {
         if (instance == null)
-            instance = new InstanceGroupJsonUnmarshaller();
+            instance = new AttributeJsonUnmarshaller();
         return instance;
     }
 }

@@ -24,7 +24,7 @@ public class DescribeEnvironmentRevisionRequestProtocolMarshaller implements
         Marshaller<Request<DescribeEnvironmentRevisionRequest>, DescribeEnvironmentRevisionRequest> {
 
     private static final OperationInfo SDK_OPERATION_BINDING = OperationInfo.builder().protocol(Protocol.API_GATEWAY)
-            .requestUri("/alpha/v1/{cluster}/environments/{environmentName}/revisions/{revisionId}").httpMethodName(HttpMethodName.GET)
+            .requestUri("/alpha/v1/{cluster}/environments/{environmentName}/revisions/{environmentRevisionId}").httpMethodName(HttpMethodName.GET)
             .hasExplicitPayloadMember(false).hasPayloadMembers(false).serviceName("Blox").build();
 
     private final com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl protocolFactory;
