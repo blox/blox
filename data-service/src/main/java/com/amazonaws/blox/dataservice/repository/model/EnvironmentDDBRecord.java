@@ -18,6 +18,8 @@ import com.amazonaws.blox.dataservice.model.EnvironmentHealth;
 import com.amazonaws.blox.dataservice.model.EnvironmentStatus;
 import com.amazonaws.blox.dataservice.model.EnvironmentType;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
@@ -42,6 +44,10 @@ public class EnvironmentDDBRecord {
   public static final String ENVIRONMENT_NAME_RANGE_KEY = "environmentName";
   public static final String LATEST_ENVIRONMENT_REVISION_ID = "latestEnvironmentRevisionId";
 
+  public static final String ENVIRONMENT_CLUSTER_GSI_NAME = "environmentClusterIndex";
+  public static final String ENVIRONMENT_CLUSTER_INDEX_HASH_KEY = "accountId";
+  public static final String ENVIRONMENT_CLUSTER_INDEX_RANGE_KEY = "cluster";
+
   public static EnvironmentDDBRecord withHashKeys(final String accountIdCluster) {
     return EnvironmentDDBRecord.builder().accountIdCluster(accountIdCluster).build();
   }
@@ -57,6 +63,18 @@ public class EnvironmentDDBRecord {
 
   @DynamoDBHashKey(attributeName = ACCOUNT_ID_CLUSTER_HASH_KEY)
   private String accountIdCluster;
+
+  @DynamoDBIndexHashKey(
+    attributeName = ENVIRONMENT_CLUSTER_INDEX_HASH_KEY,
+    globalSecondaryIndexName = ENVIRONMENT_CLUSTER_GSI_NAME
+  )
+  private String accountId;
+
+  @DynamoDBIndexRangeKey(
+    attributeName = ENVIRONMENT_CLUSTER_INDEX_RANGE_KEY,
+    globalSecondaryIndexName = ENVIRONMENT_CLUSTER_GSI_NAME
+  )
+  private String clusterName;
 
   @DynamoDBRangeKey(attributeName = ENVIRONMENT_NAME_RANGE_KEY)
   private String environmentName;

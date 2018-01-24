@@ -11,6 +11,12 @@ compileJava {
     ]
 }
 
+repositories {
+    maven {
+        url "https://s3-us-west-2.amazonaws.com/dynamodb-local/release"
+    }
+}
+
 dependencies {
     compile project(":data-service-model")
     compile project(":lambda-spring")
@@ -41,10 +47,27 @@ dependencies {
             'org.hamcrest:hamcrest-junit:2.+',
             'org.mockito:mockito-core',
             'org.slf4j:jcl-over-slf4j',
-            'org.springframework:spring-test'
+            'org.springframework:spring-test',
+            'com.amazonaws:DynamoDBLocal:+',
     )
 }
 
+def sqliteNativeLibName() {
+    def os = org.gradle.internal.os.OperatingSystem.current()
+
+    if (os.isMacOsX()) "libsqlite4java-osx"
+    else if (os.isLinux()) "libsqlite4java-linux-amd64"
+    else if (os.isWindows()) "sqlite4java-win32-x64"
+}
+
+test {
+    // Set the path to the native sqlite4java artifacts for the current platform:
+    // (see https://bitbucket.org/almworks/sqlite4java/wiki/UsingWithMaven for details)
+    def libName = sqliteNativeLibName()
+    def path = configurations.testRuntime.resolve().find { it.name.startsWith(libName) }
+
+    systemProperty 'sqlite4java.library.path', path.parent
+}
 
 task packageLambda(type: Zip, dependsOn: classes) {
     group "build"

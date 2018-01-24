@@ -35,7 +35,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.SaveB
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBSaveExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedScanList;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedList;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -43,7 +43,6 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ExpectedAttributeValue;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -396,25 +395,36 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
       Validate.notNull(accountId, "accountId must be specified if clusterNamePrefix is specified");
     }
 
-    // TODO: rewrite this to use the index instead of scanning the table
-    PaginatedScanList<EnvironmentDDBRecord> records =
-        dynamoDBMapper.scan(EnvironmentDDBRecord.class, new DynamoDBScanExpression());
+    PaginatedList<EnvironmentDDBRecord> clusters;
 
-    Stream<Cluster> stream =
-        records
-            .stream()
-            .map(EnvironmentDDBRecord::getAccountIdCluster)
-            .distinct()
-            .map(Cluster::fromAccountIdCluster);
+    if (accountId == null) {
+      clusters =
+          dynamoDBMapper.scan(
+              EnvironmentDDBRecord.class,
+              new DynamoDBScanExpression()
+                  .withIndexName(EnvironmentDDBRecord.ENVIRONMENT_CLUSTER_GSI_NAME));
+    } else {
+      DynamoDBQueryExpression<EnvironmentDDBRecord> query =
+          new DynamoDBQueryExpression<EnvironmentDDBRecord>()
+              .withIndexName(EnvironmentDDBRecord.ENVIRONMENT_CLUSTER_GSI_NAME)
+              .withHashKeyValues(EnvironmentDDBRecord.builder().accountId(accountId).build())
+              .withConsistentRead(false);
 
-    if (accountId != null) {
-      stream = stream.filter(c -> c.getAccountId().equals(accountId));
+      if (clusterNamePrefix != null) {
+        query.withRangeKeyCondition(
+            EnvironmentDDBRecord.ENVIRONMENT_CLUSTER_INDEX_RANGE_KEY,
+            new Condition()
+                .withComparisonOperator(ComparisonOperator.BEGINS_WITH.toString())
+                .withAttributeValueList(new AttributeValue().withS(clusterNamePrefix)));
+      }
+      clusters = dynamoDBMapper.query(EnvironmentDDBRecord.class, query);
     }
-    if (clusterNamePrefix != null) {
-      stream = stream.filter(c -> c.getClusterName().startsWith(clusterNamePrefix));
-    }
 
-    return stream.collect(Collectors.toList());
+    return clusters
+        .stream()
+        .map(environmentMapper::toCluster)
+        .distinct() // items in the index aren't unique
+        .collect(Collectors.toList());
   }
 
   @Override

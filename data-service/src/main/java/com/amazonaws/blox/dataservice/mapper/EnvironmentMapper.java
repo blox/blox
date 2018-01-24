@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.dataservice.mapper;
 
+import com.amazonaws.blox.dataservice.model.Cluster;
 import com.amazonaws.blox.dataservice.model.Environment;
 import com.amazonaws.blox.dataservice.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservice.repository.model.EnvironmentDDBRecord;
@@ -25,6 +26,8 @@ import org.mapstruct.Mapping;
 @Mapper
 public interface EnvironmentMapper {
 
+  @Mapping(source = "environmentId.accountId", target = "accountId")
+  @Mapping(source = "environmentId.cluster", target = "clusterName")
   @Mapping(source = "environmentId.environmentName", target = "environmentName")
   @Mapping(source = "environmentType", target = "type")
   @Mapping(source = "environmentHealth", target = "health")
@@ -47,6 +50,8 @@ public interface EnvironmentMapper {
     expression =
         "java(EnvironmentId.getClusterFromAccountIdCluster(environmentDDBRecord.getAccountIdCluster()))"
   )
+  // TODO map deploymentConfiguration
+  @Mapping(target = "deploymentConfiguration", ignore = true)
   Environment toEnvironment(EnvironmentDDBRecord environmentDDBRecord);
 
   @Mapping(source = "environmentId.cluster", target = "clusterName")
@@ -69,4 +74,6 @@ public interface EnvironmentMapper {
   )
   EnvironmentRevision toEnvironmentRevision(
       EnvironmentRevisionDDBRecord environmentRevisionDDBRecord);
+
+  Cluster toCluster(EnvironmentDDBRecord record);
 }
