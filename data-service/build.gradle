@@ -1,6 +1,5 @@
 plugins {
     id "java"
-    id 'net.ltgt.apt'
     id 'blox-deploy'
 }
 
@@ -32,6 +31,10 @@ dependencies {
             'org.springframework:spring-context',
     )
 
+    compileOnly(
+            'org.mapstruct:mapstruct-processor',
+    )
+
     testCompile(
             'junit:junit:4.12',
             'org.assertj:assertj-core:3.8+',
@@ -40,9 +43,6 @@ dependencies {
             'org.slf4j:jcl-over-slf4j',
             'org.springframework:spring-test'
     )
-
-    apt 'org.mapstruct:mapstruct-processor'
-    apt 'org.projectlombok:lombok'
 }
 
 
