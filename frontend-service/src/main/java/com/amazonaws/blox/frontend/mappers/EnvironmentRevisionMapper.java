@@ -24,7 +24,4 @@ public interface EnvironmentRevisionMapper {
   @Mapping(target = "counts", ignore = true)
   EnvironmentRevision fromDataService(
       com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision environmentRevision);
-
-  com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision toDataService(
-      EnvironmentRevision environmentRevision);
 }

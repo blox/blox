@@ -21,7 +21,7 @@ import com.amazonaws.serverless.proxy.internal.model.ApiGatewayRequestContext;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(uses = {EnvironmentMapper.class, EnvironmentRevisionMapper.class})
+@Mapper(uses = EnvironmentMapper.class)
 public interface DescribeEnvironmentMapper {
   @Mapping(target = "environmentId.accountId", source = "context.accountId")
   @Mapping(target = "environmentId.cluster", source = "cluster")
