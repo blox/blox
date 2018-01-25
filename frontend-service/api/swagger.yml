@@ -5,39 +5,6 @@ info:
   version: "v2017-07-11"
   title: "ecs-blox-frontend"
 paths:
-  /v1/{cluster}/environments/{environmentName}/revisions/{revisionId}:
-    get:
-      summary: "Describe Environment revisions"
-      description: ""
-      operationId: "describeEnvironmentRevision"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "cluster"
-        in: "path"
-        required: true
-        type: "string"
-      - name: "environmentName"
-        in: "path"
-        required: true
-        type: "string"
-      - name: "revisionId"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/DescribeEnvironmentRevisionResponse"
-      security:
-      - defaultAuthorization: []
-      x-amazon-apigateway-integration:
-        passthroughBehavior: "when_no_match"
-        httpMethod: "POST"
-        type: "aws_proxy"
-        uri:
-          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
   /v1/{cluster}/environments:
     get:
       summary: "List all environments"
@@ -210,6 +177,71 @@ paths:
         type: "aws_proxy"
         uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
+    delete:
+      summary: "Delete an Environment by name"
+      description: ""
+      operationId: "deleteEnvironment"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "cluster"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "environmentName"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "forceDelete"
+        in: "query"
+        required: false
+        type: "boolean"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DeleteEnvironmentResponse"
+      security:
+      - defaultAuthorization: []
+      x-amazon-apigateway-integration:
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
+  /v1/{cluster}/environments/{environmentName}/revisions/{environmentRevisionId}:
+    get:
+      summary: "Describe Environment revisions"
+      description: ""
+      operationId: "describeEnvironmentRevision"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "cluster"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "environmentName"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "environmentRevisionId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DescribeEnvironmentRevisionResponse"
+      security:
+      - defaultAuthorization: []
+      x-amazon-apigateway-integration:
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
   /v1/{cluster}/environments/{environmentName}/revisions:
     get:
       summary: "List Environment Revisions"
@@ -288,53 +320,17 @@ securityDefinitions:
     in: "header"
     x-amazon-apigateway-authtype: "awsSigv4"
 definitions:
-  DescribeEnvironmentRevisionResponse:
+  CreateEnvironmentResponse:
     type: "object"
     properties:
-      environmentRevision:
-        $ref: "#/definitions/EnvironmentRevision"
+      environmentRevisionId:
+        type: "string"
   Attribute:
     type: "object"
     properties:
       name:
         type: "string"
       value:
-        type: "string"
-  EnvironmentRevision:
-    type: "object"
-    properties:
-      environmentRevisionId:
-        type: "string"
-      taskDefinition:
-        type: "string"
-      instanceGroup:
-        $ref: "#/definitions/InstanceGroup"
-      counts:
-        $ref: "#/definitions/TaskCounts"
-  InstanceGroup:
-    type: "object"
-    properties:
-      attributes:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Attribute"
-  TaskCounts:
-    type: "object"
-    properties:
-      desired:
-        type: "integer"
-        format: "int64"
-      healthy:
-        type: "integer"
-        format: "int64"
-      total:
-        type: "integer"
-        format: "int64"
-  CreateEnvironmentResponse:
-    type: "object"
-    properties:
-      environmentRevisionId:
         type: "string"
   CreateEnvironmentRequest:
     type: "object"
@@ -355,6 +351,14 @@ definitions:
         $ref: "#/definitions/DeploymentConfiguration"
   DeploymentConfiguration:
     type: "object"
+  InstanceGroup:
+    type: "object"
+    properties:
+      attributes:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Attribute"
   StartDeploymentResponse:
     type: "object"
     properties:
@@ -384,6 +388,36 @@ definitions:
         $ref: "#/definitions/DeploymentConfiguration"
       activeEnvironmentRevisionId:
         type: "string"
+      latestEnvironmentRevisionId:
+        type: "string"
+  DescribeEnvironmentRevisionResponse:
+    type: "object"
+    properties:
+      environmentRevision:
+        $ref: "#/definitions/EnvironmentRevision"
+  EnvironmentRevision:
+    type: "object"
+    properties:
+      environmentRevisionId:
+        type: "string"
+      taskDefinition:
+        type: "string"
+      instanceGroup:
+        $ref: "#/definitions/InstanceGroup"
+      counts:
+        $ref: "#/definitions/TaskCounts"
+  TaskCounts:
+    type: "object"
+    properties:
+      desired:
+        type: "integer"
+        format: "int64"
+      healthy:
+        type: "integer"
+        format: "int64"
+      total:
+        type: "integer"
+        format: "int64"
   ListEnvironmentsResponse:
     type: "object"
     properties:
@@ -400,6 +434,11 @@ definitions:
         type: "array"
         items:
           type: "string"
+  DeleteEnvironmentResponse:
+    type: "object"
+    properties:
+      environment:
+        $ref: "#/definitions/Environment"
   ListEnvironmentDeploymentsResponse:
     type: "object"
     properties:
@@ -428,4 +467,3 @@ definitions:
         type: "string"
       newTargetRevisionId:
         type: "string"
-x-generated-at: "2018-01-09T22:55:42.535Z"

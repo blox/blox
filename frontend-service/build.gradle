@@ -59,16 +59,8 @@ task swagger(type: GenerateSwaggerModel, dependsOn: classes) {
 
     scanClasspath = project.sourceSets.main.runtimeClasspath
 
-    // TODO: Specify API classes by package rather than name
-    apiClasses += [
-            'com.amazonaws.blox.frontend.operations.CreateEnvironment',
-            'com.amazonaws.blox.frontend.operations.DescribeEnvironment',
-            'com.amazonaws.blox.frontend.operations.DescribeEnvironmentDeployment',
-            'com.amazonaws.blox.frontend.operations.DescribeEnvironmentRevision',
-            'com.amazonaws.blox.frontend.operations.ListEnvironmentDeployments',
-            'com.amazonaws.blox.frontend.operations.ListEnvironmentRevisions',
-            'com.amazonaws.blox.frontend.operations.ListEnvironments',
-            'com.amazonaws.blox.frontend.operations.StartDeployment',
+    apiPackages += [
+            'com.amazonaws.blox.frontend.operations'
     ]
 
     swaggerFile file("api/swagger.yml")

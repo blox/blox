@@ -14,7 +14,6 @@
  */
 package com.amazonaws.blox.tasks;
 
-import com.amazonaws.blox.swagger.GenerationTimestampFilter;
 import com.amazonaws.blox.swagger.SwaggerFilter;
 import com.github.kongchen.swagger.docgen.GenerateException;
 import com.github.kongchen.swagger.docgen.reader.SpringMvcApiReader;
@@ -40,6 +39,10 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.reflections.Reflections;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 
 /**
  * Generate a YAML-formatted Swagger specification from the given classes.
@@ -53,10 +56,8 @@ import org.gradle.api.tasks.TaskAction;
 public class GenerateSwaggerModel extends DefaultTask {
   private Log log = new SystemStreamLog();
 
-  public static final SwaggerFilter DEFAULT_FILTER = new GenerationTimestampFilter();
-
-  /** A list of class names to scan for Swagger annotations */
-  @Input private List<String> apiClasses = new ArrayList<>();
+  /** A list of package names to scan for swagger annotations */
+  @Input private List<String> apiPackages = new ArrayList<>();
 
   /** The file into which to write the swagger definition */
   @OutputFile private File swaggerFile;
@@ -76,18 +77,23 @@ public class GenerateSwaggerModel extends DefaultTask {
    */
   @Nested private List<SwaggerFilter> filters = new ArrayList<>();
 
-  public GenerateSwaggerModel() {
-    filters.add(DEFAULT_FILTER);
-  }
-
   @TaskAction
-  public void generateSpec() throws IOException, ClassNotFoundException, GenerateException {
+  public void generateSpec() throws IOException, GenerateException {
     ClassLoader loader = projectClassLoader();
-
     Set<Class<?>> classes = new HashSet<>();
 
-    for (String name : apiClasses) {
-      classes.add(loader.loadClass(name));
+    for (String pkg : apiPackages) {
+      Reflections reflections =
+          new Reflections(
+              new ConfigurationBuilder()
+                  .addClassLoaders(loader)
+                  .addUrls(ClasspathHelper.forPackage(pkg, loader))
+                  .setExpandSuperTypes(false)
+                  .filterInputsBy(new FilterBuilder().includePackage(pkg)));
+      Set<Class<?>> springMVCClasses =
+          reflections.getTypesAnnotatedWith(
+              org.springframework.web.bind.annotation.RestController.class);
+      classes.addAll(springMVCClasses);
     }
 
     SpringMvcApiReader reader = new SpringMvcApiReader(new Swagger(), log);
