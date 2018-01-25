@@ -21,15 +21,15 @@ import static org.mockito.Mockito.when;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
-import com.amazonaws.blox.frontend.mappers.DescribeEnvironmentMapper;
-import com.amazonaws.blox.frontend.operations.DescribeEnvironment.DescribeEnvironmentResponse;
+import com.amazonaws.blox.frontend.mappers.DeleteEnvironmentMapper;
+import com.amazonaws.blox.frontend.operations.DeleteEnvironment.DeleteEnvironmentResponse;
 import java.time.Instant;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class DescribeEnvironmentTest extends EnvironmentControllerTestCase {
-  @Autowired DescribeEnvironment controller;
-  @Autowired DescribeEnvironmentMapper mapper;
+public class DeleteEnvironmentTest extends EnvironmentControllerTestCase {
+  @Autowired DeleteEnvironment controller;
+  @Autowired DeleteEnvironmentMapper mapper;
 
   @Test
   public void mapsInputsAndOutputsCorrectly() throws Exception {
@@ -52,21 +52,21 @@ public class DescribeEnvironmentTest extends EnvironmentControllerTestCase {
             .lastUpdatedTime(Instant.now())
             .build();
 
-    when(dataService.describeEnvironment(any()))
+    when(dataService.deleteEnvironment(any()))
         .thenReturn(
-            com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentResponse
+            com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentResponse
                 .builder()
                 .environment(environment)
                 .build());
 
-    DescribeEnvironmentResponse response =
-        controller.describeEnvironment(TEST_CLUSTER, ENVIRONMENT_NAME);
+    DeleteEnvironmentResponse response =
+        controller.deleteEnvironment(TEST_CLUSTER, ENVIRONMENT_NAME, false);
 
     verify(dataService)
-        .describeEnvironment(
-            com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest
-                .builder()
+        .deleteEnvironment(
+            com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest.builder()
                 .environmentId(id)
+                .forceDelete(false)
                 .build());
 
     assertThat(response).isNotNull();

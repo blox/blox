@@ -28,25 +28,15 @@ import com.amazonaws.blox.frontend.mappers.CreateEnvironmentMapper;
 import com.amazonaws.blox.frontend.operations.CreateEnvironment.CreateEnvironmentRequest;
 import com.amazonaws.blox.frontend.operations.CreateEnvironment.CreateEnvironmentResponse;
 import java.time.Instant;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class CreateEnvironmentTest extends EnvironmentControllerTestCase {
-  CreateEnvironment controller = new CreateEnvironment();
+  @Autowired CreateEnvironment controller;
   @Autowired CreateEnvironmentMapper mapper;
-
-  @Before
-  public void setupController() {
-    controller.request = servletRequest;
-    controller.dataService = dataService;
-    controller.mapper = mapper;
-  }
 
   @Test
   public void mapsInputsAndOutputsCorrectly() throws Exception {
-    requestContext.setAccountId(ACCOUNT_ID);
-
     EnvironmentId id =
         EnvironmentId.builder()
             .accountId(ACCOUNT_ID)

@@ -24,25 +24,15 @@ import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
 import com.amazonaws.blox.frontend.mappers.DescribeEnvironmentRevisionMapper;
 import com.amazonaws.blox.frontend.operations.DescribeEnvironmentRevision.DescribeEnvironmentRevisionResponse;
 import java.time.Instant;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DescribeEnvironmentRevisionTest extends EnvironmentControllerTestCase {
-  DescribeEnvironmentRevision controller = new DescribeEnvironmentRevision();
+  @Autowired DescribeEnvironmentRevision controller;
   @Autowired DescribeEnvironmentRevisionMapper mapper;
-
-  @Before
-  public void setupController() {
-    controller.request = servletRequest;
-    controller.dataService = dataService;
-    controller.mapper = mapper;
-  }
 
   @Test
   public void mapsInputsAndOutputsCorrectly() throws Exception {
-    requestContext.setAccountId(ACCOUNT_ID);
-
     EnvironmentId id =
         EnvironmentId.builder()
             .accountId(ACCOUNT_ID)

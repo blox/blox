@@ -26,16 +26,25 @@ import com.amazonaws.serverless.proxy.internal.model.ApiGatewayRequestContext;
 import com.amazonaws.serverless.proxy.internal.servlet.AwsProxyHttpServletRequestReader;
 import java.util.Arrays;
 import java.util.HashSet;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Profile;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 // TODO: We only use the Spring runner in order to wire in the needed mappers. See the comment on
 // MapperConfiguration for details.
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = MapperConfiguration.class)
+@ContextConfiguration(classes = EnvironmentControllerTestCase.Config.class)
+@ActiveProfiles("api_test")
 public abstract class EnvironmentControllerTestCase {
 
   protected static final String ROLE = "TestRole";
@@ -51,13 +60,29 @@ public abstract class EnvironmentControllerTestCase {
   protected static final String ATTRIBUTE_NAME = "TestAttributeName";
   protected static final String ATTRIBUTE_VALUE = "TestAttributeValue";
   protected static final String ACCOUNT_ID = "1234567890";
-  protected MockHttpServletRequest servletRequest;
-  ApiGatewayRequestContext requestContext = new ApiGatewayRequestContext();
-  DataService dataService = mock(DataService.class);
+  @Autowired DataService dataService;
+  @Autowired HttpServletRequest servletRequest;
+
+  @Configuration
+  @Import(MapperConfiguration.class)
+  @ComponentScan("com.amazonaws.blox.frontend.operations")
+  @Profile("api_test")
+  static class Config {
+    @Bean
+    public DataService dataService() {
+      return mock(DataService.class);
+    }
+
+    @Bean
+    public HttpServletRequest httpServletRequest() {
+      return new MockHttpServletRequest();
+    }
+  }
 
   @Before
   public void setupRequest() {
-    servletRequest = new MockHttpServletRequest();
+    ApiGatewayRequestContext requestContext = new ApiGatewayRequestContext();
+    requestContext.setAccountId(ACCOUNT_ID);
     servletRequest.setAttribute(
         AwsProxyHttpServletRequestReader.API_GATEWAY_CONTEXT_PROPERTY, requestContext);
   }

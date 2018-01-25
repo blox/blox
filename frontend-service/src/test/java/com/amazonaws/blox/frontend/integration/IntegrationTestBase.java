@@ -23,6 +23,7 @@ import com.amazonaws.serverless.proxy.spring.SpringLambdaContainerHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
@@ -40,8 +41,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 public abstract class IntegrationTestBase {
 
   protected static final String ACCOUNT_ID = "123456789012";
-  private static final String CLUSTER_NAME = "myCluster";
-  private static final String ENVIRONMENT_NAME = "myEnv";
+  protected static final String CLUSTER_NAME = "myCluster";
+  protected static final String ENVIRONMENT_NAME = "myEnv";
 
   protected EnvironmentId environmentId;
 
@@ -55,6 +56,7 @@ public abstract class IntegrationTestBase {
 
   @Before
   public void setUpBase() {
+    Mockito.reset(dataService);
     environmentId =
         EnvironmentId.builder()
             .accountId(ACCOUNT_ID)
