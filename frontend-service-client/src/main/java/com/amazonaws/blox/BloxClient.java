@@ -86,6 +86,25 @@ class BloxClient implements Blox {
     }
 
     /**
+     * @param deleteEnvironmentRequest
+     * @return Result of the deleteEnvironment operation returned by the service.
+     * @sample Blox.deleteEnvironment
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/deleteEnvironment" target="_top">AWS
+     *      API Documentation</a>
+     */
+    @Override
+    public DeleteEnvironmentResult deleteEnvironment(DeleteEnvironmentRequest deleteEnvironmentRequest) {
+        HttpResponseHandler<DeleteEnvironmentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata().withPayloadJson(true)
+                .withHasStreamingSuccessResponse(false), new DeleteEnvironmentResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<DeleteEnvironmentRequest, DeleteEnvironmentResult>()
+                .withMarshaller(new DeleteEnvironmentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(deleteEnvironmentRequest));
+    }
+
+    /**
      * @param describeEnvironmentRequest
      * @return Result of the describeEnvironment operation returned by the service.
      * @sample Blox.describeEnvironment

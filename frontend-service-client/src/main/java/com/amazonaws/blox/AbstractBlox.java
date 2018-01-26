@@ -24,6 +24,11 @@ public class AbstractBlox implements Blox {
     }
 
     @Override
+    public DeleteEnvironmentResult deleteEnvironment(DeleteEnvironmentRequest request) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
     public DescribeEnvironmentResult describeEnvironment(DescribeEnvironmentRequest request) {
         throw new java.lang.UnsupportedOperationException();
     }

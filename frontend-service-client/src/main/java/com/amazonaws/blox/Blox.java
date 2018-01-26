@@ -28,6 +28,15 @@ public interface Blox {
     CreateEnvironmentResult createEnvironment(CreateEnvironmentRequest createEnvironmentRequest);
 
     /**
+     * @param deleteEnvironmentRequest
+     * @return Result of the deleteEnvironment operation returned by the service.
+     * @sample Blox.deleteEnvironment
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/deleteEnvironment" target="_top">AWS
+     *      API Documentation</a>
+     */
+    DeleteEnvironmentResult deleteEnvironment(DeleteEnvironmentRequest deleteEnvironmentRequest);
+
+    /**
      * @param describeEnvironmentRequest
      * @return Result of the describeEnvironment operation returned by the service.
      * @sample Blox.describeEnvironment
