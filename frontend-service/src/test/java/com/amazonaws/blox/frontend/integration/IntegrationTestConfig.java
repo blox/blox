@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.frontend.MapperConfiguration;
+import com.amazonaws.blox.frontend.integration.SampleController.Checker;
 import com.amazonaws.serverless.proxy.internal.model.AwsProxyRequest;
 import com.amazonaws.serverless.proxy.internal.model.AwsProxyResponse;
 import com.amazonaws.serverless.proxy.internal.testutils.MockLambdaContext;
@@ -46,6 +47,16 @@ public class IntegrationTestConfig {
         SpringLambdaContainerHandler.getAwsProxyHandler(applicationContext);
     handler.setRefreshContext(false);
     return handler;
+  }
+
+  @Bean
+  public SampleController sampleController() {
+    return new SampleController();
+  }
+
+  @Bean
+  public Checker sampleControllerChecker() {
+    return mock(Checker.class);
   }
 
   @Bean

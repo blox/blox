@@ -14,8 +14,7 @@
  */
 package com.amazonaws.blox.frontend.integration;
 
-import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.frontend.integration.SampleController.Checker;
 import com.amazonaws.serverless.proxy.internal.model.AwsProxyRequest;
 import com.amazonaws.serverless.proxy.internal.model.AwsProxyResponse;
 import com.amazonaws.serverless.proxy.internal.testutils.MockLambdaContext;
@@ -40,28 +39,16 @@ import org.springframework.test.context.web.WebAppConfiguration;
 )
 public abstract class IntegrationTestBase {
 
-  protected static final String ACCOUNT_ID = "123456789012";
-  protected static final String CLUSTER_NAME = "myCluster";
-  protected static final String ENVIRONMENT_NAME = "myEnv";
-
-  protected EnvironmentId environmentId;
-
   @Autowired protected SpringLambdaContainerHandler<AwsProxyRequest, AwsProxyResponse> handler;
 
   @Autowired protected MockLambdaContext lambdaContext;
 
-  @Autowired protected DataService dataService;
-
   @Autowired protected ObjectMapper objectMapper;
 
+  @Autowired protected Checker checker;
+
   @Before
-  public void setUpBase() {
-    Mockito.reset(dataService);
-    environmentId =
-        EnvironmentId.builder()
-            .accountId(ACCOUNT_ID)
-            .cluster(CLUSTER_NAME)
-            .environmentName(ENVIRONMENT_NAME)
-            .build();
+  public void resetMocks() {
+    Mockito.reset(checker);
   }
 }
