@@ -8,12 +8,13 @@ plugins {
     id 'com.commercehub.cucumber-jvm' version '0.13' apply false
 }
 
-group 'com.amazonaws.blox'
-version '0.1-SNAPSHOT'
 description "Blox: Open Source schedulers for Amazon ECS"
 
 allprojects {
     apply plugin: 'com.diffplug.gradle.spotless'
+
+    group 'com.amazonaws.blox'
+    version '0.1-SNAPSHOT'
 
     repositories {
         mavenCentral()
