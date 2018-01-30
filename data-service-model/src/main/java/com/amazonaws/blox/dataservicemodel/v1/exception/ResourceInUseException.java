@@ -14,6 +14,8 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.exception;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
@@ -22,7 +24,11 @@ public class ResourceInUseException extends ClientException {
   private String resourceType;
   private String resourceId;
 
-  public ResourceInUseException(String resourceType, String resourceId, String message) {
+  @JsonCreator
+  public ResourceInUseException(
+      @JsonProperty("resourceType") String resourceType,
+      @JsonProperty("resourceId") String resourceId,
+      @JsonProperty("message") String message) {
     super(message);
 
     this.resourceType = resourceType;

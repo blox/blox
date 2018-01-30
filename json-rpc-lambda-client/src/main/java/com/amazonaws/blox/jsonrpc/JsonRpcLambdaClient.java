@@ -16,8 +16,10 @@ package com.amazonaws.blox.jsonrpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
+import com.googlecode.jsonrpc4j.DefaultExceptionResolver;
 import com.googlecode.jsonrpc4j.IJsonRpcClient;
 import com.googlecode.jsonrpc4j.JsonRpcClient;
+import com.googlecode.jsonrpc4j.MultipleExceptionResolver;
 import com.googlecode.jsonrpc4j.ProxyUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,7 +54,11 @@ public class JsonRpcLambdaClient {
   public JsonRpcLambdaClient(ObjectMapper mapper, LambdaAsyncClient lambda, String functionName) {
     this.lambda = lambda;
     this.functionName = functionName;
-    this.streamClient = new JsonRpcClient(mapper);
+    this.streamClient =
+        new JsonRpcClient(
+            mapper,
+            new MultipleExceptionResolver(
+                new PojoExceptionResolver(mapper), DefaultExceptionResolver.INSTANCE));
   }
 
   /**
