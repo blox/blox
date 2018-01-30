@@ -12,19 +12,9 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package cucumber.steps.helpers;
+package com.amazonaws.blox.jsonrpc.fixtures;
 
-import java.util.function.Function;
-import lombok.SneakyThrows;
+public interface TestService {
 
-@FunctionalInterface
-public interface ThrowingFunction<T, R> extends Function<T, R> {
-
-  @Override
-  @SneakyThrows
-  default R apply(T t) {
-    return applyThrows(t);
-  }
-
-  R applyThrows(T t) throws Exception;
+  String throwsException(String input) throws TestException;
 }

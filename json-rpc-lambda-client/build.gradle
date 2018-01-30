@@ -5,7 +5,7 @@ plugins {
 description 'Blox DataService Client'
 
 dependencies {
-    compile "com.github.briandilley.jsonrpc4j:jsonrpc4j:+"
+    compile project(":json-rpc-core")
 
     compile "software.amazon.awssdk:lambda"
 

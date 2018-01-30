@@ -12,25 +12,27 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package com.amazonaws.blox.dataservicemodel.v1.exception;
+package com.amazonaws.blox.jsonrpc.fixtures;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-public class ResourceNotFoundException extends ClientException {
-
-  private String resourceType;
-  private String resourceId;
+public class PojoTestException extends Exception {
+  private final String someValue;
+  private final String anotherValue;
 
   @JsonCreator
-  public ResourceNotFoundException(
-      @JsonProperty("resourceType") String resourceType,
-      @JsonProperty("resourceId") String resourceId) {
-    super(String.format("%s with id %s could not be found", resourceType, resourceId));
+  public PojoTestException(
+      @JsonProperty("someValue") String someValue,
+      @JsonProperty("anotherValue") String anotherValue) {
+    this(someValue, anotherValue, null);
+  }
 
-    this.resourceType = resourceType;
-    this.resourceId = resourceId;
+  public PojoTestException(String someValue, String anotherValue, Throwable cause) {
+    super(someValue + ":" + anotherValue, cause);
+    this.someValue = someValue;
+    this.anotherValue = anotherValue;
   }
 }

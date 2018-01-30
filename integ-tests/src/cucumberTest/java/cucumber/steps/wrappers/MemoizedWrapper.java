@@ -27,7 +27,8 @@ public class MemoizedWrapper implements Memoized {
       Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
 
   @Override
-  public <T> T getLastFromHistory(Class<T> type) {
+  @SuppressWarnings("unchecked")
+  public <T> T getLastFromHistory(final Class<T> type) {
     return (T) memory.get(type).get(memory.get(type).size() - 1);
   }
 
@@ -37,6 +38,7 @@ public class MemoizedWrapper implements Memoized {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public final <T, R> R memoizeFunction(final T input, final ThrowingFunction<T, R> fn) {
     Validate.notNull(input);
 

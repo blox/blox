@@ -14,6 +14,8 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.exception;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
@@ -22,7 +24,10 @@ public class ResourceExistsException extends ClientException {
   private String resourceType;
   private String resourceId;
 
-  public ResourceExistsException(String resourceType, String resourceId) {
+  @JsonCreator
+  public ResourceExistsException(
+      @JsonProperty("resourceType") String resourceType,
+      @JsonProperty("resourceId") String resourceId) {
     super(String.format("%s with id %s already exists", resourceType, resourceId));
 
     this.resourceType = resourceType;

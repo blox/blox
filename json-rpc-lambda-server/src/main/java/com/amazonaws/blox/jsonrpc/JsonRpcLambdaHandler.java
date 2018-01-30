@@ -17,7 +17,9 @@ package com.amazonaws.blox.jsonrpc;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.DefaultErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
+import com.googlecode.jsonrpc4j.MultipleErrorResolver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,6 +42,8 @@ public class JsonRpcLambdaHandler<T> implements RequestStreamHandler {
   public JsonRpcLambdaHandler(ObjectMapper mapper, Class<T> serviceClass, T service) {
     this.service = service;
     this.server = new JsonRpcBasicServer(mapper, this.service, serviceClass);
+    this.server.setErrorResolver(
+        new MultipleErrorResolver(new PojoErrorResolver(mapper), DefaultErrorResolver.INSTANCE));
   }
 
   private static ObjectMapper defaultObjectMapper() {
