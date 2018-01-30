@@ -14,6 +14,7 @@
  */
 package com.amazonaws.blox.tasks;
 
+import com.amazonaws.blox.swagger.SortedModelFilter;
 import com.amazonaws.blox.swagger.SwaggerFilter;
 import com.github.kongchen.swagger.docgen.GenerateException;
 import com.github.kongchen.swagger.docgen.reader.SpringMvcApiReader;
@@ -56,6 +57,9 @@ import org.reflections.util.FilterBuilder;
 public class GenerateSwaggerModel extends DefaultTask {
   private Log log = new SystemStreamLog();
 
+  /** A swagger filter to make swagger as sorted to make swagger yaml generation unique by model */
+  private static final SwaggerFilter SORTED_MODEL_FILTER = new SortedModelFilter();
+
   /** A list of package names to scan for swagger annotations */
   @Input private List<String> apiPackages = new ArrayList<>();
 
@@ -76,6 +80,10 @@ public class GenerateSwaggerModel extends DefaultTask {
    * writing it out.
    */
   @Nested private List<SwaggerFilter> filters = new ArrayList<>();
+
+  public GenerateSwaggerModel() {
+    filters.add(SORTED_MODEL_FILTER);
+  }
 
   @TaskAction
   public void generateSpec() throws IOException, GenerateException {
