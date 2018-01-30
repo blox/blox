@@ -17,6 +17,11 @@ cucumberTest {
     systemProperties = [
             'aws.region': stack.region.toString(),
             'aws.defaultProfile': stack.profile.toString(),
+
+            // Suppress the Spring Context's verbose startup logs that usualy get
+            // emitted on each scenario run, but still warn when things go wrong.
+            // If you want to debug Spring issues, set this to info or debug.
+            'org.slf4j.simpleLogger.log.org.springframework': 'warn',
     ]
 }
 
@@ -27,7 +32,12 @@ dependencies {
         'com.google.guava:guava:23.0',
         'info.cukes:cucumber-java8:1.2.5',
         'info.cukes:cucumber-spring:1.2.5',
-        // To use JUnit assertions in the step definitions:
+
+        // Wire the Spring Framework's JCL logs into SLF4J
+        'org.slf4j:jcl-over-slf4j',
+        // Use the SLF4J simpleLogger for logging in tests
+        'org.slf4j:slf4j-simple',
+
         'junit:junit:4.12',
         'org.assertj:assertj-core:3.8+',
 

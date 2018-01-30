@@ -15,17 +15,15 @@
 package cucumber.steps.helpers;
 
 import java.util.function.Function;
+import lombok.SneakyThrows;
 
 @FunctionalInterface
 public interface ThrowingFunction<T, R> extends Function<T, R> {
 
   @Override
+  @SneakyThrows
   default R apply(T t) {
-    try {
-      return applyThrows(t);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    return applyThrows(t);
   }
 
   R applyThrows(T t) throws Exception;

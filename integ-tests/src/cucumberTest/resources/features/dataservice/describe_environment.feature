@@ -14,12 +14,11 @@ Feature: Describe environment
     When I describe the updated environment
     Then the updated and described environments match
 
-  @ignore
   Scenario: Describe a non-existent environment
     When I try to describe a non-existent environment named "non-existent"
     Then there should be a ResourceNotFoundException thrown
-    And the resourceType is "environment"
-    And the resourceId contains "non-existent"
+    And its resourceType is "environment"
+    And its resourceId contains "non-existent"
 
   @ignore
   Scenario: Describe a deleted environment
@@ -27,7 +26,7 @@ Feature: Describe environment
     And I delete the created environment
     When I try to describe the created environment
     Then there should be a ResourceNotFoundException thrown
-    And the resourceType is "environment"
-    And the resourceId contains "test"
+    And its resourceType is "environment"
+    And its resourceId contains "test"
 
   #TODO: Add invalid parameter tests

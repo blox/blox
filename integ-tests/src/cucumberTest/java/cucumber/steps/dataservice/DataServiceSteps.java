@@ -19,9 +19,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceInUseException;
-import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
 import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentHealth;
@@ -194,46 +191,24 @@ public class DataServiceSteps implements En {
     Then(
         "^there should be an? \"?\'?(\\w*)\"?\'? thrown$",
         (final String exceptionName) -> {
-          assertNotNull("Expecting an exception to be thrown", exceptionContext.getException());
-          assertEquals(exceptionName, exceptionContext.getException().getClass().getSimpleName());
+          assertThat(exceptionContext.getException())
+              .isNotNull()
+              .satisfies(t -> assertThat(t.getClass().getSimpleName()).isEqualTo(exceptionName));
         });
 
     And(
-        "^the resourceType is \"([^\"]*)\"$",
-        (final String resourceType) -> {
-          assertNotNull("Expecting an exception to be thrown", exceptionContext.getException());
-          if (exceptionContext.getException() instanceof ResourceNotFoundException) {
-            final ResourceNotFoundException exception =
-                (ResourceNotFoundException) exceptionContext.getException();
-            assertEquals(resourceType, exception.getResourceType());
-          } else if (exceptionContext.getException() instanceof ResourceExistsException) {
-            final ResourceExistsException exception =
-                (ResourceExistsException) exceptionContext.getException();
-            assertEquals(resourceType, exception.getResourceType());
-          } else if (exceptionContext.getException() instanceof ResourceInUseException) {
-            final ResourceInUseException exception =
-                (ResourceInUseException) exceptionContext.getException();
-            assertEquals(resourceType, exception.getResourceType());
-          }
+        "^its ([^ ]*) is \"([^\"]*)\"$",
+        (final String field, final String value) -> {
+          assertThat(exceptionContext.getException()).hasFieldOrPropertyWithValue(field, value);
         });
 
     And(
-        "^the resourceId contains \"([^\"]*)\"$",
-        (final String resourceId) -> {
-          assertNotNull("Expecting an exception to be thrown", exceptionContext.getException());
-          if (exceptionContext.getException() instanceof ResourceNotFoundException) {
-            final ResourceNotFoundException exception =
-                (ResourceNotFoundException) exceptionContext.getException();
-            assertEquals(resourceId, exception.getResourceType());
-          } else if (exceptionContext.getException() instanceof ResourceExistsException) {
-            final ResourceExistsException exception =
-                (ResourceExistsException) exceptionContext.getException();
-            assertEquals(resourceId, exception.getResourceType());
-          } else if (exceptionContext.getException() instanceof ResourceInUseException) {
-            final ResourceInUseException exception =
-                (ResourceInUseException) exceptionContext.getException();
-            assertEquals(resourceId, exception.getResourceType());
-          }
+        "^its ([^ ]*) contains \"([^\"]*)\"$",
+        (final String field, final String value) -> {
+          assertThat(exceptionContext.getException())
+              .hasFieldOrProperty(field)
+              .extracting(field)
+              .allSatisfy(s -> assertThat(s).asString().contains(value));
         });
 
     When(
