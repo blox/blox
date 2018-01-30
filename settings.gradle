@@ -14,4 +14,5 @@ include 'json-rpc-lambda-server'
 include 'json-rpc-lambda-client'
 include 'lambda-spring'
 include 'lambda-logging'
+include 'json-rpc-core'
 
