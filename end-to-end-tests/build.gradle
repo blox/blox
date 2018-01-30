@@ -10,11 +10,8 @@ sourceCompatibility = 1.8
 
 dependencies {
     compile project(":frontend-service-client")
-    compile project(":data-service-model")
-    compile project(":json-rpc-lambda-client")
 
     compile "software.amazon.awssdk:ecs:2.0.0-preview-4"
-    compile "software.amazon.awssdk:dynamodb:2.0.0-preview-4"
     compile "software.amazon.awssdk:cloudformation:2.0.0-preview-4"
     compile "org.projectlombok:lombok:1.16.18"
 

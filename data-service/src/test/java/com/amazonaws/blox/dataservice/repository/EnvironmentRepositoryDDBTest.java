@@ -39,6 +39,7 @@ import com.amazonaws.blox.dataservice.repository.model.EnvironmentRevisionDDBRec
 import com.amazonaws.blox.dataservicemodel.v1.exception.InternalServiceException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.SaveBehavior;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -246,10 +247,13 @@ public class EnvironmentRepositoryDDBTest {
 
   @Test
   public void testDeleteEnvironmentSuccess() throws Exception {
-    doNothing().when(dynamoDBMapper).delete(any(EnvironmentDDBRecord.class));
+    doNothing()
+        .when(dynamoDBMapper)
+        .delete(any(EnvironmentDDBRecord.class), eq(SaveBehavior.CLOBBER.config()));
 
     environmentRepositoryDDB.deleteEnvironment(environmentId);
-    verify(dynamoDBMapper, times(1)).delete(environmentDDBRecordArgumentCaptor.capture());
+    verify(dynamoDBMapper, times(1))
+        .delete(environmentDDBRecordArgumentCaptor.capture(), eq(SaveBehavior.CLOBBER.config()));
     assertEquals(
         environmentId.generateAccountIdCluster(),
         environmentDDBRecordArgumentCaptor.getValue().getAccountIdCluster());
@@ -262,7 +266,7 @@ public class EnvironmentRepositoryDDBTest {
   public void testDeleteEnvironmentInternalError() throws Exception {
     doThrow(AmazonServiceException.class)
         .when(dynamoDBMapper)
-        .delete(any(EnvironmentDDBRecord.class));
+        .delete(any(EnvironmentDDBRecord.class), eq(SaveBehavior.CLOBBER.config()));
 
     thrown.expect(InternalServiceException.class);
     thrown.expectMessage(

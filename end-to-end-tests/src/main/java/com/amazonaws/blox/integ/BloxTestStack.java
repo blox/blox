@@ -18,7 +18,6 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.blox.Blox;
 import java.util.List;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.dynamodb.DynamoDBClient;
 import software.amazon.awssdk.services.ecs.ECSClient;
 import software.amazon.awssdk.services.ecs.model.Task;
 
@@ -32,12 +31,10 @@ public class BloxTestStack {
 
   private final String bloxEndpoint;
   private final CloudFormationClient cloudFormationClient;
-  private final DynamoDBClient dynamoDBClient;
   private final ECSClient ecsClient;
 
   private final CloudFormationStacks stacks;
   private final ECSClusterWrapper ecs;
-  private final DBWrapper db;
 
   private final Blox blox;
 
@@ -45,12 +42,10 @@ public class BloxTestStack {
     this.bloxEndpoint = bloxEndpoint;
 
     this.cloudFormationClient = CloudFormationClient.create();
-    this.dynamoDBClient = DynamoDBClient.create();
     this.ecsClient = ECSClient.create();
     this.stacks = new CloudFormationStacks(cloudFormationClient);
 
     this.ecs = new ECSClusterWrapper(ecsClient, stacks);
-    this.db = new DBWrapper(this.dynamoDBClient);
 
     this.blox =
         Blox.builder()
@@ -77,6 +72,5 @@ public class BloxTestStack {
 
   public void reset() {
     ecs.reset();
-    db.reset();
   }
 }

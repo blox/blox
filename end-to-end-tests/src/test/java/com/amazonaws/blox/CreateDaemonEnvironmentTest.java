@@ -20,6 +20,7 @@ import static org.assertj.core.groups.Tuple.tuple;
 
 import com.amazonaws.blox.integ.BloxTestStack;
 import com.amazonaws.blox.model.CreateEnvironmentRequest;
+import com.amazonaws.blox.model.DeleteEnvironmentRequest;
 import com.amazonaws.blox.model.DeploymentConfiguration;
 import com.amazonaws.blox.model.DescribeEnvironmentRequest;
 import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
@@ -32,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class CreateDaemonEnvironmentTest {
+
   private String environmentName;
   private static final long RECONCILIATION_INTERVAL = 60_000;
 
@@ -47,6 +49,14 @@ public class CreateDaemonEnvironmentTest {
 
   @After
   public void tearDown() {
+    // Delete environment
+    stack
+        .getBlox()
+        .deleteEnvironment(
+            new DeleteEnvironmentRequest()
+                .cluster(stack.getCluster())
+                .environmentName(environmentName));
+    // Cleanup ECS tasks
     stack.reset();
   }
 

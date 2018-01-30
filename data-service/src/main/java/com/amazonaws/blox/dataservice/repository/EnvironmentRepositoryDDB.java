@@ -433,7 +433,8 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
     try {
       dynamoDBMapper.delete(
           EnvironmentDDBRecord.withKeys(
-              environmentId.generateAccountIdCluster(), environmentId.getEnvironmentName()));
+              environmentId.generateAccountIdCluster(), environmentId.getEnvironmentName()),
+          SaveBehavior.CLOBBER.config());
     } catch (final AmazonServiceException e) {
       throw new InternalServiceException(
           String.format(
