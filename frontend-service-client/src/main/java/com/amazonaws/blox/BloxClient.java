@@ -3,38 +3,57 @@
 */
 package com.amazonaws.blox;
 
-import java.net.*;
-import java.util.*;
-
-import javax.annotation.Generated;
-
-import org.apache.commons.logging.*;
-
-import com.amazonaws.*;
-import com.amazonaws.opensdk.*;
-import com.amazonaws.opensdk.model.*;
-import com.amazonaws.opensdk.protect.model.transform.*;
-import com.amazonaws.auth.*;
-import com.amazonaws.handlers.*;
-import com.amazonaws.http.*;
-import com.amazonaws.internal.*;
-import com.amazonaws.metrics.*;
-import com.amazonaws.regions.*;
-import com.amazonaws.transform.*;
-import com.amazonaws.util.*;
-import com.amazonaws.protocol.json.*;
-
+import com.amazonaws.SdkBaseException;
 import com.amazonaws.annotation.ThreadSafe;
+import com.amazonaws.blox.model.CreateEnvironmentRequest;
+import com.amazonaws.blox.model.CreateEnvironmentResult;
+import com.amazonaws.blox.model.DeleteEnvironmentRequest;
+import com.amazonaws.blox.model.DeleteEnvironmentResult;
+import com.amazonaws.blox.model.DescribeEnvironmentDeploymentRequest;
+import com.amazonaws.blox.model.DescribeEnvironmentDeploymentResult;
+import com.amazonaws.blox.model.DescribeEnvironmentRequest;
+import com.amazonaws.blox.model.DescribeEnvironmentResult;
+import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
+import com.amazonaws.blox.model.DescribeEnvironmentRevisionResult;
+import com.amazonaws.blox.model.ListEnvironmentDeploymentsRequest;
+import com.amazonaws.blox.model.ListEnvironmentDeploymentsResult;
+import com.amazonaws.blox.model.ListEnvironmentRevisionsRequest;
+import com.amazonaws.blox.model.ListEnvironmentRevisionsResult;
+import com.amazonaws.blox.model.ListEnvironmentsRequest;
+import com.amazonaws.blox.model.ListEnvironmentsResult;
+import com.amazonaws.blox.model.ResourceNotFoundException;
+import com.amazonaws.blox.model.StartDeploymentRequest;
+import com.amazonaws.blox.model.StartDeploymentResult;
+import com.amazonaws.blox.model.transform.CreateEnvironmentRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.CreateEnvironmentResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.DeleteEnvironmentRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.DeleteEnvironmentResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.DescribeEnvironmentDeploymentRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.DescribeEnvironmentDeploymentResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.DescribeEnvironmentRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.DescribeEnvironmentResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.DescribeEnvironmentRevisionRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.DescribeEnvironmentRevisionResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.ListEnvironmentDeploymentsRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.ListEnvironmentDeploymentsResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.ListEnvironmentRevisionsRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.ListEnvironmentRevisionsResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.ListEnvironmentsRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.ListEnvironmentsResultJsonUnmarshaller;
+import com.amazonaws.blox.model.transform.StartDeploymentRequestProtocolMarshaller;
+import com.amazonaws.blox.model.transform.StartDeploymentResultJsonUnmarshaller;
 import com.amazonaws.client.AwsSyncClientParams;
-
+import com.amazonaws.client.ClientExecutionParams;
 import com.amazonaws.client.ClientHandler;
 import com.amazonaws.client.ClientHandlerParams;
-import com.amazonaws.client.ClientExecutionParams;
+import com.amazonaws.http.HttpResponseHandler;
 import com.amazonaws.opensdk.protect.client.SdkClientHandler;
-import com.amazonaws.SdkBaseException;
-
-import com.amazonaws.blox.model.*;
-import com.amazonaws.blox.model.transform.*;
+import com.amazonaws.protocol.json.JsonClientMetadata;
+import com.amazonaws.protocol.json.JsonErrorResponseMetadata;
+import com.amazonaws.protocol.json.JsonErrorShapeMetadata;
+import com.amazonaws.protocol.json.JsonOperationMetadata;
+import java.util.Arrays;
+import javax.annotation.Generated;
 
 /**
  * Client for accessing Blox. All service calls made using this client are blocking, and will not return until the
@@ -49,7 +68,14 @@ class BloxClient implements Blox {
     private final ClientHandler clientHandler;
 
     private static final com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl protocolFactory = new com.amazonaws.opensdk.protect.protocol.ApiGatewayProtocolFactoryImpl(
-            new JsonClientMetadata().withProtocolVersion("1.1").withSupportsCbor(false).withSupportsIon(false).withContentTypeOverride("application/json")
+            new JsonClientMetadata()
+                    .withProtocolVersion("1.1")
+                    .withSupportsCbor(false)
+                    .withSupportsIon(false)
+                    .withContentTypeOverride("application/json")
+                    .addErrorMetadata(
+                            new JsonErrorShapeMetadata().withErrorCode("ResourceNotFoundException").withModeledClass(
+                                    com.amazonaws.blox.model.ResourceNotFoundException.class))
                     .withBaseServiceExceptionClass(com.amazonaws.blox.model.BloxException.class));
 
     /**
@@ -107,6 +133,7 @@ class BloxClient implements Blox {
     /**
      * @param describeEnvironmentRequest
      * @return Result of the describeEnvironment operation returned by the service.
+     * @throws ResourceNotFoundException
      * @sample Blox.describeEnvironment
      * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/describeEnvironment"
      *      target="_top">AWS API Documentation</a>
@@ -116,7 +143,8 @@ class BloxClient implements Blox {
         HttpResponseHandler<DescribeEnvironmentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata()
                 .withPayloadJson(true).withHasStreamingSuccessResponse(false), new DescribeEnvironmentResultJsonUnmarshaller());
 
-        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler(new JsonErrorShapeMetadata().withModeledClass(
+                ResourceNotFoundException.class).withHttpStatusCode(404));
 
         return clientHandler.execute(new ClientExecutionParams<DescribeEnvironmentRequest, DescribeEnvironmentResult>()
                 .withMarshaller(new DescribeEnvironmentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)

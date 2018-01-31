@@ -16,9 +16,12 @@ package com.amazonaws.blox.frontend.operations;
 
 import com.amazonaws.blox.dataservicemodel.v1.exception.ClientException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
+import com.amazonaws.blox.frontend.exception.ResourceNotFoundExceptionResponse;
 import com.amazonaws.blox.frontend.mappers.DescribeEnvironmentMapper;
 import com.amazonaws.blox.frontend.models.Environment;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +38,15 @@ public class DescribeEnvironment extends EnvironmentController {
 
   @RequestMapping(path = "/{environmentName}", method = RequestMethod.GET)
   @ApiOperation(value = "Describe an Environment by name")
+  @ApiResponses(
+    value = {
+      @ApiResponse(
+        code = ResourceNotFoundExceptionResponse.STATUS_CODE,
+        message = ResourceNotFoundExceptionResponse.MESSAGE,
+        response = ResourceNotFoundExceptionResponse.class
+      )
+    }
+  )
   public DescribeEnvironmentResponse describeEnvironment(
       @PathVariable("cluster") String cluster,
       @PathVariable("environmentName") String environmentName)

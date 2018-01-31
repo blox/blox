@@ -109,7 +109,7 @@ After a client is configured and created, you can make a request to the service.
 For each API method, classes are generated that represent the request and response of that API. The request class has setters for any path parameters, query parameters, headers, and payload model that are defined in the API. The response class exposes getters for any modeled headers and for the modeled payload.
 ```java
 Blox client = Blox.builder().build();
-CreateEnvironmentResult result = client.createEnvironment(new CreateEnvironmentRequest());
+DescribeEnvironmentResult result = client.describeEnvironment(new DescribeEnvironmentRequest());
 ```
 
 ### Request Configuration
@@ -119,7 +119,7 @@ The request config also allows adding headers and query parameters that aren't m
 
 ```java
 Blox client = Blox.builder().build();
-client.createEnvironment(new CreateEnvironmentRequest().sdkRequestConfig(
+client.describeEnvironment(new DescribeEnvironmentRequest().sdkRequestConfig(
     SdkRequestConfig.builder()
 	.httpRequestTimeout(1500)
 	.totalExecutionTimeout(5000)
@@ -132,7 +132,7 @@ client.createEnvironment(new CreateEnvironmentRequest().sdkRequestConfig(
 ### Response Metadata
 In addition to the modeled data present in result objects, the SDK exposes access to additional HTTP metadata. This metadata is useful for debugging issues or accessing unmodeled data from the HTTP response.
 ```java
-CreateEnvironmentResult result = client.createEnvironment(new CreateEnvironmentRequest());
+DescribeEnvironmentResult result = client.describeEnvironment(new DescribeEnvironmentRequest());
 System.out.println(result.sdkResponseMetadata().requestId());
 System.out.println(result.sdkResponseMetadata().httpStatusCode());
 // Full access to all HTTP headers (including modeled ones)
@@ -144,7 +144,9 @@ result.sdkResponseMetadata().header("Content-Length").ifPresent(System.out::prin
 Service exceptions and client exceptions can be handled separately. Any exceptions modeled in the API will be a subtype of BloxException.
 ```java
 try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
+} catch(ResourceNotFoundException e) {
+    // This is a modeled exception defined in the API
 } catch(BloxException e) {
    // All service exceptions will extend from BloxException.
    // Any unknown or unmodeled service exceptions will be represented as a BloxException.
@@ -157,7 +159,7 @@ try {
 All exceptions that can be thrown by the SDK are a subtype of SdkBaseException. To handle any exception in the same way, you can directly catch this exception. This covers both client and service exceptions.
 ```java
 try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
 } catch(SdkBaseException e) {
     // All exceptions thrown from the client will be a subtype of SdkBaseException.
 }
@@ -166,7 +168,7 @@ try {
 All service exceptions expose metadata about the HTTP response for logging or debugging purposes.
 ```java
 try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
 } catch(BloxException e) {
     int statusCode = e.sdkHttpMetadata().httpStatusCode();
     String requestId = e.sdkHttpMetadata().requestId();
@@ -178,7 +180,7 @@ try {
 Some client exceptions thrown are subtypes of SdkClientException. This provides greater granularity to deal with client-side exceptions.
 ```java
 try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
 } catch(ClientExecutionTimeoutException e) {
     // Specific client exception thrown when the totalExecutionTimeout is triggered.
 } catch(AbortedException e) {
@@ -200,7 +202,7 @@ The easiest way to create a custom retry policy is to use the RetryPolicyBuilder
  */
 Blox client = Blox.builder()
         .retryPolicy(RetryPolicyBuilder.standard()
-                             .retryOnExceptions(SocketTimeoutException.class)
+                             .retryOnExceptions(ResourceNotFoundException.class, SocketTimeoutException.class)
                              .retryOnStatusCodes(429, 500)
                              .maxNumberOfRetries(10)
                              .fixedBackoff(100)

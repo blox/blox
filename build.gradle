@@ -1,4 +1,3 @@
-import groovy.json.JsonSlurper
 import groovy.transform.Canonical
 
 plugins {
@@ -196,6 +195,7 @@ task downloadClient() {
                 "java.artifact-version=${project.version}",
                 "flattenRequests=true",
                 "flattenResponses=true",
+                "exceptionFor404=ResourceNotFoundException"
         ].join(",")
 
         exec {

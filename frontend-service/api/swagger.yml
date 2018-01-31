@@ -99,6 +99,10 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/DescribeEnvironmentResponse"
+        404:
+          description: "Resource not found"
+          schema:
+            $ref: "#/definitions/ResourceNotFoundExceptionResponse"
       security:
       - defaultAuthorization: []
       x-amazon-apigateway-integration:
@@ -449,6 +453,15 @@ definitions:
         items:
           type: "string"
       nextToken:
+        type: "string"
+  ResourceNotFoundExceptionResponse:
+    type: "object"
+    properties:
+      message:
+        type: "string"
+      resourceType:
+        type: "string"
+      resourceId:
         type: "string"
   StartDeploymentResponse:
     type: "object"

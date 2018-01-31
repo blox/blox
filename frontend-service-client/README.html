@@ -79,13 +79,13 @@ client.shutdown();
 <p>After a client is configured and created, you can make a request to the service. A method on the client interface (<code>Blox</code>) is created for all actions (resource + method) in your API.</p>
 <p>For each API method, classes are generated that represent the request and response of that API. The request class has setters for any path parameters, query parameters, headers, and payload model that are defined in the API. The response class exposes getters for any modeled headers and for the modeled payload.</p>
 <pre><code class="language-java">Blox client = Blox.builder().build();
-CreateEnvironmentResult result = client.createEnvironment(new CreateEnvironmentRequest());
+DescribeEnvironmentResult result = client.describeEnvironment(new DescribeEnvironmentRequest());
 </code></pre>
 <h3>Request Configuration</h3>
 <p>In addition to client-level configuration configured by the builder, each request class exposes configuration methods that are scoped to that request alone. Request level configuration takes precedence over client level configuration.</p>
 <p>The request config also allows adding headers and query parameters that aren't modeled by the API.</p>
 <pre><code class="language-java">Blox client = Blox.builder().build();
-client.createEnvironment(new CreateEnvironmentRequest().sdkRequestConfig(
+client.describeEnvironment(new DescribeEnvironmentRequest().sdkRequestConfig(
     SdkRequestConfig.builder()
 	.httpRequestTimeout(1500)
 	.totalExecutionTimeout(5000)
@@ -96,7 +96,7 @@ client.createEnvironment(new CreateEnvironmentRequest().sdkRequestConfig(
 </code></pre>
 <h3>Response Metadata</h3>
 <p>In addition to the modeled data present in result objects, the SDK exposes access to additional HTTP metadata. This metadata is useful for debugging issues or accessing unmodeled data from the HTTP response.</p>
-<pre><code class="language-java">CreateEnvironmentResult result = client.createEnvironment(new CreateEnvironmentRequest());
+<pre><code class="language-java">DescribeEnvironmentResult result = client.describeEnvironment(new DescribeEnvironmentRequest());
 System.out.println(result.sdkResponseMetadata().requestId());
 System.out.println(result.sdkResponseMetadata().httpStatusCode());
 // Full access to all HTTP headers (including modeled ones)
@@ -105,7 +105,9 @@ result.sdkResponseMetadata().header(&quot;Content-Length&quot;).ifPresent(System
 <h2>Exception Handling</h2>
 <p>Service exceptions and client exceptions can be handled separately. Any exceptions modeled in the API will be a subtype of BloxException.</p>
 <pre><code class="language-java">try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
+} catch(ResourceNotFoundException e) {
+    // This is a modeled exception defined in the API
 } catch(BloxException e) {
    // All service exceptions will extend from BloxException.
    // Any unknown or unmodeled service exceptions will be represented as a BloxException.
@@ -116,14 +118,14 @@ result.sdkResponseMetadata().header(&quot;Content-Length&quot;).ifPresent(System
 </code></pre>
 <p>All exceptions that can be thrown by the SDK are a subtype of SdkBaseException. To handle any exception in the same way, you can directly catch this exception. This covers both client and service exceptions.</p>
 <pre><code class="language-java">try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
 } catch(SdkBaseException e) {
     // All exceptions thrown from the client will be a subtype of SdkBaseException.
 }
 </code></pre>
 <p>All service exceptions expose metadata about the HTTP response for logging or debugging purposes.</p>
 <pre><code class="language-java">try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
 } catch(BloxException e) {
     int statusCode = e.sdkHttpMetadata().httpStatusCode();
     String requestId = e.sdkHttpMetadata().requestId();
@@ -133,7 +135,7 @@ result.sdkResponseMetadata().header(&quot;Content-Length&quot;).ifPresent(System
 </code></pre>
 <p>Some client exceptions thrown are subtypes of SdkClientException. This provides greater granularity to deal with client-side exceptions.</p>
 <pre><code class="language-java">try {
-    client.createEnvironment(...);
+    client.describeEnvironment(...);
 } catch(ClientExecutionTimeoutException e) {
     // Specific client exception thrown when the totalExecutionTimeout is triggered.
 } catch(AbortedException e) {
@@ -151,7 +153,7 @@ result.sdkResponseMetadata().header(&quot;Content-Length&quot;).ifPresent(System
  */
 Blox client = Blox.builder()
         .retryPolicy(RetryPolicyBuilder.standard()
-                             .retryOnExceptions(SocketTimeoutException.class)
+                             .retryOnExceptions(ResourceNotFoundException.class, SocketTimeoutException.class)
                              .retryOnStatusCodes(429, 500)
                              .maxNumberOfRetries(10)
                              .fixedBackoff(100)

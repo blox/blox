@@ -34,7 +34,9 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @Import(MapperConfiguration.class)
-@ComponentScan("com.amazonaws.blox.frontend.operations")
+@ComponentScan(
+  basePackages = {"com.amazonaws.blox.frontend.operations", "com.amazonaws.blox.frontend.exception"}
+)
 @EnableWebMvc
 public class IntegrationTestConfig {
 
