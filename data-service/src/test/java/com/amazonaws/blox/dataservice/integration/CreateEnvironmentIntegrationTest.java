@@ -23,36 +23,19 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRe
 import org.junit.Test;
 
 public class CreateEnvironmentIntegrationTest extends DataServiceIntegrationTestBase {
-  private static final String ACCOUNT_ID = "123456789012";
-  private static final String ENVIRONMENT_NAME = "environmentName";
   private static final String CLUSTER_ONE = "cluster1";
   private static final String CLUSTER_TWO = "cluster2";
-  private static final String TASK_DEFINITION = "taskDefinition";
   private static final DataServiceModelBuilder models = DataServiceModelBuilder.builder().build();
   private static final EnvironmentId createdEnvironmentId1 =
-      models
-          .environmentId()
-          .accountId(ACCOUNT_ID)
-          .environmentName(ENVIRONMENT_NAME)
-          .cluster(CLUSTER_ONE)
-          .build();
+      models.environmentId().cluster(CLUSTER_ONE).build();
   private static final EnvironmentId createdEnvironmentId2 =
-      models
-          .environmentId()
-          .accountId(ACCOUNT_ID)
-          .environmentName(ENVIRONMENT_NAME)
-          .cluster(CLUSTER_TWO)
-          .build();
+      models.environmentId().cluster(CLUSTER_TWO).build();
 
   @Test
   public void testCreateEnvironmentSuccessful() throws Exception {
     final CreateEnvironmentResponse createEnvironmentResponse =
         dataService.createEnvironment(
-            models
-                .createEnvironmentRequest()
-                .taskDefinition(TASK_DEFINITION)
-                .environmentId(createdEnvironmentId1)
-                .build());
+            models.createEnvironmentRequest().environmentId(createdEnvironmentId1).build());
     assertThat(createEnvironmentResponse.getEnvironment().getEnvironmentId())
         .isEqualTo(createdEnvironmentId1);
   }
@@ -60,20 +43,12 @@ public class CreateEnvironmentIntegrationTest extends DataServiceIntegrationTest
   @Test
   public void testCreateAnEnvironmentAlreadyExist() throws Exception {
     dataService.createEnvironment(
-        models
-            .createEnvironmentRequest()
-            .taskDefinition(TASK_DEFINITION)
-            .environmentId(createdEnvironmentId1)
-            .build());
+        models.createEnvironmentRequest().environmentId(createdEnvironmentId1).build());
 
     assertThatThrownBy(
             () ->
                 dataService.createEnvironment(
-                    models
-                        .createEnvironmentRequest()
-                        .taskDefinition(TASK_DEFINITION)
-                        .environmentId(createdEnvironmentId1)
-                        .build()))
+                    models.createEnvironmentRequest().environmentId(createdEnvironmentId1).build()))
         .isInstanceOf(ResourceExistsException.class)
         .hasMessageContaining(
             String.format("environment with id %s already exists", createdEnvironmentId1));
@@ -83,21 +58,12 @@ public class CreateEnvironmentIntegrationTest extends DataServiceIntegrationTest
   public void testCreateTwoEnvironmentsWithTheSameNameButDifferentClusters() throws Exception {
     final CreateEnvironmentResponse createEnvironmentResponse1 =
         dataService.createEnvironment(
-            models
-                .createEnvironmentRequest()
-                .taskDefinition(TASK_DEFINITION)
-                .environmentId(createdEnvironmentId1)
-                .build());
+            models.createEnvironmentRequest().environmentId(createdEnvironmentId1).build());
     assertThat(createEnvironmentResponse1.getEnvironment().getEnvironmentId())
         .isEqualTo(createdEnvironmentId1);
-
     final CreateEnvironmentResponse createEnvironmentResponse2 =
         dataService.createEnvironment(
-            models
-                .createEnvironmentRequest()
-                .taskDefinition(TASK_DEFINITION)
-                .environmentId(createdEnvironmentId2)
-                .build());
+            models.createEnvironmentRequest().environmentId(createdEnvironmentId2).build());
     assertThat(createEnvironmentResponse2.getEnvironment().getEnvironmentId())
         .isEqualTo(createdEnvironmentId2);
   }

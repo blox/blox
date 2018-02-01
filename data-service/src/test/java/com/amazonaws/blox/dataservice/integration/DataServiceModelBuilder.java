@@ -14,12 +14,19 @@
  */
 package com.amazonaws.blox.dataservice.integration;
 
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
+import com.amazonaws.blox.dataservicemodel.v1.model.Cluster.ClusterBuilder;
 import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId.EnvironmentIdBuilder;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.*;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest.CreateEnvironmentRequestBuilder;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest.DeleteEnvironmentRequestBuilder;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest.DescribeEnvironmentRequestBuilder;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRevisionRequest.DescribeEnvironmentRevisionRequestBuilder;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest.ListClustersRequestBuilder;
+import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest.ListEnvironmentsRequestBuilder;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Value;
@@ -29,7 +36,7 @@ import lombok.experimental.Accessors;
 @Value
 @Builder
 public class DataServiceModelBuilder {
-  private String accountId = "0123456789012";
+  private String accountId = "123456789012";
   private String clusterName = "Cluster";
   private String environmentName = "Environment";
   private String environmentRevisionId = "EnvironmentRevisionId";
@@ -49,10 +56,40 @@ public class DataServiceModelBuilder {
         .environmentId(environmentId().build());
   }
 
+  public DescribeEnvironmentRequestBuilder describeEnvironmentRequest() {
+    return DescribeEnvironmentRequest.builder().environmentId(environmentId().build());
+  }
+
+  public DescribeEnvironmentRevisionRequestBuilder describeEnvironmentRevisionRequest() {
+    return DescribeEnvironmentRevisionRequest.builder()
+        .environmentId(environmentId().build())
+        .environmentRevisionId(environmentRevisionId);
+  }
+
+  public ListClustersRequestBuilder listClustersRequest() {
+    return ListClustersRequest.builder().accountId(accountId).clusterNamePrefix(clusterName);
+  }
+
+  public ListEnvironmentsRequestBuilder listEnvironmentsRequest() {
+    return ListEnvironmentsRequest.builder()
+        .cluster(cluster().build())
+        .environmentNamePrefix(environmentName);
+  }
+
+  public DeleteEnvironmentRequestBuilder deleteEnvironmentRequest() {
+    return DeleteEnvironmentRequest.builder()
+        .forceDelete(false)
+        .environmentId(environmentId().build());
+  }
+
   public EnvironmentIdBuilder environmentId() {
     return EnvironmentId.builder()
         .accountId(accountId)
         .cluster(clusterName)
         .environmentName(environmentName);
+  }
+
+  public ClusterBuilder cluster() {
+    return Cluster.builder().accountId(accountId).clusterName(clusterName);
   }
 }
