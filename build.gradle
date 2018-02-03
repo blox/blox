@@ -180,7 +180,7 @@ task downloadClient() {
 
     def deployTask = tasks.getByPath(":frontend-service:deploy")
 
-    inputs.file deployTask
+    inputs.files deployTask
     outputs.file sdkZip
 
     doLast {
