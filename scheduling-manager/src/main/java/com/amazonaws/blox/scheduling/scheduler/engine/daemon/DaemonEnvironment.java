@@ -16,6 +16,7 @@ package com.amazonaws.blox.scheduling.scheduler.engine.daemon;
 
 import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription;
 import com.amazonaws.blox.scheduling.scheduler.engine.StartTask;
+import com.amazonaws.blox.scheduling.scheduler.engine.StopTask;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot.ContainerInstance;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot.Task;
 import java.util.Arrays;
@@ -35,8 +36,8 @@ public class DaemonEnvironment {
 
   private final EnvironmentDescription environment;
 
-  public boolean hasMatchingTask(List<Task> tasks) {
-    return tasks.stream().noneMatch(this::matchesTask);
+  public boolean isMissingHealthyTask(List<Task> tasks) {
+    return tasks.stream().noneMatch(this::isMatchingTask);
   }
 
   public StartTask startTaskFor(ContainerInstance i) {
@@ -48,9 +49,25 @@ public class DaemonEnvironment {
         .build();
   }
 
-  public boolean matchesTask(Task t) {
+  public StopTask stopTaskFor(final Task task) {
+    return StopTask.builder()
+        .clusterName(environment.getClusterName())
+        .task(task.getTaskDefinitionArn())
+        .reason(
+            String.format(
+                "Stopped by deployment to %s@%s",
+                environment.getEnvironmentName(), environment.getTaskDefinitionArn()))
+        .build();
+  }
+
+  public boolean isTaskStoppable(Task t) {
     return t.getGroup().equals(environment.getEnvironmentName())
-        && t.getTaskDefinitionArn().equals(environment.getTaskDefinitionArn())
+        && !t.getTaskDefinitionArn().equals(environment.getTaskDefinitionArn())
+        && HEALTHY_STATES.contains(t.getStatus());
+  }
+
+  public boolean isMatchingTask(Task t) {
+    return t.getGroup().equals(environment.getEnvironmentName())
         && HEALTHY_STATES.contains(t.getStatus());
   }
 }

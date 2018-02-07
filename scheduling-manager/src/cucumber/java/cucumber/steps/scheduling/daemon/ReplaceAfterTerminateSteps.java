@@ -16,11 +16,8 @@ package cucumber.steps.scheduling.daemon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription;
+import com.amazonaws.blox.scheduling.scheduler.engine.*;
 import com.amazonaws.blox.scheduling.scheduler.engine.EnvironmentDescription.EnvironmentDescriptionBuilder;
-import com.amazonaws.blox.scheduling.scheduler.engine.Scheduler;
-import com.amazonaws.blox.scheduling.scheduler.engine.SchedulingAction;
-import com.amazonaws.blox.scheduling.scheduler.engine.StartTask;
 import com.amazonaws.blox.scheduling.scheduler.engine.daemon.ReplaceAfterTerminateScheduler;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot;
 import com.amazonaws.blox.scheduling.state.ClusterSnapshot.ContainerInstance;
@@ -85,6 +82,16 @@ public class ReplaceAfterTerminateSteps implements En {
         () -> {
           assertThat(actions).isEmpty();
         });
+
+    Then(
+        "^it should stop the following tasks:$",
+        (DataTable stopTasksTable) -> {
+          List<StopTask> stopTasks = stopTaskActionsFromTable(stopTasksTable);
+
+          assertThat(actions).containsAll(stopTasks);
+
+          actions.removeAll(stopTasks);
+        });
   }
 
   private EnvironmentDescriptionBuilder environmentDescriptionFromTable(DataTable properties) {
@@ -94,6 +101,14 @@ public class ReplaceAfterTerminateSteps implements En {
   private List<StartTask> startTaskActionsFromTable(DataTable startTasksTable) {
     return startTasksTable
         .asList(StartTask.StartTaskBuilder.class)
+        .stream()
+        .map(b -> b.clusterName(environment.getClusterName()).build())
+        .collect(Collectors.toList());
+  }
+
+  private List<StopTask> stopTaskActionsFromTable(DataTable stopTasksTable) {
+    return stopTasksTable
+        .asList(StopTask.StopTaskBuilder.class)
         .stream()
         .map(b -> b.clusterName(environment.getClusterName()).build())
         .collect(Collectors.toList());
