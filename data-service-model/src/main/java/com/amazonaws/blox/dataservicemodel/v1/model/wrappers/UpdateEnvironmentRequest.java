@@ -15,16 +15,19 @@
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
-import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 
-@Value
+@Data
 @Builder
+// required for builder
+@AllArgsConstructor
+// required for mapstruct
+@NoArgsConstructor
 public class UpdateEnvironmentRequest {
   @NonNull private EnvironmentId environmentId;
-  @NonNull private String role;
   @NonNull private String taskDefinition;
-  @NonNull private InstanceGroup instanceGroup;
 }

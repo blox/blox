@@ -3,57 +3,38 @@
 */
 package com.amazonaws.blox;
 
-import com.amazonaws.SdkBaseException;
+import java.net.*;
+import java.util.*;
+
+import javax.annotation.Generated;
+
+import org.apache.commons.logging.*;
+
+import com.amazonaws.*;
+import com.amazonaws.opensdk.*;
+import com.amazonaws.opensdk.model.*;
+import com.amazonaws.opensdk.protect.model.transform.*;
+import com.amazonaws.auth.*;
+import com.amazonaws.handlers.*;
+import com.amazonaws.http.*;
+import com.amazonaws.internal.*;
+import com.amazonaws.metrics.*;
+import com.amazonaws.regions.*;
+import com.amazonaws.transform.*;
+import com.amazonaws.util.*;
+import com.amazonaws.protocol.json.*;
+
 import com.amazonaws.annotation.ThreadSafe;
-import com.amazonaws.blox.model.CreateEnvironmentRequest;
-import com.amazonaws.blox.model.CreateEnvironmentResult;
-import com.amazonaws.blox.model.DeleteEnvironmentRequest;
-import com.amazonaws.blox.model.DeleteEnvironmentResult;
-import com.amazonaws.blox.model.DescribeEnvironmentDeploymentRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentDeploymentResult;
-import com.amazonaws.blox.model.DescribeEnvironmentRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentResult;
-import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentRevisionResult;
-import com.amazonaws.blox.model.ListEnvironmentDeploymentsRequest;
-import com.amazonaws.blox.model.ListEnvironmentDeploymentsResult;
-import com.amazonaws.blox.model.ListEnvironmentRevisionsRequest;
-import com.amazonaws.blox.model.ListEnvironmentRevisionsResult;
-import com.amazonaws.blox.model.ListEnvironmentsRequest;
-import com.amazonaws.blox.model.ListEnvironmentsResult;
-import com.amazonaws.blox.model.ResourceNotFoundException;
-import com.amazonaws.blox.model.StartDeploymentRequest;
-import com.amazonaws.blox.model.StartDeploymentResult;
-import com.amazonaws.blox.model.transform.CreateEnvironmentRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.CreateEnvironmentResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.DeleteEnvironmentRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.DeleteEnvironmentResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.DescribeEnvironmentDeploymentRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.DescribeEnvironmentDeploymentResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.DescribeEnvironmentRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.DescribeEnvironmentResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.DescribeEnvironmentRevisionRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.DescribeEnvironmentRevisionResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.ListEnvironmentDeploymentsRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.ListEnvironmentDeploymentsResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.ListEnvironmentRevisionsRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.ListEnvironmentRevisionsResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.ListEnvironmentsRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.ListEnvironmentsResultJsonUnmarshaller;
-import com.amazonaws.blox.model.transform.StartDeploymentRequestProtocolMarshaller;
-import com.amazonaws.blox.model.transform.StartDeploymentResultJsonUnmarshaller;
 import com.amazonaws.client.AwsSyncClientParams;
-import com.amazonaws.client.ClientExecutionParams;
+
 import com.amazonaws.client.ClientHandler;
 import com.amazonaws.client.ClientHandlerParams;
-import com.amazonaws.http.HttpResponseHandler;
+import com.amazonaws.client.ClientExecutionParams;
 import com.amazonaws.opensdk.protect.client.SdkClientHandler;
-import com.amazonaws.protocol.json.JsonClientMetadata;
-import com.amazonaws.protocol.json.JsonErrorResponseMetadata;
-import com.amazonaws.protocol.json.JsonErrorShapeMetadata;
-import com.amazonaws.protocol.json.JsonOperationMetadata;
-import java.util.Arrays;
-import javax.annotation.Generated;
+import com.amazonaws.SdkBaseException;
+
+import com.amazonaws.blox.model.*;
+import com.amazonaws.blox.model.transform.*;
 
 /**
  * Client for accessing Blox. All service calls made using this client are blocking, and will not return until the
@@ -263,6 +244,25 @@ class BloxClient implements Blox {
         return clientHandler.execute(new ClientExecutionParams<StartDeploymentRequest, StartDeploymentResult>()
                 .withMarshaller(new StartDeploymentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
                 .withErrorResponseHandler(errorResponseHandler).withInput(startDeploymentRequest));
+    }
+
+    /**
+     * @param updateEnvironmentRequest
+     * @return Result of the updateEnvironment operation returned by the service.
+     * @sample Blox.updateEnvironment
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/updateEnvironment" target="_top">AWS
+     *      API Documentation</a>
+     */
+    @Override
+    public UpdateEnvironmentResult updateEnvironment(UpdateEnvironmentRequest updateEnvironmentRequest) {
+        HttpResponseHandler<UpdateEnvironmentResult> responseHandler = protocolFactory.createResponseHandler(new JsonOperationMetadata().withPayloadJson(true)
+                .withHasStreamingSuccessResponse(false), new UpdateEnvironmentResultJsonUnmarshaller());
+
+        HttpResponseHandler<SdkBaseException> errorResponseHandler = createErrorResponseHandler();
+
+        return clientHandler.execute(new ClientExecutionParams<UpdateEnvironmentRequest, UpdateEnvironmentResult>()
+                .withMarshaller(new UpdateEnvironmentRequestProtocolMarshaller(protocolFactory)).withResponseHandler(responseHandler)
+                .withErrorResponseHandler(errorResponseHandler).withInput(updateEnvironmentRequest));
     }
 
     /**

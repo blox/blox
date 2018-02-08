@@ -17,14 +17,12 @@ package cucumber.steps.helpers;
 import com.amazonaws.blox.dataservicemodel.v1.model.Cluster;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
-import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DeleteEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironmentRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsRequest;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
-import java.util.Collections;
 import java.util.StringJoiner;
 import java.util.UUID;
 import lombok.Getter;
@@ -106,9 +104,7 @@ public class InputCreator {
   private UpdateEnvironmentRequest updateEnvironmentRequest(final EnvironmentId id) {
     return UpdateEnvironmentRequest.builder()
         .environmentId(id)
-        .role(getRoleArn())
         .taskDefinition(getTaskDefinitionArn())
-        .instanceGroup(InstanceGroup.builder().attributes(Collections.emptySet()).build())
         .build();
   }
 

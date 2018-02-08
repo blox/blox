@@ -3,26 +3,14 @@
 */
 package com.amazonaws.blox;
 
-import com.amazonaws.blox.model.CreateEnvironmentRequest;
-import com.amazonaws.blox.model.CreateEnvironmentResult;
-import com.amazonaws.blox.model.DeleteEnvironmentRequest;
-import com.amazonaws.blox.model.DeleteEnvironmentResult;
-import com.amazonaws.blox.model.DescribeEnvironmentDeploymentRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentDeploymentResult;
-import com.amazonaws.blox.model.DescribeEnvironmentRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentResult;
-import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentRevisionResult;
-import com.amazonaws.blox.model.ListEnvironmentDeploymentsRequest;
-import com.amazonaws.blox.model.ListEnvironmentDeploymentsResult;
-import com.amazonaws.blox.model.ListEnvironmentRevisionsRequest;
-import com.amazonaws.blox.model.ListEnvironmentRevisionsResult;
-import com.amazonaws.blox.model.ListEnvironmentsRequest;
-import com.amazonaws.blox.model.ListEnvironmentsResult;
-import com.amazonaws.blox.model.ResourceNotFoundException;
-import com.amazonaws.blox.model.StartDeploymentRequest;
-import com.amazonaws.blox.model.StartDeploymentResult;
 import javax.annotation.Generated;
+
+import com.amazonaws.*;
+import com.amazonaws.opensdk.*;
+import com.amazonaws.opensdk.model.*;
+import com.amazonaws.regions.*;
+
+import com.amazonaws.blox.model.*;
 
 /**
  * Interface for accessing Blox.
@@ -111,6 +99,15 @@ public interface Blox {
      *      API Documentation</a>
      */
     StartDeploymentResult startDeployment(StartDeploymentRequest startDeploymentRequest);
+
+    /**
+     * @param updateEnvironmentRequest
+     * @return Result of the updateEnvironment operation returned by the service.
+     * @sample Blox.updateEnvironment
+     * @see <a href="http://docs.aws.amazon.com/goto/WebAPI/ecs-blox-v2017-07-11/updateEnvironment" target="_top">AWS
+     *      API Documentation</a>
+     */
+    UpdateEnvironmentResult updateEnvironment(UpdateEnvironmentRequest updateEnvironmentRequest);
 
     /**
      * @return Create new instance of builder with all defaults set.
