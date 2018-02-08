@@ -111,6 +111,41 @@ paths:
         type: "aws_proxy"
         uri:
           Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
+    put:
+      summary: "Update an existing Environment"
+      description: ""
+      operationId: "updateEnvironment"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "cluster"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "environmentName"
+        in: "path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/UpdateEnvironmentRequest"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/UpdateEnvironmentResponse"
+      security:
+      - defaultAuthorization: []
+      x-amazon-apigateway-integration:
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FrontendHandler.Arn}/invocations"
     delete:
       summary: "Delete an Environment by name"
       description: ""
@@ -480,3 +515,15 @@ definitions:
       total:
         type: "integer"
         format: "int64"
+  UpdateEnvironmentRequest:
+    type: "object"
+    properties:
+      environmentName:
+        type: "string"
+      taskDefinition:
+        type: "string"
+  UpdateEnvironmentResponse:
+    type: "object"
+    properties:
+      environmentRevisionId:
+        type: "string"
