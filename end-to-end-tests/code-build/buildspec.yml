@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - mkdir -p /root/.gradle
+      - echo "org.gradle.daemon=false" > /root/.gradle/gradle.properties
+      - cat end-to-end-tests/code-build/end2end.properties >> /root/.gradle/gradle.properties
+      - aws configure --profile default set region us-west-2
+  build:
+    commands:
+      - ./gradlew testEndToEnd
+  post_build:
+    commands:
+      - rm -f  /root/.gradle/caches/modules-2/modules-2.lock
+      - rm -fr /root/.gradle/caches/*/plugin-resolution/
+      - rm -fr /root/.gradle/caches/*/fileHashes/
+      - rm -fr /root/.gradle/caches/jars-3/
+cache:
+  paths:
+    - '/root/.gradle/caches/**/*'
+    - '/root/.gradle/wrapper/**/*'
+artifacts:
+  files:
+    - end-to-end-tests/build/reports/**/*
+

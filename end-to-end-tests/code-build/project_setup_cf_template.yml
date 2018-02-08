@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  Blox:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: Blox-E2E-Test
+      Description: Job to run end to end test for blox
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: S3
+        Location: blox-codebuild-us-west-2
+        NamespaceType: BUILD_ID
+        Path: codebuild/report
+      Source:
+        Type: GITHUB
+        BuildSpec: end-to-end-tests/code-build/buildspec.yml
+        Location: https://github.com/blox/blox.git
+        Auth:
+          Type: OAUTH
+      Cache:
+        Type: S3
+        Location: blox-codebuild-us-west-2/codebuild/cache
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/java:openjdk-8
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [codebuild.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess
+        - arn:aws:iam::aws:policy/IAMReadOnlyAccess
+        - arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess
+      Policies:
+      - PolicyName: blox-test
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - 'cloudformation:*ChangeSet'
+              - 'execute-api:*'
+            Resource: '*'
