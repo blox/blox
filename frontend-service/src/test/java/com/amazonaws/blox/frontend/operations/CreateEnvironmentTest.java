@@ -20,14 +20,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
-import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import com.amazonaws.blox.frontend.mappers.CreateEnvironmentMapper;
 import com.amazonaws.blox.frontend.operations.CreateEnvironment.CreateEnvironmentRequest;
 import com.amazonaws.blox.frontend.operations.CreateEnvironment.CreateEnvironmentResponse;
-import java.time.Instant;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -51,26 +48,8 @@ public class CreateEnvironmentTest extends EnvironmentControllerTestCase {
         .thenReturn(
             com.amazonaws.blox.dataservicemodel.v1.model.wrappers.CreateEnvironmentResponse
                 .builder()
-                .environment(
-                    Environment.builder()
-                        .environmentId(id)
-                        .role(ROLE)
-                        .environmentType(ENVIRONMENT_TYPE)
-                        .environmentHealth(HEALTHY)
-                        .environmentStatus(STATUS)
-                        .deploymentMethod(DEPLOYMENT_METHOD)
-                        .deploymentConfiguration(deploymentConfiguration)
-                        .createdTime(Instant.now())
-                        .lastUpdatedTime(Instant.now())
-                        .build())
-                .environmentRevision(
-                    EnvironmentRevision.builder()
-                        .environmentId(id)
-                        .environmentRevisionId(ENVIRONMENT_REVISION_ID)
-                        .instanceGroup(instanceGroup)
-                        .taskDefinition(TASK_DEFINITION)
-                        .createdTime(Instant.now())
-                        .build())
+                .environment(environmentDS(id, deploymentConfiguration))
+                .environmentRevision(environmentRevisionDS(id, instanceGroup))
                 .build());
 
     CreateEnvironmentResponse response =

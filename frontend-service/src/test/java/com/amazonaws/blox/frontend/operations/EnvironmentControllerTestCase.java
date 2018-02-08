@@ -19,11 +19,15 @@ import static org.mockito.Mockito.mock;
 import com.amazonaws.blox.dataservicemodel.v1.client.DataService;
 import com.amazonaws.blox.dataservicemodel.v1.model.Attribute;
 import com.amazonaws.blox.dataservicemodel.v1.model.DeploymentConfiguration;
+import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentId;
+import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
 import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentType;
 import com.amazonaws.blox.dataservicemodel.v1.model.InstanceGroup;
 import com.amazonaws.blox.frontend.MapperConfiguration;
 import com.amazonaws.serverless.proxy.internal.model.ApiGatewayRequestContext;
 import com.amazonaws.serverless.proxy.internal.servlet.AwsProxyHttpServletRequestReader;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import javax.servlet.http.HttpServletRequest;
@@ -104,6 +108,10 @@ public abstract class EnvironmentControllerTestCase {
         .build();
   }
 
+  protected InstanceGroup instanceGroupDS() {
+    return instanceGroupWithAttributeDS(ATTRIBUTE_NAME, ATTRIBUTE_VALUE);
+  }
+
   protected InstanceGroup instanceGroupWithAttributeDS(
       String attributeName, String attributeValue) {
     return InstanceGroup.builder()
@@ -120,5 +128,36 @@ public abstract class EnvironmentControllerTestCase {
 
   protected com.amazonaws.blox.frontend.models.DeploymentConfiguration deploymentConfigurationFE() {
     return com.amazonaws.blox.frontend.models.DeploymentConfiguration.builder().build();
+  }
+
+  protected EnvironmentRevision environmentRevisionDS(
+      final EnvironmentId id, final InstanceGroup instanceGroup) {
+    return environmentRevisionDS(id, TASK_DEFINITION, instanceGroup);
+  }
+
+  protected EnvironmentRevision environmentRevisionDS(
+      final EnvironmentId id, final String taskDefinition, final InstanceGroup instanceGroup) {
+    return EnvironmentRevision.builder()
+        .environmentId(id)
+        .environmentRevisionId(ENVIRONMENT_REVISION_ID)
+        .instanceGroup(instanceGroup)
+        .taskDefinition(taskDefinition)
+        .createdTime(Instant.now())
+        .build();
+  }
+
+  protected Environment environmentDS(
+      final EnvironmentId id, final DeploymentConfiguration deploymentConfiguration) {
+    return Environment.builder()
+        .environmentId(id)
+        .role(ROLE)
+        .environmentType(ENVIRONMENT_TYPE)
+        .environmentHealth(HEALTHY)
+        .environmentStatus(STATUS)
+        .deploymentMethod(DEPLOYMENT_METHOD)
+        .deploymentConfiguration(deploymentConfiguration)
+        .createdTime(Instant.now())
+        .lastUpdatedTime(Instant.now())
+        .build();
   }
 }
