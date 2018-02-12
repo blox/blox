@@ -35,8 +35,10 @@ Resources:
           Action: ['sts:AssumeRole']
       Path: /
       ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
         - arn:aws:iam::aws:policy/AWSLambdaFullAccess
         - arn:aws:iam::aws:policy/AmazonEC2ContainerServiceFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
         - arn:aws:iam::aws:policy/IAMReadOnlyAccess
         - arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess
       Policies:
