@@ -54,4 +54,7 @@ public interface EnvironmentRepository {
   List<Cluster> listClusters(String accountId, String clusterNamePrefix);
 
   void deleteEnvironment(EnvironmentId environmentId) throws InternalServiceException;
+
+  EnvironmentRevision createEnvironmentRevision(EnvironmentRevision revision)
+      throws ResourceExistsException, InternalServiceException;
 }

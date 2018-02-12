@@ -267,7 +267,7 @@ public class EnvironmentRepositoryDDB implements EnvironmentRepository {
     }
   }
 
-  private EnvironmentRevision createEnvironmentRevision(
+  public EnvironmentRevision createEnvironmentRevision(
       @NonNull final EnvironmentRevision environmentRevision)
       throws ResourceExistsException, InternalServiceException {
 

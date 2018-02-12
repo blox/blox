@@ -45,9 +45,7 @@ public class UpdateEnvironmentTest extends EnvironmentControllerTestCase {
         .thenReturn(
             com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse
                 .builder()
-                .environment(environmentDS(id, deploymentConfigurationDS()))
-                .environmentRevision(
-                    environmentRevisionDS(id, NEW_TASK_DEFINITION, instanceGroupDS()))
+                .environmentRevisionId(ENVIRONMENT_REVISION_ID)
                 .build());
 
     UpdateEnvironmentResponse response =

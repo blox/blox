@@ -46,7 +46,8 @@ public interface DataService {
 
   /** Creates a new environment revision for the environment. */
   UpdateEnvironmentResponse updateEnvironment(UpdateEnvironmentRequest request)
-      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException;
+      throws ResourceNotFoundException, InvalidParameterException, InternalServiceException,
+          ResourceExistsException;
 
   /** Returns the environment record. */
   DescribeEnvironmentResponse describeEnvironment(DescribeEnvironmentRequest request)

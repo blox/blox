@@ -14,8 +14,6 @@
  */
 package com.amazonaws.blox.dataservicemodel.v1.model.wrappers;
 
-import com.amazonaws.blox.dataservicemodel.v1.model.Environment;
-import com.amazonaws.blox.dataservicemodel.v1.model.EnvironmentRevision;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
@@ -24,6 +22,5 @@ import lombok.NonNull;
 @Builder
 public class UpdateEnvironmentResponse {
 
-  @NonNull private Environment environment;
-  @NonNull private EnvironmentRevision environmentRevision;
+  @NonNull private String environmentRevisionId;
 }

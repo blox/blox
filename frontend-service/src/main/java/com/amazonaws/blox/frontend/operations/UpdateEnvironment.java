@@ -15,6 +15,7 @@
 package com.amazonaws.blox.frontend.operations;
 
 import com.amazonaws.blox.dataservicemodel.v1.exception.InvalidParameterException;
+import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceExistsException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ResourceNotFoundException;
 import com.amazonaws.blox.dataservicemodel.v1.exception.ServiceException;
 import com.amazonaws.blox.frontend.mappers.UpdateEnvironmentMapper;
@@ -44,7 +45,8 @@ public class UpdateEnvironment extends EnvironmentController {
       @PathVariable("cluster") String cluster,
       @PathVariable("environmentName") String environmentName,
       @RequestBody UpdateEnvironmentRequest request)
-      throws InvalidParameterException, ServiceException, ResourceNotFoundException {
+      throws InvalidParameterException, ServiceException, ResourceNotFoundException,
+          ResourceExistsException {
 
     return mapper.fromDataServiceResponse(
         dataService.updateEnvironment(

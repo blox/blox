@@ -32,7 +32,6 @@ public interface UpdateEnvironmentMapper {
       String environmentName,
       UpdateEnvironment.UpdateEnvironmentRequest request);
 
-  @Mapping(source = "environmentRevision.environmentRevisionId", target = "environmentRevisionId")
   UpdateEnvironment.UpdateEnvironmentResponse fromDataServiceResponse(
       UpdateEnvironmentResponse response);
 }
