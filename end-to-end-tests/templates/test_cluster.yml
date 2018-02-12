@@ -3,7 +3,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   DesiredInstances:
     Type: Number
-    Default: '1'
+    Default: '2'
     Description: Number of instances to launch in your ECS cluster.
   DesiredTasks:
     Type: Number
@@ -12,27 +12,27 @@ Parameters:
   InstanceType:
     Description: EC2 instance type
     Type: String
-    Default: m3.medium
+    Default: t2.micro
 Mappings:
   AWSRegionToAMI:
     us-east-1:
-      AMIID: ami-eca289fb
+      AMIID: ami-5e414e24
     us-east-2:
-      AMIID: ami-446f3521
+      AMIID: ami-67ab9e02
     us-west-1:
-      AMIID: ami-9fadf8ff
+      AMIID: ami-00898660
     us-west-2:
-      AMIID: ami-7abc111a
+      AMIID: ami-10ed6968
     eu-west-1:
-      AMIID: ami-a1491ad2
+      AMIID: ami-880d64f1
     eu-central-1:
-      AMIID: ami-54f5303b
+      AMIID: ami-63cbae0c
     ap-northeast-1:
-      AMIID: ami-9cd57ffd
+      AMIID: ami-e3166185
     ap-southeast-1:
-      AMIID: ami-a900a3ca
+      AMIID: ami-66c98f1a
     ap-southeast-2:
-      AMIID: ami-5781be34
+      AMIID: ami-36867d54
 Resources:
   Cluster:
     Type: AWS::ECS::Cluster
@@ -40,11 +40,11 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: ECS Security Group
-  SleepTask:
+  TransientTask:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family:
-        Fn::Join: ['', [{ Ref: 'AWS::StackName' }, -task]]
+        Fn::Join: ['', [{ Ref: 'AWS::StackName' }, -transient-task]]
       ContainerDefinitions:
       - Name: sleep
         Cpu: '10'
@@ -52,6 +52,21 @@ Resources:
         Essential: 'true'
         Image: 'alpine:latest'
         Command: ['/bin/sh', '-c', 'sleep $TIME']
+        Environment:
+        - Name: TIME
+          Value: "60"
+  PersistentTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family:
+        Fn::Join: ['', [{ Ref: 'AWS::StackName' }, -persistent-task]]
+      ContainerDefinitions:
+      - Name: sleep
+        Cpu: '10'
+        Memory: '300'
+        Essential: 'true'
+        Image: 'alpine:latest'
+        Command: ['/bin/sh', '-c', 'trap : TERM INT; sleep infinity & wait']
         Environment:
         - Name: TIME
           Value: "60"
@@ -130,5 +145,7 @@ Resources:
 Outputs:
   cluster:
     Value: { Ref: 'Cluster' }
-  taskdef:
-    Value: { Ref: 'SleepTask' }
+  transienttask:
+    Value: { Ref: 'TransientTask' }
+  persistenttask:
+    Value: { Ref: 'PersistentTask' }

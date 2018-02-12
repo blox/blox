@@ -16,8 +16,6 @@ package com.amazonaws.blox;
 
 import static com.amazonaws.blox.integ.AsynchronousTestSupport.waitOrTimeout;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.assertj.core.groups.Tuple.tuple;
 
 import com.amazonaws.blox.integ.BloxTestStack;
 import com.amazonaws.blox.model.CreateEnvironmentRequest;
@@ -27,7 +25,6 @@ import com.amazonaws.blox.model.DescribeEnvironmentRequest;
 import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
 import com.amazonaws.blox.model.Environment;
 import com.amazonaws.blox.model.EnvironmentRevision;
-import com.amazonaws.blox.model.ResourceNotFoundException;
 import com.amazonaws.blox.model.StartDeploymentRequest;
 import java.util.UUID;
 import org.junit.After;
@@ -36,9 +33,8 @@ import org.junit.Test;
 
 public class CreateDaemonEnvironmentTest {
 
-  private String environmentName;
   private static final long RECONCILIATION_INTERVAL = 60_000;
-
+  private String environmentName;
   private BloxTestStack stack;
 
   @Before
@@ -51,6 +47,14 @@ public class CreateDaemonEnvironmentTest {
 
   @After
   public void tearDown() {
+    // Delete environment
+    stack
+        .getBlox()
+        .deleteEnvironment(
+            new DeleteEnvironmentRequest()
+                .cluster(stack.getCluster())
+                .environmentName(environmentName));
+
     // Cleanup ECS tasks
     stack.reset();
   }
@@ -64,7 +68,7 @@ public class CreateDaemonEnvironmentTest {
             .createEnvironment(
                 new CreateEnvironmentRequest()
                     .environmentName(environmentName)
-                    .taskDefinition(stack.getTaskDefinition())
+                    .taskDefinition(stack.getTransientTaskDefinition())
                     .deploymentConfiguration(new DeploymentConfiguration())
                     .cluster(stack.getCluster())
                     .environmentType("Daemon")
@@ -99,7 +103,7 @@ public class CreateDaemonEnvironmentTest {
             .getEnvironmentRevision();
 
     // The task definition should match
-    assertThat(revision.getTaskDefinition()).isEqualTo(stack.getTaskDefinition());
+    assertThat(revision.getTaskDefinition()).isEqualTo(stack.getTransientTaskDefinition());
 
     // Now start deployment
     final String deploymentId =
@@ -118,34 +122,11 @@ public class CreateDaemonEnvironmentTest {
         () -> {
           assertThat(stack.describeTasks())
               .as("Tasks launched by blox")
-              .extracting("group", "taskDefinitionArn")
-              .containsExactly(tuple(environment.getEnvironmentName(), stack.getTaskDefinition()));
+              .allSatisfy(
+                  t -> {
+                    assertThat(t.group()).isEqualTo(environment.getEnvironmentName());
+                    assertThat(t.taskDefinitionArn()).isEqualTo(stack.getTransientTaskDefinition());
+                  });
         });
-
-    // Delete environment
-    stack
-        .getBlox()
-        .deleteEnvironment(
-            new DeleteEnvironmentRequest()
-                .cluster(stack.getCluster())
-                .environmentName(environmentName));
-
-    // Describe the environment again, should be ResourceNotFoundException
-    Throwable thrown =
-        catchThrowable(
-            () ->
-                stack
-                    .getBlox()
-                    .describeEnvironment(
-                        new DescribeEnvironmentRequest()
-                            .cluster(stack.getCluster())
-                            .environmentName(environmentName)));
-
-    assertThat(thrown)
-        .isInstanceOf(ResourceNotFoundException.class)
-        .hasNoCause()
-        .hasMessageContaining(environmentName)
-        .hasFieldOrProperty("resourceId")
-        .hasFieldOrPropertyWithValue("resourceType", "environment");
   }
 }
