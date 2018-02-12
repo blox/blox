@@ -30,7 +30,6 @@ import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.DescribeEnvironment
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListClustersResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.ListEnvironmentsResponse;
 import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentRequest;
-import com.amazonaws.blox.dataservicemodel.v1.model.wrappers.UpdateEnvironmentResponse;
 import cucumber.api.DataTable;
 import cucumber.api.java8.En;
 import cucumber.configuration.CucumberConfiguration;
@@ -140,28 +139,6 @@ public class DataServiceSteps implements En {
               dataServiceWrapper.getLastFromHistory(DescribeEnvironmentResponse.class);
           checkEnvironmentEquality(
               createEnvironmentResponse.getEnvironment(),
-              describeEnvironmentResponse.getEnvironment());
-        });
-
-    // TODO: Remove; changing the cluster of an existent environment is unsupported.
-    Given(
-        "^I update the created environment with cluster name \"([^\"]*)\"$",
-        (final String newCluster) -> {
-          final EnvironmentId environmentId = getEnvironmentIdFromCreatedEnvironment();
-          dataServiceWrapper.updateEnvironment(
-              inputCreator.updateEnvironmentRequestWithNewCluster(
-                  environmentId.getEnvironmentName(), inputCreator.prefixName(newCluster)));
-        });
-
-    Then(
-        "^the updated and described environments match$",
-        () -> {
-          final UpdateEnvironmentResponse updateEnvironmentResponse =
-              dataServiceWrapper.getLastFromHistory(UpdateEnvironmentResponse.class);
-          final DescribeEnvironmentResponse describeEnvironmentResponse =
-              dataServiceWrapper.getLastFromHistory(DescribeEnvironmentResponse.class);
-          checkEnvironmentEquality(
-              updateEnvironmentResponse.getEnvironment(),
               describeEnvironmentResponse.getEnvironment());
         });
 

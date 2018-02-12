@@ -7,13 +7,6 @@ Feature: Describe environment
     When I describe the created environment
     Then the created and described environments match
 
-  @ignore
-  Scenario: Describe an updated environment
-    Given I create an environment named "test"
-    And I update the created environment with cluster name "new-task-definition"
-    When I describe the updated environment
-    Then the updated and described environments match
-
   Scenario: Describe a non-existent environment
     When I try to describe a non-existent environment named "non-existent"
     Then there should be a ResourceNotFoundException thrown
