@@ -57,13 +57,18 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
                 DescribeEnvironmentRequest.builder().environmentId(environmentId).build())
             .getEnvironment();
 
-    String activeEnvironmentId = environment.getActiveEnvironmentRevisionId();
+    String activeEnvironmentRevisionId = environment.getActiveEnvironmentRevisionId();
+
+    if (activeEnvironmentRevisionId == null) {
+      return new SchedulerOutput(
+          input.getSnapshot().getClusterName(), input.getEnvironmentId(), 0, 0);
+    }
 
     EnvironmentRevision activeEnvironmentRevision =
         data.describeEnvironmentRevision(
                 DescribeEnvironmentRevisionRequest.builder()
                     .environmentId(environmentId)
-                    .environmentRevisionId(activeEnvironmentId)
+                    .environmentRevisionId(activeEnvironmentRevisionId)
                     .build())
             .getEnvironmentRevision();
 
@@ -71,7 +76,7 @@ public class SchedulerHandler implements RequestHandler<SchedulerInput, Schedule
         EnvironmentDescription.builder()
             .clusterName(environmentId.getCluster())
             .environmentName(environmentId.getEnvironmentName())
-            .activeEnvironmentRevisionId(activeEnvironmentId)
+            .activeEnvironmentRevisionId(activeEnvironmentRevisionId)
             .environmentType(
                 EnvironmentDescription.EnvironmentType.valueOf(
                     environment.getEnvironmentType().toString()))

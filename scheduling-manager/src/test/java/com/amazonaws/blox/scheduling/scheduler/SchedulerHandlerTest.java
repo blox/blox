@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,19 +59,42 @@ public class SchedulerHandlerTest {
   private static final String ACTIVE_ENVIRONMENT_REVISION_ID = "1";
   private static final String DEPLOYMENT_METHOD = "ReplaceAfterTerminate";
   private static final String TASK_DEFINITION = "arn:::::task:1";
-
+  private static final ClusterSnapshot EMPTY_CLUSTER =
+      new ClusterSnapshot(CLUSTER_NAME, Collections.emptyList(), Collections.emptyList());
+  private final EnvironmentId environmentId =
+      EnvironmentId.builder()
+          .accountId(ACCOUNT_ID)
+          .cluster(CLUSTER_NAME)
+          .environmentName(ENVIRONMENT_NAME)
+          .build();
   @Mock private SchedulerFactory schedulerFactory;
   @Mock private DataService dataService;
   @Mock private ECSAsyncClient ecs;
 
   @Test
+  public void doesNothingIfNoEnvironmentRevisionIsActive() throws Exception {
+    DescribeEnvironmentRequest describeEnvironmentRequest =
+        DescribeEnvironmentRequest.builder().environmentId(environmentId).build();
+
+    when(dataService.describeEnvironment(describeEnvironmentRequest))
+        .thenReturn(
+            DescribeEnvironmentResponse.builder()
+                .environment(environmentWithActiveRevision(null))
+                .build());
+
+    SchedulerHandler handler = new SchedulerHandler(dataService, ecs, schedulerFactory);
+
+    SchedulerOutput output =
+        handler.handleRequest(new SchedulerInput(EMPTY_CLUSTER, environmentId), null);
+
+    verify(dataService, never()).describeEnvironmentRevision(any());
+    assertThat(output)
+        .hasFieldOrPropertyWithValue("failedActions", 0L)
+        .hasFieldOrPropertyWithValue("successfulActions", 0L);
+  }
+
+  @Test
   public void invokesSchedulerCoreForDeploymentMethod() throws Exception {
-    EnvironmentId environmentId =
-        EnvironmentId.builder()
-            .accountId(ACCOUNT_ID)
-            .cluster(CLUSTER_NAME)
-            .environmentName(ENVIRONMENT_NAME)
-            .build();
 
     DescribeEnvironmentRequest describeEnvironmentRequest =
         DescribeEnvironmentRequest.builder().environmentId(environmentId).build();
@@ -83,19 +107,7 @@ public class SchedulerHandlerTest {
     when(dataService.describeEnvironment(describeEnvironmentRequest))
         .thenReturn(
             DescribeEnvironmentResponse.builder()
-                .environment(
-                    Environment.builder()
-                        .environmentId(environmentId)
-                        .role("")
-                        .environmentType(EnvironmentType.SingleTask)
-                        .createdTime(Instant.now())
-                        .lastUpdatedTime(Instant.now())
-                        .environmentHealth(EnvironmentHealth.HEALTHY)
-                        .environmentStatus(EnvironmentStatus.ACTIVE)
-                        .deploymentMethod(DEPLOYMENT_METHOD)
-                        .deploymentConfiguration(DeploymentConfiguration.builder().build())
-                        .activeEnvironmentRevisionId(ACTIVE_ENVIRONMENT_REVISION_ID)
-                        .build())
+                .environment(environmentWithActiveRevision(ACTIVE_ENVIRONMENT_REVISION_ID))
                 .build());
     when(dataService.describeEnvironmentRevision(describeEnvironmentRevisionRequest))
         .thenReturn(
@@ -109,9 +121,6 @@ public class SchedulerHandlerTest {
                         .build())
                 .build());
 
-    ClusterSnapshot snapshot =
-        new ClusterSnapshot(CLUSTER_NAME, Collections.emptyList(), Collections.emptyList());
-
     SchedulingAction successfulAction = e -> CompletableFuture.completedFuture(true);
     SchedulingAction failedAction = e -> CompletableFuture.completedFuture(false);
 
@@ -124,13 +133,13 @@ public class SchedulerHandlerTest {
     SchedulerHandler handler = new SchedulerHandler(dataService, ecs, schedulerFactory);
 
     SchedulerOutput output =
-        handler.handleRequest(new SchedulerInput(snapshot, environmentId), null);
+        handler.handleRequest(new SchedulerInput(EMPTY_CLUSTER, environmentId), null);
 
     verify(dataService).describeEnvironment(describeEnvironmentRequest);
     verify(dataService).describeEnvironmentRevision(describeEnvironmentRevisionRequest);
     ArgumentCaptor<EnvironmentDescription> environmentDescription =
         ArgumentCaptor.forClass(EnvironmentDescription.class);
-    verify(mockScheduler).schedule(eq(snapshot), environmentDescription.capture());
+    verify(mockScheduler).schedule(eq(EMPTY_CLUSTER), environmentDescription.capture());
     assertThat(environmentDescription.getValue())
         .isEqualTo(
             EnvironmentDescription.builder()
@@ -146,5 +155,20 @@ public class SchedulerHandlerTest {
     assertThat(output.getEnvironmentId()).isEqualTo(environmentId);
     assertThat(output.getSuccessfulActions()).isEqualTo(1L);
     assertThat(output.getFailedActions()).isEqualTo(1L);
+  }
+
+  private Environment environmentWithActiveRevision(final String revisionId) {
+    return Environment.builder()
+        .environmentId(environmentId)
+        .role("")
+        .environmentType(EnvironmentType.SingleTask)
+        .createdTime(Instant.now())
+        .lastUpdatedTime(Instant.now())
+        .environmentHealth(EnvironmentHealth.HEALTHY)
+        .environmentStatus(EnvironmentStatus.ACTIVE)
+        .deploymentMethod(DEPLOYMENT_METHOD)
+        .deploymentConfiguration(DeploymentConfiguration.builder().build())
+        .activeEnvironmentRevisionId(revisionId)
+        .build();
   }
 }
