@@ -67,7 +67,6 @@ public class UpdateEnvironment extends EnvironmentController {
   @AllArgsConstructor
   @NoArgsConstructor
   public static class UpdateEnvironmentRequest {
-    private String environmentName;
     private String taskDefinition;
   }
 }

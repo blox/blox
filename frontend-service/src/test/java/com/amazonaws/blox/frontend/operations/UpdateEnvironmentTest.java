@@ -52,10 +52,7 @@ public class UpdateEnvironmentTest extends EnvironmentControllerTestCase {
         controller.updateEnvironment(
             TEST_CLUSTER,
             ENVIRONMENT_NAME,
-            UpdateEnvironmentRequest.builder()
-                .environmentName(ENVIRONMENT_NAME)
-                .taskDefinition(NEW_TASK_DEFINITION)
-                .build());
+            UpdateEnvironmentRequest.builder().taskDefinition(NEW_TASK_DEFINITION).build());
 
     verify(dataService)
         .updateEnvironment(

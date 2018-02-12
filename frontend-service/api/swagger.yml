@@ -518,8 +518,6 @@ definitions:
   UpdateEnvironmentRequest:
     type: "object"
     properties:
-      environmentName:
-        type: "string"
       taskDefinition:
         type: "string"
   UpdateEnvironmentResponse:
