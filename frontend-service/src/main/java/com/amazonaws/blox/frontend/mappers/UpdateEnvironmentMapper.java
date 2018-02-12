@@ -25,7 +25,7 @@ import org.mapstruct.Mapping;
 public interface UpdateEnvironmentMapper {
   @Mapping(target = "environmentId.accountId", source = "context.accountId")
   @Mapping(target = "environmentId.cluster", source = "cluster")
-  @Mapping(target = "environmentId.environmentName", source = "request.environmentName")
+  @Mapping(target = "environmentId.environmentName", source = "environmentName")
   UpdateEnvironmentRequest toDataServiceRequest(
       ApiGatewayRequestContext context,
       String cluster,

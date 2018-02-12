@@ -39,8 +39,12 @@ public class ECSClusterWrapper {
     this(ecs, stacks.get("blox-test-cluster"));
   }
 
-  public String getTaskDefinition() {
-    return stack.output("taskdef");
+  public String getTransientTaskDefinition() {
+    return stack.output("transienttask");
+  }
+
+  public String getPersistentTaskDefinition() {
+    return stack.output("persistenttask");
   }
 
   public String getCluster() {

@@ -62,8 +62,12 @@ public class BloxTestStack {
     return ecs.describeTasks();
   }
 
-  public String getTaskDefinition() {
-    return ecs.getTaskDefinition();
+  public String getTransientTaskDefinition() {
+    return ecs.getTransientTaskDefinition();
+  }
+
+  public String getPersistentTaskDefinition() {
+    return ecs.getPersistentTaskDefinition();
   }
 
   public String getCluster() {

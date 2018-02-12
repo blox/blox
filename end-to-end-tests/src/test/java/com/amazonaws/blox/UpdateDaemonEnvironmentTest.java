@@ -21,17 +21,14 @@ import com.amazonaws.blox.integ.BloxTestStack;
 import com.amazonaws.blox.model.CreateEnvironmentRequest;
 import com.amazonaws.blox.model.DeleteEnvironmentRequest;
 import com.amazonaws.blox.model.DeploymentConfiguration;
-import com.amazonaws.blox.model.DescribeEnvironmentRequest;
-import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
-import com.amazonaws.blox.model.Environment;
-import com.amazonaws.blox.model.EnvironmentRevision;
 import com.amazonaws.blox.model.StartDeploymentRequest;
+import com.amazonaws.blox.model.UpdateEnvironmentRequest;
 import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CreateDaemonEnvironmentTest {
+public class UpdateDaemonEnvironmentTest {
 
   private static final long RECONCILIATION_INTERVAL = 60_000;
   private String environmentName;
@@ -60,15 +57,18 @@ public class CreateDaemonEnvironmentTest {
   }
 
   @Test
-  public void creatingDaemonEnvironmentShouldLaunchTaskPerInstance() throws Exception {
+  public void updatingEnvironmentCreatesNewRevision() throws Exception {
     // Create environment
-    final String revisionId =
-        stack
-            .getBlox()
-            .createEnvironment(
+    final Blox blox = stack.getBlox();
+
+    final String firstTaskDefinition = stack.getPersistentTaskDefinition();
+    final String secondTaskDefinition = stack.getTransientTaskDefinition();
+
+    final String firstRevisionId =
+        blox.createEnvironment(
                 new CreateEnvironmentRequest()
                     .environmentName(environmentName)
-                    .taskDefinition(stack.getTransientTaskDefinition())
+                    .taskDefinition(firstTaskDefinition)
                     .deploymentConfiguration(new DeploymentConfiguration())
                     .cluster(stack.getCluster())
                     .environmentType("Daemon")
@@ -76,46 +76,12 @@ public class CreateDaemonEnvironmentTest {
                     .deploymentMethod("ReplaceAfterTerminate"))
             .getEnvironmentRevisionId();
 
-    // Then when I describe that environment ...
-    Environment environment =
-        stack
-            .getBlox()
-            .describeEnvironment(
-                new DescribeEnvironmentRequest()
-                    .cluster(stack.getCluster())
-                    .environmentName(environmentName))
-            .getEnvironment();
-
-    // The names should match
-    assertThat(environment.getEnvironmentName()).as("environment name").isEqualTo(environmentName);
-    // and the active environment revision should not set
-    assertThat(environment.getActiveEnvironmentRevisionId()).isNull();
-
-    // And when I describe the revision
-    EnvironmentRevision revision =
-        stack
-            .getBlox()
-            .describeEnvironmentRevision(
-                new DescribeEnvironmentRevisionRequest()
-                    .cluster(stack.getCluster())
-                    .environmentName(environmentName)
-                    .environmentRevisionId(revisionId))
-            .getEnvironmentRevision();
-
-    // The task definition should match
-    assertThat(revision.getTaskDefinition()).isEqualTo(stack.getTransientTaskDefinition());
-
     // Now start deployment
-    final String deploymentId =
-        stack
-            .getBlox()
-            .startDeployment(
-                new StartDeploymentRequest()
-                    .cluster(stack.getCluster())
-                    .environmentName(environmentName)
-                    .revisionId(revisionId))
-            .getDeploymentId();
-    assertThat(deploymentId).isNotEmpty();
+    blox.startDeployment(
+        new StartDeploymentRequest()
+            .cluster(stack.getCluster())
+            .environmentName(environmentName)
+            .revisionId(firstRevisionId));
 
     waitOrTimeout(
         RECONCILIATION_INTERVAL * 3 / 2,
@@ -123,10 +89,36 @@ public class CreateDaemonEnvironmentTest {
           assertThat(stack.describeTasks())
               .as("Tasks launched by blox")
               .allSatisfy(
-                  t -> {
-                    assertThat(t.group()).isEqualTo(environment.getEnvironmentName());
-                    assertThat(t.taskDefinitionArn()).isEqualTo(stack.getTransientTaskDefinition());
-                  });
+                  t ->
+                      assertThat(t)
+                          .hasFieldOrPropertyWithValue("group", environmentName)
+                          .hasFieldOrPropertyWithValue("taskDefinitionArn", firstTaskDefinition));
+        });
+
+    final String secondRevisionId =
+        blox.updateEnvironment(
+                new UpdateEnvironmentRequest()
+                    .cluster(stack.getCluster())
+                    .environmentName(environmentName)
+                    .taskDefinition(secondTaskDefinition))
+            .getEnvironmentRevisionId();
+
+    blox.startDeployment(
+        new StartDeploymentRequest()
+            .cluster(stack.getCluster())
+            .environmentName(environmentName)
+            .revisionId(firstRevisionId));
+
+    waitOrTimeout(
+        RECONCILIATION_INTERVAL * 3 / 2,
+        () -> {
+          assertThat(stack.describeTasks())
+              .as("Tasks launched by blox")
+              .allSatisfy(
+                  t ->
+                      assertThat(t)
+                          .hasFieldOrPropertyWithValue("group", environmentName)
+                          .hasFieldOrPropertyWithValue("taskDefinitionArn", secondTaskDefinition));
         });
   }
 }
