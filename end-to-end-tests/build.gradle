@@ -1,3 +1,5 @@
+import com.amazonaws.blox.tasks.EndToEndTest
+
 plugins {
     id "java"
     id "blox-deploy"
@@ -30,19 +32,13 @@ deployment {
     templateFile file("templates/test_cluster.yml")
 }
 
-task testEndToEnd(type: Test) {
+task testEndToEnd(type: EndToEndTest) {
     group "verification"
     description "Run end to end integration tests"
 
-    dependsOn ":end-to-end-tests:deploy"
-    dependsOn ":frontend-service:deploy"
-    dependsOn ":data-service:deploy"
-    dependsOn ":scheduling-manager:deploy"
-
-    doFirst {
-        systemProperty 'aws.region', stack.region.toString()
-        systemProperty 'aws.defaultProfile', stack.profile.toString()
-        systemProperty 'blox.tests.apiUrl', findProject(":frontend-service").deployment.outputs["ApiUrl"]
-    }
+    setDefaultRegion stack.region.toString()
+    setDefaultProfile stack.profile.toString()
+    setDefaultEndpoint findProject(":frontend-service").deployment.outputs["ApiUrl"]
 }
 
+testEndToEnd.mustRunAfter "deploy"

@@ -14,47 +14,13 @@
  */
 package com.amazonaws.blox;
 
-import static com.amazonaws.blox.integ.AsynchronousTestSupport.waitOrTimeout;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.amazonaws.blox.integ.BloxTestStack;
 import com.amazonaws.blox.model.CreateEnvironmentRequest;
-import com.amazonaws.blox.model.DeleteEnvironmentRequest;
 import com.amazonaws.blox.model.DeploymentConfiguration;
 import com.amazonaws.blox.model.StartDeploymentRequest;
 import com.amazonaws.blox.model.UpdateEnvironmentRequest;
-import java.util.UUID;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-public class UpdateDaemonEnvironmentTest {
-
-  private static final long RECONCILIATION_INTERVAL = 60_000;
-  private String environmentName;
-  private BloxTestStack stack;
-
-  @Before
-  public void setUp() {
-    final String bloxEndpoint = System.getProperty("blox.tests.apiUrl");
-    stack = new BloxTestStack(bloxEndpoint);
-
-    environmentName = "EndToEndTestEnvironment_" + UUID.randomUUID();
-  }
-
-  @After
-  public void tearDown() {
-    // Delete environment
-    stack
-        .getBlox()
-        .deleteEnvironment(
-            new DeleteEnvironmentRequest()
-                .cluster(stack.getCluster())
-                .environmentName(environmentName));
-
-    // Cleanup ECS tasks
-    stack.reset();
-  }
+public class UpdateDaemonEnvironmentTest extends AbstractEndToEndTest {
 
   @Test
   public void updatingEnvironmentCreatesNewRevision() throws Exception {
@@ -83,17 +49,7 @@ public class UpdateDaemonEnvironmentTest {
             .environmentName(environmentName)
             .revisionId(firstRevisionId));
 
-    waitOrTimeout(
-        RECONCILIATION_INTERVAL * 3 / 2,
-        () -> {
-          assertThat(stack.describeTasks())
-              .as("Tasks launched by blox")
-              .allSatisfy(
-                  t ->
-                      assertThat(t)
-                          .hasFieldOrPropertyWithValue("group", environmentName)
-                          .hasFieldOrPropertyWithValue("taskDefinitionArn", firstTaskDefinition));
-        });
+    assertAllRunningTasksMatch(environmentName, firstTaskDefinition);
 
     final String secondRevisionId =
         blox.updateEnvironment(
@@ -107,18 +63,8 @@ public class UpdateDaemonEnvironmentTest {
         new StartDeploymentRequest()
             .cluster(stack.getCluster())
             .environmentName(environmentName)
-            .revisionId(firstRevisionId));
+            .revisionId(secondRevisionId));
 
-    waitOrTimeout(
-        RECONCILIATION_INTERVAL * 3 / 2,
-        () -> {
-          assertThat(stack.describeTasks())
-              .as("Tasks launched by blox")
-              .allSatisfy(
-                  t ->
-                      assertThat(t)
-                          .hasFieldOrPropertyWithValue("group", environmentName)
-                          .hasFieldOrPropertyWithValue("taskDefinitionArn", secondTaskDefinition));
-        });
+    assertAllRunningTasksMatch(environmentName, secondTaskDefinition);
   }
 }

@@ -9,7 +9,7 @@ phases:
       - aws configure --profile default set region us-west-2
   build:
     commands:
-      - ./gradlew testEndToEnd
+      - ./gradlew deploy testEndToEnd
   post_build:
     commands:
       - rm -f  /root/.gradle/caches/modules-2/modules-2.lock

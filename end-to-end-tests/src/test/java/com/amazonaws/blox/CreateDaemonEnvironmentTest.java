@@ -14,53 +14,22 @@
  */
 package com.amazonaws.blox;
 
-import static com.amazonaws.blox.integ.AsynchronousTestSupport.waitOrTimeout;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.amazonaws.blox.integ.BloxTestStack;
 import com.amazonaws.blox.model.CreateEnvironmentRequest;
-import com.amazonaws.blox.model.DeleteEnvironmentRequest;
 import com.amazonaws.blox.model.DeploymentConfiguration;
 import com.amazonaws.blox.model.DescribeEnvironmentRequest;
 import com.amazonaws.blox.model.DescribeEnvironmentRevisionRequest;
 import com.amazonaws.blox.model.Environment;
 import com.amazonaws.blox.model.EnvironmentRevision;
 import com.amazonaws.blox.model.StartDeploymentRequest;
-import java.util.UUID;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-public class CreateDaemonEnvironmentTest {
-
-  private static final long RECONCILIATION_INTERVAL = 60_000;
-  private String environmentName;
-  private BloxTestStack stack;
-
-  @Before
-  public void setUp() {
-    final String bloxEndpoint = System.getProperty("blox.tests.apiUrl");
-    stack = new BloxTestStack(bloxEndpoint);
-
-    environmentName = "EndToEndTestEnvironment_" + UUID.randomUUID();
-  }
-
-  @After
-  public void tearDown() {
-    // Delete environment
-    stack
-        .getBlox()
-        .deleteEnvironment(
-            new DeleteEnvironmentRequest()
-                .cluster(stack.getCluster())
-                .environmentName(environmentName));
-
-    // Cleanup ECS tasks
-    stack.reset();
-  }
+public class CreateDaemonEnvironmentTest extends AbstractEndToEndTest {
 
   @Test
   public void creatingDaemonEnvironmentShouldLaunchTaskPerInstance() throws Exception {
+    final String taskDefinition = stack.getTransientTaskDefinition();
     // Create environment
     final String revisionId =
         stack
@@ -68,7 +37,7 @@ public class CreateDaemonEnvironmentTest {
             .createEnvironment(
                 new CreateEnvironmentRequest()
                     .environmentName(environmentName)
-                    .taskDefinition(stack.getTransientTaskDefinition())
+                    .taskDefinition(taskDefinition)
                     .deploymentConfiguration(new DeploymentConfiguration())
                     .cluster(stack.getCluster())
                     .environmentType("Daemon")
@@ -86,9 +55,7 @@ public class CreateDaemonEnvironmentTest {
                     .environmentName(environmentName))
             .getEnvironment();
 
-    // The names should match
     assertThat(environment.getEnvironmentName()).as("environment name").isEqualTo(environmentName);
-    // and the active environment revision should not set
     assertThat(environment.getActiveEnvironmentRevisionId()).isNull();
 
     // And when I describe the revision
@@ -117,16 +84,6 @@ public class CreateDaemonEnvironmentTest {
             .getDeploymentId();
     assertThat(deploymentId).isNotEmpty();
 
-    waitOrTimeout(
-        RECONCILIATION_INTERVAL * 3 / 2,
-        () -> {
-          assertThat(stack.describeTasks())
-              .as("Tasks launched by blox")
-              .allSatisfy(
-                  t -> {
-                    assertThat(t.group()).isEqualTo(environment.getEnvironmentName());
-                    assertThat(t.taskDefinitionArn()).isEqualTo(stack.getTransientTaskDefinition());
-                  });
-        });
+    assertAllRunningTasksMatch(environmentName, taskDefinition);
   }
 }
