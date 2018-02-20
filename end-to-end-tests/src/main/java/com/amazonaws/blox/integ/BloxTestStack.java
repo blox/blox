@@ -20,6 +20,7 @@ import java.util.List;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.ecs.ECSClient;
 import software.amazon.awssdk.services.ecs.model.Task;
+import software.amazon.awssdk.utils.Validate;
 
 /**
  * Facade over everything in an end-to-end Blox stack that's needed in tests.
@@ -39,6 +40,8 @@ public class BloxTestStack {
   private final Blox blox;
 
   public BloxTestStack(String bloxEndpoint) {
+    Validate.notEmpty(bloxEndpoint, "Blox endpoint cannot be empty.");
+
     this.bloxEndpoint = bloxEndpoint;
 
     this.cloudFormationClient = CloudFormationClient.create();
