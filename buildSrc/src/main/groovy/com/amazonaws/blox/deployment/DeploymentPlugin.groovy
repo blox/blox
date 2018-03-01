@@ -44,6 +44,7 @@ class DeploymentPlugin implements Plugin<Project> {
                 lambdaFunction it.name, project.files(it.zipFile)
             }
         }
+        project.assemble.dependsOn(postProcessTask)
 
 
         def packageTask = project.task("packageCloudformationResources", type: Exec) {

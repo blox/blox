@@ -61,6 +61,7 @@ task packageLambda(type: Zip) {
         from configurations.runtime
     }
 }
+assemble.dependsOn(packageLambda)
 
 deployment {
     aws {

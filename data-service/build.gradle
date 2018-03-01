@@ -81,6 +81,8 @@ task packageLambda(type: Zip, dependsOn: classes) {
     }
 }
 
+assemble.dependsOn(packageLambda)
+
 deployment {
     aws {
         profile stack.profile.toString()

@@ -11,7 +11,6 @@ description "Blox: Open Source schedulers for Amazon ECS"
 
 allprojects {
     apply plugin: 'com.diffplug.gradle.spotless'
-
     group 'com.amazonaws.blox'
     version '0.1-SNAPSHOT'
 
@@ -228,3 +227,24 @@ task updateClient(type: Copy, dependsOn: downloadClient) {
         file("${tmpDir}/generated-code").renameTo(file("frontend-service-client"))
     }
 }
+task release
+
+def projectsToRelease = ["frontend-service", "data-service", "scheduling-manager"].collect { project(it) }
+configure(projectsToRelease) {
+    task release(dependsOn: assemble) {
+        group "build"
+        description "Build the project and copy the outputs required for the pipeline"
+        doLast {
+            copy {
+                from tasks.getByPath("packageLambda")
+                from tasks.getByPath("postprocessCloudformationTemplate")
+
+                into rootProject.file("build/blox-release/${project.name}")
+            }
+        }
+    }
+
+    rootProject.release.dependsOn(release)
+}
+
+
