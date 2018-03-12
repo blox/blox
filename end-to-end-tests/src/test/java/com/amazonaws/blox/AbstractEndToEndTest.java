@@ -31,7 +31,8 @@ public abstract class AbstractEndToEndTest {
 
   @Before
   public void setupBase() {
-    final String bloxEndpoint = System.getProperty("blox.tests.apiUrl");
+    final String bloxEndpoint =
+        System.getProperty("blox.tests.apiUrl", System.getenv("BLOX_TESTS_APIURL"));
     stack = new BloxTestStack(bloxEndpoint);
 
     environmentName = "EndToEndTestEnvironment_" + UUID.randomUUID();

@@ -243,8 +243,15 @@ configure(projectsToRelease) {
             }
         }
     }
-
     rootProject.release.dependsOn(release)
 }
 
+
+configure(project("end-to-end-tests")) {
+    task release(type: Copy) {
+        from tasks.getByPath(":end-to-end-tests:testJar")
+        into rootProject.file("build/blox-release/${project.name}")
+    }
+    rootProject.release.dependsOn(release)
+}
 

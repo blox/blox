@@ -1,8 +1,10 @@
 import com.amazonaws.blox.tasks.EndToEndTest
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id "java"
     id "blox-deploy"
+    id 'com.github.johnrengelman.shadow' version '2.0.2'
 }
 
 sourceCompatibility = 1.8
@@ -30,6 +32,15 @@ deployment {
     s3Bucket stack.s3Bucket.toString()
 
     templateFile file("templates/test_cluster.yml")
+}
+
+task testJar(type: ShadowJar) {
+    group "build"
+    description "Generate uber jar for end to end testing"
+    classifier = 'tests'
+    from sourceSets.test.output
+    from sourceSets.main.output
+    configurations = [project.configurations.testRuntime]
 }
 
 task testEndToEnd(type: EndToEndTest) {
